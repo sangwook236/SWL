@@ -208,44 +208,60 @@ def merge_generated_data_directories():
 			fd.write('{}\n'.format(line))
 
 def check_label_distribution():
-	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
-	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
-	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
-	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#hangeul_charset = fd.read().strip('\n')  # A strings.
-		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
-		#hangeul_charset = fd.readlines()  # A list of string.
-		#hangeul_charset = fd.read().splitlines()  # A list of strings.
-	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-	hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
-	alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-	digit_charset = '0123456789'
-	symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
-
-	#label_set = set(hangeul_charset + hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset)
-	label_set = set(alphabet_charset + digit_charset + symbol_charset)
-
-	#label_charset = sorted(label_set)
-	label_charset = ''.join(sorted(label_set))
-
-	#--------------------
 	label_filepath = './text_line_samples_en_train/labels.txt'
 	#label_filepath = './text_line_samples_en_test/labels.txt'
 
 	try:
-		with open(label_filepath, 'r') as fd:
-			lines = fd.readlines()
+		with open(label_filepath, 'r', encoding='UTF8') as fd:
+			#lines = fd.readlines()
+			lines = fd.read().splitlines()
 	except FileNotFoundError:
 		print('[SWL] Error: File not found: {}.'.format(label_filepath))
 		return
+	except UnicodeDecodeError as ex:
+		print('[SWL] Error: Unicode decode error: {}.'.format(text_fpath))
+		return
 
-	label_dict = dict()
-	for ch in label_charset:
-		label_dict[ch] = 0
+	#--------------------
+	import string
+	if True:
+		charset = \
+			string.ascii_uppercase + \
+			string.ascii_lowercase + \
+			string.digits + \
+			string.punctuation + \
+			' '
+	else:
+		hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
+		#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
+		#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
+		with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
+			#hangeul_charset = fd.read().strip('\n')  # A strings.
+			hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
+			#hangeul_charset = fd.readlines()  # A list of string.
+			#hangeul_charset = fd.read().splitlines()  # A list of strings.
+		#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+		#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+		hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
+
+		charset = \
+			hangeul_charset + \
+			hangeul_jamo_charset + \
+			string.ascii_uppercase + \
+			string.ascii_lowercase + \
+			string.digits + \
+			string.punctuation + \
+			' '
+
+	#charset = sorted(charset)
+	charset = ''.join(sorted(charset))
+
+	#--------------------
+	char_dict = dict()
+	for ch in charset:
+		char_dict[ch] = 0
 
 	for line in lines:
-		line = line.rstrip('\n')
 		if not line:
 			continue
 
@@ -256,16 +272,19 @@ def check_label_distribution():
 		fname, label = line[:pos], line[pos+1:]
 
 		for ch in label:
-			label_dict[ch] += 1
+			try:
+				char_dict[ch] += 1
+			except KeyError:
+				print('[SWL] Warning: Invalid character {}.'.format(ch))
 
 	#--------------------
 	import numpy as np
 	import matplotlib.pyplot as plt
 
 	fig = plt.figure(figsize=(10, 6))
-	x_label = np.arange(len(label_dict.keys()))
-	plt.bar(x_label, label_dict.values(), align='center', alpha=0.5)
-	plt.xticks(x_label, label_dict.keys())
+	x_label = np.arange(len(char_dict.keys()))
+	plt.bar(x_label, char_dict.values(), align='center', alpha=0.5)
+	plt.xticks(x_label, char_dict.keys())
 	plt.show()
 
 	fig.savefig('./label_distribution.png')

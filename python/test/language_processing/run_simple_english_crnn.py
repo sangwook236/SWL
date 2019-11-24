@@ -492,18 +492,21 @@ class MyRunner(object):
 		#--------------------
 		# Create a dataset.
 		if is_dataset_generated_at_runtime:
+			#word_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
+			word_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
+			#word_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
+
 			print('[SWL] Info: Start loading an English dictionary...')
 			start_time = time.time()
-			english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
-			with open(english_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-				#english_words = fd.readlines()
-				#english_words = fd.read().strip('\n')
-				english_words = fd.read().splitlines()
+			with open(word_dictionary_filepath, 'r', encoding='UTF-8') as fd:
+				#dictionary_words = fd.readlines()
+				#dictionary_words = fd.read().strip('\n')
+				dictionary_words = fd.read().splitlines()
 			print('[SWL] Info: End loading an English dictionary: {} secs.'.format(time.time() - start_time))
 
 			print('[SWL] Info: Start creating an English dataset...')
 			start_time = time.time()
-			self._dataset = text_line_data.RunTimeTextLineDataset(set(english_words), image_height, image_width, image_channel, max_label_len=max_label_len)
+			self._dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(set(dictionary_words), image_height, image_width, image_channel, max_label_len=max_label_len)
 			print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000

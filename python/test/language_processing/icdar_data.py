@@ -7,7 +7,7 @@ import hangeul_util as hg_util
 import text_line_data
 
 # REF [site] >> https://rrc.cvc.uab.es/?ch=13
-class Icdar2019SorieTextLineDatasetBase(text_line_data.TextLineDatasetBase):
+class Icdar2019SroieTextLineDatasetBase(text_line_data.TextLineDatasetBase):
 	def __init__(self, image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True):
 		super().__init__(labels=None, default_value=default_value)
 
@@ -187,7 +187,7 @@ class Icdar2019SorieTextLineDatasetBase(text_line_data.TextLineDatasetBase):
 				break
 			start_idx = end_idx
 
-class Icdar2019SorieTextLineDataset(Icdar2019SorieTextLineDatasetBase):
+class Icdar2019SroieTextLineDataset(Icdar2019SroieTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True)
 

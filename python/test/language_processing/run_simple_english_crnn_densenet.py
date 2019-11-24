@@ -340,6 +340,26 @@ class MyModel(object):
 
 #--------------------------------------------------------------------
 
+def create_random_words():
+	import string, random
+	chars = \
+		string.ascii_uppercase * 3000 + \
+		string.digits * 3000 + \
+		string.punctuation * 1000
+	chars = list(chars)
+	random.shuffle(chars)
+	chars = ''.join(chars)
+	random_words = list()
+	start_idx = 0
+	while True:
+		end_idx = start_idx + random.randint(1, 10)
+		random_words.append(chars[start_idx:end_idx])
+		if end_idx >= len(chars):
+			break
+		start_idx = end_idx
+
+	return random_words
+
 class MyRunner(object):
 	def __init__(self, is_dataset_generated_at_runtime, data_dir_path=None, train_test_ratio=0.8, is_fine_tuned=False):
 		# Set parameters.
@@ -354,24 +374,35 @@ class MyRunner(object):
 		#--------------------
 		# Create a dataset.
 		if is_dataset_generated_at_runtime:
+			#word_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
+			word_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
+			#word_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
+
 			print('[SWL] Info: Start loading an English dictionary...')
 			start_time = time.time()
-			english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
-			with open(english_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-				#english_words = fd.readlines()
-				#english_words = fd.read().strip('\n')
-				english_words = fd.read().splitlines()
+			with open(word_dictionary_filepath, 'r', encoding='UTF-8') as fd:
+				#dictionary_words = fd.readlines()
+				#dictionary_words = fd.read().strip('\n')
+				dictionary_words = fd.read().splitlines()
 			print('[SWL] Info: End loading an English dictionary: {} secs.'.format(time.time() - start_time))
+
+			print('[SWL] Info: Start generating random words...')
+			start_time = time.time()
+			random_words = create_random_words()
+			print('[SWL] Info: End generating random words: {} secs.'.format(time.time() - start_time))
+
+			words = dictionary_words + random_words
 
 			print('[SWL] Info: Start creating an English dataset...')
 			start_time = time.time()
-			self._dataset = text_line_data.RunTimeTextLineDataset(set(english_words), image_height, image_width, image_channel, max_label_len=max_label_len)
+			#self._dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(set(words), image_height, image_width, image_channel, max_label_len=max_label_len)
+			self._dataset = text_line_data.BasicRunTimeTextLineDataset(set(words), image_height, image_width, image_channel, max_label_len=max_label_len):
 			print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000
 		else:
 			if is_fine_tuned:
-				self._dataset = icdar_data.Icdar2019SorieTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
+				self._dataset = icdar_data.Icdar2019SroieTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
 			else:
 				self._dataset = MyEnglishTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
 
@@ -762,7 +793,7 @@ def main():
 			else:
 				data_base_dir_path = 'D:/work/dataset'
 
-			data_dir_path = data_base_dir_path + '/text/icdar2019_sorie_text_line_train'
+			data_dir_path = data_base_dir_path + '/text/icdar2019_sroie/task1_train_text_line'
 		else:
 			# Data generation.
 			#	REF [function] >> EnglishTextRecognitionDataGeneratorTextLineDataset_test() in TextRecognitionDataGenerator_data_test.py.
@@ -775,7 +806,7 @@ def main():
 	if False:
 		print('[SWL] Info: Start checking data...')
 		start_time = time.time()
-		check_data(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio, is_fine_tuned, num_epochs, batch_size):
+		check_data(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio, is_fine_tuned, num_epochs, batch_size)
 		print('[SWL] Info: End checking data: {} secs.'.format(time.time() - start_time))
 		return
 
@@ -827,7 +858,7 @@ def main():
 			os.makedirs(inference_dir_path, exist_ok=True)
 
 		#image_filepaths = glob.glob('./text_line_samples_en_test/**/*.jpg', recursive=False)
-		image_filepaths = glob.glob('./receipt_icdar2019/image/*.jpg', recursive=False)
+		image_filepaths = glob.glob('./icdar2019_sroie/task1_test_text_line/image/*.jpg', recursive=False)
 		image_filepaths.sort()
 		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size)
 

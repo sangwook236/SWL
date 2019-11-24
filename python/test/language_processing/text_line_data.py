@@ -332,7 +332,7 @@ class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
 				break
 
 # This class is independent of language.
-class RunTimeTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
+class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 	def __init__(self, word_set, image_height, image_width, image_channel, max_label_len=0, use_NWHC=True, default_value=-1):
 		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
 
@@ -388,7 +388,7 @@ class RunTimeTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 		"""
 
 # This class is independent of language.
-class RunTimeHangeulJamoTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
+class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 	def __init__(self, word_set, image_height, image_width, image_channel, max_label_len=0, use_NWHC=True, default_value=-1):
 		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
 
@@ -988,7 +988,7 @@ class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
 			corrupted_scenes = scenes
 			#corrupted_scenes = cv2.pyrUp(cv2.pyrUp(cv2.pyrDown(cv2.pyrDown(corrupted_scenes))))
 			corrupted_scenes = list(map(lambda image: reduce_image(image, min_height, max_height), corrupted_scenes))
-			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(image, axis=0)))), corrupted_scenes))
+			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(image, axis=0)), axis=0)), corrupted_scenes))
 			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
 			"""
 			corrupted_scenes = scene_text_masks

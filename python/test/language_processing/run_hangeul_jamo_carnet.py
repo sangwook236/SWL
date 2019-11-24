@@ -404,18 +404,19 @@ class MyRunner(object):
 		#--------------------
 		# Create a dataset.
 		if is_dataset_generated_at_runtime:
+			word_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
+
 			print('[SWL] Info: Start loading a Korean dictionary...')
 			start_time = time.time()
-			korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
-			with open(korean_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-				#korean_words = fd.readlines()
-				#korean_words = fd.read().strip('\n')
-				korean_words = fd.read().splitlines()
+			with open(word_dictionary_filepath, 'r', encoding='UTF-8') as fd:
+				#dictionary_words = fd.readlines()
+				#dictionary_words = fd.read().strip('\n')
+				dictionary_words = fd.read().splitlines()
 			print('[SWL] Info: End loading a Korean dictionary: {} secs.'.format(time.time() - start_time))
 
 			print('[SWL] Info: Start creating a Hangeul jamo dataset...')
 			start_time = time.time()
-			self._dataset = text_line_data.RunTimeHangeulJamoTextLineDataset(set(korean_words), image_height, image_width, image_channel, max_label_len=max_label_len)
+			self._dataset = text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset(set(dictionary_words), image_height, image_width, image_channel, max_label_len=max_label_len)
 			print('[SWL] Info: End creating a Hangeul jamo dataset: {} secs.'.format(time.time() - start_time))
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000

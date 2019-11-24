@@ -225,24 +225,21 @@ class MyRunner(object):
 
 		#--------------------
 		# Create a dataset.
-		if True:
-			english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
-		elif False:
-			english_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
-		elif False:
-			english_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
+		#word_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
+		word_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
+		#word_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
 
 		print('[SWL] Info: Start loading an English dictionary...')
 		start_time = time.time()
-		with open(english_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-			#english_words = fd.readlines()
-			#english_words = fd.read().strip('\n')
-			english_words = fd.read().splitlines()
+		with open(word_dictionary_filepath, 'r', encoding='UTF-8') as fd:
+			#dictionary_words = fd.readlines()
+			#dictionary_words = fd.read().strip('\n')
+			dictionary_words = fd.read().splitlines()
 		print('[SWL] Info: End loading an English dictionary: {} secs.'.format(time.time() - start_time))
 
 		print('[SWL] Info: Start creating an English dataset...')
 		start_time = time.time()
-		self._dataset = text_line_data.RunTimePairedCorruptedTextLineDataset(set(english_words), image_height, image_width, image_channel, max_label_len=max_label_len, use_NWHC=False, corrupt_functor=self._corrupt)
+		self._dataset = text_line_data.RunTimePairedCorruptedTextLineDataset(set(dictionary_words), image_height, image_width, image_channel, max_label_len=max_label_len, use_NWHC=False, corrupt_functor=self._corrupt)
 		print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		#self._train_examples_per_epoch, self._test_examples_per_epoch = 500000, 10000
@@ -660,7 +657,7 @@ def main():
 			os.makedirs(inference_dir_path, exist_ok=True)
 
 		#image_filepaths = glob.glob('./text_line_samples_en_test/**/*.jpg', recursive=False)
-		image_filepaths = glob.glob('./receipt_icdar2019/image/*.jpg', recursive=False)
+		image_filepaths = glob.glob('./icdar2019_sroie/task1_test_text_line/image/*.jpg', recursive=False)
 		image_filepaths.sort()
 		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size)
 

@@ -9,16 +9,16 @@ import numpy as np
 import swl.language_processing.util as swl_langproc_util
 
 # Generates Tesseract results:
-#	cd ~/work/dataset/text/receipt_icdar2019_tesseract
+#	cd ~/work/dataset/text/icdar2019_sroie/task1_test_text_line/tesseract
 #	magick mogrify -resize x70 -path ./image_70h ./image/*.jpg
 #	tesseract --tessdata-dir ~/lib_repo/cpp/tesseract_tessdata_best_github file_list.txt tess_ocr_results -l eng --oem 3 --psm 3 --dpi 70
 def load_tesseract_results():
 	if 'posix' == os.name:
-		receipt_icdar2019_base_dir_path = '/home/sangwook/work/dataset/text/receipt_icdar2019/tesseract_70h'
+		data_dir_path = '/home/sangwook/work/dataset/text/icdar2019_sroie/task1_test_text_line/tesseract_70h'
 	else:
-		receipt_icdar2019_base_dir_path = 'D:/work/dataset/text/receipt_icdar2019/tesseract_70h'
+		data_dir_path = 'D:/work/dataset/text/icdar2019_sroie/task1_test_text_line/tesseract_70h'
 
-	filepath = receipt_icdar2019_base_dir_path + '/tess_ocr_results_70h.txt'
+	filepath = data_dir_path + '/tess_ocr_results_70h.txt'
 	try:
 		with open(filepath, 'r', encoding='UTF8') as fd:
 			data = fd.read()
@@ -54,15 +54,15 @@ def load_tesseract_results():
 # Generates OCRopy results:
 #	cd ~/work/dataset/text
 #	conda activate ocropus
-#	ocropus-nlbin receipt_icdar2019_ocropy/image/*.jpg -o receipt_icdar2019_ocropy/bin -n
-#	ocropus-rpred -Q 4 -m ~/lib_repo/python/ocropy_github/models/en-default.pyrnn.gz 'receipt_icdar2019_ocropy/bin/?????.bin.png'
+#	ocropus-nlbin icdar2019_sroie/task1_test_text_line/ocropy/image/*.jpg -o icdar2019_sroie/task1_test_text_line/ocropy/bin -n
+#	ocropus-rpred -Q 4 -m ~/lib_repo/python/ocropy_github/models/en-default.pyrnn.gz 'icdar2019_sroie/task1_test_text_line/ocropy/bin/?????.bin.png'
 def load_ocropy_results():
 	if 'posix' == os.name:
-		receipt_icdar2019_base_dir_path = '/home/sangwook/work/dataset/text/receipt_icdar2019/ocropy'
+		data_dir_path = '/home/sangwook/work/dataset/text/icdar2019_sroie/task1_test_text_line/ocropy'
 	else:
-		receipt_icdar2019_base_dir_path = 'D:/work/dataset/text/receipt_icdar2019/ocropy'
+		data_dir_path = 'D:/work/dataset/text/icdar2019_sroie/task1_test_text_line/ocropy'
 
-	filepaths = glob.glob(receipt_icdar2019_base_dir_path + '/bin/*.txt')
+	filepaths = glob.glob(data_dir_path + '/bin/*.txt')
 	if filepaths is None:
 		print('[SWL] Error: Failed to load recognition results.')
 		return None
@@ -103,14 +103,14 @@ def load_abbyy_results():
 	text_dict = dict()
 
 	if 'posix' == os.name:
-		receipt_icdar2019_base_dir_path = '/home/sangwook/work/dataset/text/receipt_icdar2019'
+		data_dir_path = '/home/sangwook/work/dataset/text/icdar2019_sroie/task1_test_text_line'
 	else:
-		receipt_icdar2019_base_dir_path = 'D:/work/dataset/text/receipt_icdar2019'
+		data_dir_path = 'D:/work/dataset/text/icdar2019_sroie/task1_test_text_line'
 
 	#--------------------
 	# The recognition results of ABBYY FineReaderOCR 15.
 	if False:
-		filepath = receipt_icdar2019_base_dir_path + '/abbyy/abbyy_finereader_15_receipt_icdar2019_results.txt'
+		filepath = data_dir_path + '/abbyy/abbyy_finereader_15_icdar2019_sroie_task1_test_results.txt'
 		try:
 			with open(filepath, 'r', encoding='UTF8') as fd:
 				lines = fd.readlines()
@@ -131,8 +131,8 @@ def load_abbyy_results():
 
 	#--------------------
 	# The recognition results of ABBYY Cloud OCR SDK.
-	#filepaths = glob.glob(receipt_icdar2019_base_dir_path + '/abbyy/Python/results/*.txt')
-	filepaths = glob.glob(receipt_icdar2019_base_dir_path + '/abbyy/ICDAR2019_Recipt (Abbyy)/abbyy/*.txt')
+	#filepaths = glob.glob(data_dir_path + '/abbyy/Python/results/*.txt')
+	filepaths = glob.glob(data_dir_path + '/abbyy/ICDAR2019_Recipt (Abbyy)/abbyy/*.txt')
 	if filepaths is None:
 		print('[SWL] Error: Failed to load recognition results.')
 		return None
@@ -173,17 +173,18 @@ def load_abbyy_results():
 #	REF [file] >> run_simple_english_crnn.py or run_simple_hangeul_crnn.py
 def load_my_text_recognition_results():
 	if 'posix' == os.name:
-		receipt_icdar2019_base_dir_path = '/home/sangwook/work/dataset/text/receipt_icdar2019'
+		data_dir_path = '/home/sangwook/work/dataset/text/icdar2019_sroie/task1_test_text_line'
 	else:
-		receipt_icdar2019_base_dir_path = 'D:/work/dataset/text/receipt_icdar2019'
+		data_dir_path = 'D:/work/dataset/text/icdar2019_sroie/task1_test_text_line'
 
-	#inference_filepath = receipt_icdar2019_base_dir_path + '/inference_results_17.csv'
-	#inference_filepath = receipt_icdar2019_base_dir_path + '/inference_results_densenet_01.csv'
-	#inference_filepath = receipt_icdar2019_base_dir_path + '/inference_results_densenet_02.csv'
-	inference_filepath = receipt_icdar2019_base_dir_path + '/inference_results_densenet_03.csv'
-	#inference_filepath = receipt_icdar2019_base_dir_path + '/inference_results_resnetv2_04.csv'
+	#inference_filepath = data_dir_path + '/inference_results_17.csv'
+	#inference_filepath = data_dir_path + '/inference_results_densenet_01.csv'
+	#inference_filepath = data_dir_path + '/inference_results_densenet_02.csv'
+	#inference_filepath = data_dir_path + '/inference_results_densenet_03.csv'
+	inference_filepath = data_dir_path + '/inference_results_densenet_04.csv'
+	#inference_filepath = data_dir_path + '/inference_results_resnetv2_04.csv'
 
-	id_prefix = './receipt_icdar2019/'
+	id_prefix = './icdar2019_sroie/task1_test_text_line/'
 	id_prefix_len = len(id_prefix)
 
 	if True:
@@ -247,15 +248,15 @@ def load_my_text_recognition_results():
 
 	return dict(sorted(text_dict.items()))
 
-def load_ground_truth_of_receipt_icdar2019():
+def load_ground_truth_of_icdar2019_sroie_task1_test():
 	if 'posix' == os.name:
-		receipt_icdar2019_base_dir_path = '/home/sangwook/work/dataset/text/receipt_icdar2019'
+		data_dir_path = '/home/sangwook/work/dataset/text/icdar2019_sroie/task1_test_text_line'
 	else:
-		receipt_icdar2019_base_dir_path = 'D:/work/dataset/text/receipt_icdar2019'
+		data_dir_path = 'D:/work/dataset/text/icdar2019_sroie/task1_test_text_line'
 
 	# ICDAR SROIE dataset.
 	#	REF [site] >> https://rrc.cvc.uab.es/?ch=13
-	ground_truth_filepath = receipt_icdar2019_base_dir_path + '/labels.txt'
+	ground_truth_filepath = data_dir_path + '/labels.txt'
 
 	if False:
 		text_dict = dict()
@@ -307,7 +308,7 @@ def load_ground_truth_of_receipt_icdar2019():
 def compute_simple_text_recognition_accuracy_results():
 	print('[SWL] Info: Start loading text recognition results...')
 	start_time = time.time()
-	gt_text_dict = load_ground_truth_of_receipt_icdar2019()
+	gt_text_dict = load_ground_truth_of_icdar2019_sroie_task1_test()
 
 	if False:
 		inf_text_dict = load_tesseract_results()
@@ -352,7 +353,7 @@ def compute_simple_text_recognition_accuracy_results():
 def compute_string_distance_results():
 	print('[SWL] Info: Start loading text recognition results...')
 	start_time = time.time()
-	gt_text_dict = load_ground_truth_of_receipt_icdar2019()
+	gt_text_dict = load_ground_truth_of_icdar2019_sroie_task1_test()
 
 	if False:
 		inf_text_dict = load_tesseract_results()

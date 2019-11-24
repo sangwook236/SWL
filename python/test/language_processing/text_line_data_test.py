@@ -36,9 +36,13 @@ def create_charsets():
 	return hangeul_charset, alphabet_charset, digit_charset, symbol_charset, hangeul_jamo_charset
 
 def BasicRunTimeTextLineDataset_test():
+	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
+	#english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
+	english_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
+	#english_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
+
 	print('Start loading a Korean dictionary...')
 	start_time = time.time()
-	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
 	with open(korean_dictionary_filepath, 'r', encoding='UTF-8') as fd:
 		#korean_words = fd.readlines()
 		#korean_words = fd.read().strip('\n')
@@ -47,7 +51,6 @@ def BasicRunTimeTextLineDataset_test():
 
 	print('Start loading an English dictionary...')
 	start_time = time.time()
-	english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
 	with open(english_dictionary_filepath, 'r', encoding='UTF-8') as fd:
 		#english_words = fd.readlines()
 		#english_words = fd.read().strip('\n')
@@ -97,10 +100,14 @@ def BasicRunTimeTextLineDataset_test():
 		dataset.visualize(train_generator, num_examples=10)
 		dataset.visualize(test_generator, num_examples=10)
 
-def RunTimeTextLineDataset_test():
+def RunTimeAlphaMatteTextLineDataset_test():
+	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
+	#english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
+	english_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
+	#english_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
+
 	print('Start loading a Korean dictionary...')
 	start_time = time.time()
-	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
 	with open(korean_dictionary_filepath, 'r', encoding='UTF-8') as fd:
 		#korean_words = fd.readlines()
 		#korean_words = fd.read().strip('\n')
@@ -109,7 +116,6 @@ def RunTimeTextLineDataset_test():
 
 	print('Start loading an English dictionary...')
 	start_time = time.time()
-	english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
 	with open(english_dictionary_filepath, 'r', encoding='UTF-8') as fd:
 		#english_words = fd.readlines()
 		#english_words = fd.read().strip('\n')
@@ -124,7 +130,7 @@ def RunTimeTextLineDataset_test():
 		print('Start creating a Korean dataset...')
 		start_time = time.time()
 		image_height, image_width, image_channel = 64, 640, 1
-		dataset = text_line_data.RunTimeTextLineDataset(korean_word_set, image_height, image_width, image_channel)
+		dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(korean_word_set, image_height, image_width, image_channel)
 		print('End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -137,7 +143,7 @@ def RunTimeTextLineDataset_test():
 		print('Start creating an English dataset...')
 		start_time = time.time()
 		image_height, image_width, image_channel = 32, 320, 1
-		dataset = text_line_data.RunTimeTextLineDataset(english_word_set, image_height, image_width, image_channel)
+		dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(english_word_set, image_height, image_width, image_channel)
 		print('End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -150,7 +156,7 @@ def RunTimeTextLineDataset_test():
 		print('Start creating a Korean+English dataset...')
 		start_time = time.time()
 		image_height, image_width, image_channel = 64, 640, 1
-		dataset = text_line_data.RunTimeTextLineDataset(all_word_set, image_height, image_width, image_channel)
+		dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(all_word_set, image_height, image_width, image_channel)
 		print('End creating a Korean+English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -159,10 +165,14 @@ def RunTimeTextLineDataset_test():
 		dataset.visualize(train_generator, num_examples=10)
 		dataset.visualize(test_generator, num_examples=10)
 
-def RunTimeHangeulJamoTextLineDataset_test():
+def RunTimeHangeulJamoAlphaMatteTextLineDataset_test():
+	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
+	#english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
+	english_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
+	#english_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
+
 	print('Start loading a Korean dictionary...')
 	start_time = time.time()
-	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
 	with open(korean_dictionary_filepath, 'r', encoding='UTF-8') as fd:
 		#korean_words = fd.readlines()
 		#korean_words = fd.read().strip('\n')
@@ -171,7 +181,6 @@ def RunTimeHangeulJamoTextLineDataset_test():
 
 	print('Start loading an English dictionary...')
 	start_time = time.time()
-	english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
 	with open(english_dictionary_filepath, 'r', encoding='UTF-8') as fd:
 		#english_words = fd.readlines()
 		#english_words = fd.read().strip('\n')
@@ -185,7 +194,7 @@ def RunTimeHangeulJamoTextLineDataset_test():
 		print('Start creating a Korean dataset...')
 		start_time = time.time()
 		image_height, image_width, image_channel = 64, 640, 1
-		dataset = text_line_data.RunTimeHangeulJamoTextLineDataset(korean_word_set, image_height, image_width, image_channel)
+		dataset = text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset(korean_word_set, image_height, image_width, image_channel)
 		print('End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -198,7 +207,7 @@ def RunTimeHangeulJamoTextLineDataset_test():
 		print('Start creating a Korean+English dataset...')
 		start_time = time.time()
 		image_height, image_width, image_channel = 64, 640, 1
-		dataset = text_line_data.RunTimeHangeulJamoTextLineDataset(all_word_set, image_height, image_width, image_channel)
+		dataset = text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset(all_word_set, image_height, image_width, image_channel)
 		print('End creating a Korean+English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -242,9 +251,13 @@ def JsonBasedHangeulJamoTextLineDataset_test():
 	dataset.visualize(test_generator, num_examples=10)
 
 def RunTimePairedCorruptedTextLineDataset_test():
+	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
+	#english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
+	english_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
+	#english_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
+
 	print('Start loading a Korean dictionary...')
 	start_time = time.time()
-	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
 	with open(korean_dictionary_filepath, 'r', encoding='UTF-8') as fd:
 		#korean_words = fd.readlines()
 		#korean_words = fd.read().strip('\n')
@@ -253,7 +266,6 @@ def RunTimePairedCorruptedTextLineDataset_test():
 
 	print('Start loading an English dictionary...')
 	start_time = time.time()
-	english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
 	with open(english_dictionary_filepath, 'r', encoding='UTF-8') as fd:
 		#english_words = fd.readlines()
 		#english_words = fd.read().strip('\n')
@@ -367,8 +379,8 @@ def main():
 	#BasicRunTimeTextLineDataset_test()
 
 	#--------------------
-	RunTimeTextLineDataset_test()
-	#RunTimeHangeulJamoTextLineDataset_test()
+	RunTimeAlphaMatteTextLineDataset_test()
+	#RunTimeHangeulJamoAlphaMatteTextLineDataset_test()
 
 	#JsonBasedTextLineDataset_test()
 	#JsonBasedHangeulJamoTextLineDataset_test()
