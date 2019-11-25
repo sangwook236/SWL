@@ -78,7 +78,7 @@ def create_augmenter():
 
 class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len, use_NWHC, default_value):
+		super().__init__(word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len, use_NWHC, default_value)
 
 		self._augmenter = create_augmenter()
 
@@ -499,7 +499,7 @@ class MyRunner(object):
 			print('[SWL] Info: Start creating an English dataset...')
 			start_time = time.time()
 			#self._dataset = MyRunTimeAlphaMatteTextLineDataset(set(words), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len)
-			self._dataset = MyRunTimeTextLineDataset(set(words), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len):
+			self._dataset = MyRunTimeTextLineDataset(set(words), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len)
 			print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000
@@ -902,6 +902,10 @@ def main():
 			#	REF [function] >> EnglishTextRecognitionDataGeneratorTextLineDataset_test() in TextRecognitionDataGenerator_data_test.py.
 
 			data_dir_path = './text_line_samples_en_train'
+
+		if not os.path.isdir(data_dir_path) or not os.path.exists(data_dir_path):
+			print('[SWL] Error: Data directory not found, {}.'.format(data_dir_path))
+			return
 	else:
 		data_dir_path = None
 

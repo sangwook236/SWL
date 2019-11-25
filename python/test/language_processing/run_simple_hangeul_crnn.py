@@ -797,6 +797,10 @@ def main():
 		#	REF [function] >> HangeulTextRecognitionDataGeneratorTextLineDataset_test() in TextRecognitionDataGenerator_data_test.py.
 
 		data_dir_path = './text_line_samples_kr_train'
+
+		if not os.path.isdir(data_dir_path) or not os.path.exists(data_dir_path):
+			print('[SWL] Error: Data directory not found, {}.'.format(data_dir_path))
+			return
 	else:
 		data_dir_path = None
 
