@@ -59,6 +59,8 @@ def compute_string_distance(text_pairs, case_sensitive=True):
 
 	return text_distance, word_distance, char_distance, total_text_count, total_word_count, total_char_count
 
+#--------------------------------------------------------------------
+
 def compute_text_size(text, font_type, font_index, font_size):
 	font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
 	text_size = font.getsize(text)  # (width, height).
@@ -301,6 +303,8 @@ def generate_per_character_text_image_and_mask(text, font_type, font_index, font
 			msk = msk.crop(text_rect)
 
 	return img, msk
+
+#--------------------------------------------------------------------
 
 def draw_text_on_image(img, text, font_type, font_index, font_size, font_color, text_offset=(0, 0), rotation_angle=None):
 	font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
@@ -599,3 +603,68 @@ def transform_texts_on_image(texts, tx, ty, rotation_angle, img, font, font_colo
 	text_mask = np.asarray(text_mask, dtype=np.uint8)
 
 	return text_bboxes, img, text_mask
+
+#--------------------------------------------------------------------
+
+def draw_character_histogram(texts, charset=None):
+	if charset is None:
+		import string
+		if True:
+			charset = \
+				string.ascii_uppercase + \
+				string.ascii_lowercase + \
+				string.digits + \
+				string.punctuation + \
+				' '
+		else:
+			hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
+			#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
+			#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
+			with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
+				#hangeul_charset = fd.read().strip('\n')  # A strings.
+				hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
+				#hangeul_charset = fd.readlines()  # A list of string.
+				#hangeul_charset = fd.read().splitlines()  # A list of strings.
+			#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+			#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+			hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
+
+			charset = \
+				hangeul_charset + \
+				hangeul_jamo_charset + \
+				string.ascii_uppercase + \
+				string.ascii_lowercase + \
+				string.digits + \
+				string.punctuation + \
+				' '
+
+	#charset = sorted(charset)
+	charset = ''.join(sorted(charset))
+
+	#--------------------
+	char_dict = dict()
+	for ch in charset:
+		char_dict[ch] = 0
+
+	for txt in texts:
+		if not txt:
+			continue
+
+		for ch in txt:
+			try:
+				char_dict[ch] += 1
+			except KeyError:
+				print('[SWL] Warning: Invalid character, {} in {}.'.format(ch, txt))
+
+	#--------------------
+	import numpy as np
+	import matplotlib.pyplot as plt
+
+	fig = plt.figure(figsize=(10, 6))
+	x_label = np.arange(len(char_dict.keys()))
+	plt.bar(x_label, char_dict.values(), align='center', alpha=0.5)
+	plt.xticks(x_label, char_dict.keys())
+	plt.show()
+
+	fig.savefig('./character_histogram.png')
+	plt.close(fig)

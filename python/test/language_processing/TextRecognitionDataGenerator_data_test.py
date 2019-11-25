@@ -222,73 +222,18 @@ def check_label_distribution():
 		print('[SWL] Error: Unicode decode error: {}.'.format(text_fpath))
 		return
 
-	#--------------------
-	import string
-	if True:
-		charset = \
-			string.ascii_uppercase + \
-			string.ascii_lowercase + \
-			string.digits + \
-			string.punctuation + \
-			' '
-	else:
-		hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
-		#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
-		#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
-		with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
-			#hangeul_charset = fd.read().strip('\n')  # A strings.
-			hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
-			#hangeul_charset = fd.readlines()  # A list of string.
-			#hangeul_charset = fd.read().splitlines()  # A list of strings.
-		#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-		#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-		hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
-
-		charset = \
-			hangeul_charset + \
-			hangeul_jamo_charset + \
-			string.ascii_uppercase + \
-			string.ascii_lowercase + \
-			string.digits + \
-			string.punctuation + \
-			' '
-
-	#charset = sorted(charset)
-	charset = ''.join(sorted(charset))
-
-	#--------------------
-	char_dict = dict()
-	for ch in charset:
-		char_dict[ch] = 0
-
+	texts = list()
 	for line in lines:
-		if not line:
-			continue
-
 		pos = line.find(' ')
 		if -1 == pos:
 			print('[SWL] Warning: Invalid image-label pair: {}.'.format(line))
 			continue
 		fname, label = line[:pos], line[pos+1:]
-
-		for ch in label:
-			try:
-				char_dict[ch] += 1
-			except KeyError:
-				print('[SWL] Warning: Invalid character {}.'.format(ch))
+		texts.append(label)
 
 	#--------------------
-	import numpy as np
-	import matplotlib.pyplot as plt
-
-	fig = plt.figure(figsize=(10, 6))
-	x_label = np.arange(len(char_dict.keys()))
-	plt.bar(x_label, char_dict.values(), align='center', alpha=0.5)
-	plt.xticks(x_label, char_dict.keys())
-	plt.show()
-
-	fig.savefig('./label_distribution.png')
-	plt.close(fig)
+	from swl.language_processing.util import draw_character_histogram
+	draw_character_histogram(texts, charset=None)
 
 def main():
 	#EnglishTextRecognitionDataGeneratorTextLineDataset_test()

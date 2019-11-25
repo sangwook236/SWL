@@ -133,44 +133,8 @@ def check_label_distribution_of_icdar2019_sroie_task1_train_text_line_data():
 		return
 
 	#--------------------
-	import string
-	charset = \
-		string.ascii_uppercase + \
-		string.ascii_lowercase + \
-		string.digits + \
-		string.punctuation + \
-		' '
-
-	#charset = sorted(charset)
-	charset = ''.join(sorted(charset))
-
-	#--------------------
-	char_dict = dict()
-	for ch in charset:
-		char_dict[ch] = 0
-
-	for line in lines:
-		if not line:
-			continue
-
-		for ch in line:
-			try:
-				char_dict[ch] += 1
-			except KeyError:
-				print('[SWL] Warning: Invalid character {}.'.format(ch))
-
-	#--------------------
-	import numpy as np
-	import matplotlib.pyplot as plt
-
-	fig = plt.figure(figsize=(10, 6))
-	x_label = np.arange(len(char_dict.keys()))
-	plt.bar(x_label, char_dict.values(), align='center', alpha=0.5)
-	plt.xticks(x_label, char_dict.keys())
-	plt.show()
-
-	fig.savefig('./label_distribution.png')
-	plt.close(fig)
+	from swl.language_processing.util import draw_character_histogram
+	draw_character_histogram(words, charset=None)
 
 def main():
 	#generate_icdar2019_sroie_task1_train_text_line_data()

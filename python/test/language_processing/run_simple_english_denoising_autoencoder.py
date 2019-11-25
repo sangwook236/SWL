@@ -237,9 +237,25 @@ class MyRunner(object):
 			dictionary_words = fd.read().splitlines()
 		print('[SWL] Info: End loading an English dictionary: {} secs.'.format(time.time() - start_time))
 
+		#--------------------
+		if 'posix' == os.name:
+			system_font_dir_path = '/usr/share/fonts'
+			font_base_dir_path = '/home/sangwook/work/font'
+		else:
+			system_font_dir_path = 'C:/Windows/Fonts'
+			font_base_dir_path = 'D:/work/font'
+		#font_dir_path = font_base_dir_path + '/eng'
+		font_dir_path = font_base_dir_path + '/receipt_eng'
+
+		import text_generation_util as tg_util
+		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+		font_list = tg_util.generate_font_list(font_filepaths)
+		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
+		handwriting_dict = None
+
 		print('[SWL] Info: Start creating an English dataset...')
 		start_time = time.time()
-		self._dataset = text_line_data.RunTimePairedCorruptedTextLineDataset(set(dictionary_words), image_height, image_width, image_channel, max_label_len=max_label_len, use_NWHC=False, corrupt_functor=self._corrupt)
+		self._dataset = text_line_data.RunTimePairedCorruptedTextLineDataset(set(dictionary_words), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len, use_NWHC=False, corrupt_functor=self._corrupt)
 		print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		#self._train_examples_per_epoch, self._test_examples_per_epoch = 500000, 10000

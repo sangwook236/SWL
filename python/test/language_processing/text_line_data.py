@@ -265,7 +265,7 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 
 # This class is independent of language.
 class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, max_label_len=0, use_NWHC=True, default_value=-1):
+	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, default_value=-1):
 		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
@@ -283,22 +283,6 @@ class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
-
-		#--------------------
-		if 'posix' == os.name:
-			system_font_dir_path = '/usr/share/fonts'
-			font_base_dir_path = '/home/sangwook/work/font'
-		else:
-			system_font_dir_path = 'C:/Windows/Fonts'
-			font_base_dir_path = 'D:/work/font'
-		#font_dir_path = font_base_dir_path + '/eng'
-		font_dir_path = font_base_dir_path + '/kor'
-
-		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
-		#font_list = tg_util.generate_font_list(font_filepaths)
-		font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-		handwriting_dict = None
 
 		#--------------------
 		min_font_size, max_font_size = int(image_height * 0.8), int(image_height * 1.25)
@@ -333,7 +317,7 @@ class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
 
 # This class is independent of language.
 class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, max_label_len=0, use_NWHC=True, default_value=-1):
+	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, default_value=-1):
 		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
@@ -351,22 +335,6 @@ class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
-
-		#--------------------
-		if 'posix' == os.name:
-			system_font_dir_path = '/usr/share/fonts'
-			font_base_dir_path = '/home/sangwook/work/font'
-		else:
-			system_font_dir_path = 'C:/Windows/Fonts'
-			font_base_dir_path = 'D:/work/font'
-		#font_dir_path = font_base_dir_path + '/eng'
-		font_dir_path = font_base_dir_path + '/kor'
-
-		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
-		#font_list = tg_util.generate_font_list(font_filepaths)
-		font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-		handwriting_dict = None
 
 		#--------------------
 		min_font_size, max_font_size = int(image_height * 0.8), int(image_height * 1.25)
@@ -389,7 +357,7 @@ class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 
 # This class is independent of language.
 class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, max_label_len=0, use_NWHC=True, default_value=-1):
+	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, default_value=-1):
 		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
 
 		#--------------------
@@ -411,22 +379,6 @@ class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatas
 
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
-
-		#--------------------
-		if 'posix' == os.name:
-			system_font_dir_path = '/usr/share/fonts'
-			font_base_dir_path = '/home/sangwook/work/font'
-		else:
-			system_font_dir_path = 'C:/Windows/Fonts'
-			font_base_dir_path = 'D:/work/font'
-		#font_dir_path = font_base_dir_path + '/eng'
-		font_dir_path = font_base_dir_path + '/kor'
-
-		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
-		#font_list = tg_util.generate_font_list(font_filepaths)
-		font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-		handwriting_dict = None
 
 		#--------------------
 		min_font_size, max_font_size = int(image_height * 0.8), int(image_height * 1.25)
@@ -927,7 +879,7 @@ class RunTimePairedTextLineDatasetBase(PairedTextLineDatasetBase):
 
 # This class is independent of language.
 class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, corrupt_functor, max_label_len=0, use_NWHC=True, default_value=-1):
+	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, corrupt_functor, max_label_len=0, use_NWHC=True, default_value=-1):
 		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
 
 		#--------------------
@@ -945,24 +897,6 @@ class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
 
 		self._corrupt_functor = corrupt_functor
-
-		#--------------------
-		if 'posix' == os.name:
-			system_font_dir_path = '/usr/share/fonts'
-			font_base_dir_path = '/home/sangwook/work/font'
-		else:
-			system_font_dir_path = 'C:/Windows/Fonts'
-			font_base_dir_path = 'D:/work/font'
-		#font_dir_path = font_base_dir_path + '/eng'
-		#font_dir_path = font_base_dir_path + '/kor'
-		font_dir_path = font_base_dir_path + '/receipt_eng'
-		#font_dir_path = font_base_dir_path + '/receipt_kor'
-
-		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
-		#font_list = tg_util.generate_font_list(font_filepaths)
-		font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-		handwriting_dict = None
 
 		#--------------------
 		min_font_size, max_font_size = int(image_height * 0.8), int(image_height * 1.25)
