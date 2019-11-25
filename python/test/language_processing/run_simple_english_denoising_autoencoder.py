@@ -573,7 +573,8 @@ def check_data(num_epochs, batch_size):
 	train_steps_per_epoch = None if train_examples_per_epoch is None else math.ceil(train_examples_per_epoch / batch_size)
 	test_steps_per_epoch = None if test_examples_per_epoch is None else math.ceil(test_examples_per_epoch / batch_size)
 
-	for batch_step, (batch_data, num_batch_examples) in enumerate(runner.dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=False)):
+	generator = runner.dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=False)
+	for batch_step, (batch_data, num_batch_examples) in enumerate(generator):
 		#batch_corrupted_images (np.array), batch_clean_images (np.array), batch_labels_str (a list of strings), batch_labels_int (a list of sequences) = batch_data
 
 		if 0 == batch_step:
@@ -603,15 +604,10 @@ def check_data(num_epochs, batch_size):
 		sequences = swl_ml_util.dense_to_sequences(dense, default_value=default_value, dtype=np.int32)
 		#print('Dense tensor = {}.'.format(dense))
 
-		for idx, (inp, outp) in enumerate(zip(batch_data[0], batch_data[1])):
-			cv2.imshow('Input Image', inp)
-			cv2.imshow('Output Image', outp)
-			cv2.waitKey(2000)
-			if idx + 1 >= 10:
-				break
-
 		break
-	cv2.destroyAllWindows()
+
+	#generator = runner.dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=False)
+	runner.dataset.visualize(generator, num_examples=10)
 
 #--------------------------------------------------------------------
 

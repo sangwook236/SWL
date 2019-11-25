@@ -19,18 +19,18 @@ def create_augmenter():
 	from imgaug import augmenters as iaa
 
 	augmenter = iaa.Sequential([
-		iaa.Sometimes(0.5, iaa.OneOf([
-			iaa.Crop(px=(0, 100)),  # Crop images from each side by 0 to 16px (randomly chosen).
-			iaa.Crop(percent=(0, 0.1)),  # Crop images by 0-10% of their height/width.
-			#iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
-			#iaa.Flipud(0.5),  # Vertically flip 50% of the images.
-		])),
+		#iaa.Sometimes(0.5, iaa.OneOf([
+		#	iaa.Crop(px=(0, 100)),  # Crop images from each side by 0 to 16px (randomly chosen).
+		#	iaa.Crop(percent=(0, 0.1)),  # Crop images by 0-10% of their height/width.
+		#	#iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
+		#	#iaa.Flipud(0.5),  # Vertically flip 50% of the images.
+		#])),
 		iaa.Sometimes(0.5, iaa.OneOf([
 			iaa.Affine(
-				scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
-				translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent (per axis).
-				rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
-				shear=(-5, 5),  # Shear by -5 to +5 degrees.
+				#scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+				translate_percent={'x': (0.0, 0.1), 'y': (-0.05, 0.05)},  # Translate by 0 to +10 percent along x-axis and -5 to +5 percent along y-axis.
+				rotate=(-2, 2),  # Rotate by -2 to +2 degrees.
+				shear=(-10, 10),  # Shear by -10 to +10 degrees.
 				#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
 				order=0,  # Use nearest neighbour or bilinear interpolation (fast).
 				#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
@@ -38,8 +38,8 @@ def create_augmenter():
 				#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
 			),
 			#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
-			iaa.PerspectiveTransform(scale=(0.01, 0.1)),
-			iaa.ElasticTransformation(alpha=(15.0, 30.0), sigma=5.0),  # Move pixels locally around (with random strengths).
+			#iaa.PerspectiveTransform(scale=(0.01, 0.1)),
+			iaa.ElasticTransformation(alpha=(20.0, 40.0), sigma=(6.0, 8.0)),  # Move pixels locally around (with random strengths).
 		])),
 		iaa.Sometimes(0.5, iaa.OneOf([
 			iaa.OneOf([
@@ -74,7 +74,7 @@ def create_augmenter():
 		#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
 	])
 
-	return argumenter
+	return augmenter
 
 class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, default_value=-1):
@@ -91,6 +91,7 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 
 	def _create_batch_generator(self, textGenerator, word_set, batch_size, steps_per_epoch, is_data_augmented=False):
 		def reduce_image(image, min_height, max_height):
+			import random, cv2
 			height = random.randint(min_height, max_height)
 			interpolation = random.choice([cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4])
 			return cv2.resize(image, (round(image.shape[1] * height / image.shape[0]), height), interpolation=interpolation)
@@ -843,7 +844,8 @@ def check_data(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio,
 	train_steps_per_epoch = None if train_examples_per_epoch is None else math.ceil(train_examples_per_epoch / batch_size)
 	test_steps_per_epoch = None if test_examples_per_epoch is None else math.ceil(test_examples_per_epoch / batch_size)
 
-	for batch_step, (batch_data, num_batch_examples) in enumerate(dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=False)):
+	generator = runner.dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=False)
+	for batch_step, (batch_data, num_batch_examples) in enumerate(generator):
 		#batch_images (np.array), batch_labels_str (a list of strings), batch_labels_int (a list of sequences) = batch_data
 
 		if 0 == batch_step:
@@ -871,7 +873,10 @@ def check_data(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio,
 		sequences = swl_ml_util.dense_to_sequences(dense, default_value=default_value, dtype=np.int32)
 		#print('Dense tensor = {}.'.format(dense))
 
-		#break
+		break
+
+	#generator = runner.dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=False)
+	runner.dataset.visualize(generator, num_examples=10)
 
 #--------------------------------------------------------------------
 
@@ -888,7 +893,7 @@ def main():
 	train_test_ratio = 0.8
 	is_fine_tuned = False
 
-	is_dataset_generated_at_runtime = False
+	is_dataset_generated_at_runtime = True
 	if not is_dataset_generated_at_runtime and (is_trained or is_tested):
 		if is_fine_tuned:
 			if 'posix' == os.name:
