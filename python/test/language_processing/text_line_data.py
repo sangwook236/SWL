@@ -237,31 +237,52 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 		"""
 
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
-		return self._create_batch_generator(self._textGenerator, self._word_set, batch_size, steps_per_epoch)
+		return self._create_batch_generator(self._textGenerator, self._word_set, batch_size, steps_per_epoch, is_data_augmented=True)
 
 	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
-		return self._create_batch_generator(self._textGenerator, self._word_set, batch_size, steps_per_epoch)
+		return self._create_batch_generator(self._textGenerator, self._word_set, batch_size, steps_per_epoch, is_data_augmented=False)
 
-	def _create_batch_generator(self, textGenerator, word_set, batch_size, steps_per_epoch):
+	def _create_batch_generator(self, textGenerator, word_set, batch_size, steps_per_epoch, is_data_augmented=False):
 		generator = textGenerator.create_generator(word_set, batch_size)
-		for step, (texts, scenes, _) in enumerate(generator):
-			# For using RGB images.
-			#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
-			# For using grayscale images.
-			#scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
+		if is_data_augmented and hasattr(self, 'augment'):
+			for step, (texts, scenes, _) in enumerate(generator):
+				# For using RGB images.
+				#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
+				# For using grayscale images.
+				#scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
 
-			scenes = list(map(lambda image: self.resize(image), scenes))
-			scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
-			#scene_text_masks = list(map(lambda image: self.resize(image), scene_text_masks))
-			#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
+				scenes = list(map(lambda image: self.resize(image), scenes))
+				scenes, _ = self.augment(np.array(scenes), None)
+				scenes = self._transform_images(scenes.astype(np.float32), use_NWHC=self._use_NWHC)
+				#scene_text_masks = list(map(lambda image: self.resize(image), scene_text_masks))
+				#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
 
-			scenes, _ = self.preprocess(scenes, None)
-			#scene_text_masks, _ = self.preprocess(scene_text_masks, None)
-			texts_int = list(map(lambda txt: self.encode_label(txt), texts))
-			#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
-			yield (scenes, texts, texts_int), batch_size
-			if steps_per_epoch and (step + 1) >= steps_per_epoch:
-				break
+				scenes, _ = self.preprocess(scenes, None)
+				#scene_text_masks, _ = self.preprocess(scene_text_masks, None)
+				texts_int = list(map(lambda txt: self.encode_label(txt), texts))
+				#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
+				yield (scenes, texts, texts_int), batch_size
+				if steps_per_epoch and (step + 1) >= steps_per_epoch:
+					break
+		else:
+			for step, (texts, scenes, _) in enumerate(generator):
+				# For using RGB images.
+				#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
+				# For using grayscale images.
+				#scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
+
+				scenes = list(map(lambda image: self.resize(image), scenes))
+				scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
+				#scene_text_masks = list(map(lambda image: self.resize(image), scene_text_masks))
+				#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
+
+				scenes, _ = self.preprocess(scenes, None)
+				#scene_text_masks, _ = self.preprocess(scene_text_masks, None)
+				texts_int = list(map(lambda txt: self.encode_label(txt), texts))
+				#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
+				yield (scenes, texts, texts_int), batch_size
+				if steps_per_epoch and (step + 1) >= steps_per_epoch:
+					break
 
 # This class is independent of language.
 class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
@@ -297,23 +318,44 @@ class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
 	def __init__(self, word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, use_NWHC=True, default_value=-1):
 		super().__init__(word_set, image_height, image_width, image_channel, num_classes, max_label_len, use_NWHC, default_value)
 
-	def _create_batch_generator(self, textGenerator, word_set, batch_size, steps_per_epoch):
+	def _create_batch_generator(self, textGenerator, word_set, batch_size, steps_per_epoch, is_data_augmented=False):
 		generator = textGenerator.create_generator(word_set, batch_size)
-		for step, (texts, scenes, _) in enumerate(generator):
-			#scenes = list(map(lambda image: self.resize(image), scenes))
-			scenes = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scenes))
-			#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (self.resize(image), self.resize(mask)), scenes, scene_text_masks))))
-			#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), self.resize(mask)), scenes, scene_text_masks))))
-			scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
-			#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
+		if is_data_augmented and hasattr(self, 'augment'):
+			for step, (texts, scenes, _) in enumerate(generator):
+				#scenes = list(map(lambda image: self.resize(image), scenes))
+				scenes = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scenes))
+				#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (self.resize(image), self.resize(mask)), scenes, scene_text_masks))))
+				#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), self.resize(mask)), scenes, scene_text_masks))))
 
-			scenes, _ = self.preprocess(scenes, None)
-			#scene_text_masks = scene_text_masks.astype(np.float32) / 255
-			texts_int = list(map(lambda txt: self.encode_label(txt), texts))
-			#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
-			yield (scenes, texts, texts_int), batch_size
-			if steps_per_epoch and (step + 1) >= steps_per_epoch:
-				break
+				scenes, _ = self.augment(np.array(scenes), None)
+				#scenes, scene_text_masks = self.augment(np.array(scenes), np.array(scene_text_masks))
+
+				scenes = self._transform_images(scenes.astype(np.float32), use_NWHC=self._use_NWHC)
+				#scene_text_masks = self._transform_images(scene_text_masks.astype(np.float32), use_NWHC=self._use_NWHC)
+
+				scenes, _ = self.preprocess(scenes, None)
+				#scene_text_masks = scene_text_masks.astype(np.float32) / 255
+				texts_int = list(map(lambda txt: self.encode_label(txt), texts))
+				#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
+				yield (scenes, texts, texts_int), batch_size
+				if steps_per_epoch and (step + 1) >= steps_per_epoch:
+					break
+		else:
+			for step, (texts, scenes, _) in enumerate(generator):
+				#scenes = list(map(lambda image: self.resize(image), scenes))
+				scenes = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scenes))
+				#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (self.resize(image), self.resize(mask)), scenes, scene_text_masks))))
+				#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), self.resize(mask)), scenes, scene_text_masks))))
+				scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
+				#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
+
+				scenes, _ = self.preprocess(scenes, None)
+				#scene_text_masks = scene_text_masks.astype(np.float32) / 255
+				texts_int = list(map(lambda txt: self.encode_label(txt), texts))
+				#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
+				yield (scenes, texts, texts_int), batch_size
+				if steps_per_epoch and (step + 1) >= steps_per_epoch:
+					break
 
 # This class is independent of language.
 class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
@@ -920,7 +962,7 @@ class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
 			scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
 
 			corrupted_scenes = scenes
-			#corrupted_scenes = cv2.pyrUp(cv2.pyrUp(cv2.pyrDown(cv2.pyrDown(corrupted_scenes))))
+			#corrupted_scenes = list(map(lambda image: cv2.pyrDown(cv2.pyrDown(image)), corrupted_scenes))
 			corrupted_scenes = list(map(lambda image: reduce_image(image, min_height, max_height), corrupted_scenes))
 			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(image, axis=0)), axis=0)), corrupted_scenes))
 			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)

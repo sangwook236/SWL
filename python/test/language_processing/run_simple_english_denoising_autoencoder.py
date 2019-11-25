@@ -159,6 +159,61 @@ class MyModel(object):
 
 #--------------------------------------------------------------------
 
+def create_corrupter():
+	#import imgaug as ia
+	from imgaug import augmenters as iaa
+
+	corrupter = iaa.Sequential([
+		#iaa.Sometimes(0.5, iaa.OneOf([
+		#	#iaa.Affine(
+		#	#	scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+		#	#	translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent (per axis).
+		#	#	rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
+		#	#	shear=(-5, 5),  # Shear by -5 to +5 degrees.
+		#	#	#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
+		#	#	order=0,  # Use nearest neighbour or bilinear interpolation (fast).
+		#	#	#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
+		#	#	#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+		#	#	#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+		#	#),
+		#	#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
+		#	#iaa.PerspectiveTransform(scale=(0.01, 0.1)),
+		#	iaa.ElasticTransformation(alpha=(10.0, 30.0), sigma=(6.0, 8.0)),  # Move pixels locally around (with random strengths).
+		#])),
+		iaa.OneOf([
+			iaa.OneOf([
+				iaa.GaussianBlur(sigma=(0.5, 1.5)),
+				iaa.AverageBlur(k=(2, 4)),
+				iaa.MedianBlur(k=(3, 3)),
+				iaa.MotionBlur(k=(3, 4), angle=(0, 360), direction=(-1.0, 1.0), order=1),
+			]),
+			iaa.Sequential([
+				iaa.OneOf([
+					iaa.AdditiveGaussianNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
+					#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
+					iaa.AdditivePoissonNoise(lam=(20, 30), per_channel=False),
+					iaa.CoarseSaltAndPepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					iaa.CoarseSalt(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					iaa.CoarsePepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					#iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.8, 0.9), per_channel=False),
+				]),
+				iaa.GaussianBlur(sigma=(0.7, 1.0)),
+			]),
+			#iaa.OneOf([
+			#	#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
+			#	#iaa.AddToHueAndSaturation(value=(-255, 255), per_channel=False),
+			#	#iaa.LinearContrast(alpha=(0.5, 1.5), per_channel=False),
+
+			#	iaa.Invert(p=1, per_channel=False),
+
+			#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
+			#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
+			#]),
+		]),
+	])
+
+	return corrupter
+
 class MyRunner(object):
 	def __init__(self):
 		# Set parameters.
@@ -170,58 +225,7 @@ class MyRunner(object):
 		model_output_time_steps = 80
 		max_label_len = model_output_time_steps  # max_label_len <= model_output_time_steps.
 
-		#--------------------
-		#import imgaug as ia
-		from imgaug import augmenters as iaa
-
-		self._corrupter = iaa.Sequential([
-			#iaa.Sometimes(0.5, iaa.OneOf([
-			#	#iaa.Affine(
-			#	#	scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
-			#	#	translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent (per axis).
-			#	#	rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
-			#	#	shear=(-5, 5),  # Shear by -5 to +5 degrees.
-			#	#	#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
-			#	#	order=0,  # Use nearest neighbour or bilinear interpolation (fast).
-			#	#	#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
-			#	#	#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
-			#	#	#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
-			#	#),
-			#	#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
-			#	#iaa.PerspectiveTransform(scale=(0.01, 0.1)),
-			#	iaa.ElasticTransformation(alpha=(10.0, 30.0), sigma=(6.0, 8.0)),  # Move pixels locally around (with random strengths).
-			#])),
-			iaa.OneOf([
-				iaa.OneOf([
-					iaa.GaussianBlur(sigma=(0.5, 1.5)),
-					iaa.AverageBlur(k=(2, 4)),
-					iaa.MedianBlur(k=(3, 3)),
-					iaa.MotionBlur(k=(3, 4), angle=(0, 360), direction=(-1.0, 1.0), order=1),
-				]),
-				iaa.Sequential([
-					iaa.OneOf([
-						iaa.AdditiveGaussianNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
-						#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
-						iaa.AdditivePoissonNoise(lam=(20, 30), per_channel=False),
-						iaa.CoarseSaltAndPepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
-						iaa.CoarseSalt(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
-						iaa.CoarsePepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
-						#iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.8, 0.9), per_channel=False),
-					]),
-					iaa.GaussianBlur(sigma=(0.7, 1.0)),
-				]),
-				#iaa.OneOf([
-				#	#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
-				#	#iaa.AddToHueAndSaturation(value=(-255, 255), per_channel=False),
-				#	#iaa.LinearContrast(alpha=(0.5, 1.5), per_channel=False),
-
-				#	iaa.Invert(p=1, per_channel=False),
-
-				#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
-				#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
-				#]),
-			]),
-		])
+		self._corrupter = create_corrupter()
 
 		#--------------------
 		# Create a dataset.
@@ -236,6 +240,10 @@ class MyRunner(object):
 			#dictionary_words = fd.read().strip('\n')
 			dictionary_words = fd.read().splitlines()
 		print('[SWL] Info: End loading an English dictionary: {} secs.'.format(time.time() - start_time))
+
+		if False:
+			from swl.language_processing.util import draw_character_histogram
+			draw_character_histogram(dictionary_words, charset=None)
 
 		#--------------------
 		if 'posix' == os.name:

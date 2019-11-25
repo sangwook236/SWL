@@ -14,69 +14,153 @@ import my_keras_applications
 
 #--------------------------------------------------------------------
 
+def create_augmenter():
+	#import imgaug as ia
+	from imgaug import augmenters as iaa
+
+	augmenter = iaa.Sequential([
+		iaa.Sometimes(0.5, iaa.OneOf([
+			iaa.Crop(px=(0, 100)),  # Crop images from each side by 0 to 16px (randomly chosen).
+			iaa.Crop(percent=(0, 0.1)),  # Crop images by 0-10% of their height/width.
+			#iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
+			#iaa.Flipud(0.5),  # Vertically flip 50% of the images.
+		])),
+		iaa.Sometimes(0.5, iaa.OneOf([
+			iaa.Affine(
+				scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+				translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent (per axis).
+				rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
+				shear=(-5, 5),  # Shear by -5 to +5 degrees.
+				#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
+				order=0,  # Use nearest neighbour or bilinear interpolation (fast).
+				#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
+				#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+				#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+			),
+			#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
+			iaa.PerspectiveTransform(scale=(0.01, 0.1)),
+			iaa.ElasticTransformation(alpha=(15.0, 30.0), sigma=5.0),  # Move pixels locally around (with random strengths).
+		])),
+		iaa.Sometimes(0.5, iaa.OneOf([
+			iaa.OneOf([
+				iaa.GaussianBlur(sigma=(0.5, 1.5)),
+				iaa.AverageBlur(k=(2, 4)),
+				iaa.MedianBlur(k=(3, 3)),
+				iaa.MotionBlur(k=(3, 4), angle=(0, 360), direction=(-1.0, 1.0), order=1),
+			]),
+			iaa.Sequential([
+				iaa.OneOf([
+					iaa.AdditiveGaussianNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
+					#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
+					iaa.AdditivePoissonNoise(lam=(20, 30), per_channel=False),
+					iaa.CoarseSaltAndPepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					iaa.CoarseSalt(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					iaa.CoarsePepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					#iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.8, 0.9), per_channel=False),
+				]),
+				iaa.GaussianBlur(sigma=(0.7, 1.0)),
+			]),
+			#iaa.OneOf([
+			#	#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
+			#	#iaa.AddToHueAndSaturation(value=(-255, 255), per_channel=False),
+			#	#iaa.LinearContrast(alpha=(0.5, 1.5), per_channel=False),
+
+			#	iaa.Invert(p=1, per_channel=False),
+
+			#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
+			#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
+			#]),
+		])),
+		#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
+	])
+
+	return argumenter
+
+class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
+	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, default_value=-1):
+		super().__init__(word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len, use_NWHC, default_value):
+
+		self._augmenter = create_augmenter()
+
+	def augment(self, inputs, outputs, *args, **kwargs):
+		if outputs is None:
+			return self._augmenter.augment_images(inputs), None
+		else:
+			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
+			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
+
+	def _create_batch_generator(self, textGenerator, word_set, batch_size, steps_per_epoch, is_data_augmented=False):
+		def reduce_image(image, min_height, max_height):
+			height = random.randint(min_height, max_height)
+			interpolation = random.choice([cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4])
+			return cv2.resize(image, (round(image.shape[1] * height / image.shape[0]), height), interpolation=interpolation)
+
+		min_height, max_height = 16, 32
+		generator = textGenerator.create_generator(word_set, batch_size)
+		if is_data_augmented and hasattr(self, 'augment'):
+			for step, (texts, scenes, _) in enumerate(generator):
+				# For using RGB images.
+				#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
+				# For using grayscale images.
+				#scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
+
+				#scenes = list(map(lambda image: cv2.pyrDown(cv2.pyrDown(image)), scenes))
+				scenes = list(map(lambda image: reduce_image(image, min_height, max_height), scenes))
+
+				scenes = list(map(lambda image: self.resize(image), scenes))
+				scenes, _ = self.augment(np.array(scenes), None)
+				scenes = self._transform_images(scenes.astype(np.float32), use_NWHC=self._use_NWHC)
+				#scene_text_masks = list(map(lambda image: self.resize(image), scene_text_masks))
+				#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
+
+				scenes, _ = self.preprocess(scenes, None)
+				#scene_text_masks, _ = self.preprocess(scene_text_masks, None)
+				texts_int = list(map(lambda txt: self.encode_label(txt), texts))
+				#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
+				yield (scenes, texts, texts_int), batch_size
+				if steps_per_epoch and (step + 1) >= steps_per_epoch:
+					break
+		else:
+			for step, (texts, scenes, _) in enumerate(generator):
+				# For using RGB images.
+				#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
+				# For using grayscale images.
+				#scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
+
+				#scenes = list(map(lambda image: cv2.pyrDown(cv2.pyrDown(image)), scenes))
+				scenes = list(map(lambda image: reduce_image(image, min_height, max_height), scenes))
+
+				scenes = list(map(lambda image: self.resize(image), scenes))
+				scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
+				#scene_text_masks = list(map(lambda image: self.resize(image), scene_text_masks))
+				#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
+
+				scenes, _ = self.preprocess(scenes, None)
+				#scene_text_masks, _ = self.preprocess(scene_text_masks, None)
+				texts_int = list(map(lambda txt: self.encode_label(txt), texts))
+				#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
+				yield (scenes, texts, texts_int), batch_size
+				if steps_per_epoch and (step + 1) >= steps_per_epoch:
+					break
+
+class MyRunTimeAlphaMatteTextLineDataset(text_line_data.RunTimeAlphaMatteTextLineDataset):
+	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, default_value=-1):
+		super().__init__(word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len, use_NWHC, default_value)
+
+		self._augmenter = create_augmenter()
+
+	def augment(self, inputs, outputs, *args, **kwargs):
+		if outputs is None:
+			return self._augmenter.augment_images(inputs), None
+		else:
+			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
+			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
+
 class MyEnglishTextLineDataset(TextRecognitionDataGenerator_data.EnglishTextRecognitionDataGeneratorTextLineDataset):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True):
 		super().__init__(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle)
 
-		#--------------------
-		#import imgaug as ia
-		from imgaug import augmenters as iaa
-
-		self._augmenter = iaa.Sequential([
-			iaa.Sometimes(0.5, iaa.OneOf([
-				iaa.Crop(px=(0, 100)),  # Crop images from each side by 0 to 16px (randomly chosen).
-				iaa.Crop(percent=(0, 0.1)),  # Crop images by 0-10% of their height/width.
-				#iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
-				#iaa.Flipud(0.5),  # Vertically flip 50% of the images.
-			])),
-			iaa.Sometimes(0.5, iaa.OneOf([
-				iaa.Affine(
-					scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
-					translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent (per axis).
-					rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
-					shear=(-5, 5),  # Shear by -5 to +5 degrees.
-					#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
-					order=0,  # Use nearest neighbour or bilinear interpolation (fast).
-					#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
-					#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
-					#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
-				),
-				#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
-				iaa.PerspectiveTransform(scale=(0.01, 0.1)),
-				iaa.ElasticTransformation(alpha=(15.0, 30.0), sigma=5.0),  # Move pixels locally around (with random strengths).
-			])),
-			iaa.Sometimes(0.5, iaa.OneOf([
-				iaa.OneOf([
-					iaa.GaussianBlur(sigma=(0.5, 1.5)),
-					iaa.AverageBlur(k=(2, 4)),
-					iaa.MedianBlur(k=(3, 3)),
-					iaa.MotionBlur(k=(3, 4), angle=(0, 360), direction=(-1.0, 1.0), order=1),
-				]),
-				iaa.Sequential([
-					iaa.OneOf([
-						iaa.AdditiveGaussianNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
-						#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
-						iaa.AdditivePoissonNoise(lam=(20, 30), per_channel=False),
-						iaa.CoarseSaltAndPepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
-						iaa.CoarseSalt(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
-						iaa.CoarsePepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
-						#iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.8, 0.9), per_channel=False),
-					]),
-					iaa.GaussianBlur(sigma=(0.7, 1.0)),
-				]),
-				#iaa.OneOf([
-				#	#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
-				#	#iaa.AddToHueAndSaturation(value=(-255, 255), per_channel=False),
-				#	#iaa.LinearContrast(alpha=(0.5, 1.5), per_channel=False),
-
-				#	iaa.Invert(p=1, per_channel=False),
-
-				#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
-				#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
-				#]),
-			])),
-			#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
-		])
+		self._augmenter = create_augmenter()
 
 	def augment(self, inputs, outputs, *args, **kwargs):
 		if outputs is None:
@@ -414,8 +498,8 @@ class MyRunner(object):
 
 			print('[SWL] Info: Start creating an English dataset...')
 			start_time = time.time()
-			#self._dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(set(words), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len)
-			self._dataset = text_line_data.BasicRunTimeTextLineDataset(set(words), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len):
+			#self._dataset = MyRunTimeAlphaMatteTextLineDataset(set(words), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len)
+			self._dataset = MyRunTimeTextLineDataset(set(words), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len):
 			print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000
