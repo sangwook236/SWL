@@ -13,12 +13,217 @@ import TextRecognitionDataGenerator_data
 
 #--------------------------------------------------------------------
 
+def create_augmenter():
+	#import imgaug as ia
+	from imgaug import augmenters as iaa
+
+	"""
+	augmenter = iaa.Sequential([
+		iaa.Sometimes(0.5, iaa.OneOf([
+			iaa.Crop(px=(0, 100)),  # Crop images from each side by 0 to 16px (randomly chosen).
+			iaa.Crop(percent=(0, 0.1)),  # Crop images by 0-10% of their height/width.
+			#iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
+			#iaa.Flipud(0.5),  # Vertically flip 50% of the images.
+		])),
+		iaa.Sometimes(0.5, iaa.OneOf([
+			iaa.Affine(
+				scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+				translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent (per axis).
+				rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
+				shear=(-5, 5),  # Shear by -5 to +5 degrees.
+				#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
+				order=0,  # Use nearest neighbour or bilinear interpolation (fast).
+				#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
+				#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+				#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+			),
+			#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
+			iaa.PerspectiveTransform(scale=(0.01, 0.1)),
+			iaa.ElasticTransformation(alpha=(15.0, 30.0), sigma=5.0),  # Move pixels locally around (with random strengths).
+		])),
+		iaa.Sometimes(0.5, iaa.OneOf([
+			iaa.OneOf([
+				iaa.GaussianBlur(sigma=(1.5, 2.5)),
+				iaa.AverageBlur(k=(3, 6)),
+				iaa.MedianBlur(k=(3, 5)),
+				iaa.MotionBlur(k=(3, 7), angle=(0, 360), direction=(-1.0, 1.0), order=1),
+			]),
+			iaa.OneOf([
+				iaa.AdditiveGaussianNoise(loc=0, scale=(0.1 * 255, 0.3 * 255), per_channel=False),
+				#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.1 * 255, 0.3 * 255), per_channel=False),
+				#iaa.AdditivePoissonNoise(lam=(32, 64), per_channel=False),
+				iaa.CoarseSaltAndPepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
+				iaa.CoarseSalt(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
+				#iaa.CoarsePepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
+				iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.05, 0.3), per_channel=False),
+			]),
+			#iaa.OneOf([
+			#	#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
+			#	#iaa.AddToHueAndSaturation(value=(-255, 255), per_channel=False),
+			#	#iaa.LinearContrast(alpha=(0.5, 1.5), per_channel=False),
+
+			#	iaa.Invert(p=1, per_channel=False),
+
+			#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
+			#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
+			#]),
+		])),
+		#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
+	])
+	"""
+	augmenter = iaa.Sequential([
+		#iaa.Sometimes(0.5, iaa.OneOf([
+		#	iaa.Crop(px=(0, 100)),  # Crop images from each side by 0 to 16px (randomly chosen).
+		#	iaa.Crop(percent=(0, 0.1)),  # Crop images by 0-10% of their height/width.
+		#	#iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
+		#	#iaa.Flipud(0.5),  # Vertically flip 50% of the images.
+		#])),
+		iaa.Sometimes(0.5, iaa.OneOf([
+			iaa.Affine(
+				#scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+				translate_percent={'x': (0.0, 0.1), 'y': (-0.05, 0.05)},  # Translate by 0 to +10 percent along x-axis and -5 to +5 percent along y-axis.
+				rotate=(-2, 2),  # Rotate by -2 to +2 degrees.
+				shear=(-10, 10),  # Shear by -10 to +10 degrees.
+				#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
+				order=0,  # Use nearest neighbour or bilinear interpolation (fast).
+				#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
+				#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+				#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+			),
+			#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
+			#iaa.PerspectiveTransform(scale=(0.01, 0.1)),
+			iaa.ElasticTransformation(alpha=(20.0, 40.0), sigma=(6.0, 8.0)),  # Move pixels locally around (with random strengths).
+		])),
+		iaa.Sometimes(0.5, iaa.OneOf([
+			iaa.OneOf([
+				iaa.GaussianBlur(sigma=(0.5, 1.5)),
+				iaa.AverageBlur(k=(2, 4)),
+				iaa.MedianBlur(k=(3, 3)),
+				iaa.MotionBlur(k=(3, 4), angle=(0, 360), direction=(-1.0, 1.0), order=1),
+			]),
+			iaa.Sequential([
+				iaa.OneOf([
+					iaa.AdditiveGaussianNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
+					#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
+					iaa.AdditivePoissonNoise(lam=(20, 30), per_channel=False),
+					iaa.CoarseSaltAndPepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					iaa.CoarseSalt(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					iaa.CoarsePepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					#iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.8, 0.9), per_channel=False),
+				]),
+				iaa.GaussianBlur(sigma=(0.7, 1.0)),
+			]),
+			#iaa.OneOf([
+			#	#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
+			#	#iaa.AddToHueAndSaturation(value=(-255, 255), per_channel=False),
+			#	#iaa.LinearContrast(alpha=(0.5, 1.5), per_channel=False),
+
+			#	iaa.Invert(p=1, per_channel=False),
+
+			#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
+			#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
+			#]),
+		])),
+		#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
+	])
+
+	return augmenter
+
+class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
+	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, default_value=-1):
+		super().__init__(word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len, use_NWHC, default_value)
+
+		self._augmenter = create_augmenter()
+
+	def augment(self, inputs, outputs, *args, **kwargs):
+		if outputs is None:
+			return self._augmenter.augment_images(inputs), None
+		else:
+			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
+			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
+
+	def _create_batch_generator(self, textGenerator, word_set, batch_size, steps_per_epoch, is_data_augmented=False):
+		def reduce_image(image, min_height, max_height):
+			import random, cv2
+			height = random.randint(min_height, max_height)
+			interpolation = random.choice([cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4])
+			return cv2.resize(image, (round(image.shape[1] * height / image.shape[0]), height), interpolation=interpolation)
+
+		min_height, max_height = 16, 32
+		generator = textGenerator.create_generator(word_set, batch_size)
+		if is_data_augmented and hasattr(self, 'augment'):
+			for step, (texts, scenes, _) in enumerate(generator):
+				# For using RGB images.
+				#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
+				# For using grayscale images.
+				#scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
+
+				# Simulates resizing artifact.
+				#scenes = list(map(lambda image: cv2.pyrDown(cv2.pyrDown(image)), scenes))
+				scenes = list(map(lambda image: reduce_image(image, min_height, max_height), scenes))
+
+				scenes = list(map(lambda image: self.resize(image), scenes))
+				scenes, _ = self.augment(np.array(scenes), None)
+				scenes = self._transform_images(scenes.astype(np.float32), use_NWHC=self._use_NWHC)
+				#scene_text_masks = list(map(lambda image: self.resize(image), scene_text_masks))
+				#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
+
+				scenes, _ = self.preprocess(scenes, None)
+				#scene_text_masks, _ = self.preprocess(scene_text_masks, None)
+				texts_int = list(map(lambda txt: self.encode_label(txt), texts))
+				#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
+				yield (scenes, texts, texts_int), batch_size
+				if steps_per_epoch and (step + 1) >= steps_per_epoch:
+					break
+		else:
+			for step, (texts, scenes, _) in enumerate(generator):
+				# For using RGB images.
+				#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
+				# For using grayscale images.
+				#scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
+
+				# Simulates resizing artifact.
+				#scenes = list(map(lambda image: cv2.pyrDown(cv2.pyrDown(image)), scenes))
+				scenes = list(map(lambda image: reduce_image(image, min_height, max_height), scenes))
+
+				scenes = list(map(lambda image: self.resize(image), scenes))
+				scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
+				#scene_text_masks = list(map(lambda image: self.resize(image), scene_text_masks))
+				#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
+
+				scenes, _ = self.preprocess(scenes, None)
+				#scene_text_masks, _ = self.preprocess(scene_text_masks, None)
+				texts_int = list(map(lambda txt: self.encode_label(txt), texts))
+				#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
+				yield (scenes, texts, texts_int), batch_size
+				if steps_per_epoch and (step + 1) >= steps_per_epoch:
+					break
+
+class MyRunTimeAlphaMatteTextLineDataset(text_line_data.RunTimeAlphaMatteTextLineDataset):
+	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, default_value=-1):
+		super().__init__(word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len, use_NWHC, default_value)
+
+		self._augmenter = create_augmenter()
+
+	def augment(self, inputs, outputs, *args, **kwargs):
+		if outputs is None:
+			return self._augmenter.augment_images(inputs), None
+		else:
+			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
+			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
+
 class MyHangeulTextLineDataset(TextRecognitionDataGenerator_data.HangeulTextRecognitionDataGeneratorTextLineDataset):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True):
 		super().__init__(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle)
 
-	#def augment(self, inputs, outputs, *args, **kwargs):
-	#	raise NotImplementedError
+		self._augmenter = create_augmenter()
+
+	def augment(self, inputs, outputs, *args, **kwargs):
+		if outputs is None:
+			return self._augmenter.augment_images(inputs), None
+		else:
+			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
+			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
 #--------------------------------------------------------------------
 
@@ -359,6 +564,26 @@ class MyModel(object):
 
 #--------------------------------------------------------------------
 
+def create_random_words(min_text_len=1, max_text_len=10):
+	import string, random
+	chars = \
+		string.ascii_uppercase * 3000 + \
+		string.digits * 3000 + \
+		string.punctuation * 1000
+	chars = list(chars)
+	random.shuffle(chars)
+	chars = ''.join(chars)
+	random_words = list()
+	start_idx = 0
+	while True:
+		end_idx = start_idx + random.randint(min_text_len, max_text_len)
+		random_words.append(chars[start_idx:end_idx])
+		if end_idx >= len(chars):
+			break
+		start_idx = end_idx
+
+	return random_words
+
 class MyRunner(object):
 	def __init__(self, is_dataset_generated_at_runtime, data_dir_path=None, train_test_ratio=0.8):
 		# Set parameters.
@@ -387,6 +612,16 @@ class MyRunner(object):
 				dictionary_words = fd.read().splitlines()
 			print('[SWL] Info: End loading a Korean dictionary: {} secs.'.format(time.time() - start_time))
 
+			print('[SWL] Info: Start generating random words...')
+			start_time = time.time()
+			random_words = create_random_words(min_text_len=1, max_text_len=10)
+			print('[SWL] Info: End generating random words: {} secs.'.format(time.time() - start_time))
+
+			words = dictionary_words + random_words
+			if False:
+				from swl.language_processing.util import draw_character_histogram
+				draw_character_histogram(words, charset=None)
+
 			#--------------------
 			if 'posix' == os.name:
 				system_font_dir_path = '/usr/share/fonts'
@@ -404,7 +639,8 @@ class MyRunner(object):
 
 			print('[SWL] Info: Start creating a Hangeul dataset...')
 			start_time = time.time()
-			self._dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(set(dictionary_words), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len)
+			#self._dataset = MyRunTimeAlphaMatteTextLineDataset(set(words), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len)
+			self._dataset = MyRunTimeTextLineDataset(set(words), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len)
 			print('[SWL] Info: End creating a Hangeul dataset: {} secs.'.format(time.time() - start_time))
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000
@@ -429,7 +665,25 @@ class MyRunner(object):
 			##optimizer = keras.optimizers.Adadelta(lr=1.0, rho=0.95, epsilon=None, decay=0.0)
 			#optimizer = tf.keras.optimizers.Adadelta(lr=0.001, rho=0.95, epsilon=1e-07)
 			optimizer = tf.train.AdadeltaOptimizer(learning_rate=1.0, rho=0.95, epsilon=1e-08)
-			train_op = optimizer.minimize(loss)
+			if True:
+				train_op = optimizer.minimize(loss)
+			else:  # Gradient clipping.
+				max_gradient_norm = 5
+				global_step = None
+				var_list = None #tf.trainable_variables()
+				# Method 1.
+				gradients = optimizer.compute_gradients(loss, var_list=var_list)
+				gradients = list(map(lambda gv: (tf.clip_by_norm(gv[0], clip_norm=max_gradient_norm), gv[1]), gradients))
+				train_op = optimizer.apply_gradients(gradients, global_step=global_step)
+				"""
+				# Method 2.
+				#	REF [site] >> https://www.tensorflow.org/tutorials/seq2seq
+				if var_list is None:
+					var_list = tf.trainable_variables()
+				gradients = tf.gradients(loss, var_list)
+				gradients, _ = tf.clip_by_global_norm(gradients, clip_norm=max_gradient_norm)  # Clip gradients.
+				train_op = optimizer.apply_gradients(zip(gradients, var_list), global_step=global_step)
+				"""
 
 			# Create a saver.
 			saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
@@ -627,7 +881,7 @@ class MyRunner(object):
 			if inferences and ground_truths:
 				#print('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
-				# REF [function] >> compute_text_recognition_accuracy() in ${SWL_PYTHON_HOME}/src/swl/language_processing/util.py.
+				# REF [function] >> compute_simple_text_recognition_accuracy() in ${SWL_PYTHON_HOME}/src/swl/language_processing/util.py.
 				correct_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0, 0
 				total_text_count = max(len(inferences), len(ground_truths))
 				for inf_lbl, gt_lbl in zip(inferences, ground_truths):
@@ -759,7 +1013,7 @@ def check_data(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio,
 			print('type(batch_data[2]) = {}, len(batch_data[2]) = {}.'.format(type(batch_data[2]), len(batch_data[2])))
 
 		if batch_size != batch_data[0].shape[0]:
-			print('Invalid image size: {} != {}.'format(batch_size, batch_data[0].shape[0]))
+			print('Invalid image size: {} != {}.'.format(batch_size, batch_data[0].shape[0]))
 		if batch_size != len(batch_data[1]) or batch_size != len(batch_data[2]):
 			print('Invalid label size: {0} != {1} or {0} != {2}.'.format(batch_size, len(batch_data[1]), len(batch_data[1])))
 

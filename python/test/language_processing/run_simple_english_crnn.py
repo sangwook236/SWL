@@ -131,7 +131,7 @@ def create_augmenter():
 
 class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len, use_NWHC, default_value):
+		super().__init__(word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len, use_NWHC, default_value)
 
 		self._augmenter = create_augmenter()
 
