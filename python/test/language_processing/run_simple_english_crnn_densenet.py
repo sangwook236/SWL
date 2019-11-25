@@ -105,6 +105,7 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 				# For using grayscale images.
 				#scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
 
+				# Simulates resizing artifact.
 				#scenes = list(map(lambda image: cv2.pyrDown(cv2.pyrDown(image)), scenes))
 				scenes = list(map(lambda image: reduce_image(image, min_height, max_height), scenes))
 
@@ -128,6 +129,7 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 				# For using grayscale images.
 				#scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
 
+				# Simulates resizing artifact.
 				#scenes = list(map(lambda image: cv2.pyrDown(cv2.pyrDown(image)), scenes))
 				scenes = list(map(lambda image: reduce_image(image, min_height, max_height), scenes))
 
@@ -207,7 +209,7 @@ class MyModel(object):
 			self._decode_functor = functools.partial(MyModel._decode_label, blank_label=blank_label)
 			self._get_feed_dict_functor = self._get_feed_dict_for_dense
 
-	def get_feed_dict(self, data, num_data, *args, **kwargs):	
+	def get_feed_dict(self, data, num_data, *args, **kwargs):
 		return self._get_feed_dict_functor(data, num_data, *args, **kwargs)
 
 	def create_model(self, num_classes, is_training=False):
@@ -527,7 +529,25 @@ class MyRunner(object):
 			learning_rate = 0.0001
 			optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-08)
 			#optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate, decay=0.9, momentum=0.9, epsilon=1e-10)
-			train_op = optimizer.minimize(loss)
+			if True:
+				train_op = optimizer.minimize(loss)
+			else:  # Gradient clipping.
+				max_gradient_norm = 5
+				global_step = None
+				var_list = None #tf.trainable_variables()
+				# Method 1.
+				gradients = optimizer.compute_gradients(loss, var_list=var_list)
+				gradients = list(map(lambda gv: (tf.clip_by_norm(gv[0], clip_norm=max_gradient_norm), gv[1]), gradients))
+				train_op = optimizer.apply_gradients(gradients, global_step=global_step)
+				"""
+				# Method 2.
+				#	REF [site] >> https://www.tensorflow.org/tutorials/seq2seq
+				if var_list is None:
+					var_list = tf.trainable_variables()
+				gradients = tf.gradients(loss, var_list)
+				gradients, _ = tf.clip_by_global_norm(gradients, clip_norm=max_gradient_norm)  # Clip gradients.
+				train_op = optimizer.apply_gradients(zip(gradients, var_list), global_step=global_step)
+				"""
 
 			# Create a saver.
 			saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)

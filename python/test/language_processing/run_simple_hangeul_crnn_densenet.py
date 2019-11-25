@@ -8,8 +8,9 @@ import os, math, time, datetime, functools, itertools, glob, csv
 import numpy as np
 import tensorflow as tf
 import swl.machine_learning.util as swl_ml_util
-import text_line_data
+import text_line_data, icdar_data
 import TextRecognitionDataGenerator_data
+import my_keras_applications
 
 #--------------------------------------------------------------------
 
@@ -17,60 +18,6 @@ def create_augmenter():
 	#import imgaug as ia
 	from imgaug import augmenters as iaa
 
-	"""
-	augmenter = iaa.Sequential([
-		iaa.Sometimes(0.5, iaa.OneOf([
-			iaa.Crop(px=(0, 100)),  # Crop images from each side by 0 to 16px (randomly chosen).
-			iaa.Crop(percent=(0, 0.1)),  # Crop images by 0-10% of their height/width.
-			#iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
-			#iaa.Flipud(0.5),  # Vertically flip 50% of the images.
-		])),
-		iaa.Sometimes(0.5, iaa.OneOf([
-			iaa.Affine(
-				scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
-				translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent (per axis).
-				rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
-				shear=(-5, 5),  # Shear by -5 to +5 degrees.
-				#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
-				order=0,  # Use nearest neighbour or bilinear interpolation (fast).
-				#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
-				#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
-				#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
-			),
-			#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
-			iaa.PerspectiveTransform(scale=(0.01, 0.1)),
-			iaa.ElasticTransformation(alpha=(15.0, 30.0), sigma=5.0),  # Move pixels locally around (with random strengths).
-		])),
-		iaa.Sometimes(0.5, iaa.OneOf([
-			iaa.OneOf([
-				iaa.GaussianBlur(sigma=(1.5, 2.5)),
-				iaa.AverageBlur(k=(3, 6)),
-				iaa.MedianBlur(k=(3, 5)),
-				iaa.MotionBlur(k=(3, 7), angle=(0, 360), direction=(-1.0, 1.0), order=1),
-			]),
-			iaa.OneOf([
-				iaa.AdditiveGaussianNoise(loc=0, scale=(0.1 * 255, 0.3 * 255), per_channel=False),
-				#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.1 * 255, 0.3 * 255), per_channel=False),
-				#iaa.AdditivePoissonNoise(lam=(32, 64), per_channel=False),
-				iaa.CoarseSaltAndPepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
-				iaa.CoarseSalt(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
-				#iaa.CoarsePepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
-				iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.05, 0.3), per_channel=False),
-			]),
-			#iaa.OneOf([
-			#	#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
-			#	#iaa.AddToHueAndSaturation(value=(-255, 255), per_channel=False),
-			#	#iaa.LinearContrast(alpha=(0.5, 1.5), per_channel=False),
-
-			#	iaa.Invert(p=1, per_channel=False),
-
-			#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
-			#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
-			#]),
-		])),
-		#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
-	])
-	"""
 	augmenter = iaa.Sequential([
 		#iaa.Sometimes(0.5, iaa.OneOf([
 		#	iaa.Crop(px=(0, 100)),  # Crop images from each side by 0 to 16px (randomly chosen).
@@ -212,7 +159,7 @@ class MyRunTimeAlphaMatteTextLineDataset(text_line_data.RunTimeAlphaMatteTextLin
 			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
 			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
-class MyEnglishTextLineDataset(TextRecognitionDataGenerator_data.EnglishTextRecognitionDataGeneratorTextLineDataset):
+class MyHangeulTextLineDataset(TextRecognitionDataGenerator_data.HangeulTextRecognitionDataGeneratorTextLineDataset):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True):
 		super().__init__(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle)
 
@@ -236,9 +183,12 @@ class MyModel(object):
 		#		Because computing accuracy requires heavy computation resources, model_output['decoded_label'] can be used to compute an accuracy.
 		#	When _is_sparse_output = False, CTC loss is only applied.
 		#		tf.keras.backend.ctc_batch_cost() is used to calculate a loss.
-		self._is_sparse_output = True
+		self._is_sparse_output = False
 		self._model_output_len = 0
 		self._default_value = default_value
+
+		# FIXME [check] >> Different input shape is used.
+		self._input_shape = (image_width, image_height, image_channel)
 
 		self._input_ph = tf.placeholder(tf.float32, shape=(None, image_width, image_height, image_channel), name='input_ph')
 		if self._is_sparse_output:
@@ -252,8 +202,7 @@ class MyModel(object):
 		#--------------------
 		if self._is_sparse_output:
 			#self._decode_functor = lambda args: args  # Dense tensor.
-			self._decode_functor = lambda args: swl_ml_util.sparse_to_sequences(*args, dtype=np.int32)  # Sparse tensor.
-			#self._decode_functor = lambda args: swl_ml_util.sparse_to_sequences(*args, dtype=np.int32) if args[1].size else list()  # Sparse tensor.
+			self._decode_functor = lambda args: swl_ml_util.sparse_to_sequences(*args, dtype=np.int32) if args[1].size else list()  # Sparse tensor.
 			self._get_feed_dict_functor = self._get_feed_dict_for_sparse
 		else:
 			self._decode_functor = functools.partial(MyModel._decode_label, blank_label=blank_label)
@@ -317,7 +266,7 @@ class MyModel(object):
 
 	def _create_model(self, inputs, num_classes):
 		# TODO [decide] >>
-		kernel_initializer = None
+		#kernel_initializer = None
 		#kernel_initializer = tf.initializers.he_normal()
 		#kernel_initializer = tf.initializers.he_uniform()
 		#kernel_initializer = tf.initializers.truncated_normal(mean=0.0, stddev=1.0)
@@ -325,11 +274,7 @@ class MyModel(object):
 		#kernel_initializer = tf.initializers.variance_scaling(scale=1.0, mode='fan_in', distribution='truncated_normal')
 		#kernel_initializer = tf.initializers.glorot_normal()  # Xavier normal initialization.
 		#kernel_initializer = tf.initializers.glorot_uniform()  # Xavier uniform initialization.
-		#kernel_initializer = tf.initializers.orthogonal()
-
-		# TODO [decide] >>
-		create_cnn_functor = MyModel._create_cnn_without_batch_normalization
-		#create_cnn_functor = MyModel._create_cnn_with_batch_normalization
+		kernel_initializer = tf.initializers.orthogonal()
 
 		#--------------------
 		# Preprocessing.
@@ -338,7 +283,7 @@ class MyModel(object):
 
 		#--------------------
 		with tf.variable_scope('cnn', reuse=tf.AUTO_REUSE):
-			cnn_output = create_cnn_functor(inputs, kernel_initializer)
+			cnn_output = MyModel._create_densenet121(inputs, kernel_initializer, input_shape=self._input_shape, weights=None)
 
 		with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
 			rnn_input_shape = cnn_output.shape #cnn_output.shape.as_list()
@@ -346,7 +291,7 @@ class MyModel(object):
 			self._model_output_len = rnn_input.shape[1]  # Model output time-steps.
 
 			# TODO [decide] >>
-			#rnn_input = tf.layers.dense(rnn_input, 64, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
+			rnn_input = tf.layers.dense(rnn_input, 64, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
 
 			rnn_output = MyModel._create_bidirectionnal_rnn(rnn_input, self._model_output_len_ph, kernel_initializer)
 
@@ -428,108 +373,24 @@ class MyModel(object):
 
 		return accuracy
 
+	# REF [function] >> densenet_test() in ${SWDT_PYTHON_HOME}/rnd/test/machine_learning/keras/keras_applications_test.py.
 	@staticmethod
-	def _create_cnn_without_batch_normalization(inputs, kernel_initializer=None):
-		with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
-			conv1 = tf.layers.conv2d(inputs, filters=64, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv')
-			conv1 = tf.nn.relu(conv1, name='relu')
-			conv1 = tf.layers.max_pooling2d(conv1, pool_size=(2, 2), strides=2, name='maxpool')
+	def _create_densenet121(inputs, kernel_initializer=None, input_shape=None, weights=None):
+		kwargs = {'backend': tf.keras.backend, 'layers': tf.keras.layers, 'models': tf.keras.models, 'utils': tf.keras.utils}
 
-			# (None, width/2, height/2, 64).
+		# DenseNet121, DenseNet169, DenseNet201.
+		model = my_keras_applications.densenet.DenseNet121_Text(
+			include_top=False,
+			weights=weights,
+			input_tensor=None,
+			input_shape=input_shape,
+			pooling=None,
+			classes=None,
+			**kwargs
+		)
+		#print(model.summary())
 
-		with tf.variable_scope('conv2', reuse=tf.AUTO_REUSE):
-			conv2 = tf.layers.conv2d(conv1, filters=128, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv')
-			conv2 = tf.nn.relu(conv2, name='relu')
-			conv2 = tf.layers.max_pooling2d(conv2, pool_size=(2, 2), strides=2, name='maxpool')
-
-			# (None, width/4, height/4, 128).
-
-		with tf.variable_scope('conv3', reuse=tf.AUTO_REUSE):
-			conv3 = tf.layers.conv2d(conv2, filters=256, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv1')
-			conv3 = tf.nn.relu(conv3, name='relu1')
-			conv3 = tf.layers.batch_normalization(conv3, name='batchnorm')
-
-			conv3 = tf.layers.conv2d(conv3, filters=256, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv2')
-			conv3 = tf.nn.relu(conv3, name='relu2')
-			conv3 = tf.layers.max_pooling2d(conv3, pool_size=(2, 2), strides=(1, 2), padding='same', name='maxpool')
-
-			# (None, width/4, height/8, 256).
-
-		with tf.variable_scope('conv4', reuse=tf.AUTO_REUSE):
-			conv4 = tf.layers.conv2d(conv3, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv1')
-			conv4 = tf.nn.relu(conv4, name='relu1')
-			conv4 = tf.layers.batch_normalization(conv4, name='batchnorm')
-
-			conv4 = tf.layers.conv2d(conv4, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv2')
-			conv4 = tf.nn.relu(conv4, name='relu2')
-			conv4 = tf.layers.max_pooling2d(conv4, pool_size=(2, 2), strides=(1, 2), padding='same', name='maxpool')
-
-			# (None, width/4, height/16, 512).
-
-		with tf.variable_scope('conv5', reuse=tf.AUTO_REUSE):
-			# TODO [decide] >>
-			conv5 = tf.layers.conv2d(conv4, filters=512, kernel_size=(2, 2), padding='valid', kernel_initializer=kernel_initializer, name='conv')
-			#conv5 = tf.layers.conv2d(conv4, filters=512, kernel_size=(2, 2), padding='same', kernel_initializer=kernel_initializer, name='conv')
-			conv5 = tf.nn.relu(conv5, name='relu')
-
-			# (None, width/4, height/16, 512).
-
-		return conv5
-
-	@staticmethod
-	def _create_cnn_with_batch_normalization(inputs, kernel_initializer=None):
-		with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
-			conv1 = tf.layers.conv2d(inputs, filters=64, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv')
-			conv1 = tf.layers.batch_normalization(conv1, name='batchnorm')
-			conv1 = tf.nn.relu(conv1, name='relu')
-			conv1 = tf.layers.max_pooling2d(conv1, pool_size=(2, 2), strides=2, name='maxpool')
-
-			# (None, width/2, height/2, 64).
-
-		with tf.variable_scope('conv2', reuse=tf.AUTO_REUSE):
-			conv2 = tf.layers.conv2d(conv1, filters=128, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv')
-			conv2 = tf.layers.batch_normalization(conv2, name='batchnorm')
-			conv2 = tf.nn.relu(conv2, name='relu')
-			conv2 = tf.layers.max_pooling2d(conv2, pool_size=(2, 2), strides=2, name='maxpool')
-
-			# (None, width/4, height/4, 128).
-
-		with tf.variable_scope('conv3', reuse=tf.AUTO_REUSE):
-			conv3 = tf.layers.conv2d(conv2, filters=256, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv1')
-			conv3 = tf.layers.batch_normalization(conv3, name='batchnorm')
-			conv3 = tf.nn.relu(conv3, name='relu1')
-
-			conv3 = tf.layers.conv2d(conv3, filters=256, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv2')
-			conv3 = tf.layers.batch_normalization(conv3, name='batchnorm2')
-			conv3 = tf.nn.relu(conv3, name='relu2')
-			conv3 = tf.layers.max_pooling2d(conv3, pool_size=(1, 2), strides=(1, 2), padding='same', name='maxpool')
-
-			# (None, width/4, height/8, 256).
-
-		with tf.variable_scope('conv4', reuse=tf.AUTO_REUSE):
-			conv4 = tf.layers.conv2d(conv3, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv1')
-			conv4 = tf.layers.batch_normalization(conv4, name='batchnorm')
-			conv4 = tf.nn.relu(conv4, name='relu1')
-
-			# TODO [decide] >>
-			conv4 = tf.layers.conv2d(conv4, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=None, name='conv2')
-			#conv4 = tf.layers.conv2d(conv4, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv2')
-			conv4 = tf.layers.batch_normalization(conv4, name='batchnorm2')
-			conv4 = tf.nn.relu(conv4, name='relu2')
-			conv4 = tf.layers.max_pooling2d(conv4, pool_size=(1, 2), strides=(1, 2), padding='same', name='maxpool')
-
-			# (None, width/4, height/16, 512).
-
-		with tf.variable_scope('conv5', reuse=tf.AUTO_REUSE):
-			# TODO [decide] >>
-			conv5 = tf.layers.conv2d(conv4, filters=512, kernel_size=(2, 2), padding='same', kernel_initializer=kernel_initializer, name='conv')
-			#conv5 = tf.layers.conv2d(conv4, filters=512, kernel_size=(2, 2), padding='valid', kernel_initializer=kernel_initializer, name='conv')
-			conv5 = tf.layers.batch_normalization(conv5, name='batchnorm')
-			conv5 = tf.nn.relu(conv5, name='relu')
-
-			# (None, width/4, height/16, 512).
-
-		return conv5
+		return model(inputs)
 
 	@staticmethod
 	def _create_bidirectionnal_rnn(inputs, input_len=None, kernel_initializer=None):
@@ -546,7 +407,7 @@ class MyModel(object):
 			outputs_2, _ = tf.nn.bidirectional_dynamic_rnn(fw_cell_2, bw_cell_2, outputs_1, input_len, dtype=tf.float32)
 			outputs_2 = tf.concat(outputs_2, 2)
 			# TODO [decide] >>
-			#outputs_2 = tf.layers.batch_normalization(outputs_2, name='batchnorm')
+			outputs_2 = tf.layers.batch_normalization(outputs_2, name='batchnorm')
 
 		return outputs_2
 
@@ -568,6 +429,7 @@ class MyModel(object):
 def create_random_words(min_text_len=1, max_text_len=10):
 	import string, random
 	chars = \
+		string.ascii_lowercase * 3000 + \
 		string.ascii_uppercase * 3000 + \
 		string.digits * 3000 + \
 		string.punctuation * 1000
@@ -592,24 +454,26 @@ class MyRunner(object):
 		#	model_output_time_steps = image_width / width_downsample_factor or image_width / width_downsample_factor - 1.
 		#	REF [function] >> MyModel.create_model().
 		#width_downsample_factor = 4
-		image_height, image_width, image_channel = 32, 100, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
-		model_output_time_steps = 24
+		if False:
+			image_height, image_width, image_channel = 32, 320, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+			model_output_time_steps = 39 #79
+		else:
+			image_height, image_width, image_channel = 64, 640, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+			model_output_time_steps = 79 #159
 		max_label_len = model_output_time_steps  # max_label_len <= model_output_time_steps.
 
 		#--------------------
 		# Create a dataset.
 		if is_dataset_generated_at_runtime:
-			#word_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
-			word_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
-			#word_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
+			word_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
 
-			print('[SWL] Info: Start loading an English dictionary...')
+			print('[SWL] Info: Start loading a Korean dictionary...')
 			start_time = time.time()
 			with open(word_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-				#dictionary_words = fd.readlines()
 				#dictionary_words = fd.read().strip('\n')
+				#dictionary_words = fd.readlines()
 				dictionary_words = fd.read().splitlines()
-			print('[SWL] Info: End loading an English dictionary: {} secs.'.format(time.time() - start_time))
+			print('[SWL] Info: End loading a Korean dictionary: {} secs.'.format(time.time() - start_time))
 
 			print('[SWL] Info: Start generating random words...')
 			start_time = time.time()
@@ -628,23 +492,24 @@ class MyRunner(object):
 			else:
 				system_font_dir_path = 'C:/Windows/Fonts'
 				font_base_dir_path = 'D:/work/font'
-			font_dir_path = font_base_dir_path + '/eng'
+			#font_dir_path = font_base_dir_path + '/kor'
+			font_dir_path = font_base_dir_path + '/receipt_kor'
 
 			import text_generation_util as tg_util
 			font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
-			font_list = tg_util.generate_font_list(font_filepaths)
+			font_list = tg_util.generate_hangeul_font_list(font_filepaths)
 			#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
 			handwriting_dict = None
 
-			print('[SWL] Info: Start creating an English dataset...')
+			print('[SWL] Info: Start creating a Hangeul dataset...')
 			start_time = time.time()
 			#self._dataset = MyRunTimeAlphaMatteTextLineDataset(set(words), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len)
 			self._dataset = MyRunTimeTextLineDataset(set(words), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len)
-			print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
+			print('[SWL] Info: End creating a Hangeul dataset: {} secs.'.format(time.time() - start_time))
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000
 		else:
-			self._dataset = MyEnglishTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
+			self._dataset = MyHangeulTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = None, None
 
@@ -660,8 +525,10 @@ class MyRunner(object):
 			model_output, loss, accuracy = model.create_model(self._dataset.num_classes, is_training=True)
 
 			# Create a trainer.
-			learning_rate = 0.0001
-			optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-08)
+			#optimizer = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-08)
+			##optimizer = keras.optimizers.Adadelta(lr=1.0, rho=0.95, epsilon=None, decay=0.0)
+			#optimizer = tf.keras.optimizers.Adadelta(lr=0.001, rho=0.95, epsilon=1e-07)
+			optimizer = tf.train.AdadeltaOptimizer(learning_rate=1.0, rho=0.95, epsilon=1e-08)
 			if True:
 				train_op = optimizer.minimize(loss)
 			else:  # Gradient clipping.
@@ -770,6 +637,7 @@ class MyRunner(object):
 				"""
 
 				#--------------------
+				# TODO [check] >> No accuracy is computed.
 				#if epoch % 10 == 0:
 				if True:
 					start_time = time.time()
@@ -1038,7 +906,7 @@ def main():
 	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
 
 	#--------------------
-	num_epochs, batch_size = 20, 64  # batch_size affects training.
+	num_epochs, batch_size = 50, 64
 	initial_epoch = 0
 	is_trained, is_tested, is_inferred = True, True, False
 	is_training_resumed = False
@@ -1048,9 +916,9 @@ def main():
 	is_dataset_generated_at_runtime = False
 	if not is_dataset_generated_at_runtime and (is_trained or is_tested):
 		# Data generation.
-		#	REF [function] >> EnglishTextRecognitionDataGeneratorTextLineDataset_test() in TextRecognitionDataGenerator_data_test.py.
+		#	REF [function] >> HangeulTextRecognitionDataGeneratorTextLineDataset_test() in TextRecognitionDataGenerator_data_test.py.
 
-		data_dir_path = './text_line_samples_en_train'
+		data_dir_path = './text_line_samples_kr_train'
 
 		if not os.path.isdir(data_dir_path) or not os.path.exists(data_dir_path):
 			print('[SWL] Error: Data directory not found, {}.'.format(data_dir_path))
@@ -1069,7 +937,7 @@ def main():
 	#--------------------
 	output_dir_path = None
 	if not output_dir_path:
-		output_dir_prefix = 'simple_english_crnn'
+		output_dir_prefix = 'simple_hangeul_crnn_densenet'
 		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 
@@ -1113,7 +981,7 @@ def main():
 		if inference_dir_path and inference_dir_path.strip() and not os.path.exists(inference_dir_path):
 			os.makedirs(inference_dir_path, exist_ok=True)
 
-		image_filepaths = glob.glob('./text_line_samples_en_test/**/*.jpg', recursive=False)
+		image_filepaths = glob.glob('./text_line_samples_kr_test/**/*.jpg', recursive=False)
 		image_filepaths.sort()
 		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size)
 
