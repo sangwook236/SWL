@@ -306,7 +306,7 @@ class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
 
 		#--------------------
-		min_font_size, max_font_size = int(image_height * 0.8), int(image_height * 1.25)
+		min_font_size, max_font_size = round(image_height * 0.8), round(image_height * 1.25)
 		min_char_space_ratio, max_char_space_ratio = 0.8, 1.25
 
 		#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None)
@@ -379,7 +379,7 @@ class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
 
 		#--------------------
-		min_font_size, max_font_size = int(image_height * 0.8), int(image_height * 1.25)
+		min_font_size, max_font_size = round(image_height * 0.8), round(image_height * 1.25)
 		min_char_space_ratio, max_char_space_ratio = 0.8, 1.25
 		alpha_matte_mode = '1' #'L'
 
@@ -423,7 +423,7 @@ class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatas
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
 
 		#--------------------
-		min_font_size, max_font_size = int(image_height * 0.8), int(image_height * 1.25)
+		min_font_size, max_font_size = round(image_height * 0.8), round(image_height * 1.25)
 		min_char_space_ratio, max_char_space_ratio = 0.8, 1.25
 		alpha_matte_mode = '1' #'L'
 
@@ -772,7 +772,7 @@ class JsonBasedHangeulJamoTextLineDataset(JsonBasedTextLineDatasetBase):
 
 #--------------------------------------------------------------------
 
-class PairedTextLineDatasetBase(TextLineDatasetBase):
+class TextLinePairDatasetBase(TextLineDatasetBase):
 	"""A base dataset for paired text lines, input & output text line images.
 	"""
 
@@ -900,7 +900,7 @@ class PairedTextLineDatasetBase(TextLineDatasetBase):
 
 #--------------------------------------------------------------------
 
-class RunTimePairedTextLineDatasetBase(PairedTextLineDatasetBase):
+class RunTimeTextLinePairDatasetBase(TextLinePairDatasetBase):
 	def __init__(self, word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, use_NWHC=True, default_value=-1):
 		super().__init__(labels=None, use_NWHC=use_NWHC, default_value=default_value)
 
@@ -920,7 +920,7 @@ class RunTimePairedTextLineDatasetBase(PairedTextLineDatasetBase):
 		return self._num_classes
 
 # This class is independent of language.
-class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
+class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, corrupt_functor, max_label_len=0, use_NWHC=True, default_value=-1):
 		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
 
@@ -941,7 +941,7 @@ class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
 		self._corrupt_functor = corrupt_functor
 
 		#--------------------
-		min_font_size, max_font_size = int(image_height * 0.8), int(image_height * 1.25)
+		min_font_size, max_font_size = round(image_height * 0.8), round(image_height * 1.25)
 		min_char_space_ratio, max_char_space_ratio = 0.8, 1.25
 
 		#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mask_mode='L')
@@ -966,6 +966,88 @@ class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
 			#corrupted_scenes = list(map(lambda image: cv2.pyrDown(cv2.pyrDown(image)), corrupted_scenes))
 			corrupted_scenes = list(map(lambda image: reduce_image(image, min_height, max_height), corrupted_scenes))
 			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(image, axis=0)), axis=0)), corrupted_scenes))
+			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
+			"""
+			corrupted_scenes = scene_text_masks
+			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(image, axis=0)))), corrupted_scenes))
+			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
+			#corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32) * 255, use_NWHC=self._use_NWHC)
+			#corrupted_scenes = 255 - corrupted_scenes  # Invert.
+			"""
+
+			"""
+			clean_scenes = scenes
+			clean_scenes = list(map(lambda image: self.resize(image), clean_scenes))
+			clean_scenes = self._transform_images(np.array(clean_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
+			"""
+			clean_scenes = scene_text_masks
+			# FIXME [enhance] >> Resizing clean images is not a good idea.
+			clean_scenes = list(map(lambda image: self.resize(image), clean_scenes))
+			clean_scenes = self._transform_images(np.array(clean_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
+			#clean_scenes = self._transform_images(np.array(clean_scenes, dtype=np.float32) * 255, use_NWHC=self._use_NWHC)
+			clean_scenes = 255 - clean_scenes  # Invert.
+
+			corrupted_scenes, _ = self.preprocess(corrupted_scenes, None)
+			clean_scenes, _ = self.preprocess(clean_scenes, None)
+			texts_int = list(map(lambda txt: self.encode_label(txt), texts))
+			#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
+			yield (corrupted_scenes, clean_scenes, texts, texts_int), batch_size
+			if steps_per_epoch and (step + 1) >= steps_per_epoch:
+				break
+
+# This class is independent of language.
+class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
+	def __init__(self, word_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, handwriting_dict, corrupt_functor, max_label_len=0, use_NWHC=True, default_value=-1):
+		super().__init__(word_set, hr_image_height, hr_image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
+
+		self._lr_image_height, self._lr_image_width = lr_image_height, lr_image_width
+
+		#--------------------
+		#self._SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
+		#self._EOS = '<EOS>'  # All strings will end with the End-Of-String token.
+
+		#--------------------
+		label_set = functools.reduce(lambda x, word: x.union(word), self._word_set, set())
+		#self._labels = sorted(label_set)
+		self._labels = ''.join(sorted(label_set))
+		print('[SWL] Info: Labels = {}.'.format(self._labels))
+		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
+
+		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+		self._num_classes = len(self._labels) + 1  # Labels + blank label.
+
+		self._corrupt_functor = corrupt_functor
+
+		#--------------------
+		min_font_size, max_font_size = round(hr_image_height * 0.8), round(hr_image_height * 1.25)
+		min_char_space_ratio, max_char_space_ratio = 0.8, 1.25
+
+		#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mask_mode='L')
+		self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mask_mode='L')
+
+	@property
+	def shape(self):
+		return self._image_height, self._image_width, self._lr_image_height, self._lr_image_width, self._image_channel
+
+	def _create_batch_generator(self, textGenerator, word_set, batch_size, steps_per_epoch):
+		def reduce_image(image, min_height, max_height):
+			height = random.randint(min_height, max_height)
+			interpolation = random.choice([cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4])
+			return cv2.resize(image, (round(image.shape[1] * height / image.shape[0]), height), interpolation=interpolation)
+
+		min_height, max_height = self._lr_image_height, self._lr_image_height * 2
+		generator = textGenerator.create_generator(word_set, batch_size)
+		for step, (texts, scenes, scene_text_masks) in enumerate(generator):
+			# For using RGB images.
+			#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
+			# For using grayscale images.
+			scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
+
+			corrupted_scenes = scenes
+			# Simulates resizing artifact.
+			#corrupted_scenes = list(map(lambda image: cv2.pyrDown(cv2.pyrDown(image)), corrupted_scenes))
+			corrupted_scenes = list(map(lambda image: reduce_image(image, min_height, max_height), corrupted_scenes))
+			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(image, axis=0)), axis=0), None, self._lr_image_height, self._lr_image_width), corrupted_scenes))
 			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
 			"""
 			corrupted_scenes = scene_text_masks

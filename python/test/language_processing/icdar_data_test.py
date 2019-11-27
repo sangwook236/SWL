@@ -134,7 +134,7 @@ def check_label_distribution_of_icdar2019_sroie_task1_train_text_line_data():
 
 	#--------------------
 	from swl.language_processing.util import draw_character_histogram
-	draw_character_histogram(words, charset=None)
+	draw_character_histogram(lines, charset=None)
 
 def main():
 	#generate_icdar2019_sroie_task1_train_text_line_data()

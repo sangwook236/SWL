@@ -280,7 +280,7 @@ class MyModel(object):
 			return model_output
 
 	def decode_label(self, labels):
-		return self._decode_functor(labels) if labels[2][1] > 0 else list()
+		return self._decode_functor(labels) if not self._is_sparse_output or labels[2][1] > 0 else list()
 
 	def _get_feed_dict_for_sparse(self, data, num_data, *args, **kwargs):
 		len_data = len(data)
@@ -564,25 +564,71 @@ class MyModel(object):
 
 #--------------------------------------------------------------------
 
-def create_random_words(min_text_len=1, max_text_len=10):
+def create_random_words(min_char_len=1, max_char_len=10):
 	import string, random
+
+	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
+	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
+	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
+	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
+		#hangeul_charset = fd.read().strip('\n')  # A strings.
+		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
+		#hangeul_charset = fd.readlines()  # A list of string.
+		#hangeul_charset = fd.read().splitlines()  # A list of strings.
+	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+	hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
+
 	chars = \
-		string.ascii_uppercase * 3000 + \
-		string.digits * 3000 + \
-		string.punctuation * 1000
+		hangeul_charset * 10 + \
+		hangeul_jamo_charset * 1 + \
+		string.ascii_lowercase * 10 + \
+		string.ascii_uppercase * 3 + \
+		string.digits * 5 + \
+		string.punctuation * 2
+	chars *= 500
+	"""
+	chars = \
+		hangeul_charset * 0 + \
+		hangeul_jamo_charset * 0 + \
+		string.ascii_lowercase * 10 + \
+		string.ascii_uppercase * 3 + \
+		string.digits * 5 + \
+		string.punctuation * 2
+	chars *= 1000
+	"""
 	chars = list(chars)
 	random.shuffle(chars)
 	chars = ''.join(chars)
+	num_chars = len(chars)
+
 	random_words = list()
 	start_idx = 0
 	while True:
-		end_idx = start_idx + random.randint(min_text_len, max_text_len)
+		end_idx = start_idx + random.randint(min_char_len, max_char_len)
 		random_words.append(chars[start_idx:end_idx])
-		if end_idx >= len(chars):
+		if end_idx >= num_chars:
 			break
 		start_idx = end_idx
 
 	return random_words
+
+def reorganize_words(words, min_word_len=1, max_word_len=5):
+	import random
+
+	num_words = len(words)
+	random.shuffle(words)
+
+	reorganized_words = list()
+	start_idx = 0
+	while True:
+		end_idx = start_idx + random.randint(min_word_len, max_word_len)
+		reorganized_words.append(' '.join(words[start_idx:end_idx]))
+		if end_idx >= num_words:
+			break
+		start_idx = end_idx
+
+	return reorganized_words
 
 class MyRunner(object):
 	def __init__(self, is_dataset_generated_at_runtime, data_dir_path=None, train_test_ratio=0.8):
@@ -614,10 +660,11 @@ class MyRunner(object):
 
 			print('[SWL] Info: Start generating random words...')
 			start_time = time.time()
-			random_words = create_random_words(min_text_len=1, max_text_len=10)
+			random_words = create_random_words(min_char_len=1, max_char_len=10)
 			print('[SWL] Info: End generating random words: {} secs.'.format(time.time() - start_time))
 
-			words = dictionary_words + random_words
+			#words = reorganize_words(dictionary_words + random_words, min_word_len=1, max_word_len=5)
+			words = reorganize_words(random_words, min_word_len=1, max_word_len=5)
 			if False:
 				from swl.language_processing.util import draw_character_histogram
 				draw_character_histogram(words, charset=None)

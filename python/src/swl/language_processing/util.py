@@ -666,5 +666,5 @@ def draw_character_histogram(texts, charset=None):
 	plt.xticks(x_label, char_dict.keys())
 	plt.show()
 
-	fig.savefig('./character_histogram.png')
+	fig.savefig('./character_frequency.png')
 	plt.close(fig)

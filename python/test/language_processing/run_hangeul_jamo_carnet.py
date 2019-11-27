@@ -75,7 +75,7 @@ class MyModel(object):
 			return model_output
 
 	def decode_label(self, labels):
-		return self._decode_functor(labels) if labels[2][1] > 0 else list()
+		return self._decode_functor(labels) if not self._is_sparse_output or labels[2][1] > 0 else list()
 
 	def _get_feed_dict_for_sparse(self, data, num_data, *args, **kwargs):
 		len_data = len(data)

@@ -7,8 +7,8 @@ sys.path.append('../../src')
 import os, math, time, datetime, functools, itertools, glob, csv
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.layers import Dense, Input, Activation, BatchNormalization
-from tensorflow.keras.layers import Conv2D, Conv2DTranspose, Flatten, Reshape, UpSampling2D, MaxPooling2D, Lambda
+from tensorflow.keras.layers import Dense, Input, BatchNormalization, PReLU
+from tensorflow.keras.layers import Conv2D, Add, Lambda
 from tensorflow.keras.models import Model
 from tensorflow.keras.losses import mse, binary_crossentropy
 from tensorflow.keras import backend as K
@@ -19,11 +19,11 @@ import text_line_data
 #--------------------------------------------------------------------
 
 class MyModel(object):
-	def __init__(self, image_height, image_width, image_channel):
-		self._input_shape = (image_height, image_width, image_channel)
+	def __init__(self, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel):
+		self._input_shape = (lr_image_height, lr_image_width, image_channel)
 
-		self._input_ph = tf.placeholder(tf.float32, shape=(None, image_height, image_width, image_channel), name='input_ph')
-		self._output_ph = tf.placeholder(tf.float32, shape=(None, image_height, image_width, image_channel), name='output_ph')
+		self._input_ph = tf.placeholder(tf.float32, shape=(None, lr_image_height, lr_image_width, image_channel), name='input_ph')
+		self._output_ph = tf.placeholder(tf.float32, shape=(None, hr_image_height, hr_image_width, image_channel), name='output_ph')
 
 	def get_feed_dict(self, data, num_data, *args, **kwargs):	
 		len_data = len(data)
@@ -64,7 +64,7 @@ class MyModel(object):
 
 		#--------------------
 		with tf.variable_scope('cnn', reuse=tf.AUTO_REUSE):
-			cnn_output = MyModel._create_autoencoder(inputs, kernel_initializer, input_shape=self._input_shape)
+			cnn_output = MyModel._create_sr_resnet(inputs, kernel_initializer, input_shape=self._input_shape)
 
 		with tf.variable_scope('transcription', reuse=tf.AUTO_REUSE):
 			logits = cnn_output
@@ -84,76 +84,62 @@ class MyModel(object):
 			return accuracy
 
 	@staticmethod
-	def _create_autoencoder(inputs, kernel_initializer=None, input_shape=None):
-		kernel_size = 3
-		latent_dim = 1024
-		# Encoder/Decoder number of CNN layers and filters per layer.
-		layer_filters = [32, 64, 128, 256]
+	def _normalize_01(x):
+		"""Normalizes RGB images to [0, 1]."""
+		return x / 255.0
 
-		#--------------------
-		# Build the Autoencoder Model.
+	@staticmethod
+	def _denormalize_m11(x):
+		"""Inverse of normalize_m11."""
+		return (x + 1) * 127.5
 
-		#--------------------
-		# Build the Encoder Model.
-		#inputs = Input(shape=input_shape, name='encoder_input')
+	@staticmethod
+	def _pixel_shuffle(scale):
+		return lambda x: tf.nn.depth_to_space(x, scale)
+
+	@staticmethod
+	def _upsample(x_in, num_filters):
+		x = Conv2D(num_filters, kernel_size=3, padding='same')(x_in)
+		x = Lambda(MyModel._pixel_shuffle(scale=2))(x)
+		return PReLU(shared_axes=[1, 2])(x)
+
+	@staticmethod
+	def _res_block(x_in, num_filters, momentum=0.8):
+		x = Conv2D(num_filters, kernel_size=3, padding='same')(x_in)
+		x = BatchNormalization(momentum=momentum)(x)
+		x = PReLU(shared_axes=[1, 2])(x)
+		x = Conv2D(num_filters, kernel_size=3, padding='same')(x)
+		x = BatchNormalization(momentum=momentum)(x)
+		x = Add()([x_in, x])
+		return x
+
+	# REF [paper] >> "Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network", CVPR 2017.
+	# REF [site] >> https://github.com/krasserm/super-resolution
+	@staticmethod
+	def _create_sr_resnet(inputs, kernel_initializer=None, input_shape=None, num_filters=64, num_res_blocks=16):
+		#x_in = Input(shape=(None, None, 3))
+		#x = Lambda(MyModel._normalize_01)(x_in)
 		x = inputs
-		# Stack of Conv2D blocks.
-		# Notes:
-		# 1) Use Batch Normalization before ReLU on deep networks.
-		# 2) Use MaxPooling2D as alternative to strides > 1.
-		# - faster but not as good as strides > 1.
-		for filters in layer_filters:
-			x = Conv2D(filters=filters,
-					   kernel_size=kernel_size,
-					   strides=2,
-					   activation='relu',
-					   padding='same')(x)
 
-		# Shape info needed to build Decoder Model.
-		shape = K.int_shape(x)
+		x = Conv2D(num_filters, kernel_size=9, padding='same')(x)
+		x = x_1 = PReLU(shared_axes=[1, 2])(x)
 
-		# Generate the latent vector.
-		x = Flatten()(x)
-		latent = Dense(latent_dim, name='latent_vector')(x)
+		for _ in range(num_res_blocks):
+			x = MyModel._res_block(x, num_filters)
 
-		# Instantiate Encoder Model.
-		#encoder = Model(inputs, latent, name='encoder')
-		#encoder.summary()
+		x = Conv2D(num_filters, kernel_size=3, padding='same')(x)
+		x = BatchNormalization()(x)
+		x = Add()([x_1, x])
 
-		#--------------------
-		# Build the Decoder Model.
-		#latent_inputs = Input(shape=(latent_dim,), name='decoder_input')
-		x = Dense(shape[1] * shape[2] * shape[3])(latent)
-		x = Reshape((shape[1], shape[2], shape[3]))(x)
+		x = MyModel._upsample(x, num_filters * 4)
+		x = MyModel._upsample(x, num_filters * 4)
 
-		# Stack of Transposed Conv2D blocks.
-		# Notes:
-		# 1) Use Batch Normalization before ReLU on deep networks.
-		# 2) Use UpSampling2D as alternative to strides > 1.
-		# - faster but not as good as strides > 1.
-		for filters in layer_filters[::-1]:
-			x = Conv2DTranspose(filters=filters,
-								kernel_size=kernel_size,
-								strides=2,
-								activation='relu',
-								padding='same')(x)
+		#x = Conv2D(3, kernel_size=9, padding='same', activation='tanh')(x)
+		#x = Lambda(MyModel._denormalize_m11)(x)
+		x = Conv2D(1, kernel_size=9, padding='same', activation='sigmoid')(x)
 
-		x = Conv2DTranspose(filters=1,
-							kernel_size=kernel_size,
-							padding='same')(x)
-		outputs = Activation('sigmoid', name='decoder_output')(x)
-
-		# Instantiate Decoder Model.
-		#decoder = Model(latent_inputs, outputs, name='decoder')
-		#decoder.summary()
-
-		#--------------------
-		# Autoencoder = Encoder + Decoder.
-		# Instantiate Autoencoder Model.
-		#autoencoder = Model(inputs, decoder(encoder(inputs)), name='autoencoder')
-		#autoencoder.summary()
-
-		return outputs
+		#return Model(x_in, x)
+		return x
 
 #--------------------------------------------------------------------
 
@@ -215,11 +201,14 @@ def create_corrupter():
 class MyRunner(object):
 	def __init__(self):
 		# Set parameters.
+		sr_ratio = 4
+		lr_image_height, lr_image_width, image_channel = 16, 160, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+		hr_image_height, hr_image_width = lr_image_height * sr_ratio, lr_image_width * sr_ratio
+
 		# TODO [modify] >> Depends on a model.
 		#	model_output_time_steps = image_width / width_downsample_factor or image_width / width_downsample_factor - 1.
 		#	REF [function] >> MyModel.create_model().
 		#width_downsample_factor = 4
-		image_height, image_width, image_channel = 64, 640, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
 		model_output_time_steps = 80 #160
 		max_label_len = model_output_time_steps  # max_label_len <= model_output_time_steps.
 
@@ -261,7 +250,7 @@ class MyRunner(object):
 
 		print('[SWL] Info: Start creating an English dataset...')
 		start_time = time.time()
-		self._dataset = text_line_data.RunTimeCorruptedTextLinePairDataset(set(dictionary_words), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len, use_NWHC=False, corrupt_functor=self._corrupt)
+		self._dataset = text_line_data.RunTimeSuperResolvedTextLinePairDataset(set(dictionary_words), hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len, use_NWHC=False, corrupt_functor=self._corrupt)
 		print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		#self._train_examples_per_epoch, self._test_examples_per_epoch = 500000, 10000
@@ -630,7 +619,7 @@ def main():
 	#--------------------
 	output_dir_path = None
 	if not output_dir_path:
-		output_dir_prefix = 'simple_english_denoising_autoencoder'
+		output_dir_prefix = 'simple_english_srresnet'
 		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 
