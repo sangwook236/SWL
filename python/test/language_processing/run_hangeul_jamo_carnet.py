@@ -906,6 +906,9 @@ def main():
 		#image_filepaths = glob.glob('./single_letters_test/*.jpg', recursive=False)
 		#image_filepaths = glob.glob('./double_letters_test/*.jpg', recursive=False)
 		image_filepaths = glob.glob('./text_line_samples_kr_test/**/*.jpg', recursive=False)
+		if not image_filepaths:
+			print('[SWL] Error: No image file for inference.')
+			return
 		image_filepaths.sort()
 		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size)
 

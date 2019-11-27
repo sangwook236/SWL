@@ -563,6 +563,9 @@ def main():
 			os.makedirs(inference_dir_path, exist_ok=True)
 
 		image_filepaths = glob.glob('./text_line_samples_kr_test/**/*.jpg', recursive=False)
+		if not image_filepaths:
+			print('[SWL] Error: No image file for inference.')
+			return
 		image_filepaths.sort()
 		runner.infer(model_filepath, image_filepaths, inference_dir_path)
 

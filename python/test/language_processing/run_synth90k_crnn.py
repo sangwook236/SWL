@@ -491,6 +491,10 @@ def main():
 			os.makedirs(inference_dir_path, exist_ok=True)
 
 		image_filepaths = glob.glob('./images/*.jpg', recursive=False)  # TODO [modify] >>
+		if not image_filepaths:
+			print('[SWL] Error: No image file for inference.')
+			return
+		image_filepaths.sort()
 		# TODO [check] >> Not yet tested.
 		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, device_name=infer_device_name)
 
