@@ -309,8 +309,14 @@ class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 		min_font_size, max_font_size = round(image_height * 0.8), round(image_height * 1.25)
 		min_char_space_ratio, max_char_space_ratio = 0.8, 1.25
 
-		#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None)
-		self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio))
+		if 1 == image_channel:
+			#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mode='L', mask_mode='1')
+			self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mode='L', mask_mode='1')
+		elif 3 == image_channel:
+			#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mode='RGB', mask_mode='1')
+			self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mode='RGB', mask_mode='1')
+		else:
+			raise ValueError('Invalid image channel, {}'.format(image_channel))
 
 #--------------------------------------------------------------------
 
@@ -944,8 +950,14 @@ class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 		min_font_size, max_font_size = round(image_height * 0.8), round(image_height * 1.25)
 		min_char_space_ratio, max_char_space_ratio = 0.8, 1.25
 
-		#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mask_mode='L')
-		self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mask_mode='L')
+		if 1 == image_channel:
+			#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mode='L', mask_mode='L')
+			self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mode='L', mask_mode='L')
+		elif 3 == image_channel:
+			#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mode='RGB', mask_mode='L')
+			self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mode='RGB', mask_mode='L')
+		else:
+			raise ValueError('Invalid image channel, {}'.format(image_channel))
 
 	def _create_batch_generator(self, textGenerator, word_set, batch_size, steps_per_epoch):
 		def reduce_image(image, min_height, max_height):
@@ -1022,8 +1034,14 @@ class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 		min_font_size, max_font_size = round(hr_image_height * 0.8), round(hr_image_height * 1.25)
 		min_char_space_ratio, max_char_space_ratio = 0.8, 1.25
 
-		#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mask_mode='L')
-		self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mask_mode='L')
+		if 1 == image_channel:
+			#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mode='L', mask_mode='L')
+			self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mode='L', mask_mode='L')
+		elif 3 == image_channel:
+			#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mode='RGB', mask_mode='L')
+			self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mode='RGB', mask_mode='L')
+		else:
+			raise ValueError('Invalid image channel, {}'.format(image_channel))
 
 	@property
 	def shape(self):

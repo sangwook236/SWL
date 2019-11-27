@@ -126,7 +126,7 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 
 		num_examples = len(images)
 		if len(labels_str) != num_examples or len(labels_int) != num_examples:
-			raise ValueError('[SWL] Error: Unmatched data sizes, {0} != {1} or {0} != {2}'.format(num_examples, len(labels_str), len(labels_int)))
+			raise ValueError('Unmatched data sizes, {0} != {1} or {0} != {2}'.format(num_examples, len(labels_str), len(labels_int)))
 
 		return images, labels_str, labels_int, num_examples
 
@@ -136,7 +136,7 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 		elif 3 == image_channel:
 			flags = cv2.IMREAD_COLOR
 		else:
-			raise ValueError('[SWL] Error: Invalid channels {}'.format(image_channel))
+			raise ValueError('Invalid channels {}'.format(image_channel))
 
 		images, labels_str, labels_int = list(), list(), list()
 		#images, labels_str, labels_int = None, list(), list()
@@ -180,7 +180,7 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 		elif 3 == image_channel:
 			flags = cv2.IMREAD_COLOR
 		else:
-			raise ValueError('[SWL] Error: Invalid channels {}'.format(image_channel))
+			raise ValueError('Invalid channels {}'.format(image_channel))
 
 		try:
 			with open(os.path.join(data_dir_path, label_filename), 'r') as fd:
@@ -234,11 +234,11 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 
 		num_examples = len(images)
 		if len(labels_str) != num_examples or len(labels_int) != num_examples:
-			raise ValueError('[SWL] Error: Invalid data length: {} != {} != {}'.format(num_examples, len(labels_str), len(labels_int)))
+			raise ValueError('Invalid data length: {} != {} != {}'.format(num_examples, len(labels_str), len(labels_int)))
 		if batch_size is None:
 			batch_size = num_examples
 		if batch_size <= 0:
-			raise ValueError('[SWL] Error: Invalid batch size: {}'.format(batch_size))
+			raise ValueError('Invalid batch size: {}'.format(batch_size))
 
 		indices = np.arange(num_examples)
 		if shuffle:

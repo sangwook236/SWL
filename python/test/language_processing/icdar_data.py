@@ -157,11 +157,11 @@ class Icdar2019SroieTextLineDatasetBase(text_line_data.TextLineDatasetBase):
 
 		num_examples = len(images)
 		if len(labels_str) != num_examples or len(labels_int) != num_examples:
-			raise ValueError('[SWL] Error: Invalid data length: {} != {} != {}'.format(num_examples, len(labels_str), len(labels_int)))
+			raise ValueError('Invalid data length: {} != {} != {}'.format(num_examples, len(labels_str), len(labels_int)))
 		if batch_size is None:
 			batch_size = num_examples
 		if batch_size <= 0:
-			raise ValueError('[SWL] Error: Invalid batch size: {}'.format(batch_size))
+			raise ValueError('Invalid batch size: {}'.format(batch_size))
 
 		indices = np.arange(num_examples)
 		if shuffle:

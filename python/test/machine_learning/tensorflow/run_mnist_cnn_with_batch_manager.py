@@ -276,7 +276,7 @@ def mnist_batch_manager(method=0):
 					swl_tf_util.train_neural_net_by_file_batch_manager(sess, nnTrainer, trainFileBatchMgr, valFileBatchMgr, dirMgr, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output)
 			print('\tTotal training time = {}'.format(time.time() - start_time))
 		else:
-			raise ValueError('[SWL] Error: Invalid batch manager method: {}.'.format(method))
+			raise ValueError('Invalid batch manager method: {}'.format(method))
 
 		#--------------------
 		if method in (0, 1, 4):
@@ -300,7 +300,7 @@ def mnist_batch_manager(method=0):
 					swl_tf_util.evaluate_neural_net_by_file_batch_manager(sess, nnEvaluator, valFileBatchMgr, dirMgr, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_output)
 			print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 		else:
-			raise ValueError('[SWL] Error: Invalid batch manager method: {}.'.format(method))
+			raise ValueError('Invalid batch manager method: {}'.format(method))
 
 	#--------------------------------------------------------------------
 	# Infers.
@@ -326,7 +326,7 @@ def mnist_batch_manager(method=0):
 				inferences = swl_tf_util.infer_by_neural_net_and_file_batch_manager(sess, nnInferrer, testFileBatchMgr, dirMgr, infer_saver, checkpoint_dir_path, is_time_major)
 		print('\tTotal inference time = {}'.format(time.time() - start_time))
 	else:
-		raise ValueError('[SWL] Error: Invalid batch manager method: {}.'.format(method))
+		raise ValueError('Invalid batch manager method: {}'.format(method))
 
 	if inferences is not None:
 		inferences = np.vstack(inferences)

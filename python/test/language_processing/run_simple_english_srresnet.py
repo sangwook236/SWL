@@ -663,7 +663,6 @@ def main():
 		if inference_dir_path and inference_dir_path.strip() and not os.path.exists(inference_dir_path):
 			os.makedirs(inference_dir_path, exist_ok=True)
 
-		#image_filepaths = glob.glob('./text_line_samples_en_test/**/*.jpg', recursive=False)
 		image_filepaths = glob.glob('./icdar2019_sroie/task1_test_text_line/image/*.jpg', recursive=False)
 		image_filepaths.sort()
 		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size)
