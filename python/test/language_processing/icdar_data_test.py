@@ -15,7 +15,7 @@ def generate_icdar2019_sroie_task1_train_text_line_data():
 	else:
 		data_base_dir_path = 'E:/dataset'
 	data_dir_path = data_base_dir_path + '/pattern_recognition/language_processing/rrc_icdar/0_download/sroie/0325updated.task1train(626p)'
-	saved_dir_path = './icdar2019_sroie/task1_train_text_line'
+	save_dir_path = './icdar2019_sroie/task1_train_text_line'
 
 	image_filepaths = glob.glob(os.path.join(data_dir_path, 'X???????????.jpg'))
 	label_filepaths = glob.glob(os.path.join(data_dir_path, 'X???????????.txt'))
@@ -28,7 +28,7 @@ def generate_icdar2019_sroie_task1_train_text_line_data():
 		pos = [s.start() for s in re.finditer(r',', line)][7]
 		return list(int(nn) for nn in line[:pos].split(',')), line[pos+1:]
 
-	os.makedirs(saved_dir_path, exist_ok=False)
+	os.makedirs(save_dir_path, exist_ok=False)
 	save_file_id = 0
 	for image_fpath, label_fpath in zip(image_filepaths, label_filepaths):
 		try:
@@ -49,7 +49,7 @@ def generate_icdar2019_sroie_task1_train_text_line_data():
 		lines = list(separate_line(line) for line in lines)
 
 		for coords, lbl in lines:
-			img_fpath, txt_fpath = os.path.join(saved_dir_path, 'file_{:06}.jpg'.format(save_file_id)), os.path.join(saved_dir_path, 'file_{:06}.txt'.format(save_file_id))
+			img_fpath, txt_fpath = os.path.join(save_dir_path, 'file_{:06}.jpg'.format(save_file_id)), os.path.join(save_dir_path, 'file_{:06}.txt'.format(save_file_id))
 			try:
 				with open(txt_fpath, 'w', encoding='UTF8') as fd:
 					fd.write(lbl)

@@ -430,18 +430,18 @@ class MyModel(object):
 def create_random_words(min_char_len=1, max_char_len=10):
 	import string, random
 	chars = \
-		string.ascii_lowercase * 10 + \
+		string.ascii_lowercase * 5 + \
 		string.ascii_uppercase * 3 + \
 		string.digits * 5 + \
 		string.punctuation * 2
-	chars *= 2000
+	chars *= 10000
 	"""
 	chars = \
 		string.ascii_lowercase * 0 + \
 		string.ascii_uppercase * 3 + \
 		string.digits * 5 + \
 		string.punctuation * 2
-	chars *= 2000
+	chars *= 10000
 	"""
 	chars = list(chars)
 	random.shuffle(chars)

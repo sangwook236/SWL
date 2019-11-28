@@ -1091,7 +1091,7 @@ def main():
 	#--------------------
 	num_epochs, batch_size = 50, 64
 	initial_epoch = 0
-	is_trained, is_tested, is_inferred = True, True, False
+	is_trained, is_tested, is_inferred = True, True, True
 	is_training_resumed = False
 
 	train_test_ratio = 0.8
@@ -1164,7 +1164,8 @@ def main():
 		if inference_dir_path and inference_dir_path.strip() and not os.path.exists(inference_dir_path):
 			os.makedirs(inference_dir_path, exist_ok=True)
 
-		image_filepaths = glob.glob('./text_line_samples_kr_test/**/*.jpg', recursive=False)
+		#image_filepaths = glob.glob('./text_line_samples_kr_test/**/*.jpg', recursive=False)
+		image_filepaths = glob.glob('./receipt_epapyrus/epapyrus_20190618/receipt_text_line/*.png', recursive=False)
 		if not image_filepaths:
 			print('[SWL] Error: No image file for inference.')
 			return
