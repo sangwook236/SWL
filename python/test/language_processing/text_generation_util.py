@@ -98,13 +98,13 @@ def generate_phd08_dict(from_npy=True):
 
 #--------------------------------------------------------------------
 
-def constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=None, text_line_size=None):
+def constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color, text_line_size=None):
 	"""Constructs a text line from character alpha mattes.
 
 	Inputs:
 		char_alpha_list (a list of numpy.array): A list of character alpha mattes.
 		char_alpha_coordinate_list (a list of (int, int)): A list of (y position, x position) of character alpha mattes.
-		font_color (tuple): A font color for the characters. If None, random colors are used.
+		font_color (tuple): A font color for the characters.
 		text_line_size (tuple): The size of the text line.
 	Outputs:
 		A text line (numpy.array): A single text line constructed from character alpha mattes.
@@ -115,21 +115,12 @@ def constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=No
 
 	text_line = np.zeros(text_line_size + (3,), dtype=np.float32)
 	text_line_alpha = np.zeros(text_line_size, dtype=np.float32)
-	if font_color is None:
-		for alpha, (sy, sx) in zip(char_alpha_list, char_alpha_coordinate_list):
-			#pixels = np.where(alpha > 0)
-			#text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]][pixels] = alpha[pixels]	
-			font_color = (random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1))
-			#font_color = (random.randrange(256), random.randrange(256), random.randrange(256))
-			text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]] = swl_cv_util.blend_image(np.full(alpha.shape + (3,), font_color, dtype=np.float32), text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]], alpha)
-			text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]] = swl_cv_util.blend_image(np.full_like(alpha, 1.0, dtype=np.float32), text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]], alpha)
-	else:
-		font_color = list(map(lambda x: x / 255, font_color))
-		for alpha, (sy, sx) in zip(char_alpha_list, char_alpha_coordinate_list):
-			#pixels = np.where(alpha > 0)
-			#text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]][pixels] = alpha[pixels]	
-			text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]] = swl_cv_util.blend_image(np.full(alpha.shape + (3,), font_color, dtype=np.float32), text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]], alpha)
-			text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]] = swl_cv_util.blend_image(np.full_like(alpha, 1.0, dtype=np.float32), text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]], alpha)
+	font_color = list(map(lambda x: x / 255, font_color))
+	for alpha, (sy, sx) in zip(char_alpha_list, char_alpha_coordinate_list):
+		#pixels = np.where(alpha > 0)
+		#text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]][pixels] = alpha[pixels]	
+		text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]] = swl_cv_util.blend_image(np.full(alpha.shape + (3,), font_color, dtype=np.float32), text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]], alpha)
+		text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]] = swl_cv_util.blend_image(np.full_like(alpha, 1.0, dtype=np.float32), text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]], alpha)
 
 	#return text_line, text_line_alpha
 	return np.round(text_line * 255).astype(np.uint8), text_line_alpha
@@ -436,16 +427,16 @@ class MyCharacterAlphaMatteGenerator(object):
 		Inputs:
 			font_list (a list of (font file path, font index) pairs): A list of the file paths and the font indices of fonts.
 			handwriting_dict (a dict of (character, a list of images)): A dictionary of characters and their corresponding list of images.
-			mode (str): A color mode: 'L' or '1'.
+			mode (str): The color mode for alpha matte. Black-white mode ('1') or grayscale mode ('L').
 		"""
+
+		self._font_list = font_list
+		self._handwriting_dict = handwriting_dict
+		self._alpha_matte_mode = mode
 
 		self._text_offset = (0, 0)
 		self._crop_text_area = True
 		self._draw_text_border = False
-
-		self._font_list = font_list
-		self._handwriting_dict = handwriting_dict
-		self._mode = mode
 
 	def __call__(self, char, font_size, *args, **kwargs):
 		"""Generates a character and its mask of numpy.array.
@@ -457,7 +448,9 @@ class MyCharacterAlphaMatteGenerator(object):
 			A character (numpy.array): An alpha matte for an input character.
 		"""
 
-		image_size = (math.ceil(font_size * 1.1), math.ceil(font_size * 1.1))
+		#image_size = (math.ceil(font_size * 1.1), math.ceil(font_size * 1.1))
+		image_size = (font_size * 2, font_size * 2)
+		#image_size = None
 
 		if self._handwriting_dict is not None and char in self._handwriting_dict:
 			use_printed_letter = 0 == random.randrange(2)
@@ -469,11 +462,11 @@ class MyCharacterAlphaMatteGenerator(object):
 			font_type, font_index = random.choice(self._font_list)
 			font_color, bg_color = 255, 0
 
-			alpha = swl_langproc_util.generate_text_image(char, font_type, font_index, font_size, font_color, bg_color, image_size, self._text_offset, self._crop_text_area, self._draw_text_border, mode=self._mode)
-			if '1' != self._mode:
-				return np.array(alpha, dtype=np.float32) / 255
-			else:
+			alpha = swl_langproc_util.generate_text_image(char, font_type, font_index, font_size, font_color, bg_color, image_size, self._text_offset, self._crop_text_area, self._draw_text_border, mode=self._alpha_matte_mode)
+			if '1' == self._alpha_matte_mode:
 				return np.array(alpha, dtype=np.float32)
+			else:
+				return np.array(alpha, dtype=np.float32) / 255
 		else:
 			#print('Generate a handwritten Hangeul letter.')
 			return random.choice(self._handwriting_dict[char])
@@ -517,26 +510,27 @@ class MyBasicPrintedTextGenerator(object):
 			font_list (a list of (font file path, font index) pairs): A list of the file paths and the font indices of fonts.
 			font_size_interval (a tuple of two ints): A font size interval for the characters.
 			char_space_ratio_interval (a tuple of two floats): A space ratio interval between two characters.
-			mode (str): RGB mode ('RGB') or grayscale mode ('L') of image.
-			mask_mode (str): Black-white mode ('1') or grayscale mode ('L') of image mask.
+			mode (str): The color mode of image. RGB mode ('RGB') or grayscale mode ('L').
+			mask_mode (str): The color mode of image mask. Black-white mode ('1') or grayscale mode ('L').
 		"""
-
-		self._text_offset = (0, 0)
-		self._crop_text_area = True
-		self._draw_text_border = False
 
 		self._font_list = font_list
 		self._font_size_interval = font_size_interval
 		self._char_space_ratio_interval = char_space_ratio_interval
 		self._mode = mode
 		self._mask_mode = mask_mode
-		self._image_channel = 1 if 'L' == mode or '1' == mode else 3
 
-	def __call__(self, text, *args, **kwargs):
+		self._text_offset = (0, 0)
+		self._crop_text_area = True
+		self._draw_text_border = False
+
+	def __call__(self, text, font_color, bg_color, *args, **kwargs):
 		"""Generates a single text line for individual characters.
 
 		Inputs:
 			text (str): Characters to compose a text line.
+			font_color (int or list of int): A font color.
+			bg_color (int or list of int): A background color.
 		Outputs:
 			text_image (numpy.array): A generated text image.
 			text_mask (numpy.array): A generated text mask.
@@ -550,27 +544,17 @@ class MyBasicPrintedTextGenerator(object):
 		font_size = random.randint(*self._font_size_interval)
 		char_space_ratio = None if self._char_space_ratio_interval is None else random.uniform(*self._char_space_ratio_interval)
 
-		#font_color = (255,) * self._image_channel
-		#font_color = tuple(random.randrange(256) for _ in range(self._image_channel))  # Uses a specific RGB font color.
-		#font_color = (random.randrange(256),) * self._image_channel  # Uses a specific grayscale font color.
-		font_color = (random.randrange(0, 128),) * self._image_channel  # Uses a specific black font color.
-		#font_color = (random.randrange(128, 256),) * self._image_channel  # Uses a specific white font color.
-		#font_color = None  # Uses a random font color.
-		#bg_color = (0,) * self._image_channel
-		#bg_color = tuple(random.randrange(256) for _ in range(self._image_channel))  # Uses a specific RGB background color.
-		#bg_color = (random.randrange(256),) * self._image_channel  # Uses a specific grayscale background color.
-		#bg_color = (random.randrange(0, 128),) * self._image_channel  # Uses a specific black background color.
-		bg_color = (random.randrange(128, 256),) * self._image_channel  # Uses a specific white background color.
-		#bg_color = None  # Uses a random background color.
-
 		text_image, text_mask = swl_langproc_util.generate_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size, self._text_offset, self._crop_text_area, self._draw_text_border, char_space_ratio, mode=self._mode, mask=True, mask_mode=self._mask_mode)
 
 		#return np.array(text_image), np.array(text_mask)  # text_mask: np.bool.
 		return np.array(text_image), np.array(text_mask, dtype=np.uint8)
 
-	def create_generator(self, word_set, batch_size):
+	def create_generator(self, word_set, batch_size, color_functor=None):
 		if batch_size <= 0 or batch_size > len(word_set):
 			raise ValueError('Invalid batch size: 0 < batch_size <= len(word_set)')
+
+		if color_functor is None:
+			color_functor = lambda: (None, None)
 
 		while True:
 			texts = random.sample(word_set, k=batch_size)
@@ -578,7 +562,8 @@ class MyBasicPrintedTextGenerator(object):
 
 			text_list, image_list, mask_list = list(), list(), list()
 			for text in texts:
-				text_line, mask = self.__call__(text)
+				font_color, bg_color = color_functor()
+				text_line, mask = self.__call__(text, font_color, bg_color)
 
 				text_list.append(text)
 				image_list.append(text_line)
@@ -590,7 +575,7 @@ class MySimpleTextAlphaMatteGenerator(object):
 	"""Generates a simple text line and masks for individual characters.
 	"""
 
-	def __init__(self, characterTransformer, characterPositioner, font_list, font_size_interval, char_space_ratio_interval=None, handwriting_dict=None, mode='1'):
+	def __init__(self, characterTransformer, characterPositioner, font_list, font_size_interval, char_space_ratio_interval=None, handwriting_dict=None, alpha_matte_mode='1'):
 		"""Constructor.
 
 		Inputs:
@@ -600,21 +585,21 @@ class MySimpleTextAlphaMatteGenerator(object):
 			font_size_interval (a tuple of two ints): A font size interval for the characters.
 			char_space_ratio_interval (a tuple of two floats): A space ratio interval between two characters.
 			handwriting_dict (a dict of (character, a list of images)): A dictionary of characters and their corresponding list of images.
-			mode (str): A color mode: 'L' or '1'.
+			alpha_matte_mode (str): The color mode for alpha matte. Black-white mode ('1') or grayscale mode ('L').
 		"""
 
 		self._characterTransformer = characterTransformer
 		self._characterPositioner = characterPositioner
-		self._mode = mode
-
-		self._text_offset = (0, 0)
-		self._crop_text_area = True
-		self._draw_text_border = False
 
 		self._font_list = font_list
 		self._handwriting_dict = handwriting_dict  # FIXME [fix] >> Currently not used.
 		self._font_size_interval = font_size_interval
 		self._char_space_ratio_interval = char_space_ratio_interval
+		self._alpha_matte_mode = alpha_matte_mode
+
+		self._text_offset = (0, 0)
+		self._crop_text_area = True
+		self._draw_text_border = False
 
 	def __call__(self, text, *args, **kwargs):
 		"""Generates a single text line and masks for individual characters.
@@ -632,44 +617,42 @@ class MySimpleTextAlphaMatteGenerator(object):
 		font_size = random.randint(*self._font_size_interval)
 		char_space_ratio = None if self._char_space_ratio_interval is None else random.uniform(*self._char_space_ratio_interval)
 
-		image_size = (math.ceil(font_size * 1.1), math.ceil(font_size * 1.1))
+		#image_size = (math.ceil(font_size * 1.1), math.ceil(font_size * 1.1))
+		image_size = (font_size * 2, font_size * 2)
+		#image_size = None
 
 		font_color, bg_color = 255, 0
 
 		char_alpha_list = list()
 		for ch in text:
-			alpha = swl_langproc_util.generate_text_image(ch, font_type, font_index, font_size, font_color, bg_color, image_size, self._text_offset, self._crop_text_area, self._draw_text_border, mode=self._mode)
-			if '1' != self._mode:
-				alpha = np.array(alpha, dtype=np.float32) / 255
-			else:
+			alpha = swl_langproc_util.generate_text_image(ch, font_type, font_index, font_size, font_color, bg_color, image_size, self._text_offset, self._crop_text_area, self._draw_text_border, mode=self._alpha_matte_mode)
+			if '1' == self._alpha_matte_mode:
 				alpha = np.array(alpha, dtype=np.float32)
+			else:
+				alpha = np.array(alpha, dtype=np.float32) / 255
 			alpha, _, _ = self._characterTransformer(alpha, None, *args, **kwargs)
 			char_alpha_list.append(alpha)
 
 		char_alpha_coordinate_list = self._characterPositioner(char_alpha_list, char_space_ratio, *args, **kwargs)
 		return char_alpha_list, char_alpha_coordinate_list
 
-	def create_generator(self, word_set, batch_size):
+	def create_generator(self, word_set, batch_size, color_functor):
 		if batch_size <= 0 or batch_size > len(word_set):
 			raise ValueError('Invalid batch size: 0 < batch_size <= len(word_set)')
 
 		sceneTextGenerator = MyAlphaMatteSceneTextGenerator(IdentityTransformer())
 
-		font_color = None  # Uses a random font color.
 		while True:
 			texts = random.sample(word_set, k=batch_size)
 			#texts = random.choices(word_set, k=batch_size)
 
 			text_list, scene_list, scene_text_mask_list = list(), list(), list()
 			for text in texts:
-				#font_color = (255, 255, 255)
-				#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
-				#font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
-				#font_color = None  # Uses a random font color.
-				#bg_color = (0, 0, 0)
-				#bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB background color.
-				bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
-				#bg_color = None  # Uses a random background color.
+				font_color, bg_color = color_functor()
+				#if font_color is None:
+				#	font_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+				#if bg_color is None:
+				#	bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
 
 				char_alpha_list, char_alpha_coordinate_list = self.__call__(text)
 				text_line, text_line_alpha = constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color)
@@ -731,7 +714,7 @@ class MyTextAlphaMatteGenerator(object):
 		char_alpha_coordinate_list = self._characterPositioner(char_alpha_list, char_space_ratio, *args, **kwargs)
 		return char_alpha_list, char_alpha_coordinate_list
 
-	def create_generator(self, word_set, batch_size):
+	def create_generator(self, word_set, batch_size, color_functor):
 		if batch_size <= 0 or batch_size > len(word_set):
 			raise ValueError('Invalid batch size: 0 < batch_size <= len(word_set)')
 
@@ -744,14 +727,11 @@ class MyTextAlphaMatteGenerator(object):
 
 			text_list, scene_list, scene_text_mask_list = list(), list(), list()
 			for text in texts:
-				#font_color = (255, 255, 255)
-				#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
-				#font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
-				#font_color = None  # Uses a random font color.
-				#bg_color = (0, 0, 0)
-				#bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB background color.
-				bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
-				#bg_color = None  # Uses a random background color.
+				font_color, bg_color = color_functor()
+				#if font_color is None:
+				#	font_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+				#if bg_color is None:
+				#	bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
 
 				char_alpha_list, char_alpha_coordinate_list = self.__call__(text)
 				text_line, text_line_alpha = constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color)
@@ -825,7 +805,7 @@ class MyAlphaMatteSceneTextGenerator(object):
 		return np.round(scene).astype(np.uint8), scene_mask, np.array(bboxes)
 		#return np.round(scene).astype(np.uint8), scene_text_masks, np.array(bboxes)
 
-	def create_generator(self, textGenerator, sceneProvider, word_set, batch_size, text_count_interval, font_color=None):
+	def create_generator(self, textGenerator, sceneProvider, word_set, batch_size, text_count_interval, color_functor):
 		while True:
 			texts_list, scene_list, scene_text_mask_list, bboxes_list = list(), list(), list(), list()
 			for _ in range(batch_size):
@@ -834,6 +814,12 @@ class MyAlphaMatteSceneTextGenerator(object):
 
 				text_images, text_alphas = list(), list()
 				for text in texts:
+					font_color, _ = color_functor()
+					#if font_color is None:
+					#	font_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+					#if bg_color is None:
+					#	bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+
 					char_alpha_list, char_alpha_coordinate_list = textGenerator(text)
 					text_line_image, text_line_alpha = constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color)
 

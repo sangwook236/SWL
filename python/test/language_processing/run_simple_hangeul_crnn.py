@@ -129,9 +129,25 @@ def create_augmenter():
 
 	return augmenter
 
+def generate_font_colors(image_depth):
+	#font_color = (255,) * image_depth
+	#font_color = tuple(random.randrange(256) for _ in range(image_depth))  # Uses a specific RGB font color.
+	#font_color = (random.randrange(256),) * image_depth  # Uses a specific grayscale font color.
+	gray_val = random.randrange(255)
+	font_color = (gray_val,) * image_depth  # Uses a specific black font color.
+	#font_color = (random.randrange(128, 256),) * image_depth  # Uses a specific white font color.
+	#font_color = None  # Uses a random font color.
+	#bg_color = (0,) * image_depth
+	#bg_color = tuple(random.randrange(256) for _ in range(image_depth))  # Uses a specific RGB background color.
+	#bg_color = (random.randrange(256),) * image_depth  # Uses a specific grayscale background color.
+	#bg_color = (random.randrange(0, 128),) * image_depth  # Uses a specific black background color.
+	bg_color = (random.randrange(gray_val + 1, 256),) * image_depth  # Uses a specific white background color.
+	#bg_color = None  # Uses a random background color.
+	return font_color, bg_color
+
 class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len, use_NWHC, default_value)
+		super().__init__(word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len, use_NWHC, functools.partial(generate_font_colors, image_depth=image_channel), default_value)
 
 		self._augmenter = create_augmenter()
 
@@ -142,7 +158,7 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
 			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
-	def _create_batch_generator(self, textGenerator, word_set, batch_size, steps_per_epoch, is_data_augmented=False):
+	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch, is_data_augmented=False):
 		def reduce_image(image, min_height, max_height):
 			import random, cv2
 			height = random.randint(min_height, max_height)
@@ -150,7 +166,7 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 			return cv2.resize(image, (round(image.shape[1] * height / image.shape[0]), height), interpolation=interpolation)
 
 		min_height, max_height = 16, 32
-		generator = textGenerator.create_generator(word_set, batch_size)
+		generator = textGenerator.create_generator(word_set, batch_size, color_functor)
 		if is_data_augmented and hasattr(self, 'augment'):
 			for step, (texts, scenes, _) in enumerate(generator):
 				# For using RGB images.
@@ -200,8 +216,8 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 					break
 
 class MyRunTimeAlphaMatteTextLineDataset(text_line_data.RunTimeAlphaMatteTextLineDataset):
-	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len, use_NWHC, default_value)
+	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
+		super().__init__(word_set, image_height, image_width, image_channel, font_list, handwriting_dict, functools.partial(generate_font_colors, image_depth=image_channel), max_label_len, use_NWHC, alpha_matte_mode, default_value)
 
 		self._augmenter = create_augmenter()
 
@@ -579,23 +595,33 @@ def create_random_words(min_char_len=1, max_char_len=10):
 	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 	hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
 
+	"""
 	chars = \
-		hangeul_charset * 10 + \
-		hangeul_jamo_charset * 1 + \
-		string.ascii_lowercase * 10 + \
-		string.ascii_uppercase * 3 + \
-		string.digits * 5 + \
-		string.punctuation * 2
+		hangeul_charset * 1 + \
+		hangeul_jamo_charset * 10 + \
+		string.ascii_lowercase * 100 + \
+		string.ascii_uppercase * 30 + \
+		string.digits * 50 + \
+		string.punctuation * 20
+	chars *= 500
+	"""
+	chars = \
+		hangeul_charset * 1 + \
+		hangeul_jamo_charset * 0 + \
+		string.ascii_lowercase * 100 + \
+		string.ascii_uppercase * 50 + \
+		string.digits * 100 + \
+		string.punctuation * 50
 	chars *= 500
 	"""
 	chars = \
 		hangeul_charset * 0 + \
 		hangeul_jamo_charset * 0 + \
-		string.ascii_lowercase * 10 + \
-		string.ascii_uppercase * 3 + \
-		string.digits * 5 + \
-		string.punctuation * 2
-	chars *= 1000
+		string.ascii_lowercase * 100 + \
+		string.ascii_uppercase * 30 + \
+		string.digits * 50 + \
+		string.punctuation * 20
+	chars *= 500
 	"""
 	chars = list(chars)
 	random.shuffle(chars)
@@ -686,8 +712,8 @@ class MyRunner(object):
 
 			print('[SWL] Info: Start creating a Hangeul dataset...')
 			start_time = time.time()
-			#self._dataset = MyRunTimeAlphaMatteTextLineDataset(set(words), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len)
 			self._dataset = MyRunTimeTextLineDataset(set(words), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len)
+			#self._dataset = MyRunTimeAlphaMatteTextLineDataset(set(words), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len)
 			print('[SWL] Info: End creating a Hangeul dataset: {} secs.'.format(time.time() - start_time))
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000

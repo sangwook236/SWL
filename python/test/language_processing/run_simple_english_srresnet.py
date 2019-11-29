@@ -198,6 +198,22 @@ def create_corrupter():
 
 	return corrupter
 
+def generate_font_colors(image_depth):
+	#font_color = (255,) * image_depth
+	#font_color = tuple(random.randrange(256) for _ in range(image_depth))  # Uses a specific RGB font color.
+	#font_color = (random.randrange(256),) * image_depth  # Uses a specific grayscale font color.
+	gray_val = random.randrange(255)
+	font_color = (gray_val,) * image_depth  # Uses a specific black font color.
+	#font_color = (random.randrange(128, 256),) * image_depth  # Uses a specific white font color.
+	#font_color = None  # Uses a random font color.
+	#bg_color = (0,) * image_depth
+	#bg_color = tuple(random.randrange(256) for _ in range(image_depth))  # Uses a specific RGB background color.
+	#bg_color = (random.randrange(256),) * image_depth  # Uses a specific grayscale background color.
+	#bg_color = (random.randrange(0, 128),) * image_depth  # Uses a specific black background color.
+	bg_color = (random.randrange(gray_val + 1, 256),) * image_depth  # Uses a specific white background color.
+	#bg_color = None  # Uses a random background color.
+	return font_color, bg_color
+
 class MyRunner(object):
 	def __init__(self):
 		# Set parameters.
@@ -250,7 +266,7 @@ class MyRunner(object):
 
 		print('[SWL] Info: Start creating an English dataset...')
 		start_time = time.time()
-		self._dataset = text_line_data.RunTimeSuperResolvedTextLinePairDataset(set(dictionary_words), hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len, use_NWHC=False, corrupt_functor=self._corrupt)
+		self._dataset = text_line_data.RunTimeSuperResolvedTextLinePairDataset(set(dictionary_words), hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len, use_NWHC=False, corrupt_functor=self._corrupt, color_functor=functools.partial(generate_font_colors, image_depth=image_channel))
 		print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		#self._train_examples_per_epoch, self._test_examples_per_epoch = 500000, 10000

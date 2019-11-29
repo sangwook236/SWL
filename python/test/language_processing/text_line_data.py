@@ -146,10 +146,11 @@ class TextLineDatasetBase(abc.ABC):
 #--------------------------------------------------------------------
 
 class RunTimeTextLineDatasetBase(TextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, use_NWHC=True, default_value=-1):
+	def __init__(self, word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
 		super().__init__(labels=None, use_NWHC=use_NWHC, default_value=default_value)
 
 		self._textGenerator = None
+		self._color_functor = color_functor
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 		self._num_classes = num_classes
@@ -237,13 +238,13 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 		"""
 
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
-		return self._create_batch_generator(self._textGenerator, self._word_set, batch_size, steps_per_epoch, is_data_augmented=True)
+		return self._create_batch_generator(self._textGenerator, self._color_functor, self._word_set, batch_size, steps_per_epoch, is_data_augmented=True)
 
 	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
-		return self._create_batch_generator(self._textGenerator, self._word_set, batch_size, steps_per_epoch, is_data_augmented=False)
+		return self._create_batch_generator(self._textGenerator, self._color_functor, self._word_set, batch_size, steps_per_epoch, is_data_augmented=False)
 
-	def _create_batch_generator(self, textGenerator, word_set, batch_size, steps_per_epoch, is_data_augmented=False):
-		generator = textGenerator.create_generator(word_set, batch_size)
+	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch, is_data_augmented=False):
+		generator = textGenerator.create_generator(word_set, batch_size, color_functor)
 		if is_data_augmented and hasattr(self, 'augment'):
 			for step, (texts, scenes, _) in enumerate(generator):
 				# For using RGB images.
@@ -286,10 +287,8 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 
 # This class is independent of language.
 class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
-
-		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
+	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
+		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
 
 		#--------------------
 		#self._SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
@@ -321,11 +320,11 @@ class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 #--------------------------------------------------------------------
 
 class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, use_NWHC=True, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, num_classes, max_label_len, use_NWHC, default_value)
+	def __init__(self, word_set, image_height, image_width, image_channel, color_functor, num_classes=0, max_label_len=0, use_NWHC=True, default_value=-1):
+		super().__init__(word_set, image_height, image_width, image_channel, num_classes, max_label_len, use_NWHC, color_functor, default_value)
 
-	def _create_batch_generator(self, textGenerator, word_set, batch_size, steps_per_epoch, is_data_augmented=False):
-		generator = textGenerator.create_generator(word_set, batch_size)
+	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch, is_data_augmented=False):
+		generator = textGenerator.create_generator(word_set, batch_size, color_functor)
 		if is_data_augmented and hasattr(self, 'augment'):
 			for step, (texts, scenes, _) in enumerate(generator):
 				#scenes = list(map(lambda image: self.resize(image), scenes))
@@ -352,6 +351,7 @@ class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
 				scenes = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scenes))
 				#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (self.resize(image), self.resize(mask)), scenes, scene_text_masks))))
 				#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), self.resize(mask)), scenes, scene_text_masks))))
+
 				scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
 				#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
 
@@ -365,10 +365,8 @@ class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
 
 # This class is independent of language.
 class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
-
-		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
+	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, color_functor, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
+		super().__init__(word_set, image_height, image_width, image_channel, color_functor, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
 
 		#--------------------
 		#self._SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
@@ -387,13 +385,12 @@ class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 		#--------------------
 		min_font_size, max_font_size = round(image_height * 0.8), round(image_height * 1.25)
 		min_char_space_ratio, max_char_space_ratio = 0.8, 1.25
-		alpha_matte_mode = '1' #'L'
 
 		characterTransformer = tg_util.IdentityTransformer()
 		#characterTransformer = tg_util.RotationTransformer(-30, 30)
 		#characterTransformer = tg_util.ImgaugAffineTransformer()
 		characterPositioner = tg_util.MyCharacterPositioner()
-		self._textGenerator = tg_util.MySimpleTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, handwriting_dict=handwriting_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), mode=alpha_matte_mode)
+		self._textGenerator = tg_util.MySimpleTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, handwriting_dict=handwriting_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), alpha_matte_mode=alpha_matte_mode)
 		"""
 		characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode=alpha_matte_mode)
 		#characterTransformer = tg_util.IdentityTransformer()
@@ -405,8 +402,8 @@ class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 
 # This class is independent of language.
 class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
+	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, color_functor, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
+		super().__init__(word_set, image_height, image_width, image_channel, color_functor, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
 
 		#--------------------
 		#self._SOJC = '<SOJC>'  # All Hangeul jamo strings will start with the Start-Of-Jamo-Character token.
@@ -431,13 +428,12 @@ class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatas
 		#--------------------
 		min_font_size, max_font_size = round(image_height * 0.8), round(image_height * 1.25)
 		min_char_space_ratio, max_char_space_ratio = 0.8, 1.25
-		alpha_matte_mode = '1' #'L'
 
 		characterTransformer = tg_util.IdentityTransformer()
 		#characterTransformer = tg_util.RotationTransformer(-30, 30)
 		#characterTransformer = tg_util.ImgaugAffineTransformer()
 		characterPositioner = tg_util.MyCharacterPositioner()
-		self._textGenerator = tg_util.MySimpleTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, handwriting_dict=handwriting_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), mode=alpha_matte_mode)
+		self._textGenerator = tg_util.MySimpleTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, handwriting_dict=handwriting_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), alpha_matte_mode=alpha_matte_mode)
 		"""
 		characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode=alpha_matte_mode)
 		#characterTransformer = tg_util.IdentityTransformer()
@@ -782,10 +778,11 @@ class TextLinePairDatasetBase(TextLineDatasetBase):
 	"""A base dataset for paired text lines, input & output text line images.
 	"""
 
-	def __init__(self, labels=None, use_NWHC=True, default_value=-1):
+	def __init__(self, labels=None, use_NWHC=True, color_functor=None, default_value=-1):
 		super().__init__(labels, use_NWHC=use_NWHC, default_value=default_value)
 
 		self._textGenerator = None
+		self._color_functor = color_functor
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		"""
@@ -858,12 +855,12 @@ class TextLinePairDatasetBase(TextLineDatasetBase):
 		"""
 
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
-		return self._create_batch_generator(self._textGenerator, self._word_set, batch_size, steps_per_epoch)
+		return self._create_batch_generator(self._textGenerator, self._color_functor, self._word_set, batch_size, steps_per_epoch)
 
 	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
-		return self._create_batch_generator(self._textGenerator, self._word_set, batch_size, steps_per_epoch)
+		return self._create_batch_generator(self._textGenerator, self._color_functor, self._word_set, batch_size, steps_per_epoch)
 
-	def _create_batch_generator(self, textGenerator, word_set, batch_size, steps_per_epoch):
+	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch):
 		raise NotImplementedError
 
 	def visualize(self, batch_generator, num_examples=10):
@@ -907,8 +904,8 @@ class TextLinePairDatasetBase(TextLineDatasetBase):
 #--------------------------------------------------------------------
 
 class RunTimeTextLinePairDatasetBase(TextLinePairDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, use_NWHC=True, default_value=-1):
-		super().__init__(labels=None, use_NWHC=use_NWHC, default_value=default_value)
+	def __init__(self, word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
+		super().__init__(labels=None, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 		self._num_classes = num_classes
@@ -927,8 +924,8 @@ class RunTimeTextLinePairDatasetBase(TextLinePairDatasetBase):
 
 # This class is independent of language.
 class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, corrupt_functor, max_label_len=0, use_NWHC=True, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
+	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, corrupt_functor, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
+		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
 
 		#--------------------
 		#self._SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
@@ -959,19 +956,19 @@ class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 		else:
 			raise ValueError('Invalid image channel, {}'.format(image_channel))
 
-	def _create_batch_generator(self, textGenerator, word_set, batch_size, steps_per_epoch):
+	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch):
 		def reduce_image(image, min_height, max_height):
 			height = random.randint(min_height, max_height)
 			interpolation = random.choice([cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4])
 			return cv2.resize(image, (round(image.shape[1] * height / image.shape[0]), height), interpolation=interpolation)
 
 		min_height, max_height = 16, 32
-		generator = textGenerator.create_generator(word_set, batch_size)
+		generator = textGenerator.create_generator(word_set, batch_size, color_functor)
 		for step, (texts, scenes, scene_text_masks) in enumerate(generator):
 			# For using RGB images.
 			#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
 			# For using grayscale images.
-			scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
+			#scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
 
 			corrupted_scenes = scenes
 			# Simulates resizing artifact.
@@ -1009,8 +1006,8 @@ class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 
 # This class is independent of language.
 class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
-	def __init__(self, word_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, handwriting_dict, corrupt_functor, max_label_len=0, use_NWHC=True, default_value=-1):
-		super().__init__(word_set, hr_image_height, hr_image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
+	def __init__(self, word_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, handwriting_dict, corrupt_functor, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
+		super().__init__(word_set, hr_image_height, hr_image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
 
 		self._lr_image_height, self._lr_image_width = lr_image_height, lr_image_width
 
@@ -1047,19 +1044,19 @@ class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 	def shape(self):
 		return self._image_height, self._image_width, self._lr_image_height, self._lr_image_width, self._image_channel
 
-	def _create_batch_generator(self, textGenerator, word_set, batch_size, steps_per_epoch):
+	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch):
 		def reduce_image(image, min_height, max_height):
 			height = random.randint(min_height, max_height)
 			interpolation = random.choice([cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4])
 			return cv2.resize(image, (round(image.shape[1] * height / image.shape[0]), height), interpolation=interpolation)
 
 		min_height, max_height = self._lr_image_height, self._lr_image_height * 2
-		generator = textGenerator.create_generator(word_set, batch_size)
+		generator = textGenerator.create_generator(word_set, batch_size, color_functor)
 		for step, (texts, scenes, scene_text_masks) in enumerate(generator):
 			# For using RGB images.
 			#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
 			# For using grayscale images.
-			scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
+			#scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
 
 			corrupted_scenes = scenes
 			# Simulates resizing artifact.

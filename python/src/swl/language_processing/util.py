@@ -85,12 +85,19 @@ def generate_simple_text_image(text, font_type, font_index, font_size, font_colo
 		image_size = (math.ceil(len(text) * font_size * 1.1), math.ceil((text.count('\n') + 1) * font_size * 1.1))
 	if text_offset is None:
 		text_offset = (0, 0)
+	# TODO [improve] >> Other color modes have to be supported.
+	if 'L' == mode or '1' == mode:
+		image_depth = 1
+	elif 'RGBA' == mode:
+		image_depth = 4
+	else:
+		image_depth = 3
 	if font_color is None:
-		#font_color = (random.randrange(256),) * 3  # Uses a random grayscale font color.
-		font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a random RGB font color.
+		#font_color = (random.randrange(256),) * image_depth  # Uses a random grayscale font color.
+		font_color = tuple(random.randrange(256) for _ in range(image_depth))  # Uses a random RGB font color.
 	if bg_color is None:
-		#bg_color = (random.randrange(256),) * 3  # Uses a random grayscale background color.
-		bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a random RGB background color.
+		#bg_color = (random.randrange(256),) * image_depth  # Uses a random grayscale background color.
+		bg_color = tuple(random.randrange(256) for _ in range(image_depth))  # Uses a random RGB background color.
 
 	font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
 
@@ -125,12 +132,19 @@ def generate_simple_text_image_and_mask(text, font_type, font_index, font_size, 
 		image_size = (math.ceil(len(text) * font_size * 1.1), math.ceil((text.count('\n') + 1) * font_size * 1.1))
 	if text_offset is None:
 		text_offset = (0, 0)
+	# TODO [improve] >> Other color modes have to be supported.
+	if 'L' == mode or '1' == mode:
+		image_depth = 1
+	elif 'RGBA' == mode:
+		image_depth = 4
+	else:
+		image_depth = 3
 	if font_color is None:
-		#font_color = (random.randrange(256),) * 3  # Uses a random grayscale font color.
-		font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a random RGB font color.
+		#font_color = (random.randrange(256),) * image_depth  # Uses a random grayscale font color.
+		font_color = tuple(random.randrange(256) for _ in range(image_depth))  # Uses a random RGB font color.
 	if bg_color is None:
-		#bg_color = (random.randrange(256),) * 3  # Uses a random grayscale background color.
-		bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a random RGB background color.
+		#bg_color = (random.randrange(256),) * image_depth  # Uses a random grayscale background color.
+		bg_color = tuple(random.randrange(256) for _ in range(image_depth))  # Uses a random RGB background color.
 
 	font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
 
@@ -173,9 +187,16 @@ def generate_per_character_text_image(text, font_type, font_index, font_size, fo
 		image_size = (math.ceil(num_chars * font_size * char_space_ratio * 1.1), math.ceil((num_newlines + 1) * font_size * 1.1))
 	if text_offset is None:
 		text_offset = (0, 0)
+	# TODO [improve] >> Other color modes have to be supported.
+	if 'L' == mode or '1' == mode:
+		image_depth = 1
+	elif 'RGBA' == mode:
+		image_depth = 4
+	else:
+		image_depth = 3
 	if bg_color is None:
-		#bg_color = (random.randrange(256),) * 3  # Uses a random grayscale background color.
-		bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a random background color.
+		#bg_color = (random.randrange(256),) * image_depth  # Uses a random grayscale background color.
+		bg_color = tuple(random.randrange(256) for _ in range(image_depth))  # Uses a random background color.
 
 	font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
 
@@ -195,7 +216,7 @@ def generate_per_character_text_image(text, font_type, font_index, font_size, fo
 				char_offset[0] = text_offset[0]
 				char_offset[1] += font_size
 				continue
-			draw.text(xy=char_offset, text=ch, font=font, fill=tuple(random.randrange(256) for _ in range(3)))  # Random font color.
+			draw.text(xy=char_offset, text=ch, font=font, fill=tuple(random.randrange(256) for _ in range(image_depth)))  # Random font color.
 			char_offset[0] += char_space
 	#elif len(font_colors) == num_chars:
 	#	for idx, (ch, fcolor) in enumerate(zip(text, font_colors)):
@@ -237,9 +258,16 @@ def generate_per_character_text_image_and_mask(text, font_type, font_index, font
 		image_size = (math.ceil(num_chars * font_size * char_space_ratio * 1.1), math.ceil((num_newlines + 1) * font_size * 1.1))
 	if text_offset is None:
 		text_offset = (0, 0)
+	# TODO [improve] >> Other color modes have to be supported.
+	if 'L' == mode or '1' == mode:
+		image_depth = 1
+	elif 'RGBA' == mode:
+		image_depth = 4
+	else:
+		image_depth = 3
 	if bg_color is None:
-		#bg_color = (random.randrange(256),) * 3  # Uses a random grayscale background color.
-		bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a random background color.
+		#bg_color = (random.randrange(256),) * image_depth  # Uses a random grayscale background color.
+		bg_color = tuple(random.randrange(256) for _ in range(image_depth))  # Uses a random background color.
 
 	font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
 
@@ -264,7 +292,7 @@ def generate_per_character_text_image_and_mask(text, font_type, font_index, font
 				char_offset[0] = text_offset[0]
 				char_offset[1] += font_size
 				continue
-			draw_img.text(xy=char_offset, text=ch, font=font, fill=tuple(random.randrange(256) for _ in range(3)))  # Random font color.
+			draw_img.text(xy=char_offset, text=ch, font=font, fill=tuple(random.randrange(256) for _ in range(image_depth)))  # Random font color.
 			draw_msk.text(xy=char_offset, text=ch, font=font, fill=255)
 			char_offset[0] += char_space
 	#elif len(font_colors) == num_chars:
