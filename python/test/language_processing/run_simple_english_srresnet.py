@@ -243,11 +243,15 @@ class MyRunner(object):
 			#dictionary_words = fd.readlines()
 			#dictionary_words = fd.read().strip('\n')
 			dictionary_words = fd.read().splitlines()
-		print('[SWL] Info: End loading an English dictionary: {} secs.'.format(time.time() - start_time))
+		print('[SWL] Info: End loading an English dictionary, {} words loaded: {} secs.'.format(len(dictionary_words), time.time() - start_time))
+
+		print('[SWL] Info: Start reorganizing words...')
+		texts = reorganize_words(dictionary_words, min_word_len=1, max_word_len=5)
+		print('[SWL] Info: End reorganizing words, {} texts generated: {} secs.'.format(len(texts), time.time() - start_time))
 
 		if False:
 			from swl.language_processing.util import draw_character_histogram
-			draw_character_histogram(dictionary_words, charset=None)
+			draw_character_histogram(texts, charset=None)
 
 		#--------------------
 		if 'posix' == os.name:
@@ -267,12 +271,13 @@ class MyRunner(object):
 
 		print('[SWL] Info: Start creating an English dataset...')
 		start_time = time.time()
-		self._dataset = text_line_data.RunTimeSuperResolvedTextLinePairDataset(set(dictionary_words), hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len, use_NWHC=False, corrupt_functor=self._corrupt, color_functor=functools.partial(generate_font_colors, image_depth=image_channel))
+		self._dataset = text_line_data.RunTimeSuperResolvedTextLinePairDataset(set(texts), hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len, use_NWHC=False, corrupt_functor=self._corrupt, color_functor=functools.partial(generate_font_colors, image_depth=image_channel))
 		print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		#self._train_examples_per_epoch, self._test_examples_per_epoch = 500000, 10000
 		#self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000
 		self._train_examples_per_epoch, self._test_examples_per_epoch = 100000, 10000
+		#self._train_examples_per_epoch, self._test_examples_per_epoch = None, None
 
 	@property
 	def dataset(self):

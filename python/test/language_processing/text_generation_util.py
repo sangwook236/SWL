@@ -553,7 +553,7 @@ class BasicPrintedTextGenerator(object):
 		#return np.array(text_image), np.array(text_mask)  # text_mask: np.bool.
 		return np.array(text_image), np.array(text_mask, dtype=np.uint8)
 
-	def create_generator(self, word_set, batch_size, color_functor=None):
+	def create_subset_generator(self, word_set, batch_size, color_functor=None):
 		if batch_size <= 0 or batch_size > len(word_set):
 			raise ValueError('Invalid batch size: 0 < batch_size <= len(word_set)')
 
@@ -574,6 +574,36 @@ class BasicPrintedTextGenerator(object):
 				mask_list.append(mask)
 
 			yield text_list, image_list, mask_list
+
+	def create_whole_generator(self, words, batch_size, color_functor=None, shuffle=False):
+		num_words = len(words)
+		if batch_size <= 0 or batch_size > num_words:
+			raise ValueError('Invalid batch size: 0 < batch_size <= len(words)')
+
+		if color_functor is None:
+			color_functor = lambda: (None, None)
+
+		if shuffle:
+			random.shuffle(words)
+		start_idx = 0
+		while True:
+			end_idx = start_idx + batch_size
+			texts = words[start_idx:end_idx]
+
+			text_list, image_list, mask_list = list(), list(), list()
+			for text in texts:
+				font_color, bg_color = color_functor()
+				text_line, mask = self.__call__(text, font_color, bg_color)
+
+				text_list.append(text)
+				image_list.append(text_line)
+				mask_list.append(mask)
+
+			yield text_list, image_list, mask_list
+
+			if end_idx >= num_words:
+				break
+			start_idx = end_idx
 
 class BasicTextAlphaMatteGenerator(object):
 	"""Generates a simple text line and masks for individual characters.
@@ -640,7 +670,7 @@ class BasicTextAlphaMatteGenerator(object):
 		char_alpha_coordinate_list = self._characterPositioner(char_alpha_list, char_space_ratio, *args, **kwargs)
 		return char_alpha_list, char_alpha_coordinate_list
 
-	def create_generator(self, word_set, batch_size, color_functor):
+	def create_subset_generator(self, word_set, batch_size, color_functor):
 		if batch_size <= 0 or batch_size > len(word_set):
 			raise ValueError('Invalid batch size: 0 < batch_size <= len(word_set)')
 
@@ -669,6 +699,44 @@ class BasicTextAlphaMatteGenerator(object):
 				scene_text_mask_list.append(scene_text_mask)
 
 			yield text_list, scene_list, scene_text_mask_list
+
+	def create_whole_generator(self, words, batch_size, color_functor, shuffle=False):
+		num_words = len(words)
+		if batch_size <= 0 or batch_size > num_words:
+			raise ValueError('Invalid batch size: 0 < batch_size <= len(words)')
+
+		sceneTextGenerator = SimpleAlphaMatteSceneTextGenerator(IdentityTransformer())
+
+		if shuffle:
+			random.shuffle(words)
+		start_idx = 0
+		while True:
+			end_idx = start_idx + batch_size
+			texts = words[start_idx:end_idx]
+
+			text_list, scene_list, scene_text_mask_list = list(), list(), list()
+			for text in texts:
+				font_color, bg_color = color_functor()
+				#if font_color is None:
+				#	font_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+				#if bg_color is None:
+				#	bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+
+				char_alpha_list, char_alpha_coordinate_list = self.__call__(text)
+				text_line, text_line_alpha = constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color)
+
+				bg = np.full_like(text_line, bg_color, dtype=np.uint8)
+
+				scene, scene_text_mask, _ = sceneTextGenerator(bg, [text_line], [text_line_alpha])
+				text_list.append(text)
+				scene_list.append(scene)
+				scene_text_mask_list.append(scene_text_mask)
+
+			yield text_list, scene_list, scene_text_mask_list
+
+			if end_idx >= num_words:
+				break
+			start_idx = end_idx
 
 #class SimpleTextAlphaMatteGenerator(TextAlphaMatteGenerator):
 class SimpleTextAlphaMatteGenerator(object):
@@ -718,7 +786,7 @@ class SimpleTextAlphaMatteGenerator(object):
 		char_alpha_coordinate_list = self._characterPositioner(char_alpha_list, char_space_ratio, *args, **kwargs)
 		return char_alpha_list, char_alpha_coordinate_list
 
-	def create_generator(self, word_set, batch_size, color_functor):
+	def create_subset_generator(self, word_set, batch_size, color_functor):
 		if batch_size <= 0 or batch_size > len(word_set):
 			raise ValueError('Invalid batch size: 0 < batch_size <= len(word_set)')
 
@@ -748,6 +816,44 @@ class SimpleTextAlphaMatteGenerator(object):
 				scene_text_mask_list.append(scene_text_mask)
 
 			yield text_list, scene_list, scene_text_mask_list
+
+	def create_whole_generator(self, words, batch_size, color_functor=None, shuffle=False):
+		num_words = len(words)
+		if batch_size <= 0 or batch_size > num_words:
+			raise ValueError('Invalid batch size: 0 < batch_size <= len(words)')
+
+		sceneTextGenerator = SimpleAlphaMatteSceneTextGenerator(IdentityTransformer())
+
+		if shuffle:
+			random.shuffle(words)
+		start_idx = 0
+		while True:
+			end_idx = start_idx + batch_size
+			texts = words[start_idx:end_idx]
+
+			text_list, scene_list, scene_text_mask_list = list(), list(), list()
+			for text in texts:
+				font_color, bg_color = color_functor()
+				#if font_color is None:
+				#	font_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+				#if bg_color is None:
+				#	bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+
+				char_alpha_list, char_alpha_coordinate_list = self.__call__(text)
+				text_line, text_line_alpha = constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color)
+
+				bg = np.full_like(text_line, bg_color, dtype=np.uint8)
+
+				scene, scene_text_mask, _ = sceneTextGenerator(bg, [text_line], [text_line_alpha])
+				text_list.append(text)
+				scene_list.append(scene)
+				scene_text_mask_list.append(scene_text_mask)
+
+			yield text_list, scene_list, scene_text_mask_list
+
+			if end_idx >= num_words:
+				break
+			start_idx = end_idx
 
 #class SimpleAlphaMatteSceneTextGenerator(AlphaMatteSceneTextGenerator):
 class SimpleAlphaMatteSceneTextGenerator(object):

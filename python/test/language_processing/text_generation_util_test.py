@@ -281,7 +281,8 @@ def generate_basic_text_lines_test():
 	textGenerator = tg_util.BasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mode='RGB', mask_mode='1')
 
 	batch_size = 4
-	generator = textGenerator.create_generator(word_set, batch_size, color_functor)
+	generator = textGenerator.create_subset_generator(word_set, batch_size, color_functor)
+	#generator = textGenerator.create_whole_generator(list(word_set), batch_size, color_functor, shuffle=True)
 
 	#--------------------
 	step = 1
@@ -500,7 +501,8 @@ def generate_alpha_matte_text_lines_test_1():
 	textGenerator = tg_util.BasicTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, handwriting_dict=handwriting_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), alpha_matte_mode='1')
 
 	batch_size = 4
-	generator = textGenerator.create_generator(word_set, batch_size, color_functor)
+	generator = textGenerator.create_subset_generator(word_set, batch_size, color_functor)
+	#generator = textGenerator.create_whole_generator(list(word_set), batch_size, color_functor, shuffle=True)
 
 	#--------------------
 	step = 1
@@ -569,7 +571,8 @@ def generate_alpha_matte_text_lines_test_2():
 	#textAlphaMatteGenerator = tg_util.SimpleTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, (min_font_size, max_font_size), None)
 
 	batch_size = 4
-	generator = textAlphaMatteGenerator.create_generator(word_set, batch_size, color_functor)
+	generator = textAlphaMatteGenerator.create_subset_generator(word_set, batch_size, color_functor)
+	#generator = textAlphaMatteGenerator.create_whole_generator(list(word_set), batch_size, color_functor, shuffle=True)
 
 	#--------------------
 	step = 1
@@ -957,7 +960,8 @@ def generate_single_letter_dataset():
 	textGenerator = tg_util.BasicTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, handwriting_dict=handwriting_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), alpha_matte_mode='1')
 
 	batch_size = 1024
-	generator = textGenerator.create_generator(word_set, batch_size, color_functor)
+	generator = textGenerator.create_subset_generator(word_set, batch_size, color_functor)
+	#generator = textGenerator.create_whole_generator(list(word_set), batch_size, color_functor, shuffle=True)
 
 	#--------------------
 	num_texts = 10000

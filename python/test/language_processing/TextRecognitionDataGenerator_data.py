@@ -75,10 +75,10 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 		return zeropadded
 
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
-		return self._create_batch_generator(self._train_data, batch_size, shuffle, is_data_augmented=True)
+		return self._create_batch_generator(self._train_data, batch_size, shuffle, is_training=True)
 
 	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
-		return self._create_batch_generator(self._test_data, batch_size, shuffle, is_data_augmented=False)
+		return self._create_batch_generator(self._test_data, batch_size, shuffle, is_training=False)
 
 	def visualize(self, batch_generator, num_examples=10):
 		for batch_data, num_batch_examples in batch_generator:
@@ -229,7 +229,7 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 
 		return images, labels_str, labels_int
 
-	def _create_batch_generator(self, data, batch_size, shuffle, is_data_augmented=False):
+	def _create_batch_generator(self, data, batch_size, shuffle, is_training=False):
 		images, labels_str, labels_int = data
 
 		num_examples = len(images)
@@ -245,7 +245,7 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 			np.random.shuffle(indices)
 
 		start_idx = 0
-		if is_data_augmented and hasattr(self, 'augment'):
+		if is_training and hasattr(self, 'augment'):
 			while True:
 				end_idx = start_idx + batch_size
 				batch_indices = indices[start_idx:end_idx]

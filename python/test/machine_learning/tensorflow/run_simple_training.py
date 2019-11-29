@@ -51,13 +51,13 @@ class MyDataset(object):
 		return self._test_images, self._test_labels
 
 	def create_train_batch_generator(self, batch_size, shuffle=True):
-		return MyDataset._create_batch_generator(self._train_images, self._train_labels, batch_size, shuffle)
+		return MyDataset._create_batch_generator(self._train_images, self._train_labels, batch_size, shuffle, is_training=True)
 
 	def create_test_batch_generator(self, batch_size, shuffle=False):
-		return MyDataset._create_batch_generator(self._test_images, self._test_labels, batch_size, shuffle)
+		return MyDataset._create_batch_generator(self._test_images, self._test_labels, batch_size, shuffle, is_training=False)
 
 	@staticmethod
-	def _create_batch_generator(data1, data2, batch_size, shuffle):
+	def _create_batch_generator(data1, data2, batch_size, shuffle, is_training=False):
 		num_examples = len(data1)
 		if len(data2) != num_examples:
 			raise ValueError('Invalid data length: {} != {}'.format(num_examples, len(data2)))

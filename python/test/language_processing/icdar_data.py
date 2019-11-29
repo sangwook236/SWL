@@ -77,10 +77,10 @@ class Icdar2019SroieTextLineDatasetBase(text_line_data.TextLineDatasetBase):
 		"""
 
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
-		return self._create_batch_generator(self._train_data, batch_size, shuffle)
+		return self._create_batch_generator(self._train_data, batch_size, shuffle, is_training=True)
 
 	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
-		return self._create_batch_generator(self._test_data, batch_size, shuffle)
+		return self._create_batch_generator(self._test_data, batch_size, shuffle, is_training=False)
 
 	def visualize(self, batch_generator, num_examples=10):
 		for batch_data, num_batch_examples in batch_generator:
@@ -152,7 +152,7 @@ class Icdar2019SroieTextLineDatasetBase(text_line_data.TextLineDatasetBase):
 
 		return images, labels_str, labels_int
 
-	def _create_batch_generator(self, data, batch_size, shuffle):
+	def _create_batch_generator(self, data, batch_size, shuffle, is_training=False):
 		images, labels_str, labels_int = data
 
 		num_examples = len(images)

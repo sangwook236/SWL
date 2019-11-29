@@ -158,7 +158,7 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
 			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
-	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch, is_data_augmented=False):
+	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch, shuffle, is_training=False):
 		def reduce_image(image, min_height, max_height):
 			import random, cv2
 			height = random.randint(min_height, max_height)
@@ -167,8 +167,11 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 
 		min_height, max_height = round(self._image_height * 0.5), self._image_height * 2
 		#min_height, max_height = self._image_height, self._image_height * 2
-		generator = textGenerator.create_generator(word_set, batch_size, color_functor)
-		if is_data_augmented and hasattr(self, 'augment'):
+		if steps_per_epoch:
+			generator = textGenerator.create_subset_generator(word_set, batch_size, color_functor)
+		else:
+			generator = textGenerator.create_whole_generator(list(word_set), batch_size, color_functor, shuffle=shuffle)
+		if is_training and hasattr(self, 'augment'):
 			for step, (texts, scenes, _) in enumerate(generator):
 				# For using RGB images.
 				#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
@@ -676,13 +679,13 @@ class MyRunner(object):
 		print('[SWL] Info: Start generating formatted numbers...')
 		start_time = time.time()
 		formatted_numbers = create_formatted_numbers(num_examples=100000)
-		print('[SWL] Info: End generating formatted numbers: {} secs.'.format(time.time() - start_time))
+		print('[SWL] Info: End generating formatted numbers: {} secs, {} numbers generated.'.format(len(formatted_numbers), time.time() - start_time))
 
 		print('[SWL] Info: Start generating random numbers...')
 		start_time = time.time()
 		random_numbers = create_random_numbers(min_char_len=1, max_char_len=10)
 		random_numbers = reorganize_numbers(random_numbers, min_word_len=1, max_word_len=3)
-		print('[SWL] Info: End generating random numbers: {} secs.'.format(time.time() - start_time))
+		print('[SWL] Info: End generating random numbers: {} secs, {} numbers generated.'.format(len(random_numbers), time.time() - start_time))
 
 		#numbers = formatted_numbers
 		numbers = formatted_numbers + random_numbers
@@ -714,6 +717,7 @@ class MyRunner(object):
 		print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000
+		#self._train_examples_per_epoch, self._test_examples_per_epoch = None, None
 
 	@property
 	def dataset(self):

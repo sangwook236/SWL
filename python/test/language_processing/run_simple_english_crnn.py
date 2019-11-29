@@ -159,7 +159,7 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
 			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
-	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch, is_data_augmented=False):
+	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch, shuffle, is_training=False):
 		def reduce_image(image, min_height, max_height):
 			import random, cv2
 			height = random.randint(min_height, max_height)
@@ -168,8 +168,11 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 
 		min_height, max_height = round(self._image_height * 0.5), self._image_height * 2
 		#min_height, max_height = self._image_height, self._image_height * 2
-		generator = textGenerator.create_generator(word_set, batch_size, color_functor)
-		if is_data_augmented and hasattr(self, 'augment'):
+		if steps_per_epoch:
+			generator = textGenerator.create_subset_generator(word_set, batch_size, color_functor)
+		else:
+			generator = textGenerator.create_whole_generator(list(word_set), batch_size, color_functor, shuffle=shuffle)
+		if is_training and hasattr(self, 'augment'):
 			for step, (texts, scenes, _) in enumerate(generator):
 				# For using RGB images.
 				#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
@@ -656,18 +659,21 @@ class MyRunner(object):
 				#dictionary_words = fd.readlines()
 				#dictionary_words = fd.read().strip('\n')
 				dictionary_words = fd.read().splitlines()
-			print('[SWL] Info: End loading an English dictionary: {} secs.'.format(time.time() - start_time))
+			print('[SWL] Info: End loading an English dictionary, {} words loaded: {} secs.'.format(len(dictionary_words), time.time() - start_time))
 
 			print('[SWL] Info: Start generating random words...')
 			start_time = time.time()
 			random_words = create_random_words(min_char_len=1, max_char_len=10)
-			print('[SWL] Info: End generating random words: {} secs.'.format(time.time() - start_time))
+			print('[SWL] Info: End generating random words, {} words generated: {} secs.'.format(len(random_words), time.time() - start_time))
 
-			#words = reorganize_words(dictionary_words + random_words, min_word_len=1, max_word_len=5)
-			words = reorganize_words(random_words, min_word_len=1, max_word_len=5)
+			print('[SWL] Info: Start reorganizing words...')
+			#texts = reorganize_words(dictionary_words + random_words, min_word_len=1, max_word_len=5)
+			texts = reorganize_words(random_words, min_word_len=1, max_word_len=5)
+			print('[SWL] Info: End reorganizing words, {} texts generated: {} secs.'.format(len(texts), time.time() - start_time))
+
 			if False:
 				from swl.language_processing.util import draw_character_histogram
-				draw_character_histogram(words, charset=None)
+				draw_character_histogram(texts, charset=None)
 
 			#--------------------
 			if 'posix' == os.name:
@@ -686,11 +692,12 @@ class MyRunner(object):
 
 			print('[SWL] Info: Start creating an English dataset...')
 			start_time = time.time()
-			self._dataset = MyRunTimeTextLineDataset(set(words), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len)
-			#self._dataset = MyRunTimeAlphaMatteTextLineDataset(set(words), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len)
+			self._dataset = MyRunTimeTextLineDataset(set(texts), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len)
+			#self._dataset = MyRunTimeAlphaMatteTextLineDataset(set(texts), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len)
 			print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000
+			#self._train_examples_per_epoch, self._test_examples_per_epoch = None, None
 		else:
 			self._dataset = MyEnglishTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
 

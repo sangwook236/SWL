@@ -11,7 +11,18 @@ from PIL import Image, ImageDraw, ImageFont
 import swl.language_processing.util as swl_langproc_util
 import text_generation_util as tg_util
 
-def font_display_test():
+def font_display_test(font_dir_path):
+	font_filepaths = glob.glob(font_dir_path + '/*.ttf')
+	#font_list = tg_util.generate_font_list(font_filepaths)
+	font_list = tg_util.generate_hangeul_font_list(font_filepaths)
+
+	"""
+	gabia_solmee.ttf: 일부 자음 없음.
+	godoRoundedL.ttf: ? 표시.
+	godoRoundedR.ttf: ? 표시.
+	HS여름물빛체.ttf: 위아래 글자 겹침.
+	"""
+
 	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
 	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
 	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
@@ -50,28 +61,6 @@ def font_display_test():
 	image_size = (1000, 4000)
 
 	#--------------------
-	if 'posix' == os.name:
-		system_font_dir_path = '/usr/share/fonts'
-		font_base_dir_path = '/home/sangwook/work/font'
-	else:
-		system_font_dir_path = 'C:/Windows/Fonts'
-		font_base_dir_path = 'D:/work/font'
-	#font_dir_path = font_base_dir_path + '/eng'
-	font_dir_path = font_base_dir_path + '/kor'
-	#font_dir_path = font_base_dir_path + '/receipt_eng'
-	#font_dir_path = font_base_dir_path + '/receipt_kor'
-
-	font_filepaths = glob.glob(font_dir_path + '/*.ttf')
-	#font_list = tg_util.generate_font_list(font_filepaths)
-	font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-
-	"""
-	gabia_solmee.ttf: 일부 자음 없음.
-	godoRoundedL.ttf: ? 표시.
-	godoRoundedR.ttf: ? 표시.
-	HS여름물빛체.ttf: 위아래 글자 겹침.
-	"""
-
 	output_dir_path = './font_test_results'
 	os.makedirs(output_dir_path, exist_ok=True)
 	for font_fpath, font_index in font_list:
@@ -86,7 +75,7 @@ def font_display_test():
 
 	#cv2.destroyAllWindows()
 
-def is_valid_font(font_filepath, height=64, width=64, char_pair=('C', 'M')):
+def is_valid_font(font_filepath, char_pair, height=64, width=64):
 	font = ImageFont.truetype(font_filepath, size=height - 6)
 
 	img1 = Image.new(mode='1', size=(width, height))
@@ -109,33 +98,36 @@ def is_valid_font(font_filepath, height=64, width=64, char_pair=('C', 'M')):
 
 	return not is_same
 
-def font_validity_test():
+def font_validity_test(font_dir_path, char_pair, dst_dir_path=None):
+	num_invalids = 0
+	for font in os.listdir(font_dir_path):
+		font_fpath = os.path.join(font_dir_path, font)
+		#is_valid = is_valid_font(font_fpath)
+		is_valid = is_valid_font(font_fpath, char_pair)
+		if not is_valid:
+			print('Invalid font: {}.'.format(font_fpath))
+			#os.remove(font_fpath)
+			if dst_dir_path and os.path.isdir(dst_dir_path):
+				os.rename(font_fpath, os.path.join(dst_dir_path, os.path.basename(font_fpath)))
+			num_invalids += 1
+	print('#invalid fonts = {}.'.format(num_invalids))
+
+def main():
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
 		font_base_dir_path = '/home/sangwook/work/font'
 	else:
 		system_font_dir_path = 'C:/Windows/Fonts'
 		font_base_dir_path = 'D:/work/font'
-	font_dir_path = font_base_dir_path + '/eng'
+	#font_dir_path = font_base_dir_path + '/eng'
 	#font_dir_path = font_base_dir_path + '/kor'
 	#font_dir_path = font_base_dir_path + '/receipt_eng'
-	#font_dir_path = font_base_dir_path + '/receipt_kor'
+	font_dir_path = font_base_dir_path + '/receipt_kor'
 
-	num_invalids = 0
-	for font in os.listdir(font_dir_path):
-		font_fpath = os.path.join(font_dir_path, font)
-		#is_valid = is_valid_font(font_fpath)
-		is_valid = is_valid_font(font_fpath, char_pair=('가', '너'))
-		if not is_valid:
-			print('Invalid font: {}.'.format(font_fpath))
-			#os.remove(font_fpath)
-			num_invalids += 1
-	print('#invalid fonts = {}.'.format(num_invalids))
+	#font_display_test(font_dir_path)
 
-def main():
-	#font_display_test()
-
-	font_validity_test()
+	#font_validity_test(font_dir_path, char_pair=('C', 'M'))  # For English.
+	font_validity_test(font_dir_path, char_pair=('가', '너'))  # For Korean.
 
 #--------------------------------------------------------------------
 

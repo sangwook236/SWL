@@ -238,14 +238,17 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 		"""
 
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
-		return self._create_batch_generator(self._textGenerator, self._color_functor, self._word_set, batch_size, steps_per_epoch, is_data_augmented=True)
+		return self._create_batch_generator(self._textGenerator, self._color_functor, self._word_set, batch_size, steps_per_epoch, shuffle, is_training=True)
 
 	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
-		return self._create_batch_generator(self._textGenerator, self._color_functor, self._word_set, batch_size, steps_per_epoch, is_data_augmented=False)
+		return self._create_batch_generator(self._textGenerator, self._color_functor, self._word_set, batch_size, steps_per_epoch, shuffle, is_training=False)
 
-	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch, is_data_augmented=False):
-		generator = textGenerator.create_generator(word_set, batch_size, color_functor)
-		if is_data_augmented and hasattr(self, 'augment'):
+	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch, shuffle, is_training=False):
+		if steps_per_epoch:
+			generator = textGenerator.create_subset_generator(word_set, batch_size, color_functor)
+		else:
+			generator = textGenerator.create_whole_generator(list(word_set), batch_size, color_functor, shuffle=shuffle)
+		if is_training and hasattr(self, 'augment'):
 			for step, (texts, scenes, _) in enumerate(generator):
 				# For using RGB images.
 				#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
@@ -323,9 +326,12 @@ class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
 	def __init__(self, word_set, image_height, image_width, image_channel, color_functor, num_classes=0, max_label_len=0, use_NWHC=True, default_value=-1):
 		super().__init__(word_set, image_height, image_width, image_channel, num_classes, max_label_len, use_NWHC, color_functor, default_value)
 
-	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch, is_data_augmented=False):
-		generator = textGenerator.create_generator(word_set, batch_size, color_functor)
-		if is_data_augmented and hasattr(self, 'augment'):
+	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch, shuffle, is_training=False):
+		if steps_per_epoch:
+			generator = textGenerator.create_subset_generator(word_set, batch_size, color_functor)
+		else:
+			generator = textGenerator.create_whole_generator(list(word_set), batch_size, color_functor, shuffle=shuffle)
+		if is_training and hasattr(self, 'augment'):
 			for step, (texts, scenes, _) in enumerate(generator):
 				#scenes = list(map(lambda image: self.resize(image), scenes))
 				scenes = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scenes))
@@ -556,12 +562,12 @@ class JsonBasedTextLineDatasetBase(TextLineDatasetBase):
 		"""
 
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
-		return self._create_batch_generator(self._train_images, self._train_labels, batch_size, shuffle, self._default_value)
+		return self._create_batch_generator(self._train_images, self._train_labels, batch_size, shuffle, is_training=True, default_value=self._default_value)
 
 	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
-		return self._create_batch_generator(self._test_images, self._test_labels, batch_size, shuffle, self._default_value)
+		return self._create_batch_generator(self._test_images, self._test_labels, batch_size, shuffle, is_training=False, default_value=self._default_value)
 
-	def _create_batch_generator(self, images, labels_str, batch_size, shuffle, default_value):
+	def _create_batch_generator(self, images, labels_str, batch_size, shuffle, is_training=False, default_value=-1):
 		num_examples = len(images)
 		if len(labels_str) != num_examples:
 			raise ValueError('Invalid data length: {} != {}'.format(num_examples, len(labels_str)))
@@ -847,12 +853,12 @@ class TextLinePairDatasetBase(TextLineDatasetBase):
 		"""
 
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
-		return self._create_batch_generator(self._textGenerator, self._color_functor, self._word_set, batch_size, steps_per_epoch)
+		return self._create_batch_generator(self._textGenerator, self._color_functor, self._word_set, batch_size, steps_per_epoch, shuffle, is_training=True)
 
 	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
-		return self._create_batch_generator(self._textGenerator, self._color_functor, self._word_set, batch_size, steps_per_epoch)
+		return self._create_batch_generator(self._textGenerator, self._color_functor, self._word_set, batch_size, steps_per_epoch, shuffle, is_training=False)
 
-	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch):
+	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch, shuffle, is_training=False):
 		raise NotImplementedError
 
 	def visualize(self, batch_generator, num_examples=10):
@@ -948,7 +954,7 @@ class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 		else:
 			raise ValueError('Invalid image channel, {}'.format(image_channel))
 
-	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch):
+	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch, shuffle, is_training=False):
 		def reduce_image(image, min_height, max_height):
 			height = random.randint(min_height, max_height)
 			interpolation = random.choice([cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4])
@@ -957,7 +963,10 @@ class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 		#min_height, max_height = round(self._image_height * 0.5), self._image_height
 		#min_height, max_height = self._image_height, self._image_height * 2
 		min_height, max_height = round(self._image_height * 0.5), self._image_height * 2
-		generator = textGenerator.create_generator(word_set, batch_size, color_functor)
+		if steps_per_epoch:
+			generator = textGenerator.create_subset_generator(word_set, batch_size, color_functor)
+		else:
+			generator = textGenerator.create_whole_generator(list(word_set), batch_size, color_functor, shuffle=True)
 		for step, (texts, scenes, scene_text_masks) in enumerate(generator):
 			# For using RGB images.
 			#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
@@ -1038,7 +1047,7 @@ class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 	def shape(self):
 		return self._image_height, self._image_width, self._lr_image_height, self._lr_image_width, self._image_channel
 
-	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch):
+	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch, shuffle, is_training=False):
 		def reduce_image(image, min_height, max_height):
 			height = random.randint(min_height, max_height)
 			interpolation = random.choice([cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4])
@@ -1046,7 +1055,10 @@ class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 
 		#min_height, max_height = round(self._lr_image_height * 0.5), self._lr_image_height
 		min_height, max_height = self._lr_image_height, self._lr_image_height * 2
-		generator = textGenerator.create_generator(word_set, batch_size, color_functor)
+		if steps_per_epoch:
+			generator = textGenerator.create_subset_generator(word_set, batch_size, color_functor)
+		else:
+			generator = textGenerator.create_whole_generator(list(word_set), batch_size, color_functor, shuffle=True)
 		for step, (texts, scenes, scene_text_masks) in enumerate(generator):
 			# For using RGB images.
 			#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
