@@ -696,8 +696,8 @@ class MyRunner(object):
 			#self._dataset = MyRunTimeAlphaMatteTextLineDataset(set(texts), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len)
 			print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
-			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000
-			#self._train_examples_per_epoch, self._test_examples_per_epoch = None, None
+			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000  # Uses a subset of texts per epoch.
+			#self._train_examples_per_epoch, self._test_examples_per_epoch = None, None  # Uses the whole set of texts per epoch.
 		else:
 			self._dataset = MyEnglishTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
 

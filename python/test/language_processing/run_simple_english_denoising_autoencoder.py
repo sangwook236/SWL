@@ -302,10 +302,10 @@ class MyRunner(object):
 		self._dataset = text_line_data.RunTimeCorruptedTextLinePairDataset(set(texts), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len, use_NWHC=False, corrupt_functor=self._corrupt, color_functor=functools.partial(generate_font_colors, image_depth=image_channel))
 		print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
-		#self._train_examples_per_epoch, self._test_examples_per_epoch = 500000, 10000
-		#self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000
-		self._train_examples_per_epoch, self._test_examples_per_epoch = 100000, 10000
-		#self._train_examples_per_epoch, self._test_examples_per_epoch = None, None
+		#self._train_examples_per_epoch, self._test_examples_per_epoch = 500000, 10000  # Uses a subset of texts per epoch.
+		#self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000  # Uses a subset of texts per epoch.
+		self._train_examples_per_epoch, self._test_examples_per_epoch = 100000, 10000  # Uses a subset of texts per epoch.
+		#self._train_examples_per_epoch, self._test_examples_per_epoch = None, None  # Uses the whole set of texts per epoch.
 
 	@property
 	def dataset(self):

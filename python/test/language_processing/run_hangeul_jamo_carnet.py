@@ -386,6 +386,23 @@ class MyModel(object):
 
 #--------------------------------------------------------------------
 
+def reorganize_words(words, min_word_len=1, max_word_len=5):
+	import random
+
+	num_words = len(words)
+	random.shuffle(words)
+
+	reorganized_words = list()
+	start_idx = 0
+	while True:
+		end_idx = start_idx + random.randint(min_word_len, max_word_len)
+		reorganized_words.append(' '.join(words[start_idx:end_idx]))
+		if end_idx >= num_words:
+			break
+		start_idx = end_idx
+
+	return reorganized_words
+
 def generate_font_colors(image_depth):
 	import random
 	#font_color = (255,) * image_depth
@@ -431,6 +448,14 @@ class MyRunner(object):
 				dictionary_words = fd.read().splitlines()
 			print('[SWL] Info: End loading a Korean dictionary: {} secs.'.format(time.time() - start_time))
 
+			print('[SWL] Info: Start reorganizing words...')
+			texts = reorganize_words(dictionary_words, min_word_len=1, max_word_len=5)
+			print('[SWL] Info: End reorganizing words, {} texts generated: {} secs.'.format(len(texts), time.time() - start_time))
+
+			if False:
+				from swl.language_processing.util import draw_character_histogram
+				draw_character_histogram(texts, charset=None)
+
 			#--------------------
 			if 'posix' == os.name:
 				system_font_dir_path = '/usr/share/fonts'
@@ -448,10 +473,11 @@ class MyRunner(object):
 
 			print('[SWL] Info: Start creating a Hangeul jamo dataset...')
 			start_time = time.time()
-			self._dataset = text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset(set(dictionary_words), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len, color_functor=functools.partial(generate_font_colors, image_depth=image_channel))
+			self._dataset = text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset(set(texts), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len, color_functor=functools.partial(generate_font_colors, image_depth=image_channel))
 			print('[SWL] Info: End creating a Hangeul jamo dataset: {} secs.'.format(time.time() - start_time))
 
-			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000
+			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000  # Uses a subset of texts per epoch.
+			#self._train_examples_per_epoch, self._test_examples_per_epoch = None, None  # Uses the whole set of texts per epoch.
 		else:
 			self._dataset = MyHangeulJamoTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
 
