@@ -94,8 +94,8 @@ def generate_font_colors(image_depth):
 	return font_color, bg_color
 
 class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
-	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len, use_NWHC, functools.partial(generate_font_colors, image_depth=image_channel), default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len, use_NWHC, functools.partial(generate_font_colors, image_depth=image_channel), default_value)
 
 		self._augmenter = create_augmenter()
 
@@ -106,7 +106,7 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
 			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
-	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch, shuffle, is_training=False):
+	def _create_batch_generator(self, textGenerator, color_functor, text_set, batch_size, steps_per_epoch, shuffle, is_training=False):
 		def reduce_image(image, min_height, max_height):
 			import random, cv2
 			height = random.randint(min_height, max_height)
@@ -116,9 +116,9 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 		min_height, max_height = round(self._image_height * 0.5), self._image_height * 2
 		#min_height, max_height = self._image_height, self._image_height * 2
 		if steps_per_epoch:
-			generator = textGenerator.create_subset_generator(word_set, batch_size, color_functor)
+			generator = textGenerator.create_subset_generator(text_set, batch_size, color_functor)
 		else:
-			generator = textGenerator.create_whole_generator(list(word_set), batch_size, color_functor, shuffle=shuffle)
+			generator = textGenerator.create_whole_generator(list(text_set), batch_size, color_functor, shuffle=shuffle)
 		if is_training and hasattr(self, 'augment'):
 			for step, (texts, scenes, _) in enumerate(generator):
 				# For using RGB images.
@@ -140,7 +140,7 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 				#scene_text_masks, _ = self.preprocess(scene_text_masks, None)
 				texts_int = list(map(lambda txt: self.encode_label(txt), texts))
 				#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
-				yield (scenes, texts, texts_int), batch_size
+				yield (scenes, texts, texts_int), len(texts)
 				if steps_per_epoch and (step + 1) >= steps_per_epoch:
 					break
 		else:
@@ -163,13 +163,13 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 				#scene_text_masks, _ = self.preprocess(scene_text_masks, None)
 				texts_int = list(map(lambda txt: self.encode_label(txt), texts))
 				#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
-				yield (scenes, texts, texts_int), batch_size
+				yield (scenes, texts, texts_int), len(texts)
 				if steps_per_epoch and (step + 1) >= steps_per_epoch:
 					break
 
 class MyRunTimeAlphaMatteTextLineDataset(text_line_data.RunTimeAlphaMatteTextLineDataset):
-	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, font_list, handwriting_dict, functools.partial(generate_font_colors, image_depth=image_channel), max_label_len, use_NWHC, alpha_matte_mode, default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, font_list, handwriting_dict, functools.partial(generate_font_colors, image_depth=image_channel), max_label_len, use_NWHC, alpha_matte_mode, default_value)
 
 		self._augmenter = create_augmenter()
 
@@ -506,22 +506,22 @@ def create_random_words(min_char_len=1, max_char_len=10):
 
 	return random_words
 
-def reorganize_words(words, min_word_len=1, max_word_len=5):
+def generate_texts(words, min_word_len=1, max_word_len=5):
 	import random
 
 	num_words = len(words)
 	random.shuffle(words)
 
-	reorganized_words = list()
+	texts = list()
 	start_idx = 0
 	while True:
 		end_idx = start_idx + random.randint(min_word_len, max_word_len)
-		reorganized_words.append(' '.join(words[start_idx:end_idx]))
+		texts.append(' '.join(words[start_idx:end_idx]))
 		if end_idx >= num_words:
 			break
 		start_idx = end_idx
 
-	return reorganized_words
+	return texts
 
 class MyRunner(object):
 	def __init__(self, is_dataset_generated_at_runtime, data_dir_path=None, train_test_ratio=0.8):
@@ -556,10 +556,10 @@ class MyRunner(object):
 			random_words = create_random_words(min_char_len=1, max_char_len=10)
 			print('[SWL] Info: End generating random words, {} words generated: {} secs.'.format(len(random_words), time.time() - start_time))
 
-			print('[SWL] Info: Start reorganizing words...')
-			#texts = reorganize_words(dictionary_words + random_words, min_word_len=1, max_word_len=5)
-			texts = reorganize_words(random_words, min_word_len=1, max_word_len=5)
-			print('[SWL] Info: End reorganizing words, {} texts generated: {} secs.'.format(len(texts), time.time() - start_time))
+			print('[SWL] Info: Start generating texts...')
+			#texts = generate_texts(dictionary_words + random_words, min_word_len=1, max_word_len=5)
+			texts = generate_texts(random_words, min_word_len=1, max_word_len=5)
+			print('[SWL] Info: End generating texts, {} texts generated: {} secs.'.format(len(texts), time.time() - start_time))
 
 			if False:
 				from swl.language_processing.util import draw_character_histogram

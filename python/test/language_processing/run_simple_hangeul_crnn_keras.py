@@ -218,22 +218,22 @@ class MyModel(object):
 
 #--------------------------------------------------------------------
 
-def reorganize_words(words, min_word_len=1, max_word_len=5):
+def generate_texts(words, min_word_len=1, max_word_len=5):
 	import random
 
 	num_words = len(words)
 	random.shuffle(words)
 
-	reorganized_words = list()
+	texts = list()
 	start_idx = 0
 	while True:
 		end_idx = start_idx + random.randint(min_word_len, max_word_len)
-		reorganized_words.append(' '.join(words[start_idx:end_idx]))
+		texts.append(' '.join(words[start_idx:end_idx]))
 		if end_idx >= num_words:
 			break
 		start_idx = end_idx
 
-	return reorganized_words
+	return texts
 
 def generate_font_colors(image_depth):
 	import random
@@ -291,9 +291,9 @@ class MyRunner(object):
 				dictionary_words = fd.read().splitlines()
 			print('[SWL] Info: End loading a Korean dictionary, {} words loaded: {} secs.'.format(len(dictionary_words), time.time() - start_time))
 
-			print('[SWL] Info: Start reorganizing words...')
-			texts = reorganize_words(dictionary_words, min_word_len=1, max_word_len=5)
-			print('[SWL] Info: End reorganizing words, {} texts generated: {} secs.'.format(len(texts), time.time() - start_time))
+			print('[SWL] Info: Start generating texts...')
+			texts = generate_texts(dictionary_words, min_word_len=1, max_word_len=5)
+			print('[SWL] Info: End generating texts, {} texts generated: {} secs.'.format(len(texts), time.time() - start_time))
 
 			if False:
 				from swl.language_processing.util import draw_character_histogram

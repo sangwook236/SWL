@@ -146,7 +146,7 @@ class TextLineDatasetBase(abc.ABC):
 #--------------------------------------------------------------------
 
 class RunTimeTextLineDatasetBase(TextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
+	def __init__(self, text_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
 		super().__init__(labels=None, use_NWHC=use_NWHC, default_value=default_value)
 
 		self._textGenerator = None
@@ -155,9 +155,9 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 		self._num_classes = num_classes
 		if max_label_len > 0:
-			self._word_set = set(filter(lambda word: len(word) <= max_label_len, word_set))
+			self._text_set = set(filter(lambda word: len(word) <= max_label_len, text_set))
 		else:
-			self._word_set = word_set
+			self._text_set = text_set
 
 	@property
 	def shape(self):
@@ -238,16 +238,16 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 		"""
 
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
-		return self._create_batch_generator(self._textGenerator, self._color_functor, self._word_set, batch_size, steps_per_epoch, shuffle, is_training=True)
+		return self._create_batch_generator(self._textGenerator, self._color_functor, self._text_set, batch_size, steps_per_epoch, shuffle, is_training=True)
 
 	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
-		return self._create_batch_generator(self._textGenerator, self._color_functor, self._word_set, batch_size, steps_per_epoch, shuffle, is_training=False)
+		return self._create_batch_generator(self._textGenerator, self._color_functor, self._text_set, batch_size, steps_per_epoch, shuffle, is_training=False)
 
-	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch, shuffle, is_training=False):
+	def _create_batch_generator(self, textGenerator, color_functor, text_set, batch_size, steps_per_epoch, shuffle, is_training=False):
 		if steps_per_epoch:
-			generator = textGenerator.create_subset_generator(word_set, batch_size, color_functor)
+			generator = textGenerator.create_subset_generator(text_set, batch_size, color_functor)
 		else:
-			generator = textGenerator.create_whole_generator(list(word_set), batch_size, color_functor, shuffle=shuffle)
+			generator = textGenerator.create_whole_generator(list(text_set), batch_size, color_functor, shuffle=shuffle)
 		if is_training and hasattr(self, 'augment'):
 			for step, (texts, scenes, _) in enumerate(generator):
 				# For using RGB images.
@@ -265,7 +265,7 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 				#scene_text_masks, _ = self.preprocess(scene_text_masks, None)
 				texts_int = list(map(lambda txt: self.encode_label(txt), texts))
 				#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
-				yield (scenes, texts, texts_int), batch_size
+				yield (scenes, texts, texts_int), len(texts)
 				if steps_per_epoch and (step + 1) >= steps_per_epoch:
 					break
 		else:
@@ -284,21 +284,21 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 				#scene_text_masks, _ = self.preprocess(scene_text_masks, None)
 				texts_int = list(map(lambda txt: self.encode_label(txt), texts))
 				#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
-				yield (scenes, texts, texts_int), batch_size
+				yield (scenes, texts, texts_int), len(texts)
 				if steps_per_epoch and (step + 1) >= steps_per_epoch:
 					break
 
 # This class is independent of language.
 class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
 
 		#--------------------
 		#self._SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
 		#self._EOS = '<EOS>'  # All strings will end with the End-Of-String token.
 
 		#--------------------
-		label_set = functools.reduce(lambda x, word: x.union(word), self._word_set, set())
+		label_set = functools.reduce(lambda x, word: x.union(word), self._text_set, set())
 		#self._labels = sorted(label_set)
 		self._labels = ''.join(sorted(label_set))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
@@ -323,14 +323,14 @@ class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 #--------------------------------------------------------------------
 
 class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, color_functor, num_classes=0, max_label_len=0, use_NWHC=True, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, num_classes, max_label_len, use_NWHC, color_functor, default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, color_functor, num_classes=0, max_label_len=0, use_NWHC=True, default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, num_classes, max_label_len, use_NWHC, color_functor, default_value)
 
-	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch, shuffle, is_training=False):
+	def _create_batch_generator(self, textGenerator, color_functor, text_set, batch_size, steps_per_epoch, shuffle, is_training=False):
 		if steps_per_epoch:
-			generator = textGenerator.create_subset_generator(word_set, batch_size, color_functor)
+			generator = textGenerator.create_subset_generator(text_set, batch_size, color_functor)
 		else:
-			generator = textGenerator.create_whole_generator(list(word_set), batch_size, color_functor, shuffle=shuffle)
+			generator = textGenerator.create_whole_generator(list(text_set), batch_size, color_functor, shuffle=shuffle)
 		if is_training and hasattr(self, 'augment'):
 			for step, (texts, scenes, _) in enumerate(generator):
 				#scenes = list(map(lambda image: self.resize(image), scenes))
@@ -348,7 +348,7 @@ class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
 				#scene_text_masks = scene_text_masks.astype(np.float32) / 255
 				texts_int = list(map(lambda txt: self.encode_label(txt), texts))
 				#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
-				yield (scenes, texts, texts_int), batch_size
+				yield (scenes, texts, texts_int), len(texts)
 				if steps_per_epoch and (step + 1) >= steps_per_epoch:
 					break
 		else:
@@ -365,21 +365,21 @@ class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
 				#scene_text_masks = scene_text_masks.astype(np.float32) / 255
 				texts_int = list(map(lambda txt: self.encode_label(txt), texts))
 				#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
-				yield (scenes, texts, texts_int), batch_size
+				yield (scenes, texts, texts_int), len(texts)
 				if steps_per_epoch and (step + 1) >= steps_per_epoch:
 					break
 
 # This class is independent of language.
 class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, color_functor, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, color_functor, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, handwriting_dict, color_functor, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, color_functor, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
 
 		#--------------------
 		#self._SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
 		#self._EOS = '<EOS>'  # All strings will end with the End-Of-String token.
 
 		#--------------------
-		label_set = functools.reduce(lambda x, word: x.union(word), self._word_set, set())
+		label_set = functools.reduce(lambda x, word: x.union(word), self._text_set, set())
 		#self._labels = sorted(label_set)
 		self._labels = ''.join(sorted(label_set))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
@@ -404,8 +404,8 @@ class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 
 # This class is independent of language.
 class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, color_functor, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, color_functor, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, handwriting_dict, color_functor, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, color_functor, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
 
 		#--------------------
 		#self._SOJC = '<SOJC>'  # All Hangeul jamo strings will start with the Start-Of-Jamo-Character token.
@@ -418,7 +418,7 @@ class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatas
 		self._jamo2hangeul_functor = functools.partial(hg_util.jamo2hangeul, eojc_str=self._EOJC, use_separate_consonants=False, use_separate_vowels=True)
 
 		#--------------------
-		label_set = functools.reduce(lambda x, word: x.union(self._hangeul2jamo_functor(word)), self._word_set, set())
+		label_set = functools.reduce(lambda x, word: x.union(self._hangeul2jamo_functor(word)), self._text_set, set())
 		self._labels = sorted(label_set)
 		#self._labels = ''.join(sorted(label_set))  # Error.
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
@@ -853,12 +853,12 @@ class TextLinePairDatasetBase(TextLineDatasetBase):
 		"""
 
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
-		return self._create_batch_generator(self._textGenerator, self._color_functor, self._word_set, batch_size, steps_per_epoch, shuffle, is_training=True)
+		return self._create_batch_generator(self._textGenerator, self._color_functor, self._text_set, batch_size, steps_per_epoch, shuffle, is_training=True)
 
 	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
-		return self._create_batch_generator(self._textGenerator, self._color_functor, self._word_set, batch_size, steps_per_epoch, shuffle, is_training=False)
+		return self._create_batch_generator(self._textGenerator, self._color_functor, self._text_set, batch_size, steps_per_epoch, shuffle, is_training=False)
 
-	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch, shuffle, is_training=False):
+	def _create_batch_generator(self, textGenerator, color_functor, text_set, batch_size, steps_per_epoch, shuffle, is_training=False):
 		raise NotImplementedError
 
 	def visualize(self, batch_generator, num_examples=10):
@@ -902,15 +902,15 @@ class TextLinePairDatasetBase(TextLineDatasetBase):
 #--------------------------------------------------------------------
 
 class RunTimeTextLinePairDatasetBase(TextLinePairDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
+	def __init__(self, text_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
 		super().__init__(labels=None, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 		self._num_classes = num_classes
 		if max_label_len > 0:
-			self._word_set = set(filter(lambda word: len(word) <= max_label_len, word_set))
+			self._text_set = set(filter(lambda word: len(word) <= max_label_len, text_set))
 		else:
-			self._word_set = word_set
+			self._text_set = text_set
 
 	@property
 	def shape(self):
@@ -922,15 +922,15 @@ class RunTimeTextLinePairDatasetBase(TextLinePairDatasetBase):
 
 # This class is independent of language.
 class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, corrupt_functor, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, handwriting_dict, corrupt_functor, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
 
 		#--------------------
 		#self._SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
 		#self._EOS = '<EOS>'  # All strings will end with the End-Of-String token.
 
 		#--------------------
-		label_set = functools.reduce(lambda x, word: x.union(word), self._word_set, set())
+		label_set = functools.reduce(lambda x, word: x.union(word), self._text_set, set())
 		#self._labels = sorted(label_set)
 		self._labels = ''.join(sorted(label_set))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
@@ -954,7 +954,7 @@ class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 		else:
 			raise ValueError('Invalid image channel, {}'.format(image_channel))
 
-	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch, shuffle, is_training=False):
+	def _create_batch_generator(self, textGenerator, color_functor, text_set, batch_size, steps_per_epoch, shuffle, is_training=False):
 		def reduce_image(image, min_height, max_height):
 			height = random.randint(min_height, max_height)
 			interpolation = random.choice([cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4])
@@ -964,9 +964,9 @@ class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 		#min_height, max_height = self._image_height, self._image_height * 2
 		min_height, max_height = round(self._image_height * 0.5), self._image_height * 2
 		if steps_per_epoch:
-			generator = textGenerator.create_subset_generator(word_set, batch_size, color_functor)
+			generator = textGenerator.create_subset_generator(text_set, batch_size, color_functor)
 		else:
-			generator = textGenerator.create_whole_generator(list(word_set), batch_size, color_functor, shuffle=True)
+			generator = textGenerator.create_whole_generator(list(text_set), batch_size, color_functor, shuffle=True)
 		for step, (texts, scenes, scene_text_masks) in enumerate(generator):
 			# For using RGB images.
 			#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
@@ -1003,14 +1003,14 @@ class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 			clean_scenes, _ = self.preprocess(clean_scenes, None)
 			texts_int = list(map(lambda txt: self.encode_label(txt), texts))
 			#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
-			yield (corrupted_scenes, clean_scenes, texts, texts_int), batch_size
+			yield (corrupted_scenes, clean_scenes, texts, texts_int), len(texts)
 			if steps_per_epoch and (step + 1) >= steps_per_epoch:
 				break
 
 # This class is independent of language.
 class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
-	def __init__(self, word_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, handwriting_dict, corrupt_functor, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
-		super().__init__(word_set, hr_image_height, hr_image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
+	def __init__(self, text_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, handwriting_dict, corrupt_functor, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
+		super().__init__(text_set, hr_image_height, hr_image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
 
 		self._lr_image_height, self._lr_image_width = lr_image_height, lr_image_width
 
@@ -1019,7 +1019,7 @@ class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 		#self._EOS = '<EOS>'  # All strings will end with the End-Of-String token.
 
 		#--------------------
-		label_set = functools.reduce(lambda x, word: x.union(word), self._word_set, set())
+		label_set = functools.reduce(lambda x, word: x.union(word), self._text_set, set())
 		#self._labels = sorted(label_set)
 		self._labels = ''.join(sorted(label_set))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
@@ -1047,7 +1047,7 @@ class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 	def shape(self):
 		return self._image_height, self._image_width, self._lr_image_height, self._lr_image_width, self._image_channel
 
-	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch, shuffle, is_training=False):
+	def _create_batch_generator(self, textGenerator, color_functor, text_set, batch_size, steps_per_epoch, shuffle, is_training=False):
 		def reduce_image(image, min_height, max_height):
 			height = random.randint(min_height, max_height)
 			interpolation = random.choice([cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4])
@@ -1056,9 +1056,9 @@ class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 		#min_height, max_height = round(self._lr_image_height * 0.5), self._lr_image_height
 		min_height, max_height = self._lr_image_height, self._lr_image_height * 2
 		if steps_per_epoch:
-			generator = textGenerator.create_subset_generator(word_set, batch_size, color_functor)
+			generator = textGenerator.create_subset_generator(text_set, batch_size, color_functor)
 		else:
-			generator = textGenerator.create_whole_generator(list(word_set), batch_size, color_functor, shuffle=True)
+			generator = textGenerator.create_whole_generator(list(text_set), batch_size, color_functor, shuffle=True)
 		for step, (texts, scenes, scene_text_masks) in enumerate(generator):
 			# For using RGB images.
 			#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
@@ -1095,6 +1095,6 @@ class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 			clean_scenes, _ = self.preprocess(clean_scenes, None)
 			texts_int = list(map(lambda txt: self.encode_label(txt), texts))
 			#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
-			yield (corrupted_scenes, clean_scenes, texts, texts_int), batch_size
+			yield (corrupted_scenes, clean_scenes, texts, texts_int), len(texts)
 			if steps_per_epoch and (step + 1) >= steps_per_epoch:
 				break

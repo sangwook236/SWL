@@ -146,8 +146,8 @@ def generate_font_colors(image_depth):
 	return font_color, bg_color
 
 class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
-	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len, use_NWHC, functools.partial(generate_font_colors, image_depth=image_channel), default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len, use_NWHC, functools.partial(generate_font_colors, image_depth=image_channel), default_value)
 
 		self._augmenter = create_augmenter()
 
@@ -158,7 +158,7 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
 			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
-	def _create_batch_generator(self, textGenerator, color_functor, word_set, batch_size, steps_per_epoch, shuffle, is_training=False):
+	def _create_batch_generator(self, textGenerator, color_functor, text_set, batch_size, steps_per_epoch, shuffle, is_training=False):
 		def reduce_image(image, min_height, max_height):
 			import random, cv2
 			height = random.randint(min_height, max_height)
@@ -168,9 +168,9 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 		min_height, max_height = round(self._image_height * 0.5), self._image_height * 2
 		#min_height, max_height = self._image_height, self._image_height * 2
 		if steps_per_epoch:
-			generator = textGenerator.create_subset_generator(word_set, batch_size, color_functor)
+			generator = textGenerator.create_subset_generator(text_set, batch_size, color_functor)
 		else:
-			generator = textGenerator.create_whole_generator(list(word_set), batch_size, color_functor, shuffle=shuffle)
+			generator = textGenerator.create_whole_generator(list(text_set), batch_size, color_functor, shuffle=shuffle)
 		if is_training and hasattr(self, 'augment'):
 			for step, (texts, scenes, _) in enumerate(generator):
 				# For using RGB images.
@@ -192,7 +192,7 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 				#scene_text_masks, _ = self.preprocess(scene_text_masks, None)
 				texts_int = list(map(lambda txt: self.encode_label(txt), texts))
 				#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
-				yield (scenes, texts, texts_int), batch_size
+				yield (scenes, texts, texts_int), len(texts)
 				if steps_per_epoch and (step + 1) >= steps_per_epoch:
 					break
 		else:
@@ -215,13 +215,13 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 				#scene_text_masks, _ = self.preprocess(scene_text_masks, None)
 				texts_int = list(map(lambda txt: self.encode_label(txt), texts))
 				#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
-				yield (scenes, texts, texts_int), batch_size
+				yield (scenes, texts, texts_int), len(texts)
 				if steps_per_epoch and (step + 1) >= steps_per_epoch:
 					break
 
 class MyRunTimeAlphaMatteTextLineDataset(text_line_data.RunTimeAlphaMatteTextLineDataset):
-	def __init__(self, word_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, font_list, handwriting_dict, functools.partial(generate_font_colors, image_depth=image_channel), max_label_len, use_NWHC, alpha_matte_mode, default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, font_list, handwriting_dict, functools.partial(generate_font_colors, image_depth=image_channel), max_label_len, use_NWHC, alpha_matte_mode, default_value)
 
 		self._augmenter = create_augmenter()
 
@@ -623,7 +623,7 @@ def create_formatted_numbers(num_examples=100000):
 
 	return valid_examples
 
-def create_random_numbers(min_char_len=1, max_char_len=10):
+def create_random_words(min_char_len=1, max_char_len=10):
 	import string, random
 
 	chars = \
@@ -635,33 +635,33 @@ def create_random_numbers(min_char_len=1, max_char_len=10):
 	chars = ''.join(chars)
 	num_chars = len(chars)
 
-	random_numbers = list()
+	random_words = list()
 	start_idx = 0
 	while True:
 		end_idx = start_idx + random.randint(min_char_len, max_char_len)
-		random_numbers.append(chars[start_idx:end_idx])
+		random_words.append(chars[start_idx:end_idx])
 		if end_idx >= num_chars:
 			break
 		start_idx = end_idx
 
-	return random_numbers
+	return random_words
 
-def reorganize_numbers(numbers, min_word_len=1, max_word_len=3):
+def generate_texts(numbers, min_word_len=1, max_word_len=3):
 	import random
 
 	num_numbers = len(numbers)
 	random.shuffle(numbers)
 
-	reorganized_numbers = list()
+	texts = list()
 	start_idx = 0
 	while True:
 		end_idx = start_idx + random.randint(min_word_len, max_word_len)
-		reorganized_numbers.append(' '.join(numbers[start_idx:end_idx]))
+		texts.append(' '.join(numbers[start_idx:end_idx]))
 		if end_idx >= num_numbers:
 			break
 		start_idx = end_idx
 
-	return reorganized_numbers
+	return texts
 
 class MyRunner(object):
 	def __init__(self):
@@ -683,14 +683,15 @@ class MyRunner(object):
 
 		print('[SWL] Info: Start generating random numbers...')
 		start_time = time.time()
-		random_numbers = create_random_numbers(min_char_len=1, max_char_len=10)
-		random_numbers = reorganize_numbers(random_numbers, min_word_len=1, max_word_len=3)
+		random_numbers = create_random_words(min_char_len=1, max_char_len=10)
+		random_numbers = generate_texts(random_numbers, min_word_len=1, max_word_len=3)
 		print('[SWL] Info: End generating random numbers: {} secs, {} numbers generated.'.format(len(random_numbers), time.time() - start_time))
 
 		#numbers = formatted_numbers
 		numbers = formatted_numbers + random_numbers
 		import random
 		random.shuffle(numbers)
+
 		if False:
 			from swl.language_processing.util import draw_character_histogram
 			draw_character_histogram(numbers, charset=None)
