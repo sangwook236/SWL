@@ -309,11 +309,11 @@ class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 		min_char_space_ratio, max_char_space_ratio = 0.8, 1.25
 
 		if 1 == image_channel:
-			#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mode='L', mask_mode='1')
-			self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mode='L', mask_mode='1')
+			#self._textGenerator = tg_util.BasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mode='L', mask_mode='1')
+			self._textGenerator = tg_util.BasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mode='L', mask_mode='1')
 		elif 3 == image_channel:
-			#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mode='RGB', mask_mode='1')
-			self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mode='RGB', mask_mode='1')
+			#self._textGenerator = tg_util.BasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mode='RGB', mask_mode='1')
+			self._textGenerator = tg_util.BasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mode='RGB', mask_mode='1')
 		else:
 			raise ValueError('Invalid image channel, {}'.format(image_channel))
 
@@ -389,15 +389,11 @@ class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 		characterTransformer = tg_util.IdentityTransformer()
 		#characterTransformer = tg_util.RotationTransformer(-30, 30)
 		#characterTransformer = tg_util.ImgaugAffineTransformer()
-		characterPositioner = tg_util.MyCharacterPositioner()
-		self._textGenerator = tg_util.MySimpleTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, handwriting_dict=handwriting_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), alpha_matte_mode=alpha_matte_mode)
+		characterPositioner = tg_util.SimpleCharacterPositioner()
+		self._textGenerator = tg_util.BasicTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, handwriting_dict=handwriting_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), alpha_matte_mode=alpha_matte_mode)
 		"""
-		characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode=alpha_matte_mode)
-		#characterTransformer = tg_util.IdentityTransformer()
-		characterTransformer = tg_util.RotationTransformer(-30, 30)
-		#characterTransformer = tg_util.ImgaugAffineTransformer()
-		characterPositioner = tg_util.MyCharacterPositioner()
-		self._textGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio))
+		characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode=alpha_matte_mode)
+		self._textGenerator = tg_util.SimpleTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio))
 		"""
 
 # This class is independent of language.
@@ -432,15 +428,11 @@ class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatas
 		characterTransformer = tg_util.IdentityTransformer()
 		#characterTransformer = tg_util.RotationTransformer(-30, 30)
 		#characterTransformer = tg_util.ImgaugAffineTransformer()
-		characterPositioner = tg_util.MyCharacterPositioner()
-		self._textGenerator = tg_util.MySimpleTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, handwriting_dict=handwriting_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), alpha_matte_mode=alpha_matte_mode)
+		characterPositioner = tg_util.SimpleCharacterPositioner()
+		self._textGenerator = tg_util.BasicTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, handwriting_dict=handwriting_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), alpha_matte_mode=alpha_matte_mode)
 		"""
-		characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode=alpha_matte_mode)
-		#characterTransformer = tg_util.IdentityTransformer()
-		characterTransformer = tg_util.RotationTransformer(-30, 30)
-		#characterTransformer = tg_util.ImgaugAffineTransformer()
-		characterPositioner = tg_util.MyCharacterPositioner()
-		self._textGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio))
+		characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode=alpha_matte_mode)
+		self._textGenerator = tg_util.SimpleTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio))
 		"""
 
 	# String label -> integer label.
@@ -948,11 +940,11 @@ class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 		min_char_space_ratio, max_char_space_ratio = 0.8, 1.25
 
 		if 1 == image_channel:
-			#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mode='L', mask_mode='L')
-			self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mode='L', mask_mode='L')
+			#self._textGenerator = tg_util.BasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mode='L', mask_mode='L')
+			self._textGenerator = tg_util.BasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mode='L', mask_mode='L')
 		elif 3 == image_channel:
-			#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mode='RGB', mask_mode='L')
-			self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mode='RGB', mask_mode='L')
+			#self._textGenerator = tg_util.BasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mode='RGB', mask_mode='L')
+			self._textGenerator = tg_util.BasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mode='RGB', mask_mode='L')
 		else:
 			raise ValueError('Invalid image channel, {}'.format(image_channel))
 
@@ -962,7 +954,9 @@ class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 			interpolation = random.choice([cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4])
 			return cv2.resize(image, (round(image.shape[1] * height / image.shape[0]), height), interpolation=interpolation)
 
-		min_height, max_height = 16, 32
+		#min_height, max_height = round(self._image_height * 0.5), self._image_height
+		#min_height, max_height = self._image_height, self._image_height * 2
+		min_height, max_height = round(self._image_height * 0.5), self._image_height * 2
 		generator = textGenerator.create_generator(word_set, batch_size, color_functor)
 		for step, (texts, scenes, scene_text_masks) in enumerate(generator):
 			# For using RGB images.
@@ -1032,11 +1026,11 @@ class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 		min_char_space_ratio, max_char_space_ratio = 0.8, 1.25
 
 		if 1 == image_channel:
-			#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mode='L', mask_mode='L')
-			self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mode='L', mask_mode='L')
+			#self._textGenerator = tg_util.BasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mode='L', mask_mode='L')
+			self._textGenerator = tg_util.BasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mode='L', mask_mode='L')
 		elif 3 == image_channel:
-			#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mode='RGB', mask_mode='L')
-			self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mode='RGB', mask_mode='L')
+			#self._textGenerator = tg_util.BasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mode='RGB', mask_mode='L')
+			self._textGenerator = tg_util.BasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mode='RGB', mask_mode='L')
 		else:
 			raise ValueError('Invalid image channel, {}'.format(image_channel))
 
@@ -1050,6 +1044,7 @@ class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 			interpolation = random.choice([cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4])
 			return cv2.resize(image, (round(image.shape[1] * height / image.shape[0]), height), interpolation=interpolation)
 
+		#min_height, max_height = round(self._lr_image_height * 0.5), self._lr_image_height
 		min_height, max_height = self._lr_image_height, self._lr_image_height * 2
 		generator = textGenerator.create_generator(word_set, batch_size, color_functor)
 		for step, (texts, scenes, scene_text_masks) in enumerate(generator):

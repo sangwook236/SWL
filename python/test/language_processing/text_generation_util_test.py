@@ -225,8 +225,8 @@ def basic_printed_text_generator_test():
 	font_size = 32
 	char_space_ratio = 0.5
 
-	#textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (font_size, font_size), None, mode='RGB', mask_mode='1')
-	textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (font_size, font_size), (char_space_ratio, char_space_ratio), mode='RGB', mask_mode='1')
+	#textGenerator = tg_util.BasicPrintedTextGenerator(font_list, (font_size, font_size), None, mode='RGB', mask_mode='1')
+	textGenerator = tg_util.BasicPrintedTextGenerator(font_list, (font_size, font_size), (char_space_ratio, char_space_ratio), mode='RGB', mask_mode='1')
 
 	#text = '가나다라마바사아자차카타파하'
 	text = 'abcdefghijklmNOPQRSTUVWXYZ'
@@ -277,8 +277,8 @@ def generate_basic_text_lines_test():
 	min_char_space_ratio, max_char_space_ratio = 0.2, 1.5
 	color_functor = functools.partial(generate_font_colors, image_depth=3)
 
-	#textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mode='RGB', mask_mode='1')
-	textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mode='RGB', mask_mode='1')
+	#textGenerator = tg_util.BasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mode='RGB', mask_mode='1')
+	textGenerator = tg_util.BasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mode='RGB', mask_mode='1')
 
 	batch_size = 4
 	generator = textGenerator.create_generator(word_set, batch_size, color_functor)
@@ -325,13 +325,13 @@ def text_alpha_matte_generator_test():
 	char_space_ratio = 1.2
 	font_color, _ = generate_font_colors(image_depth=3)
 
-	characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='1')
-	#characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='L')
+	characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='1')
+	#characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='L')
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
-	characterPositioner = tg_util.MyCharacterPositioner()
-	textAlphaMatteGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, (font_size, font_size), (char_space_ratio, char_space_ratio))
+	characterPositioner = tg_util.SimpleCharacterPositioner()
+	textAlphaMatteGenerator = tg_util.SimpleTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, (font_size, font_size), (char_space_ratio, char_space_ratio))
 
 	char_alpha_list, char_alpha_coordinate_list = textAlphaMatteGenerator('가나다라마바사아자차카타파하')
 	text_line, text_line_alpha = tg_util.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=font_color)
@@ -347,7 +347,7 @@ def text_alpha_matte_generator_test():
 		#cv2.destroyAllWindows()
 
 	#--------------------
-	sceneTextGenerator = tg_util.MyAlphaMatteSceneTextGenerator(tg_util.IdentityTransformer())
+	sceneTextGenerator = tg_util.SimpleAlphaMatteSceneTextGenerator(tg_util.IdentityTransformer())
 
 	# Grayscale background.
 	bg = np.full_like(text_line, random.randrange(256), dtype=np.uint8)
@@ -384,24 +384,24 @@ def scene_text_alpha_matte_generator_test():
 	handwriting_dict = None
 
 	#--------------------
-	characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='1')
-	#characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='L')
+	characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='1')
+	#characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='L')
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
-	characterPositioner = tg_util.MyCharacterPositioner()
+	characterPositioner = tg_util.SimpleCharacterPositioner()
 
 	#--------------------
 	texts, text_alphas = list(), list()
 
-	textAlphaMatteGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(32, 32), char_space_ratio_interval=(0.9, 0.9))
+	textAlphaMatteGenerator = tg_util.SimpleTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(32, 32), char_space_ratio_interval=(0.9, 0.9))
 	char_alpha_list, char_alpha_coordinate_list = textAlphaMatteGenerator('가나다라마바사아자차카타파하')
 	font_color, _ = generate_font_colors(image_depth=3)
 	text_line, text_line_alpha = tg_util.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=font_color)
 	texts.append(text_line)
 	text_alphas.append(text_line_alpha)
 
-	textAlphaMatteGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(24, 24), char_space_ratio_interval=(1.6, 1.6))
+	textAlphaMatteGenerator = tg_util.SimpleTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(24, 24), char_space_ratio_interval=(1.6, 1.6))
 	#char_alpha_list, char_alpha_coordinate_list = textAlphaMatteGenerator('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
 	char_alpha_list, char_alpha_coordinate_list = textAlphaMatteGenerator('ABCDEFGHIJKLM')
 	font_color, _ = generate_font_colors(image_depth=3)
@@ -409,7 +409,7 @@ def scene_text_alpha_matte_generator_test():
 	texts.append(text_line)
 	text_alphas.append(text_line_alpha)
 
-	textAlphaMatteGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(16, 16), char_space_ratio_interval=(2.0, 2.0))
+	textAlphaMatteGenerator = tg_util.SimpleTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(16, 16), char_space_ratio_interval=(2.0, 2.0))
 	#char_alpha_list, char_alpha_coordinate_list = textAlphaMatteGenerator('abcdefghijklmnopqrstuvwxyz')
 	char_alpha_list, char_alpha_coordinate_list = textAlphaMatteGenerator('abcdefghijklm')
 	font_color, _ = generate_font_colors(image_depth=3)
@@ -422,14 +422,20 @@ def scene_text_alpha_matte_generator_test():
 		textTransformer = tg_util.PerspectiveTransformer()
 	else:
 		textTransformer = tg_util.ProjectiveTransformer()
-	sceneTextGenerator = tg_util.MyAlphaMatteSceneTextGenerator(textTransformer)
+	sceneTextGenerator = tg_util.SimpleAlphaMatteSceneTextGenerator(textTransformer)
 
 	if True:
-		sceneProvider = tg_util.MySceneProvider()
+		if 'posix' == os.name:
+			base_dir_path = '/home/sangwook/work/dataset'
+		else:
+			base_dir_path = 'D:/work/dataset'
+		scene_filepaths = glob.glob(base_dir_path + '/background_image/*.jpg', recursive=True)
+
+		sceneProvider = tg_util.SimpleSceneProvider(scene_filepaths)
 	else:
 		# Grayscale background.
 		scene_shape = (800, 1000, 3)  # Some handwritten characters have 3 channels.
-		sceneProvider = tg_util.MyGrayscaleBackgroundProvider(scene_shape)
+		sceneProvider = tg_util.GrayscaleBackgroundProvider(scene_shape)
 
 	#--------------------
 	scene = sceneProvider()
@@ -490,8 +496,8 @@ def generate_alpha_matte_text_lines_test_1():
 	characterTransformer = tg_util.IdentityTransformer()
 	#characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
-	characterPositioner = tg_util.MyCharacterPositioner()
-	textGenerator = tg_util.MySimpleTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, handwriting_dict=handwriting_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), alpha_matte_mode='1')
+	characterPositioner = tg_util.SimpleCharacterPositioner()
+	textGenerator = tg_util.BasicTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, handwriting_dict=handwriting_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), alpha_matte_mode='1')
 
 	batch_size = 4
 	generator = textGenerator.create_generator(word_set, batch_size, color_functor)
@@ -553,14 +559,14 @@ def generate_alpha_matte_text_lines_test_2():
 	min_char_space_ratio, max_char_space_ratio = 0.8, 2
 	color_functor = functools.partial(generate_font_colors, image_depth=3)
 
-	characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='1')
-	#characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='L')
+	characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='1')
+	#characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='L')
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
-	characterPositioner = tg_util.MyCharacterPositioner()
-	textAlphaMatteGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio))
-	#textAlphaMatteGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, (min_font_size, max_font_size), None)
+	characterPositioner = tg_util.SimpleCharacterPositioner()
+	textAlphaMatteGenerator = tg_util.SimpleTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio))
+	#textAlphaMatteGenerator = tg_util.SimpleTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, (min_font_size, max_font_size), None)
 
 	batch_size = 4
 	generator = textAlphaMatteGenerator.create_generator(word_set, batch_size, color_functor)
@@ -631,28 +637,34 @@ def generate_alpha_matte_scene_texts_test():
 	min_font_size, max_font_size = 15, 30
 	min_char_space_ratio, max_char_space_ratio = 0.8, 2
 
-	characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='1')
-	#characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='L')
+	characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='1')
+	#characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='L')
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
-	characterPositioner = tg_util.MyCharacterPositioner()
-	textAlphaMatteGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio))
-	#textAlphaMatteGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=None)
+	characterPositioner = tg_util.SimpleCharacterPositioner()
+	textAlphaMatteGenerator = tg_util.SimpleTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio))
+	#textAlphaMatteGenerator = tg_util.SimpleTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=None)
 
 	#--------------------
 	if True:
 		textTransformer = tg_util.PerspectiveTransformer()
 	else:
 		textTransformer = tg_util.ProjectiveTransformer()
-	sceneTextGenerator = tg_util.MyAlphaMatteSceneTextGenerator(textTransformer)
+	sceneTextGenerator = tg_util.SimpleAlphaMatteSceneTextGenerator(textTransformer)
 
 	if True:
-		sceneProvider = tg_util.MySceneProvider()
+		if 'posix' == os.name:
+			base_dir_path = '/home/sangwook/work/dataset'
+		else:
+			base_dir_path = 'D:/work/dataset'
+		scene_filepaths = glob.glob(base_dir_path + '/background_image/*.jpg', recursive=True)
+
+		sceneProvider = tg_util.SimpleSceneProvider(scene_filepaths)
 	else:
 		# Grayscale background.
 		scene_shape = (800, 1000, 3)  # Some handwritten characters have 3 channels.
-		sceneProvider = tg_util.MyGrayscaleBackgroundProvider(scene_shape)
+		sceneProvider = tg_util.GrayscaleBackgroundProvider(scene_shape)
 
 	#--------------------
 	min_text_count_per_image, max_text_count_per_image = 2, 10
@@ -846,28 +858,28 @@ def generate_hangeul_synthetic_scene_text_dataset():
 	min_font_size, max_font_size = 15, 30
 	min_char_space_ratio, max_char_space_ratio = 0.8, 2
 
-	characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='1')
-	#characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='L')
+	characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='1')
+	#characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='L')
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
-	characterPositioner = tg_util.MyCharacterPositioner()
-	textAlphaMatteGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio))
-	#textAlphaMatteGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=None)
+	characterPositioner = tg_util.SimpleCharacterPositioner()
+	textAlphaMatteGenerator = tg_util.SimpleTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio))
+	#textAlphaMatteGenerator = tg_util.SimpleTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=None)
 
 	#--------------------
 	if True:
 		textTransformer = tg_util.PerspectiveTransformer()
 	else:
 		textTransformer = tg_util.ProjectiveTransformer()
-	sceneTextGenerator = tg_util.MyAlphaMatteSceneTextGenerator(textTransformer)
+	sceneTextGenerator = tg_util.SimpleAlphaMatteSceneTextGenerator(textTransformer)
 
 	if True:
 		sceneProvider = tg_util.MySimpleSceneProvider()
 	else:
 		# Grayscale background.
 		scene_shape = (800, 1000, 3)  # Some handwritten characters have 4 channels.
-		sceneProvider = tg_util.MyGrayscaleBackgroundProvider(scene_shape)
+		sceneProvider = tg_util.GrayscaleBackgroundProvider(scene_shape)
 
 	# Generate a scene dataset.
 	scene_text_dataset_dir_path = './scene_text_dataset'
@@ -941,8 +953,8 @@ def generate_single_letter_dataset():
 	characterTransformer = tg_util.IdentityTransformer()
 	#characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
-	characterPositioner = tg_util.MyCharacterPositioner()
-	textGenerator = tg_util.MySimpleTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, handwriting_dict=handwriting_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), alpha_matte_mode='1')
+	characterPositioner = tg_util.SimpleCharacterPositioner()
+	textGenerator = tg_util.BasicTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, handwriting_dict=handwriting_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), alpha_matte_mode='1')
 
 	batch_size = 1024
 	generator = textGenerator.create_generator(word_set, batch_size, color_functor)

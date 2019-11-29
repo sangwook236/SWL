@@ -1,9 +1,7 @@
-import os, math, random, csv, time, copy, glob, json
+import os, math, random, csv, time, copy
 from functools import reduce
 import numpy as np
 import cv2
-#import imgaug as ia
-#from imgaug import augmenters as iaa
 import swl.language_processing.util as swl_langproc_util
 from swl.language_processing.text_generator import Transformer, HangeulJamoGenerator, HangeulLetterGenerator, TextGenerator, SceneProvider, SceneTextGenerator
 import swl.language_processing.hangeul_handwriting_dataset as hg_hw_dataset
@@ -364,6 +362,9 @@ class ImgaugAffineTransformer(object):
 	"""
 
 	def __init__(self):
+		#import imgaug as ia
+		from imgaug import augmenters as iaa
+
 		self._seq = iaa.Sequential([
 			iaa.Sometimes(0.5, iaa.Affine(
 				scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
@@ -397,6 +398,9 @@ class ImgaugPerspectiveTransformer(object):
 	"""
 
 	def __init__(self):
+		#import imgaug as ia
+		from imgaug import augmenters as iaa
+
 		self._seq = iaa.Sequential([
 			iaa.Sometimes(0.5, iaa.PerspectiveTransform(scale=(0.01, 0.1))),
 		])
@@ -416,8 +420,8 @@ class ImgaugPerspectiveTransformer(object):
 		seq_det = self._seq.to_deterministic()  # Call this for each batch again, NOT only once at the start.
 		return seq_det.augment_images(input), seq_det.augment_images(mask)
 
-#class MyCharacterAlphaMatteGenerator(CharacterAlphaMatteGenerator):
-class MyCharacterAlphaMatteGenerator(object):
+#class SimpleCharacterAlphaMatteGenerator(CharacterAlphaMatteGenerator):
+class SimpleCharacterAlphaMatteGenerator(object):
 	"""Generates an alpha-matte [0, 1] for a character which reflects the proportion of foreground (when alpha=1) and background (when alpha=0).
 	"""
 
@@ -471,8 +475,8 @@ class MyCharacterAlphaMatteGenerator(object):
 			#print('Generate a handwritten Hangeul letter.')
 			return random.choice(self._handwriting_dict[char])
 
-#class MyCharacterPositioner(CharacterPositioner):
-class MyCharacterPositioner(object):
+#class SimpleCharacterPositioner(CharacterPositioner):
+class SimpleCharacterPositioner(object):
 	"""Place characters to construct a text line.
 	"""
 
@@ -499,7 +503,7 @@ class MyCharacterPositioner(object):
 
 		return char_image_coordinate_list
 
-class MyBasicPrintedTextGenerator(object):
+class BasicPrintedTextGenerator(object):
 	"""Generates a basic printed text line for individual characters.
 	"""
 
@@ -571,7 +575,7 @@ class MyBasicPrintedTextGenerator(object):
 
 			yield text_list, image_list, mask_list
 
-class MySimpleTextAlphaMatteGenerator(object):
+class BasicTextAlphaMatteGenerator(object):
 	"""Generates a simple text line and masks for individual characters.
 	"""
 
@@ -640,7 +644,7 @@ class MySimpleTextAlphaMatteGenerator(object):
 		if batch_size <= 0 or batch_size > len(word_set):
 			raise ValueError('Invalid batch size: 0 < batch_size <= len(word_set)')
 
-		sceneTextGenerator = MyAlphaMatteSceneTextGenerator(IdentityTransformer())
+		sceneTextGenerator = SimpleAlphaMatteSceneTextGenerator(IdentityTransformer())
 
 		while True:
 			texts = random.sample(word_set, k=batch_size)
@@ -666,8 +670,8 @@ class MySimpleTextAlphaMatteGenerator(object):
 
 			yield text_list, scene_list, scene_text_mask_list
 
-#class MyTextAlphaMatteGenerator(TextAlphaMatteGenerator):
-class MyTextAlphaMatteGenerator(object):
+#class SimpleTextAlphaMatteGenerator(TextAlphaMatteGenerator):
+class SimpleTextAlphaMatteGenerator(object):
 	"""Generates a single text line and masks for individual characters.
 	"""
 
@@ -718,7 +722,7 @@ class MyTextAlphaMatteGenerator(object):
 		if batch_size <= 0 or batch_size > len(word_set):
 			raise ValueError('Invalid batch size: 0 < batch_size <= len(word_set)')
 
-		sceneTextGenerator = MyAlphaMatteSceneTextGenerator(IdentityTransformer())
+		sceneTextGenerator = SimpleAlphaMatteSceneTextGenerator(IdentityTransformer())
 
 		font_color = None  # Uses a random font color.
 		while True:
@@ -745,8 +749,8 @@ class MyTextAlphaMatteGenerator(object):
 
 			yield text_list, scene_list, scene_text_mask_list
 
-#class MyAlphaMatteSceneTextGenerator(AlphaMatteSceneTextGenerator):
-class MyAlphaMatteSceneTextGenerator(object):
+#class SimpleAlphaMatteSceneTextGenerator(AlphaMatteSceneTextGenerator):
+class SimpleAlphaMatteSceneTextGenerator(object):
 	"""Generates a scene containing multiple transformed text lines in a background.
 	"""
 
@@ -841,8 +845,8 @@ class MyAlphaMatteSceneTextGenerator(object):
 
 			yield texts_list, scene_list, scene_text_mask_list, bboxes_list
 
-#class MyGrayscaleBackgroundProvider(SceneProvider):
-class MyGrayscaleBackgroundProvider(object):
+#class GrayscaleBackgroundProvider(SceneProvider):
+class GrayscaleBackgroundProvider(object):
 	def __init__(self, shape):
 		"""Constructor.
 
@@ -867,14 +871,10 @@ class MyGrayscaleBackgroundProvider(object):
 		#return np.full(shape, random.randrange(256), dtype=np.uint8)
 		return np.full(shape, random.randrange(1, 255), dtype=np.uint8)
 
-#class MySceneProvider(SceneProvider):
-class MySceneProvider(object):
-	def __init__(self):
-		if 'posix' == os.name:
-			base_dir_path = '/home/sangwook/work/dataset'
-		else:
-			base_dir_path = 'D:/work/dataset'
-		self._scene_filepaths = glob.glob(base_dir_path + '/background_image/*.jpg', recursive=True)
+#class SimpleSceneProvider(SceneProvider):
+class SimpleSceneProvider(object):
+	def __init__(self, scene_filepaths):
+		self._scene_filepaths = scene_filepaths
 
 	def __call__(self, shape=None, *args, **kwargs):
 		"""Generates and provides a scene.
@@ -892,11 +892,3 @@ class MySceneProvider(object):
 			return scene
 		else:
 			return cv2.resize(scene, shape[:2], interpolation=cv2.INTER_AREA)
-
-class MySimpleSceneProvider(MySceneProvider):
-	def __init__(self):
-		if 'posix' == os.name:
-			base_dir_path = '/home/sangwook/work/dataset'
-		else:
-			base_dir_path = 'D:/work/dataset'
-		self._scene_filepaths = glob.glob(base_dir_path + '/background_image/*.jpg', recursive=True)

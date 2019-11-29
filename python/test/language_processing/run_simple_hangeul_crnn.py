@@ -166,7 +166,8 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 			interpolation = random.choice([cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4])
 			return cv2.resize(image, (round(image.shape[1] * height / image.shape[0]), height), interpolation=interpolation)
 
-		min_height, max_height = 16, 32
+		min_height, max_height = round(self._image_height * 0.5), self._image_height * 2
+		#min_height, max_height = self._image_height, self._image_height * 2
 		generator = textGenerator.create_generator(word_set, batch_size, color_functor)
 		if is_data_augmented and hasattr(self, 'augment'):
 			for step, (texts, scenes, _) in enumerate(generator):
