@@ -130,6 +130,7 @@ def create_augmenter():
 	return augmenter
 
 def generate_font_colors(image_depth):
+	import random
 	#font_color = (255,) * image_depth
 	#font_color = tuple(random.randrange(256) for _ in range(image_depth))  # Uses a specific RGB font color.
 	#font_color = (random.randrange(256),) * image_depth  # Uses a specific grayscale font color.
