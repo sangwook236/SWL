@@ -72,27 +72,27 @@ def generate_phd08_dict(from_npy=True):
 		phd08_npy_dataset_info_filepath = './phd08_npy_dataset.csv'
 		print('Start loading PHD08 npy dataset...')
 		start_time = time.time()
-		handwriting_dict = hg_hw_dataset.load_phd08_npy(phd08_npy_dataset_info_filepath, is_dark_background=False)
-		for key, values in handwriting_dict.items():
-			handwriting_dict[key] = list()
+		char_images_dict = hg_hw_dataset.load_phd08_npy(phd08_npy_dataset_info_filepath, is_dark_background=False)
+		for key, values in char_images_dict.items():
+			char_images_dict[key] = list()
 			for val in values:
 				val = cv2.cvtColor(cv2.bitwise_not(val), cv2.COLOR_BGRA2GRAY).astype(np.float32) / 255
-				handwriting_dict[key].append(val)
+				char_images_dict[key].append(val)
 		print('End loading PHD08 npy dataset: {} secs.'.format(time.time() - start_time))
 	else:
 		# Loads PHD08 image dataset.
 		phd08_image_dataset_info_filepath = './phd08_png_dataset.csv'
 		print('Start loading PHD08 image dataset...')
 		start_time = time.time()
-		handwriting_dict = phd08_dataset.load_phd08_image(phd08_image_dataset_info_filepath, is_dark_background=False)
-		for key, values in handwriting_dict.items():
-			handwriting_dict[key] = list()
+		char_images_dict = phd08_dataset.load_phd08_image(phd08_image_dataset_info_filepath, is_dark_background=False)
+		for key, values in char_images_dict.items():
+			char_images_dict[key] = list()
 			for val in values:
 				val = cv2.cvtColor(cv2.bitwise_not(val), cv2.COLOR_BGRA2GRAY).astype(np.float32) / 255
-				handwriting_dict[key].append(val)
+				char_images_dict[key].append(val)
 		print('End loading PHD08 image dataset: {} secs.'.format(time.time() - start_time))
 
-	return handwriting_dict
+	return char_images_dict
 
 #--------------------------------------------------------------------
 
@@ -425,17 +425,17 @@ class SimpleCharacterAlphaMatteGenerator(object):
 	"""Generates an alpha-matte [0, 1] for a character which reflects the proportion of foreground (when alpha=1) and background (when alpha=0).
 	"""
 
-	def __init__(self, font_list, handwriting_dict=None, mode='1'):
+	def __init__(self, font_list, char_images_dict=None, mode='1'):
 		"""Constructor.
 
 		Inputs:
 			font_list (a list of (font file path, font index) pairs): A list of the file paths and the font indices of fonts.
-			handwriting_dict (a dict of (character, a list of images)): A dictionary of characters and their corresponding list of images.
+			char_images_dict (a dict of (character, a list of images)): A dictionary of characters and their corresponding list of images.
 			mode (str): The color mode for alpha matte. Black-white mode ('1') or grayscale mode ('L').
 		"""
 
 		self._font_list = font_list
-		self._handwriting_dict = handwriting_dict
+		self._char_images_dict = char_images_dict
 		self._alpha_matte_mode = mode
 
 		self._text_offset = (0, 0)
@@ -456,7 +456,7 @@ class SimpleCharacterAlphaMatteGenerator(object):
 		image_size = (font_size * 2, font_size * 2)
 		#image_size = None
 
-		if self._handwriting_dict is not None and char in self._handwriting_dict:
+		if self._char_images_dict is not None and char in self._char_images_dict:
 			use_printed_letter = 0 == random.randrange(2)
 		else:
 			use_printed_letter = True
@@ -473,7 +473,7 @@ class SimpleCharacterAlphaMatteGenerator(object):
 				return np.array(alpha, dtype=np.float32) / 255
 		else:
 			#print('Generate a handwritten Hangeul letter.')
-			return random.choice(self._handwriting_dict[char])
+			return random.choice(self._char_images_dict[char])
 
 #class SimpleCharacterPositioner(CharacterPositioner):
 class SimpleCharacterPositioner(object):
@@ -609,7 +609,7 @@ class BasicTextAlphaMatteGenerator(object):
 	"""Generates a simple text line and masks for individual characters.
 	"""
 
-	def __init__(self, characterTransformer, characterPositioner, font_list, font_size_interval, char_space_ratio_interval=None, handwriting_dict=None, alpha_matte_mode='1'):
+	def __init__(self, characterTransformer, characterPositioner, font_list, font_size_interval, char_space_ratio_interval=None, char_images_dict=None, alpha_matte_mode='1'):
 		"""Constructor.
 
 		Inputs:
@@ -618,7 +618,7 @@ class BasicTextAlphaMatteGenerator(object):
 			font_list (a list of (font file path, font index) pairs): A list of the file paths and the font indices of fonts.
 			font_size_interval (a tuple of two ints): A font size interval for the characters.
 			char_space_ratio_interval (a tuple of two floats): A space ratio interval between two characters.
-			handwriting_dict (a dict of (character, a list of images)): A dictionary of characters and their corresponding list of images.
+			char_images_dict (a dict of (character, a list of images)): A dictionary of characters and their corresponding list of images.
 			alpha_matte_mode (str): The color mode for alpha matte. Black-white mode ('1') or grayscale mode ('L').
 		"""
 
@@ -626,7 +626,7 @@ class BasicTextAlphaMatteGenerator(object):
 		self._characterPositioner = characterPositioner
 
 		self._font_list = font_list
-		self._handwriting_dict = handwriting_dict  # FIXME [fix] >> Currently not used.
+		self._char_images_dict = char_images_dict  # FIXME [fix] >> Currently not used.
 		self._font_size_interval = font_size_interval
 		self._char_space_ratio_interval = char_space_ratio_interval
 		self._alpha_matte_mode = alpha_matte_mode

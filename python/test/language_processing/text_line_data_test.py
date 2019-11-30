@@ -90,8 +90,6 @@ def BasicRunTimeTextLineDataset_test():
 
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-		handwriting_dict = None
 
 		image_height, image_width, image_channel = 64, 640, 1
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
@@ -99,7 +97,7 @@ def BasicRunTimeTextLineDataset_test():
 
 		print('Start creating a Korean dataset...')
 		start_time = time.time()
-		dataset = text_line_data.BasicRunTimeTextLineDataset(korean_word_set, image_height, image_width, image_channel, font_list, handwriting_dict, color_functor=color_functor)
+		dataset = text_line_data.BasicRunTimeTextLineDataset(korean_word_set, image_height, image_width, image_channel, font_list, color_functor=color_functor)
 		print('End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -113,8 +111,6 @@ def BasicRunTimeTextLineDataset_test():
 
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		font_list = tg_util.generate_font_list(font_filepaths)
-		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-		handwriting_dict = None
 
 		image_height, image_width, image_channel = 32, 320, 1
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
@@ -122,7 +118,7 @@ def BasicRunTimeTextLineDataset_test():
 
 		print('Start creating an English dataset...')
 		start_time = time.time()
-		dataset = text_line_data.BasicRunTimeTextLineDataset(english_word_set, image_height, image_width, image_channel, font_list, handwriting_dict, color_functor=color_functor)
+		dataset = text_line_data.BasicRunTimeTextLineDataset(english_word_set, image_height, image_width, image_channel, font_list, color_functor=color_functor)
 		print('End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -138,8 +134,6 @@ def BasicRunTimeTextLineDataset_test():
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		#font_list = tg_util.generate_font_list(font_filepaths)
 		font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-		handwriting_dict = None
 
 		image_height, image_width, image_channel = 64, 640, 1
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
@@ -147,7 +141,7 @@ def BasicRunTimeTextLineDataset_test():
 
 		print('Start creating a Korean+English dataset...')
 		start_time = time.time()
-		dataset = text_line_data.BasicRunTimeTextLineDataset(all_word_set, image_height, image_width, image_channel, font_list, handwriting_dict, color_functor=color_functor)
+		dataset = text_line_data.BasicRunTimeTextLineDataset(all_word_set, image_height, image_width, image_channel, font_list, color_functor=color_functor)
 		print('End creating a Korean+English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -195,15 +189,15 @@ def RunTimeAlphaMatteTextLineDataset_test():
 
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-		handwriting_dict = None
+		#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
+		char_images_dict = None
 
 		image_height, image_width, image_channel = 64, 640, 1
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 		print('Start creating a Korean dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(korean_word_set, image_height, image_width, image_channel, font_list, handwriting_dict, alpha_matte_mode='1', color_functor=color_functor)
+		dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(korean_word_set, image_height, image_width, image_channel, font_list, char_images_dict, alpha_matte_mode='1', color_functor=color_functor)
 		print('End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -217,15 +211,15 @@ def RunTimeAlphaMatteTextLineDataset_test():
 
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		font_list = tg_util.generate_font_list(font_filepaths)
-		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-		handwriting_dict = None
+		#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
+		char_images_dict = None
 
 		image_height, image_width, image_channel = 32, 320, 1
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 		print('Start creating an English dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(english_word_set, image_height, image_width, image_channel, font_list, handwriting_dict, alpha_matte_mode='1', color_functor=color_functor)
+		dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(english_word_set, image_height, image_width, image_channel, font_list, char_images_dict, alpha_matte_mode='1', color_functor=color_functor)
 		print('End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -241,15 +235,15 @@ def RunTimeAlphaMatteTextLineDataset_test():
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		#font_list = tg_util.generate_font_list(font_filepaths)
 		font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-		handwriting_dict = None
+		#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
+		char_images_dict = None
 
 		image_height, image_width, image_channel = 64, 640, 1
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 		print('Start creating a Korean+English dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(all_word_set, image_height, image_width, image_channel, font_list, handwriting_dict, alpha_matte_mode='1', color_functor=color_functor)
+		dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(all_word_set, image_height, image_width, image_channel, font_list, char_images_dict, alpha_matte_mode='1', color_functor=color_functor)
 		print('End creating a Korean+English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -296,15 +290,15 @@ def RunTimeHangeulJamoAlphaMatteTextLineDataset_test():
 
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-		handwriting_dict = None
+		#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
+		char_images_dict = None
 
 		image_height, image_width, image_channel = 64, 640, 1
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 		print('Start creating a Korean dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset(korean_word_set, image_height, image_width, image_channel, font_list, handwriting_dict, color_functor=color_functor)
+		dataset = text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset(korean_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor)
 		print('End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -320,15 +314,15 @@ def RunTimeHangeulJamoAlphaMatteTextLineDataset_test():
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		#font_list = tg_util.generate_font_list(font_filepaths)
 		font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-		handwriting_dict = None
+		#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
+		char_images_dict = None
 
 		image_height, image_width, image_channel = 64, 640, 1
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 		print('Start creating a Korean+English dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset(all_word_set, image_height, image_width, image_channel, font_list, handwriting_dict, color_functor=color_functor)
+		dataset = text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset(all_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor)
 		print('End creating a Korean+English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -470,8 +464,8 @@ def RunTimeCorruptedTextLinePairDataset_test():
 
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-		handwriting_dict = None
+		#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
+		char_images_dict = None
 
 		image_height, image_width, image_channel = 64, 640, 1
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
@@ -479,7 +473,7 @@ def RunTimeCorruptedTextLinePairDataset_test():
 
 		print('Start creating a Korean dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeCorruptedTextLinePairDataset(korean_word_set, image_height, image_width, image_channel, font_list, handwriting_dict, corrupt_functor=corrupt, color_functor=color_functor)
+		dataset = text_line_data.RunTimeCorruptedTextLinePairDataset(korean_word_set, image_height, image_width, image_channel, font_list, char_images_dict, corrupt_functor=corrupt, color_functor=color_functor)
 		print('End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -494,8 +488,8 @@ def RunTimeCorruptedTextLinePairDataset_test():
 
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		font_list = tg_util.generate_font_list(font_filepaths)
-		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-		handwriting_dict = None
+		#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
+		char_images_dict = None
 
 		image_height, image_width, image_channel = 32, 320, 1
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
@@ -503,7 +497,7 @@ def RunTimeCorruptedTextLinePairDataset_test():
 
 		print('Start creating an English dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeCorruptedTextLinePairDataset(english_word_set, image_height, image_width, image_channel, font_list, handwriting_dict, corrupt_functor=corrupt, color_functor=color_functor)
+		dataset = text_line_data.RunTimeCorruptedTextLinePairDataset(english_word_set, image_height, image_width, image_channel, font_list, char_images_dict, corrupt_functor=corrupt, color_functor=color_functor)
 		print('End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -521,8 +515,8 @@ def RunTimeCorruptedTextLinePairDataset_test():
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		#font_list = tg_util.generate_font_list(font_filepaths)
 		font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-		handwriting_dict = None
+		#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
+		char_images_dict = None
 
 		image_height, image_width, image_channel = 64, 640, 1
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
@@ -530,7 +524,7 @@ def RunTimeCorruptedTextLinePairDataset_test():
 
 		print('Start creating a Korean+English dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeCorruptedTextLinePairDataset(all_word_set, image_height, image_width, image_channel, font_list, handwriting_dict, corrupt_functor=corrupt, color_functor=color_functor)
+		dataset = text_line_data.RunTimeCorruptedTextLinePairDataset(all_word_set, image_height, image_width, image_channel, font_list, char_images_dict, corrupt_functor=corrupt, color_functor=color_functor)
 		print('End creating a Korean+English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -585,8 +579,8 @@ def RunTimeSuperResolvedTextLinePairDataset_test():
 
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-		handwriting_dict = None
+		#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
+		char_images_dict = None
 
 		sr_ratio = 4
 		lr_image_height, lr_image_width, image_channel = 16, 160, 1
@@ -596,7 +590,7 @@ def RunTimeSuperResolvedTextLinePairDataset_test():
 
 		print('Start creating a Korean dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeSuperResolvedTextLinePairDataset(korean_word_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, handwriting_dict, corrupt_functor=corrupt, color_functor=color_functor)
+		dataset = text_line_data.RunTimeSuperResolvedTextLinePairDataset(korean_word_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, corrupt_functor=corrupt, color_functor=color_functor)
 		print('End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -611,8 +605,8 @@ def RunTimeSuperResolvedTextLinePairDataset_test():
 
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		font_list = tg_util.generate_font_list(font_filepaths)
-		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-		handwriting_dict = None
+		#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
+		char_images_dict = None
 
 		sr_ratio = 4
 		lr_image_height, lr_image_width, image_channel = 16, 160, 1
@@ -622,7 +616,7 @@ def RunTimeSuperResolvedTextLinePairDataset_test():
 
 		print('Start creating an English dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeSuperResolvedTextLinePairDataset(english_word_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, handwriting_dict, corrupt_functor=corrupt, color_functor=color_functor)
+		dataset = text_line_data.RunTimeSuperResolvedTextLinePairDataset(english_word_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, corrupt_functor=corrupt, color_functor=color_functor)
 		print('End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -640,8 +634,8 @@ def RunTimeSuperResolvedTextLinePairDataset_test():
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		#font_list = tg_util.generate_font_list(font_filepaths)
 		font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-		handwriting_dict = None
+		#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
+		char_images_dict = None
 
 		sr_ratio = 4
 		lr_image_height, lr_image_width, image_channel = 16, 160, 1
@@ -650,7 +644,7 @@ def RunTimeSuperResolvedTextLinePairDataset_test():
 		#color_functor = None
 
 		print('Start creating a Korean+English dataset...')
-		dataset = text_line_data.RunTimeSuperResolvedTextLinePairDataset(all_word_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, handwriting_dict, corrupt_functor=corrupt, color_functor=color_functor)
+		dataset = text_line_data.RunTimeSuperResolvedTextLinePairDataset(all_word_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, corrupt_functor=corrupt, color_functor=color_functor)
 		print('End creating a Korean+English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)

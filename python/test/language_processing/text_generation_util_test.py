@@ -316,16 +316,16 @@ def text_alpha_matte_generator_test():
 	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 	#font_list = tg_util.generate_font_list(font_filepaths)
 	font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-	#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-	handwriting_dict = None
+	#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
+	char_images_dict = None
 
 	#--------------------
 	font_size = 32
 	char_space_ratio = 1.2
 	font_color, _ = generate_font_colors(image_depth=3)
 
-	characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='1')
-	#characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='L')
+	characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, char_images_dict, mode='1')
+	#characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, char_images_dict, mode='L')
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
@@ -379,12 +379,12 @@ def scene_text_alpha_matte_generator_test():
 	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 	#font_list = tg_util.generate_font_list(font_filepaths)
 	font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-	#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-	handwriting_dict = None
+	#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
+	char_images_dict = None
 
 	#--------------------
-	characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='1')
-	#characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='L')
+	characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, char_images_dict, mode='1')
+	#characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, char_images_dict, mode='L')
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
@@ -484,8 +484,8 @@ def generate_alpha_matte_text_lines_test_1():
 	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 	#font_list = tg_util.generate_font_list(font_filepaths)
 	font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-	#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-	handwriting_dict = None
+	#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
+	char_images_dict = None
 
 	#--------------------
 	min_font_size, max_font_size = 15, 30
@@ -496,7 +496,7 @@ def generate_alpha_matte_text_lines_test_1():
 	#characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
 	characterPositioner = tg_util.SimpleCharacterPositioner()
-	textGenerator = tg_util.BasicTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, handwriting_dict=handwriting_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), alpha_matte_mode='1')
+	textGenerator = tg_util.BasicTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, char_images_dict=char_images_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), alpha_matte_mode='1')
 
 	batch_size = 4
 	generator = textGenerator.create_subset_generator(word_set, batch_size, color_functor)
@@ -551,16 +551,16 @@ def generate_alpha_matte_text_lines_test_2():
 	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 	#font_list = tg_util.generate_font_list(font_filepaths)
 	font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-	#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-	handwriting_dict = None
+	#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
+	char_images_dict = None
 
 	#--------------------
 	min_font_size, max_font_size = 15, 30
 	min_char_space_ratio, max_char_space_ratio = 0.8, 2
 	color_functor = functools.partial(generate_font_colors, image_depth=3)
 
-	characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='1')
-	#characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='L')
+	characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, char_images_dict, mode='1')
+	#characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, char_images_dict, mode='L')
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
@@ -631,15 +631,15 @@ def generate_alpha_matte_scene_texts_test():
 	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 	#font_list = tg_util.generate_font_list(font_filepaths)
 	font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-	#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-	handwriting_dict = None
+	#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
+	char_images_dict = None
 
 	#--------------------
 	min_font_size, max_font_size = 15, 30
 	min_char_space_ratio, max_char_space_ratio = 0.8, 2
 
-	characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='1')
-	#characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='L')
+	characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, char_images_dict, mode='1')
+	#characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, char_images_dict, mode='L')
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
@@ -852,15 +852,15 @@ def generate_hangeul_synthetic_scene_text_dataset():
 	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 	#font_list = tg_util.generate_font_list(font_filepaths)
 	font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-	#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-	handwriting_dict = None
+	#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
+	char_images_dict = None
 
 	#--------------------
 	min_font_size, max_font_size = 15, 30
 	min_char_space_ratio, max_char_space_ratio = 0.8, 2
 
-	characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='1')
-	#characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='L')
+	characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, char_images_dict, mode='1')
+	#characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, char_images_dict, mode='L')
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
@@ -942,8 +942,8 @@ def generate_single_letter_dataset():
 	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 	#font_list = tg_util.generate_font_list(font_filepaths)
 	font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-	#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-	handwriting_dict = None
+	#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
+	char_images_dict = None
 
 	#--------------------
 	font_size = 64
@@ -955,7 +955,7 @@ def generate_single_letter_dataset():
 	#characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
 	characterPositioner = tg_util.SimpleCharacterPositioner()
-	textGenerator = tg_util.BasicTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, handwriting_dict=handwriting_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), alpha_matte_mode='1')
+	textGenerator = tg_util.BasicTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, char_images_dict=char_images_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), alpha_matte_mode='1')
 
 	batch_size = 1024
 	generator = textGenerator.create_subset_generator(word_set, batch_size, color_functor)

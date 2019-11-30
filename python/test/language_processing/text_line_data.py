@@ -288,7 +288,7 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 
 # This class is independent of language.
 class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
 		super().__init__(text_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
 
 		#--------------------
@@ -379,7 +379,7 @@ class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
 
 # This class is independent of language.
 class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, handwriting_dict, color_functor, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
 		super().__init__(text_set, image_height, image_width, image_channel, color_functor, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
 
 		#--------------------
@@ -404,9 +404,9 @@ class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 		#characterTransformer = tg_util.RotationTransformer(-30, 30)
 		#characterTransformer = tg_util.ImgaugAffineTransformer()
 		characterPositioner = tg_util.SimpleCharacterPositioner()
-		self._textGenerator = tg_util.BasicTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, handwriting_dict=handwriting_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), alpha_matte_mode=alpha_matte_mode)
+		self._textGenerator = tg_util.BasicTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, char_images_dict=char_images_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), alpha_matte_mode=alpha_matte_mode)
 		"""
-		characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode=alpha_matte_mode)
+		characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, char_images_dict, mode=alpha_matte_mode)
 		self._textGenerator = tg_util.SimpleTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio))
 		"""
 
@@ -415,7 +415,7 @@ class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 
 # This class is independent of language.
 class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, handwriting_dict, color_functor, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
 		super().__init__(text_set, image_height, image_width, image_channel, color_functor, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
 
 		#--------------------
@@ -446,9 +446,9 @@ class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatas
 		#characterTransformer = tg_util.RotationTransformer(-30, 30)
 		#characterTransformer = tg_util.ImgaugAffineTransformer()
 		characterPositioner = tg_util.SimpleCharacterPositioner()
-		self._textGenerator = tg_util.BasicTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, handwriting_dict=handwriting_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), alpha_matte_mode=alpha_matte_mode)
+		self._textGenerator = tg_util.BasicTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, char_images_dict=char_images_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), alpha_matte_mode=alpha_matte_mode)
 		"""
-		characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode=alpha_matte_mode)
+		characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, char_images_dict, mode=alpha_matte_mode)
 		self._textGenerator = tg_util.SimpleTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio))
 		"""
 
@@ -942,7 +942,7 @@ class RunTimeTextLinePairDatasetBase(TextLinePairDatasetBase):
 
 # This class is independent of language.
 class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, handwriting_dict, corrupt_functor, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, corrupt_functor, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
 		super().__init__(text_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
 
 		#--------------------
@@ -1037,7 +1037,7 @@ class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 
 # This class is independent of language.
 class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
-	def __init__(self, text_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, handwriting_dict, corrupt_functor, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
+	def __init__(self, text_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, corrupt_functor, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
 		super().__init__(text_set, hr_image_height, hr_image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
 
 		self._lr_image_height, self._lr_image_width = lr_image_height, lr_image_width

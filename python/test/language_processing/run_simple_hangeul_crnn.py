@@ -145,8 +145,8 @@ def generate_font_colors(image_depth):
 	return font_color, bg_color
 
 class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len, use_NWHC, functools.partial(generate_font_colors, image_depth=image_channel), default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, max_label_len=0, use_NWHC=True, default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, font_list, max_label_len, use_NWHC, functools.partial(generate_font_colors, image_depth=image_channel), default_value)
 
 		self._augmenter = create_augmenter()
 
@@ -221,8 +221,8 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 				break
 
 class MyRunTimeAlphaMatteTextLineDataset(text_line_data.RunTimeAlphaMatteTextLineDataset):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, font_list, handwriting_dict, functools.partial(generate_font_colors, image_depth=image_channel), max_label_len, use_NWHC, alpha_matte_mode, default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, font_list, char_images_dict, functools.partial(generate_font_colors, image_depth=image_channel), max_label_len, use_NWHC, alpha_matte_mode, default_value)
 
 		self._augmenter = create_augmenter()
 
@@ -715,13 +715,13 @@ class MyRunner(object):
 			import text_generation_util as tg_util
 			font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 			font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-			#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
-			handwriting_dict = None
+			#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
+			char_images_dict = None
 
 			print('[SWL] Info: Start creating a Hangeul dataset...')
 			start_time = time.time()
-			self._dataset = MyRunTimeTextLineDataset(set(texts), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len)
-			#self._dataset = MyRunTimeAlphaMatteTextLineDataset(set(texts), image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=max_label_len)
+			self._dataset = MyRunTimeTextLineDataset(set(texts), image_height, image_width, image_channel, font_list, char_images_dict, max_label_len=max_label_len)
+			#self._dataset = MyRunTimeAlphaMatteTextLineDataset(set(texts), image_height, image_width, image_channel, font_list, char_images_dict, max_label_len=max_label_len)
 			print('[SWL] Info: End creating a Hangeul dataset: {} secs.'.format(time.time() - start_time))
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000  # Uses a subset of texts per epoch.
