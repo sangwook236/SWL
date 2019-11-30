@@ -131,19 +131,17 @@ def create_augmenter():
 
 def generate_font_colors(image_depth):
 	import random
-	#font_color = (255,) * image_depth
-	#font_color = tuple(random.randrange(256) for _ in range(image_depth))  # Uses a specific RGB font color.
-	#font_color = (random.randrange(256),) * image_depth  # Uses a specific grayscale font color.
-	gray_val = random.randrange(255)
-	font_color = (gray_val,) * image_depth  # Uses a specific black font color.
-	#font_color = (random.randrange(128, 256),) * image_depth  # Uses a specific white font color.
-	#font_color = None  # Uses a random font color.
-	#bg_color = (0,) * image_depth
-	#bg_color = tuple(random.randrange(256) for _ in range(image_depth))  # Uses a specific RGB background color.
-	#bg_color = (random.randrange(256),) * image_depth  # Uses a specific grayscale background color.
-	#bg_color = (random.randrange(0, 128),) * image_depth  # Uses a specific black background color.
-	bg_color = (random.randrange(gray_val + 1, 256),) * image_depth  # Uses a specific white background color.
-	#bg_color = None  # Uses a random background color.
+	#font_color = (255,) * image_depth  # White font color.
+	#font_color = tuple(random.randrange(256) for _ in range(image_depth))  # An RGB font color.
+	#font_color = (random.randrange(256),) * image_depth  # A grayscale font color.
+	#gray_val = random.randrange(255)
+	#font_color = (gray_val,) * image_depth  # A lighter grayscale font color.
+	font_color = (random.randrange(128, 256),) * image_depth  # A light grayscale font color.
+	#bg_color = (0,) * image_depth  # Black background color.
+	#bg_color = tuple(random.randrange(256) for _ in range(image_depth))  # An RGB background color.
+	#bg_color = (random.randrange(256),) * image_depth  # A grayscale background color.
+	#bg_color = (random.randrange(gray_val + 1, 256),) * image_depth  # A darker grayscale background color.
+	bg_color = (random.randrange(0, 128),) * image_depth  # A dark grayscale background color.
 	return font_color, bg_color
 
 class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
@@ -160,65 +158,68 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
 	def _create_batch_generator(self, textGenerator, color_functor, text_set, batch_size, steps_per_epoch, shuffle, is_training=False):
-		def reduce_image(image, min_height, max_height):
+		min_height, max_height = round(self._image_height * 0.5), self._image_height * 2
+		#min_height, max_height = self._image_height, self._image_height * 2
+
+		def reduce_image(image):
 			import random, cv2
 			height = random.randint(min_height, max_height)
 			interpolation = random.choice([cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4])
 			return cv2.resize(image, (round(image.shape[1] * height / image.shape[0]), height), interpolation=interpolation)
 
-		min_height, max_height = round(self._image_height * 0.5), self._image_height * 2
-		#min_height, max_height = self._image_height, self._image_height * 2
 		if steps_per_epoch:
 			generator = textGenerator.create_subset_generator(text_set, batch_size, color_functor)
 		else:
 			generator = textGenerator.create_whole_generator(list(text_set), batch_size, color_functor, shuffle=shuffle)
 		if is_training and hasattr(self, 'augment'):
-			for step, (texts, scenes, _) in enumerate(generator):
+			def apply_transform(scenes):
+				apply_augmentation = lambda img: \
+					self.resize(np.squeeze(self.augment(np.expand_dims(reduce_image(img), axis=0), None)[0], axis=0))
+
 				# For using RGB images.
 				#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
 				# For using grayscale images.
 				#scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
 
 				# Simulates resizing artifact.
-				#scenes = list(map(lambda image: cv2.pyrDown(cv2.pyrDown(image)), scenes))
-				scenes = list(map(lambda image: reduce_image(image, min_height, max_height), scenes))
-
-				scenes = list(map(lambda image: self.resize(image), scenes))
-				scenes, _ = self.augment(np.array(scenes), None)
-				scenes = self._transform_images(scenes.astype(np.float32), use_NWHC=self._use_NWHC)
-				#scene_text_masks = list(map(lambda image: self.resize(image), scene_text_masks))
-				#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
-
-				scenes, _ = self.preprocess(scenes, None)
-				#scene_text_masks, _ = self.preprocess(scene_text_masks, None)
-				texts_int = list(map(lambda txt: self.encode_label(txt), texts))
-				#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
-				yield (scenes, texts, texts_int), len(texts)
-				if steps_per_epoch and (step + 1) >= steps_per_epoch:
-					break
-		else:
-			for step, (texts, scenes, _) in enumerate(generator):
-				# For using RGB images.
-				#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
-				# For using grayscale images.
-				#scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
-
-				# Simulates resizing artifact.
-				#scenes = list(map(lambda image: cv2.pyrDown(cv2.pyrDown(image)), scenes))
-				scenes = list(map(lambda image: reduce_image(image, min_height, max_height), scenes))
-
-				scenes = list(map(lambda image: self.resize(image), scenes))
+				# Reduce(resize) -> enlarge -> augment. Not good.
+				##scenes = list(map(lambda image: cv2.pyrDown(cv2.pyrDown(image)), scenes))
+				#scenes = list(map(lambda image: reduce_image(image), scenes))
+				#scenes = list(map(lambda image: self.resize(image), scenes))
+				#scenes, _ = self.augment(np.array(scenes), None)
+				#scenes = self._transform_images(scenes.astype(np.float32), use_NWHC=self._use_NWHC)
+				# Reduce(resize) -> augment -> enlarge.
+				scenes = list(map(apply_augmentation, scenes))
 				scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
 				#scene_text_masks = list(map(lambda image: self.resize(image), scene_text_masks))
 				#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
+				return scenes
+		else:
+			def apply_transform(scenes):
+				# For using RGB images.
+				#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
+				# For using grayscale images.
+				#scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
 
-				scenes, _ = self.preprocess(scenes, None)
-				#scene_text_masks, _ = self.preprocess(scene_text_masks, None)
-				texts_int = list(map(lambda txt: self.encode_label(txt), texts))
-				#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
-				yield (scenes, texts, texts_int), len(texts)
-				if steps_per_epoch and (step + 1) >= steps_per_epoch:
-					break
+				# Simulates resizing artifact.
+				##scenes = list(map(lambda image: cv2.pyrDown(cv2.pyrDown(image)), scenes))
+				#scenes = list(map(lambda image: reduce_image(image), scenes))
+				#scenes = list(map(lambda image: self.resize(image), scenes))
+				scenes = list(map(lambda image: self.resize(reduce_image(image)), scenes))
+				scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
+				#scene_text_masks = list(map(lambda image: self.resize(image), scene_text_masks))
+				#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
+				return scenes
+
+		for step, (texts, scenes, _) in enumerate(generator):
+			scenes = apply_transform(scenes)
+			scenes, _ = self.preprocess(scenes, None)
+			#scene_text_masks, _ = self.preprocess(scene_text_masks, None)
+			texts_int = list(map(lambda txt: self.encode_label(txt), texts))
+			#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
+			yield (scenes, texts, texts_int), len(texts)
+			if steps_per_epoch and (step + 1) >= steps_per_epoch:
+				break
 
 class MyRunTimeAlphaMatteTextLineDataset(text_line_data.RunTimeAlphaMatteTextLineDataset):
 	def __init__(self, text_set, image_height, image_width, image_channel, font_list, handwriting_dict, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
@@ -990,7 +991,7 @@ class MyRunner(object):
 
 			#--------------------
 			print('[SWL] Info: Start loading images...')
-			inf_images, image_filepaths = self._dataset.load_images_from_files(image_filepaths, is_grayscale=False)
+			inf_images, image_filepaths = self._dataset.load_images_from_files(image_filepaths, is_grayscale=True)
 			print('[SWL] Info: End loading images: {} secs.'.format(time.time() - start_time))
 			print('[SWL] Info: Loaded images: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inf_images.shape, inf_images.dtype, np.min(inf_images), np.max(inf_images)))
 

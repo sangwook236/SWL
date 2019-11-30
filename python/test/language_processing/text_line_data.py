@@ -56,13 +56,9 @@ class TextLineDatasetBase(abc.ABC):
 				return None
 		return list(map(int2str, labels_int))
 
-	"""
 	@abc.abstractmethod
 	def augment(self, inputs, outputs, *args, **kwargs):
 		raise NotImplementedError
-	"""
-	def augment(self, inputs, outputs, *args, **kwargs):
-		return inputs, outputs
 
 	@abc.abstractmethod
 	def preprocess(self, inputs, outputs, *args, **kwargs):
@@ -249,27 +245,26 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 		else:
 			generator = textGenerator.create_whole_generator(list(text_set), batch_size, color_functor, shuffle=shuffle)
 		if is_training and hasattr(self, 'augment'):
-			for step, (texts, scenes, _) in enumerate(generator):
+			def apply_transform(scenes):
+				apply_augmentation = lambda img: \
+					self.resize(np.squeeze(self.augment(np.expand_dims(img, axis=0), None)[0], axis=0))
+
 				# For using RGB images.
 				#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
 				# For using grayscale images.
 				#scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
 
-				scenes = list(map(lambda image: self.resize(image), scenes))
-				scenes, _ = self.augment(np.array(scenes), None)
+				# Resize -> augment. Not good.
+				#scenes = list(map(lambda image: self.resize(image), scenes))
+				#scenes, _ = self.augment(np.array(scenes), None)
+				# Augment -> resize.
+				scenes = list(map(apply_augmentation, scenes))
 				scenes = self._transform_images(scenes.astype(np.float32), use_NWHC=self._use_NWHC)
 				#scene_text_masks = list(map(lambda image: self.resize(image), scene_text_masks))
 				#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
-
-				scenes, _ = self.preprocess(scenes, None)
-				#scene_text_masks, _ = self.preprocess(scene_text_masks, None)
-				texts_int = list(map(lambda txt: self.encode_label(txt), texts))
-				#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
-				yield (scenes, texts, texts_int), len(texts)
-				if steps_per_epoch and (step + 1) >= steps_per_epoch:
-					break
+				return scenes
 		else:
-			for step, (texts, scenes, _) in enumerate(generator):
+			def apply_transform(scenes):
 				# For using RGB images.
 				#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
 				# For using grayscale images.
@@ -279,14 +274,17 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 				scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
 				#scene_text_masks = list(map(lambda image: self.resize(image), scene_text_masks))
 				#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
+				return scenes
 
-				scenes, _ = self.preprocess(scenes, None)
-				#scene_text_masks, _ = self.preprocess(scene_text_masks, None)
-				texts_int = list(map(lambda txt: self.encode_label(txt), texts))
-				#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
-				yield (scenes, texts, texts_int), len(texts)
-				if steps_per_epoch and (step + 1) >= steps_per_epoch:
-					break
+		for step, (texts, scenes, _) in enumerate(generator):
+			scenes = apply_transform(scenes)
+			scenes, _ = self.preprocess(scenes, None)
+			#scene_text_masks, _ = self.preprocess(scene_text_masks, None)
+			texts_int = list(map(lambda txt: self.encode_label(txt), texts))
+			#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
+			yield (scenes, texts, texts_int), len(texts)
+			if steps_per_epoch and (step + 1) >= steps_per_epoch:
+				break
 
 # This class is independent of language.
 class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
@@ -320,6 +318,9 @@ class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 		else:
 			raise ValueError('Invalid image channel, {}'.format(image_channel))
 
+	def augment(self, inputs, outputs, *args, **kwargs):
+		return inputs, outputs
+
 #--------------------------------------------------------------------
 
 class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
@@ -332,9 +333,14 @@ class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
 		else:
 			generator = textGenerator.create_whole_generator(list(text_set), batch_size, color_functor, shuffle=shuffle)
 		if is_training and hasattr(self, 'augment'):
-			for step, (texts, scenes, _) in enumerate(generator):
-				#scenes = list(map(lambda image: self.resize(image), scenes))
-				scenes = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scenes))
+			def apply_transform(scenes):
+				apply_augmentation = lambda img: \
+					self.resize(np.squeeze(self.augment(np.expand_dims(img, axis=0), None)[0], axis=0))
+
+				"""
+				# Resize -> augment. Not good.
+				scenes = list(map(lambda image: self.resize(image), scenes))
+				#scenes = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scenes))
 				#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (self.resize(image), self.resize(mask)), scenes, scene_text_masks))))
 				#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), self.resize(mask)), scenes, scene_text_masks))))
 
@@ -343,31 +349,33 @@ class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
 
 				scenes = self._transform_images(scenes.astype(np.float32), use_NWHC=self._use_NWHC)
 				#scene_text_masks = self._transform_images(scene_text_masks.astype(np.float32), use_NWHC=self._use_NWHC)
-
-				scenes, _ = self.preprocess(scenes, None)
-				#scene_text_masks = scene_text_masks.astype(np.float32) / 255
-				texts_int = list(map(lambda txt: self.encode_label(txt), texts))
-				#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
-				yield (scenes, texts, texts_int), len(texts)
-				if steps_per_epoch and (step + 1) >= steps_per_epoch:
-					break
+				"""
+				# Augment -> resize.
+				scenes = list(map(apply_augmentation, scenes))
+				#scenes, scene_text_masks = list(map(apply_augmentation2, scenes, scene_text_masks))
+				scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
+				#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
+				return scenes
 		else:
-			for step, (texts, scenes, _) in enumerate(generator):
-				#scenes = list(map(lambda image: self.resize(image), scenes))
-				scenes = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scenes))
+			def apply_transform(scenes):
+				scenes = list(map(lambda image: self.resize(image), scenes))
+				#scenes = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scenes))
 				#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (self.resize(image), self.resize(mask)), scenes, scene_text_masks))))
 				#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), self.resize(mask)), scenes, scene_text_masks))))
 
 				scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
 				#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
+				return scenes
 
-				scenes, _ = self.preprocess(scenes, None)
-				#scene_text_masks = scene_text_masks.astype(np.float32) / 255
-				texts_int = list(map(lambda txt: self.encode_label(txt), texts))
-				#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
-				yield (scenes, texts, texts_int), len(texts)
-				if steps_per_epoch and (step + 1) >= steps_per_epoch:
-					break
+		for step, (texts, scenes, _) in enumerate(generator):
+			scenes = apply_transform(scenes)
+			scenes, _ = self.preprocess(scenes, None)
+			#scene_text_masks = scene_text_masks.astype(np.float32) / 255
+			texts_int = list(map(lambda txt: self.encode_label(txt), texts))
+			#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
+			yield (scenes, texts, texts_int), len(texts)
+			if steps_per_epoch and (step + 1) >= steps_per_epoch:
+				break
 
 # This class is independent of language.
 class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
@@ -401,6 +409,9 @@ class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 		characterAlphaMatteGenerator = tg_util.SimpleCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode=alpha_matte_mode)
 		self._textGenerator = tg_util.SimpleTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio))
 		"""
+
+	def augment(self, inputs, outputs, *args, **kwargs):
+		return inputs, outputs
 
 # This class is independent of language.
 class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
@@ -481,6 +492,9 @@ class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatas
 			except ValueError:
 				return None
 		return list(map(int2str, labels_int))
+
+	def augment(self, inputs, outputs, *args, **kwargs):
+		return inputs, outputs
 
 #--------------------------------------------------------------------
 
@@ -686,6 +700,9 @@ class JsonBasedTextLineDataset(JsonBasedTextLineDatasetBase):
 		print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
 		print('Test label: shape = {}, dtype = {}.'.format(self._test_labels.shape, self._test_labels.dtype))
 
+	def augment(self, inputs, outputs, *args, **kwargs):
+		return inputs, outputs
+
 # This class is independent of language.
 class JsonBasedHangeulJamoTextLineDataset(JsonBasedTextLineDatasetBase):
 	def __init__(self, train_json_filepath, test_json_filepath, image_height, image_width, image_channel, use_NWHC=True, default_value=-1):
@@ -769,6 +786,9 @@ class JsonBasedHangeulJamoTextLineDataset(JsonBasedTextLineDatasetBase):
 			except ValueError:
 				return None
 		return list(map(int2str, labels_int))
+
+	def augment(self, inputs, outputs, *args, **kwargs):
+		return inputs, outputs
 
 #--------------------------------------------------------------------
 
@@ -954,15 +974,21 @@ class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 		else:
 			raise ValueError('Invalid image channel, {}'.format(image_channel))
 
-	def _create_batch_generator(self, textGenerator, color_functor, text_set, batch_size, steps_per_epoch, shuffle, is_training=False):
-		def reduce_image(image, min_height, max_height):
-			height = random.randint(min_height, max_height)
-			interpolation = random.choice([cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4])
-			return cv2.resize(image, (round(image.shape[1] * height / image.shape[0]), height), interpolation=interpolation)
+	def augment(self, inputs, outputs, *args, **kwargs):
+		return inputs, outputs
 
+	def _create_batch_generator(self, textGenerator, color_functor, text_set, batch_size, steps_per_epoch, shuffle, is_training=False):
 		#min_height, max_height = round(self._image_height * 0.5), self._image_height
 		#min_height, max_height = self._image_height, self._image_height * 2
 		min_height, max_height = round(self._image_height * 0.5), self._image_height * 2
+
+		def reduce_image(image):
+			height = random.randint(min_height, max_height)
+			interpolation = random.choice([cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4])
+			return cv2.resize(image, (round(image.shape[1] * height / image.shape[0]), height), interpolation=interpolation)
+		apply_corruption = lambda img: \
+			self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(reduce_image(img), axis=0)), axis=0))
+
 		if steps_per_epoch:
 			generator = textGenerator.create_subset_generator(text_set, batch_size, color_functor)
 		else:
@@ -975,13 +1001,15 @@ class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 
 			corrupted_scenes = scenes
 			# Simulates resizing artifact.
-			#corrupted_scenes = list(map(lambda image: cv2.pyrDown(cv2.pyrDown(image)), corrupted_scenes))
-			corrupted_scenes = list(map(lambda image: reduce_image(image, min_height, max_height), corrupted_scenes))
-			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(image, axis=0)), axis=0)), corrupted_scenes))
+			# Reduce -> corrupt -> enlarge.
+			##corrupted_scenes = list(map(lambda image: cv2.pyrDown(cv2.pyrDown(image)), corrupted_scenes))
+			#corrupted_scenes = list(map(lambda image: reduce_image(image), corrupted_scenes))
+			#corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(image, axis=0)), axis=0)), corrupted_scenes))
+			corrupted_scenes = list(map(apply_corruption, corrupted_scenes))
 			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
 			"""
 			corrupted_scenes = scene_text_masks
-			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(image, axis=0)))), corrupted_scenes))
+			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(image, axis=0)), axis=0)), corrupted_scenes))
 			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
 			#corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32) * 255, use_NWHC=self._use_NWHC)
 			#corrupted_scenes = 255 - corrupted_scenes  # Invert.
@@ -1047,14 +1075,20 @@ class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 	def shape(self):
 		return self._image_height, self._image_width, self._lr_image_height, self._lr_image_width, self._image_channel
 
+	def augment(self, inputs, outputs, *args, **kwargs):
+		return inputs, outputs
+
 	def _create_batch_generator(self, textGenerator, color_functor, text_set, batch_size, steps_per_epoch, shuffle, is_training=False):
-		def reduce_image(image, min_height, max_height):
+		#min_height, max_height = round(self._lr_image_height * 0.5), self._lr_image_height
+		min_height, max_height = self._lr_image_height, self._lr_image_height * 2
+
+		def reduce_image(image):
 			height = random.randint(min_height, max_height)
 			interpolation = random.choice([cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4])
 			return cv2.resize(image, (round(image.shape[1] * height / image.shape[0]), height), interpolation=interpolation)
+		apply_corruption = lambda img: \
+			self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(reduce_image(img), axis=0)), axis=0), None, self._lr_image_height, self._lr_image_width)
 
-		#min_height, max_height = round(self._lr_image_height * 0.5), self._lr_image_height
-		min_height, max_height = self._lr_image_height, self._lr_image_height * 2
 		if steps_per_epoch:
 			generator = textGenerator.create_subset_generator(text_set, batch_size, color_functor)
 		else:
@@ -1067,13 +1101,15 @@ class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 
 			corrupted_scenes = scenes
 			# Simulates resizing artifact.
-			#corrupted_scenes = list(map(lambda image: cv2.pyrDown(cv2.pyrDown(image)), corrupted_scenes))
-			corrupted_scenes = list(map(lambda image: reduce_image(image, min_height, max_height), corrupted_scenes))
-			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(image, axis=0)), axis=0), None, self._lr_image_height, self._lr_image_width), corrupted_scenes))
+			# Reduce -> corrupt -> enlarge.
+			##corrupted_scenes = list(map(lambda image: cv2.pyrDown(cv2.pyrDown(image)), corrupted_scenes))
+			#corrupted_scenes = list(map(lambda image: reduce_image(image), corrupted_scenes))
+			#corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(image, axis=0)), axis=0), None, self._lr_image_height, self._lr_image_width), corrupted_scenes))
+			corrupted_scenes = list(map(apply_corruption, corrupted_scenes))
 			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
 			"""
 			corrupted_scenes = scene_text_masks
-			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(image, axis=0)))), corrupted_scenes))
+			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(image, axis=0)), axis=0)), corrupted_scenes))
 			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
 			#corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32) * 255, use_NWHC=self._use_NWHC)
 			#corrupted_scenes = 255 - corrupted_scenes  # Invert.

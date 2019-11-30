@@ -130,19 +130,17 @@ def create_augmenter():
 
 def generate_font_colors(image_depth):
 	import random
-	#font_color = (255,) * image_depth
-	#font_color = tuple(random.randrange(256) for _ in range(image_depth))  # Uses a specific RGB font color.
-	#font_color = (random.randrange(256),) * image_depth  # Uses a specific grayscale font color.
-	gray_val = random.randrange(255)
-	font_color = (gray_val,) * image_depth  # Uses a specific black font color.
-	#font_color = (random.randrange(128, 256),) * image_depth  # Uses a specific white font color.
-	#font_color = None  # Uses a random font color.
-	#bg_color = (0,) * image_depth
-	#bg_color = tuple(random.randrange(256) for _ in range(image_depth))  # Uses a specific RGB background color.
-	#bg_color = (random.randrange(256),) * image_depth  # Uses a specific grayscale background color.
-	#bg_color = (random.randrange(0, 128),) * image_depth  # Uses a specific black background color.
-	bg_color = (random.randrange(gray_val + 1, 256),) * image_depth  # Uses a specific white background color.
-	#bg_color = None  # Uses a random background color.
+	#font_color = (255,) * image_depth  # White font color.
+	#font_color = tuple(random.randrange(256) for _ in range(image_depth))  # An RGB font color.
+	#font_color = (random.randrange(256),) * image_depth  # A grayscale font color.
+	#gray_val = random.randrange(255)
+	#font_color = (gray_val,) * image_depth  # A lighter grayscale font color.
+	font_color = (random.randrange(128, 256),) * image_depth  # A light grayscale font color.
+	#bg_color = (0,) * image_depth  # Black background color.
+	#bg_color = tuple(random.randrange(256) for _ in range(image_depth))  # An RGB background color.
+	#bg_color = (random.randrange(256),) * image_depth  # A grayscale background color.
+	#bg_color = (random.randrange(gray_val + 1, 256),) * image_depth  # A darker grayscale background color.
+	bg_color = (random.randrange(0, 128),) * image_depth  # A dark grayscale background color.
 	return font_color, bg_color
 
 class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
@@ -182,8 +180,9 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 				#scenes = list(map(lambda image: cv2.pyrDown(cv2.pyrDown(image)), scenes))
 				scenes = list(map(lambda image: reduce_image(image, min_height, max_height), scenes))
 
-				scenes = list(map(lambda image: self.resize(image), scenes))
-				scenes, _ = self.augment(np.array(scenes), None)
+				#scenes = list(map(lambda image: self.resize(image), scenes))
+				#scenes, _ = self.augment(np.array(scenes), None)
+				scenes = np.array(list(map(lambda image: self.resize(np.squeeze(self.augment(np.expand_dims(image, axis=0), None)[0], axis=0)), scenes)))
 				scenes = self._transform_images(scenes.astype(np.float32), use_NWHC=self._use_NWHC)
 				#scene_text_masks = list(map(lambda image: self.resize(image), scene_text_masks))
 				#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
@@ -679,13 +678,13 @@ class MyRunner(object):
 		print('[SWL] Info: Start generating formatted numbers...')
 		start_time = time.time()
 		formatted_numbers = create_formatted_numbers(num_examples=100000)
-		print('[SWL] Info: End generating formatted numbers: {} secs, {} numbers generated.'.format(len(formatted_numbers), time.time() - start_time))
+		print('[SWL] Info: End generating formatted numbers, {} numbers generated: {} secs.'.format(len(formatted_numbers), time.time() - start_time))
 
 		print('[SWL] Info: Start generating random numbers...')
 		start_time = time.time()
 		random_numbers = create_random_words(min_char_len=1, max_char_len=10)
 		random_numbers = generate_texts(random_numbers, min_word_len=1, max_word_len=3)
-		print('[SWL] Info: End generating random numbers: {} secs, {} numbers generated.'.format(len(random_numbers), time.time() - start_time))
+		print('[SWL] Info: End generating random numbers, {} numbers generated: {} secs.'.format(len(random_numbers), time.time() - start_time))
 
 		#numbers = formatted_numbers
 		numbers = formatted_numbers + random_numbers
@@ -1007,7 +1006,7 @@ class MyRunner(object):
 
 			#--------------------
 			print('[SWL] Info: Start loading images...')
-			inf_images, image_filepaths = self._dataset.load_images_from_files(image_filepaths, is_grayscale=False)
+			inf_images, image_filepaths = self._dataset.load_images_from_files(image_filepaths, is_grayscale=True)
 			print('[SWL] Info: End loading images: {} secs.'.format(time.time() - start_time))
 			print('[SWL] Info: Loaded images: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inf_images.shape, inf_images.dtype, np.min(inf_images), np.max(inf_images)))
 
