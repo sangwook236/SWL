@@ -66,14 +66,16 @@ def hangeul_jamo_set_test():
 
 	#--------------------
 	hangeul_jamo_charset = jamo_set4
-	alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-	digit_charset = '0123456789'
-	symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
 
-	charset = set(hangeul_jamo_charset)
-	charset = charset.union(alphabet_charset)
-	charset = charset.union(digit_charset)
-	charset = charset.union(symbol_charset)
+	import string
+	charset = \
+		hangeul_jamo_charset + \
+		string.ascii_uppercase + \
+		string.ascii_lowercase + \
+		string.digits + \
+		string.punctuation + \
+		' '
+
 	charset = sorted(charset)
 
 	print('#charset =', len(charset))

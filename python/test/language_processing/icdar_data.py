@@ -1,4 +1,4 @@
-import random, time, glob
+import os, random, time, glob
 import numpy as np
 #import cv2
 #import sklearn
@@ -6,7 +6,7 @@ import numpy as np
 import text_line_data
 
 # REF [site] >> https://rrc.cvc.uab.es/?ch=13
-class Icdar2019SroieTextLineDataset(text_line_data.ImageTextFileBasedTextLineDatasetBase):
+class Icdar2019SroieTextLineDataset(text_line_data.FileBasedTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True)
 
@@ -21,9 +21,10 @@ class Icdar2019SroieTextLineDataset(text_line_data.ImageTextFileBasedTextLineDat
 			string.digits + \
 			string.punctuation + \
 			' '
+		charset = list(charset) + [self._UNKNOWN]
 
-		#self._labels = sorted(charset)
-		self._labels = ''.join(sorted(charset))
+		self._labels = sorted(charset)
+		#self._labels = ''.join(sorted(charset))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
@@ -32,19 +33,24 @@ class Icdar2019SroieTextLineDataset(text_line_data.ImageTextFileBasedTextLineDat
 
 		#--------------------
 		# Load data.
-		print('[SWL] Info: Start loading dataset...')
-		start_time = time.time()
-		image_filepaths, label_filepaths = sorted(glob.glob(os.path.join(data_dir_path, '*.jpg'), recursive=False)), sorted(glob.glob(os.path.join(data_dir_path, '*.txt'), recursive=False))
-		images, labels_str, labels_int = self._load_data(image_filepaths, label_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
-		print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
-		labels_str, labels_int = np.array(labels_str), np.array(labels_int)
+		if data_dir_path:
+			print('[SWL] Info: Start loading dataset...')
+			start_time = time.time()
+			image_filepaths, label_filepaths = sorted(glob.glob(os.path.join(data_dir_path, '*.jpg'), recursive=False)), sorted(glob.glob(os.path.join(data_dir_path, '*.txt'), recursive=False))
+			images, labels_str, labels_int = self._load_data(image_filepaths, label_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
+			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
+			labels_str, labels_int = np.array(labels_str), np.array(labels_int)
 
-		num_examples = len(images)
-		indices = np.arange(num_examples)
-		np.random.shuffle(indices)
-		test_offset = round(train_test_ratio * num_examples)
-		train_indices, test_indices = indices[:test_offset], indices[test_offset:]
-		self._train_data, self._test_data = (images[train_indices], labels_str[train_indices], labels_int[train_indices]), (images[test_indices], labels_str[test_indices], labels_int[test_indices])
+			num_examples = len(images)
+			indices = np.arange(num_examples)
+			np.random.shuffle(indices)
+			test_offset = round(train_test_ratio * num_examples)
+			train_indices, test_indices = indices[:test_offset], indices[test_offset:]
+			self._train_data, self._test_data = (images[train_indices], labels_str[train_indices], labels_int[train_indices]), (images[test_indices], labels_str[test_indices], labels_int[test_indices])
+		else:
+			print('[SWL] Info: Dataset were not loaded.')
+			self._train_data, self._test_data = None, None
+			num_examples = 0
 
 	def augment(self, inputs, outputs, *args, **kwargs):
 		return inputs, outputs

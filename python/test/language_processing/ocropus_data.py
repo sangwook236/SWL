@@ -115,9 +115,7 @@ class OcropusTextLineDatasetBase(text_line_data.TextLineDatasetBase):
 		cv2.destroyAllWindows()
 
 	def _load_data(self, data_dir_path, image_height, image_width, image_channel, max_label_len):
-		image_filepaths, label_filepaths = glob.glob(data_dir_path + '/**/*.bin.png', recursive=False), glob.glob(data_dir_path + '/**/*.gt.txt', recursive=False)
-		image_filepaths.sort()
-		label_filepaths.sort()
+		image_filepaths, label_filepaths = sorted(glob.glob(data_dir_path + '/**/*.bin.png', recursive=False)), sorted(glob.glob(data_dir_path + '/**/*.gt.txt', recursive=False))
 
 		images, labels_str, labels_int = list(), list(), list()
 		for img_fpath, lbl_fpath in zip(image_filepaths, label_filepaths):
@@ -188,15 +186,17 @@ class EnglishOcropusTextLineDataset(OcropusTextLineDatasetBase):
 			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
 
 		#--------------------
-		alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-		digit_charset = '0123456789'
-		symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
+		import string
+		charset = \
+			string.ascii_uppercase + \
+			string.ascii_lowercase + \
+			string.digits + \
+			string.punctuation + \
+			' '
+		charset = list(charset) + [self._UNKNOWN]
 
-		#label_set = set(alphabet_charset + digit_charset)
-		label_set = set(alphabet_charset + digit_charset + symbol_charset)
-
-		#self._labels = sorted(label_set)
-		self._labels = ''.join(sorted(label_set))
+		self._labels = sorted(charset)
+		#self._labels = ''.join(sorted(charset))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
@@ -222,6 +222,9 @@ class EnglishOcropusTextLineDataset(OcropusTextLineDatasetBase):
 			print('[SWL] Info: Dataset were not loaded.')
 			self._train_data, self._test_data = None, None
 			num_examples = 0
+
+	def augment(self, inputs, outputs, *args, **kwargs):
+		return inputs, outputs
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		if inputs is not None:
@@ -276,15 +279,20 @@ class HangeulOcropusTextLineDataset(OcropusTextLineDatasetBase):
 		#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 		#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 		hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
-		alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-		digit_charset = '0123456789'
-		symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
 
-		#label_set = set(hangeul_charset + hangeul_jamo_charset)
-		label_set = set(hangeul_charset + hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset)
+		import string
+		charset = \
+			hangeul_charset + \
+			hangeul_jamo_charset + \
+			string.ascii_uppercase + \
+			string.ascii_lowercase + \
+			string.digits + \
+			string.punctuation + \
+			' '
+		charset = list(charset) + [self._UNKNOWN]
 
-		#self._labels = sorted(label_set)
-		self._labels = ''.join(sorted(label_set))
+		self._labels = sorted(charset)
+		#self._labels = ''.join(sorted(charset))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
@@ -310,6 +318,9 @@ class HangeulOcropusTextLineDataset(OcropusTextLineDatasetBase):
 			print('[SWL] Info: Dataset were not loaded.')
 			self._train_data, self._test_data = None, None
 			num_examples = 0
+
+	def augment(self, inputs, outputs, *args, **kwargs):
+		return inputs, outputs
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		if inputs is not None:
@@ -369,16 +380,19 @@ class HangeulJamoOcropusTextLineDataset(OcropusTextLineDatasetBase):
 		#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 		hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 		#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
-		alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-		digit_charset = '0123456789'
-		symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
 
-		#label_set = set(hangeul_jamo_charset + alphabet_charset + digit_charset)
-		label_set = set(hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset)
-		label_set.add(self._EOJC)
+		import string
+		charset = \
+			hangeul_jamo_charset + \
+			string.ascii_uppercase + \
+			string.ascii_lowercase + \
+			string.digits + \
+			string.punctuation + \
+			' '
+		charset = list(charset) + [UNKNOWN, EOJC]
 
-		self._labels = sorted(label_set)
-		#self._labels = ''.join(sorted(label_set))
+		self._labels = sorted(charset)
+		#self._labels = ''.join(sorted(charset))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
@@ -421,6 +435,9 @@ class HangeulJamoOcropusTextLineDataset(OcropusTextLineDatasetBase):
 		except Exception as ex:
 			print('[SWL] Error: Failed to decode a label: {}.'.format(label_int))
 			raise
+
+	def augment(self, inputs, outputs, *args, **kwargs):
+		return inputs, outputs
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		if inputs is not None:

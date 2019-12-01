@@ -666,8 +666,8 @@ def draw_character_histogram(texts, charset=None):
 				string.punctuation + \
 				' '
 
-	#charset = sorted(charset)
-	charset = ''.join(sorted(charset))
+	charset = sorted(charset)
+	#charset = ''.join(sorted(charset))
 
 	#--------------------
 	char_dict = dict()

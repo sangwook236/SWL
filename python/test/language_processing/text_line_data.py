@@ -15,17 +15,21 @@ class TextLineDatasetBase(abc.ABC):
 		self._use_NWHC = use_NWHC
 		self._default_value = default_value
 
+		self._UNKNOWN = '<UNK>'  # Unknown label token.
+
 	@property
 	def default_value(self):
 		return self._default_value
 
 	# String label -> integer label.
 	def encode_label(self, label_str, *args, **kwargs):
-		try:
-			return list(self._labels.index(ch) for ch in label_str)
-		except Exception as ex:
-			print('[SWL] Error: Failed to encode a label {}.'.format(label_str))
-			raise
+		def char2index(ch):
+			try:
+				return self._labels.index(ch)
+			except Exception:
+				print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
+				return self._labels.index(self._UNKNOWN)
+		return list(char2index(ch) for ch in label_str)
 
 	# Integer label -> string label.
 	def decode_label(self, label_int, *args, **kwargs):
@@ -257,9 +261,10 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 				# Resize -> augment. Not good.
 				#scenes = list(map(lambda image: self.resize(image), scenes))
 				#scenes, _ = self.augment(np.array(scenes), None)
+				#scenes = self._transform_images(scenes.astype(np.float32), use_NWHC=self._use_NWHC)
 				# Augment -> resize.
 				scenes = list(map(apply_augmentation, scenes))
-				scenes = self._transform_images(scenes.astype(np.float32), use_NWHC=self._use_NWHC)
+				scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
 				#scene_text_masks = list(map(lambda image: self.resize(image), scene_text_masks))
 				#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
 				return scenes
@@ -288,7 +293,7 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 
 # This class is independent of language.
 class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, labels=None, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
 		super().__init__(text_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
 
 		#--------------------
@@ -296,9 +301,14 @@ class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 		#self._EOS = '<EOS>'  # All strings will end with the End-Of-String token.
 
 		#--------------------
-		label_set = functools.reduce(lambda x, word: x.union(word), self._text_set, set())
-		#self._labels = sorted(label_set)
-		self._labels = ''.join(sorted(label_set))
+		if labels:
+			charset = labels
+		else:
+			charset = functools.reduce(lambda x, word: x.union(word), self._text_set, set())
+			charset.add(self._UNKNOWN)
+
+			self._labels = sorted(charset)
+			#self._labels = ''.join(sorted(charset))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
@@ -379,7 +389,7 @@ class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
 
 # This class is independent of language.
 class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor, labels=None, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
 		super().__init__(text_set, image_height, image_width, image_channel, color_functor, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
 
 		#--------------------
@@ -387,9 +397,14 @@ class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 		#self._EOS = '<EOS>'  # All strings will end with the End-Of-String token.
 
 		#--------------------
-		label_set = functools.reduce(lambda x, word: x.union(word), self._text_set, set())
-		#self._labels = sorted(label_set)
-		self._labels = ''.join(sorted(label_set))
+		if labels:
+			charset = labels
+		else:
+			charset = functools.reduce(lambda x, word: x.union(word), self._text_set, set())
+			charset.add(self._UNKNOWN)
+
+			self._labels = sorted(charset)
+			#self._labels = ''.join(sorted(charset))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
@@ -415,7 +430,7 @@ class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 
 # This class is independent of language.
 class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor, labels=None, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
 		super().__init__(text_set, image_height, image_width, image_channel, color_functor, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
 
 		#--------------------
@@ -429,9 +444,14 @@ class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatas
 		self._jamo2hangeul_functor = functools.partial(hg_util.jamo2hangeul, eojc_str=self._EOJC, use_separate_consonants=False, use_separate_vowels=True)
 
 		#--------------------
-		label_set = functools.reduce(lambda x, word: x.union(self._hangeul2jamo_functor(word)), self._text_set, set())
-		self._labels = sorted(label_set)
-		#self._labels = ''.join(sorted(label_set))  # Error.
+		if labels:
+			charset = labels
+		else:
+			charset = functools.reduce(lambda x, word: x.union(self._hangeul2jamo_functor(word)), self._text_set, set())
+			charset.add(self._UNKNOWN)
+
+			self._labels = sorted(charset)
+			#self._labels = ''.join(sorted(charset))  # Error.
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
@@ -498,7 +518,7 @@ class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatas
 
 #--------------------------------------------------------------------
 
-class ImageTextFileBasedTextLineDatasetBase(TextLineDatasetBase):
+class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 	def __init__(self, image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True):
 		super().__init__(labels=None, default_value=default_value)
 
@@ -861,7 +881,7 @@ class JsonBasedTextLineDataset(JsonBasedTextLineDatasetBase):
 
 # This class is independent of language.
 class JsonBasedHangeulJamoTextLineDataset(JsonBasedTextLineDatasetBase):
-	def __init__(self, train_json_filepath, test_json_filepath, image_height, image_width, image_channel, use_NWHC=True, default_value=-1):
+	def __init__(self, train_json_filepath, test_json_filepath, image_height, image_width, image_channel, labels=None, use_NWHC=True, default_value=-1):
 		super().__init__(image_height, image_width, image_channel, num_classes=0, use_NWHC=use_NWHC, default_value=default_value)
 
 		#--------------------
@@ -881,9 +901,14 @@ class JsonBasedHangeulJamoTextLineDataset(JsonBasedTextLineDatasetBase):
 		self._test_images, self._test_labels, test_charset = self._text_dataset_to_numpy(test_json_filepath)
 		print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 
-		label_set = set(self._hangeul2jamo_functor(list(set(train_charset + test_charset))))
-		self._labels = sorted(label_set)
-		#self._labels = ''.join(sorted(label_set))  # Error.
+		if labels:
+			charset = labels
+		else:
+			charset = set(self._hangeul2jamo_functor(list(set(train_charset + test_charset))))
+			charset.add(self._UNKNOWN)
+
+			self._labels = sorted(charset)
+			#self._labels = ''.join(sorted(charset))  # Error.
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
@@ -1098,7 +1123,7 @@ class RunTimeTextLinePairDatasetBase(TextLinePairDatasetBase):
 
 # This class is independent of language.
 class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, corrupt_functor, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, corrupt_functor, labels=None, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
 		super().__init__(text_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
 
 		#--------------------
@@ -1106,9 +1131,14 @@ class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 		#self._EOS = '<EOS>'  # All strings will end with the End-Of-String token.
 
 		#--------------------
-		label_set = functools.reduce(lambda x, word: x.union(word), self._text_set, set())
-		#self._labels = sorted(label_set)
-		self._labels = ''.join(sorted(label_set))
+		if labels:
+			charset = labels
+		else:
+			charset = functools.reduce(lambda x, word: x.union(word), self._text_set, set())
+			charset.add(self._UNKNOWN)
+
+			self._labels = sorted(charset)
+			#self._labels = ''.join(sorted(charset))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
@@ -1193,7 +1223,7 @@ class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 
 # This class is independent of language.
 class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
-	def __init__(self, text_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, corrupt_functor, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
+	def __init__(self, text_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, corrupt_functor, labels=None, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
 		super().__init__(text_set, hr_image_height, hr_image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
 
 		self._lr_image_height, self._lr_image_width = lr_image_height, lr_image_width
@@ -1203,9 +1233,14 @@ class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 		#self._EOS = '<EOS>'  # All strings will end with the End-Of-String token.
 
 		#--------------------
-		label_set = functools.reduce(lambda x, word: x.union(word), self._text_set, set())
-		#self._labels = sorted(label_set)
-		self._labels = ''.join(sorted(label_set))
+		if labels:
+			charset = labels
+		else:
+			charset = functools.reduce(lambda x, txt: x.union(txt), self._text_set, set())
+			charset.add(self._UNKNOWN)
+
+			self._labels = sorted(charset)
+			#self._labels = ''.join(sorted(charset))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 

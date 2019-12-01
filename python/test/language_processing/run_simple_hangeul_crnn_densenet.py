@@ -193,7 +193,7 @@ class MyHangeulTextLineDataset(TextRecognitionDataGenerator_data.HangeulTextReco
 			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
 			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
-class MyImageTextFileBasedTextLineDataset(text_line_data.ImageTextFileBasedTextLineDatasetBase):
+class MyFileBasedTextLineDataset(text_line_data.FileBasedTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True)
 
@@ -222,9 +222,10 @@ class MyImageTextFileBasedTextLineDataset(text_line_data.ImageTextFileBasedTextL
 			string.digits + \
 			string.punctuation + \
 			' '
+		charset = list(charset) + [self._UNKNOWN]
 
-		#self._labels = sorted(charset)
-		self._labels = ''.join(sorted(charset))
+		self._labels = sorted(charset)
+		#self._labels = ''.join(sorted(charset))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
@@ -233,19 +234,24 @@ class MyImageTextFileBasedTextLineDataset(text_line_data.ImageTextFileBasedTextL
 
 		#--------------------
 		# Load data.
-		print('[SWL] Info: Start loading dataset...')
-		start_time = time.time()
-		image_filepaths, label_filepaths = sorted(glob.glob(os.path.join(data_dir_path, '*.png'), recursive=False)), sorted(glob.glob(os.path.join(data_dir_path, '*.txt'), recursive=False))
-		images, labels_str, labels_int = self._load_data(image_filepaths, label_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
-		print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
-		labels_str, labels_int = np.array(labels_str), np.array(labels_int)
+		if data_dir_path:
+			print('[SWL] Info: Start loading dataset...')
+			start_time = time.time()
+			image_filepaths, label_filepaths = sorted(glob.glob(os.path.join(data_dir_path, '*.png'), recursive=False)), sorted(glob.glob(os.path.join(data_dir_path, '*.txt'), recursive=False))
+			images, labels_str, labels_int = self._load_data(image_filepaths, label_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
+			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
+			labels_str, labels_int = np.array(labels_str), np.array(labels_int)
 
-		num_examples = len(images)
-		indices = np.arange(num_examples)
-		np.random.shuffle(indices)
-		test_offset = round(train_test_ratio * num_examples)
-		train_indices, test_indices = indices[:test_offset], indices[test_offset:]
-		self._train_data, self._test_data = (images[train_indices], labels_str[train_indices], labels_int[train_indices]), (images[test_indices], labels_str[test_indices], labels_int[test_indices])
+			num_examples = len(images)
+			indices = np.arange(num_examples)
+			np.random.shuffle(indices)
+			test_offset = round(train_test_ratio * num_examples)
+			train_indices, test_indices = indices[:test_offset], indices[test_offset:]
+			self._train_data, self._test_data = (images[train_indices], labels_str[train_indices], labels_int[train_indices]), (images[test_indices], labels_str[test_indices], labels_int[test_indices])
+		else:
+			print('[SWL] Info: Dataset were not loaded.')
+			self._train_data, self._test_data = None, None
+			num_examples = 0
 
 	def augment(self, inputs, outputs, *args, **kwargs):
 		if outputs is None:
@@ -657,7 +663,7 @@ class MyRunner(object):
 			#self._train_examples_per_epoch, self._test_examples_per_epoch = None, None  # Uses the whole set of texts per epoch.
 		else:
 			if is_fine_tuned:
-				self._dataset = MyImageTextFileBasedTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
+				self._dataset = MyFileBasedTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
 			else:
 				self._dataset = MyHangeulTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
 
@@ -675,10 +681,10 @@ class MyRunner(object):
 			model_output, loss, accuracy = model.create_model(self._dataset.num_classes, is_training=True)
 
 			# Create a trainer.
-			#optimizer = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-08)
+			optimizer = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-08)
 			##optimizer = keras.optimizers.Adadelta(lr=1.0, rho=0.95, epsilon=None, decay=0.0)
 			#optimizer = tf.keras.optimizers.Adadelta(lr=0.001, rho=0.95, epsilon=1e-07)
-			optimizer = tf.train.AdadeltaOptimizer(learning_rate=1.0, rho=0.95, epsilon=1e-08)
+			#optimizer = tf.train.AdadeltaOptimizer(learning_rate=1.0, rho=0.95, epsilon=1e-08)
 			if True:
 				train_op = optimizer.minimize(loss)
 			else:  # Gradient clipping.
@@ -1147,6 +1153,7 @@ def main():
 		#image_filepaths = glob.glob('./text_line_samples_kr_test/**/*.jpg', recursive=False)
 		# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_vision/pascal_voc_test.py
 		image_filepaths = glob.glob('./receipt_epapyrus/epapyrus_20190618/receipt_text_line/*.png', recursive=False)
+		#image_filepaths = glob.glob('./receipt_epapyrus/epapyrus_20190618/receipt_text_line_test/*.png', recursive=False)
 		if not image_filepaths:
 			print('[SWL] Error: No image file for inference.')
 			return

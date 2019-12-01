@@ -144,8 +144,8 @@ def generate_font_colors(image_depth):
 	return font_color, bg_color
 
 class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, max_label_len=0, use_NWHC=True, default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, font_list, max_label_len, use_NWHC, functools.partial(generate_font_colors, image_depth=image_channel), default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, labels, max_label_len=0, use_NWHC=True, default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, font_list, labels, max_label_len, use_NWHC, functools.partial(generate_font_colors, image_depth=image_channel), default_value)
 
 		self._augmenter = create_augmenter()
 
@@ -219,8 +219,8 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 					break
 
 class MyRunTimeAlphaMatteTextLineDataset(text_line_data.RunTimeAlphaMatteTextLineDataset):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, font_list, char_images_dict, functools.partial(generate_font_colors, image_depth=image_channel), max_label_len, use_NWHC, alpha_matte_mode, default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, labels, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, font_list, char_images_dict, labels, functools.partial(generate_font_colors, image_depth=image_channel), max_label_len, use_NWHC, alpha_matte_mode, default_value)
 
 		self._augmenter = create_augmenter()
 
@@ -645,6 +645,45 @@ def create_random_words(min_char_len=1, max_char_len=10):
 
 	return random_words
 
+def create_random_words(min_char_len=1, max_char_len=10):
+	import string, random
+
+	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
+	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
+	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
+	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
+		#hangeul_charset = fd.read().strip('\n')  # A strings.
+		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
+		#hangeul_charset = fd.readlines()  # A list of string.
+		#hangeul_charset = fd.read().splitlines()  # A list of strings.
+	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+	hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
+
+	chars = \
+		hangeul_charset * 1 + \
+		hangeul_jamo_charset * 0 + \
+		string.ascii_lowercase * 10 + \
+		string.ascii_uppercase * 10 + \
+		string.digits * 10 + \
+		string.punctuation * 10
+	chars *= 100
+	chars = list(chars)
+	random.shuffle(chars)
+	chars = ''.join(chars)
+	num_chars = len(chars)
+
+	random_words = list()
+	start_idx = 0
+	while True:
+		end_idx = start_idx + random.randint(min_char_len, max_char_len)
+		random_words.append(chars[start_idx:end_idx])
+		if end_idx >= num_chars:
+			break
+		start_idx = end_idx
+
+	return random_words
+
 def generate_texts(numbers, min_word_len=1, max_word_len=3):
 	import random
 
@@ -682,12 +721,19 @@ class MyRunner(object):
 
 		print('[SWL] Info: Start generating random numbers...')
 		start_time = time.time()
-		random_numbers = create_random_words(min_char_len=1, max_char_len=10)
+		random_numbers = create_random_numbers(min_char_len=1, max_char_len=10)
 		random_numbers = generate_texts(random_numbers, min_word_len=1, max_word_len=3)
 		print('[SWL] Info: End generating random numbers, {} numbers generated: {} secs.'.format(len(random_numbers), time.time() - start_time))
 
+		print('[SWL] Info: Start generating random words...')
+		start_time = time.time()
+		random_words = create_random_words(min_char_len=1, max_char_len=10)
+		random_texts = generate_texts(random_words, min_word_len=1, max_word_len=3)
+		print('[SWL] Info: End generating random words, {} numbers generated: {} secs.'.format(len(random_words), time.time() - start_time))
+
 		#numbers = formatted_numbers
-		numbers = formatted_numbers + random_numbers
+		#numbers = formatted_numbers + random_numbers
+		numbers = formatted_numbers + random_numbers + random_texts
 		import random
 		random.shuffle(numbers)
 
@@ -710,10 +756,20 @@ class MyRunner(object):
 		#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
 		char_images_dict = None
 
+		import string
+		charset = \
+			string.digits + \
+			string.punctuation + \
+			' '
+		charset = list(charset) + [self._UNKNOWN]
+
+		labels = sorted(charset)
+		#labels = ''.join(sorted(charset))
+
 		print('[SWL] Info: Start creating an English dataset...')
 		start_time = time.time()
-		#self._dataset = MyRunTimeAlphaMatteTextLineDataset(set(numbers), image_height, image_width, image_channel, font_list, char_images_dict, max_label_len=max_label_len)
-		self._dataset = MyRunTimeTextLineDataset(set(numbers), image_height, image_width, image_channel, font_list, char_images_dict, max_label_len=max_label_len)
+		self._dataset = MyRunTimeTextLineDataset(set(numbers), image_height, image_width, image_channel, font_list, char_images_dict, labels=labels, max_label_len=max_label_len)
+		#self._dataset = MyRunTimeAlphaMatteTextLineDataset(set(numbers), image_height, image_width, image_channel, font_list, char_images_dict, labels=labels, max_label_len=max_label_len)
 		print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000  # Uses a subset of texts per epoch.

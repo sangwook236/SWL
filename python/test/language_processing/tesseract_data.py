@@ -1,4 +1,4 @@
-import os, random, functools, time, glob
+import os, random, functools, time
 import numpy as np
 import cv2
 #import sklearn
@@ -225,15 +225,17 @@ class EnglishTesseractTextLineDataset(TesseractTextLineDatasetBase):
 			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
 
 		#--------------------
-		alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-		digit_charset = '0123456789'
-		symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
+		import string
+		charset = \
+			string.ascii_uppercase + \
+			string.ascii_lowercase + \
+			string.digits + \
+			string.punctuation + \
+			' '
+		charset = list(charset) + [self._UNKNOWN]
 
-		#label_set = set(alphabet_charset + digit_charset)
-		label_set = set(alphabet_charset + digit_charset + symbol_charset)
-
-		#self._labels = sorted(label_set)
-		self._labels = ''.join(sorted(label_set))
+		self._labels = sorted(charset)
+		#self._labels = ''.join(sorted(charset))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
@@ -254,6 +256,9 @@ class EnglishTesseractTextLineDataset(TesseractTextLineDatasetBase):
 		test_offset = round(train_test_ratio * num_examples)
 		train_indices, test_indices = indices[:test_offset], indices[test_offset:]
 		self._train_data, self._test_data = (images[train_indices], labels_str[train_indices], labels_int[train_indices]), (images[test_indices], labels_str[test_indices], labels_int[test_indices])
+
+	def augment(self, inputs, outputs, *args, **kwargs):
+		return inputs, outputs
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		if inputs is not None:
@@ -308,15 +313,20 @@ class HangeulTesseractTextLineDataset(TesseractTextLineDatasetBase):
 		#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 		#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 		hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
-		alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-		digit_charset = '0123456789'
-		symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
 
-		#label_set = set(hangeul_charset + hangeul_jamo_charset)
-		label_set = set(hangeul_charset + hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset)
+		import string
+		charset = \
+			hangeul_charset + \
+			hangeul_jamo_charset + \
+			string.ascii_uppercase + \
+			string.ascii_lowercase + \
+			string.digits + \
+			string.punctuation + \
+			' '
+		charset = list(charset) + [self._UNKNOWN]
 
-		#self._labels = sorted(label_set)
-		self._labels = ''.join(sorted(label_set))
+		self._labels = sorted(charset)
+		#self._labels = ''.join(sorted(charset))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
@@ -337,6 +347,9 @@ class HangeulTesseractTextLineDataset(TesseractTextLineDatasetBase):
 		test_offset = round(train_test_ratio * num_examples)
 		train_indices, test_indices = indices[:test_offset], indices[test_offset:]
 		self._train_data, self._test_data = (images[train_indices], labels_str[train_indices], labels_int[train_indices]), (images[test_indices], labels_str[test_indices], labels_int[test_indices])
+
+	def augment(self, inputs, outputs, *args, **kwargs):
+		return inputs, outputs
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		if inputs is not None:
@@ -396,16 +409,19 @@ class HangeulJamoTesseractTextLineDataset(TesseractTextLineDatasetBase):
 		#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 		hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 		#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
-		alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-		digit_charset = '0123456789'
-		symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
 
-		#label_set = set(hangeul_jamo_charset + alphabet_charset + digit_charset)
-		label_set = set(hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset)
-		label_set.add(self._EOJC)
+		import string
+		charset = \
+			hangeul_jamo_charset + \
+			string.ascii_uppercase + \
+			string.ascii_lowercase + \
+			string.digits + \
+			string.punctuation + \
+			' '
+		charset = list(charset) + [self._UNKNOWN, self._EOJC]
 
-		self._labels = sorted(label_set)
-		#self._labels = ''.join(sorted(label_set))
+		self._labels = sorted(charset)
+		#self._labels = ''.join(sorted(charset))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
@@ -443,6 +459,9 @@ class HangeulJamoTesseractTextLineDataset(TesseractTextLineDatasetBase):
 		except Exception as ex:
 			print('[SWL] Error: Failed to decode a label: {}.'.format(label_int))
 			raise
+
+	def augment(self, inputs, outputs, *args, **kwargs):
+		return inputs, outputs
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		if inputs is not None:

@@ -295,17 +295,19 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
 
 		#--------------------
-		alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-		digit_charset = '0123456789'
-		symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
-
-		#label_set = set(alphabet_charset + digit_charset)
-		label_set = set(alphabet_charset + digit_charset + symbol_charset)
+		import string
+		charset = \
+			string.ascii_uppercase + \
+			string.ascii_lowercase + \
+			string.digits + \
+			string.punctuation + \
+			' '
+		charset = list(charset) + [self._UNKNOWN]
 
 		# There are words of Unicode Hangeul letters besides KS X 1001.
-		#label_set = functools.reduce(lambda x, fpath: x.union(fpath.split('_')[0]), os.listdir(data_dir_path), label_set)
-		#self._labels = sorted(label_set)
-		self._labels = ''.join(sorted(label_set))
+		#charset = functools.reduce(lambda x, fpath: x.union(fpath.split('_')[0]), os.listdir(data_dir_path), set(charset))
+		self._labels = sorted(charset)
+		#self._labels = ''.join(sorted(charset))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
@@ -343,8 +345,8 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 			self._train_data, self._test_data = None, None
 			num_examples = 0
 
-	#def augment(self, inputs, outputs, *args, **kwargs):
-	#	raise NotImplementedError
+	def augment(self, inputs, outputs, *args, **kwargs):
+		return inputs, outputs
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		"""
@@ -404,17 +406,22 @@ class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 		#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 		#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 		hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
-		alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-		digit_charset = '0123456789'
-		symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
 
-		#label_set = set(hangeul_charset + hangeul_jamo_charset)
-		label_set = set(hangeul_charset + hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset)
+		import string
+		charset = \
+			hangeul_charset + \
+			hangeul_jamo_charset + \
+			string.ascii_uppercase + \
+			string.ascii_lowercase + \
+			string.digits + \
+			string.punctuation + \
+			' '
+		charset = list(charset) + [self._UNKNOWN]
 
 		# There are words of Unicode Hangeul letters besides KS X 1001.
-		#label_set = functools.reduce(lambda x, fpath: x.union(fpath.split('_')[0]), os.listdir(data_dir_path), label_set)
-		#self._labels = sorted(label_set)
-		self._labels = ''.join(sorted(label_set))
+		#charset = functools.reduce(lambda x, fpath: x.union(fpath.split('_')[0]), os.listdir(data_dir_path), set(charset))
+		self._labels = sorted(charset)
+		#self._labels = ''.join(sorted(charset))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
@@ -452,8 +459,8 @@ class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 			self._train_data, self._test_data = None, None
 			num_examples = 0
 
-	#def augment(self, inputs, outputs, *args, **kwargs):
-	#	raise NotImplementedError
+	def augment(self, inputs, outputs, *args, **kwargs):
+		return inputs, outputs
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		"""
@@ -516,18 +523,21 @@ class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionData
 		#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 		hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 		#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
-		alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-		digit_charset = '0123456789'
-		symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
 
-		#label_set = set(hangeul_jamo_charset + alphabet_charset + digit_charset)
-		label_set = set(hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset)
-		label_set.add(self._EOJC)
+		import string
+		charset = \
+			hangeul_jamo_charset + \
+			string.ascii_uppercase + \
+			string.ascii_lowercase + \
+			string.digits + \
+			string.punctuation + \
+			' '
+		charset = list(charset) + [self._UNKNOWN, self._EOJC]
 
 		# There are words of Unicode Hangeul letters besides KS X 1001.
-		label_set = functools.reduce(lambda x, fpath: x.union(self._hangeul2jamo_functor(fpath.split('_')[0])), os.listdir(data_dir_path), label_set)
-		self._labels = sorted(label_set)
-		#self._labels = ''.join(sorted(label_set))
+		charset = functools.reduce(lambda x, fpath: x.union(self._hangeul2jamo_functor(fpath.split('_')[0])), os.listdir(data_dir_path), set(charset))
+		self._labels = sorted(charset)
+		#self._labels = ''.join(sorted(charset))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
@@ -582,8 +592,8 @@ class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionData
 			print('[SWL] Error: Failed to decode a label: {}.'.format(label_int))
 			raise
 
-	#def augment(self, inputs, outputs, *args, **kwargs):
-	#	raise NotImplementedError
+	def augment(self, inputs, outputs, *args, **kwargs):
+		return inputs, outputs
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		"""
