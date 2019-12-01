@@ -193,6 +193,72 @@ class MyHangeulTextLineDataset(TextRecognitionDataGenerator_data.HangeulTextReco
 			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
 			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
+class MyImageTextFileBasedTextLineDataset(text_line_data.ImageTextFileBasedTextLineDatasetBase):
+	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
+		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True)
+
+		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
+			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
+
+		#--------------------
+		import string
+
+		hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
+		#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
+		#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
+		with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
+			#hangeul_charset = fd.read().strip('\n')  # A strings.
+			hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
+			#hangeul_charset = fd.readlines()  # A list of string.
+			#hangeul_charset = fd.read().splitlines()  # A list of strings.
+		#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+		#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+		hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
+
+		charset = \
+			hangeul_charset + \
+			string.ascii_uppercase + \
+			string.ascii_lowercase + \
+			string.digits + \
+			string.punctuation + \
+			' '
+
+		#self._labels = sorted(charset)
+		self._labels = ''.join(sorted(charset))
+		print('[SWL] Info: Labels = {}.'.format(self._labels))
+		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
+
+		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+		self._num_classes = len(self._labels) + 1  # Labels + blank label.
+
+		#--------------------
+		# Load data.
+		print('[SWL] Info: Start loading dataset...')
+		start_time = time.time()
+		image_filepaths, label_filepaths = sorted(glob.glob(os.path.join(data_dir_path, '*.png'), recursive=False)), sorted(glob.glob(os.path.join(data_dir_path, '*.txt'), recursive=False))
+		images, labels_str, labels_int = self._load_data(image_filepaths, label_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
+		print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
+		labels_str, labels_int = np.array(labels_str), np.array(labels_int)
+
+		num_examples = len(images)
+		indices = np.arange(num_examples)
+		np.random.shuffle(indices)
+		test_offset = round(train_test_ratio * num_examples)
+		train_indices, test_indices = indices[:test_offset], indices[test_offset:]
+		self._train_data, self._test_data = (images[train_indices], labels_str[train_indices], labels_int[train_indices]), (images[test_indices], labels_str[test_indices], labels_int[test_indices])
+
+	def augment(self, inputs, outputs, *args, **kwargs):
+		if outputs is None:
+			return self._augmenter.augment_images(inputs), None
+		else:
+			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
+			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
+
+	def preprocess(self, inputs, outputs, *args, **kwargs):
+		inputs = (inputs.astype(np.float32) / 255.0) * 2.0 - 1.0  # Normalization.
+
+		return inputs, outputs
+
 #--------------------------------------------------------------------
 
 class MyModel(object):
@@ -524,7 +590,7 @@ def generate_texts(words, min_word_len=1, max_word_len=5):
 	return texts
 
 class MyRunner(object):
-	def __init__(self, is_dataset_generated_at_runtime, data_dir_path=None, train_test_ratio=0.8):
+	def __init__(self, is_dataset_generated_at_runtime, data_dir_path=None, train_test_ratio=0.8, is_fine_tuned=False):
 		# Set parameters.
 		# TODO [modify] >> Depends on a model.
 		#	model_output_time_steps = image_width / width_downsample_factor or image_width / width_downsample_factor - 1.
@@ -590,7 +656,10 @@ class MyRunner(object):
 			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000  # Uses a subset of texts per epoch.
 			#self._train_examples_per_epoch, self._test_examples_per_epoch = None, None  # Uses the whole set of texts per epoch.
 		else:
-			self._dataset = MyHangeulTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
+			if is_fine_tuned:
+				self._dataset = MyImageTextFileBasedTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
+			else:
+				self._dataset = MyHangeulTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = None, None
 
@@ -938,8 +1007,8 @@ class MyRunner(object):
 
 #--------------------------------------------------------------------
 
-def check_data(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio, num_epochs, batch_size):
-	runner = MyRunner(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio)
+def check_data(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio, is_fine_tuned, num_epochs, batch_size):
+	runner = MyRunner(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio, is_fine_tuned)
 	default_value = -1
 
 	train_examples_per_epoch, test_examples_per_epoch = None, None
@@ -992,14 +1061,27 @@ def main():
 	is_trained, is_tested, is_inferred = True, True, True
 	is_training_resumed = False
 
-	train_test_ratio = 0.8
-
 	is_dataset_generated_at_runtime = False
-	if not is_dataset_generated_at_runtime and (is_trained or is_tested):
-		# Data generation.
-		#	REF [function] >> HangeulTextRecognitionDataGeneratorTextLineDataset_test() in TextRecognitionDataGenerator_data_test.py.
+	is_fine_tuned = False
+	if is_fine_tuned:
+		train_test_ratio = 0.9
+	else:
+		train_test_ratio = 0.8
 
-		data_dir_path = './text_line_samples_kr_train'
+	if not is_dataset_generated_at_runtime and (is_trained or is_tested):
+		if is_fine_tuned:
+			if 'posix' == os.name:
+				data_base_dir_path = '/home/sangwook/work/dataset'
+			else:
+				data_base_dir_path = 'D:/work/dataset'
+
+			# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_vision/pascal_voc_test.py
+			data_dir_path = data_base_dir_path + '/text/receipt_epapyrus/epapyrus_20190618/receipt_text_line'
+		else:
+			# Data generation.
+			#	REF [function] >> HangeulTextRecognitionDataGeneratorTextLineDataset_test() in TextRecognitionDataGenerator_data_test.py.
+
+			data_dir_path = './text_line_samples_kr_train'
 
 		if not os.path.isdir(data_dir_path) or not os.path.exists(data_dir_path):
 			print('[SWL] Error: Data directory not found, {}.'.format(data_dir_path))
@@ -1011,7 +1093,7 @@ def main():
 	if False:
 		print('[SWL] Info: Start checking data...')
 		start_time = time.time()
-		check_data(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio, num_epochs, batch_size)
+		check_data(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio, is_fine_tuned, num_epochs, batch_size)
 		print('[SWL] Info: End checking data: {} secs.'.format(time.time() - start_time))
 		return
 
@@ -1033,7 +1115,7 @@ def main():
 		inference_dir_path = os.path.join(output_dir_path, 'inference')
 
 	#--------------------
-	runner = MyRunner(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio)
+	runner = MyRunner(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio, is_fine_tuned)
 
 	if is_trained:
 		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
@@ -1063,6 +1145,7 @@ def main():
 			os.makedirs(inference_dir_path, exist_ok=True)
 
 		#image_filepaths = glob.glob('./text_line_samples_kr_test/**/*.jpg', recursive=False)
+		# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_vision/pascal_voc_test.py
 		image_filepaths = glob.glob('./receipt_epapyrus/epapyrus_20190618/receipt_text_line/*.png', recursive=False)
 		if not image_filepaths:
 			print('[SWL] Error: No image file for inference.')

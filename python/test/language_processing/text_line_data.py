@@ -498,6 +498,162 @@ class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatas
 
 #--------------------------------------------------------------------
 
+class ImageTextFileBasedTextLineDatasetBase(TextLineDatasetBase):
+	def __init__(self, image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True):
+		super().__init__(labels=None, default_value=default_value)
+
+		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
+		self._num_classes = num_classes
+		self._use_NWHC = use_NWHC
+
+		self._train_data, self._test_data = None, None
+
+	@property
+	def shape(self):
+		return self._image_height, self._image_width, self._image_channel
+
+	@property
+	def num_classes(self):
+		return self._num_classes
+
+	@property
+	def default_value(self):
+		return self._default_value
+
+	@property
+	def train_examples(self):
+		return self._train_data
+
+	@property
+	def test_examples(self):
+		return self._test_data
+
+	@property
+	def num_train_examples(self):
+		return 0 if self._train_data is None else len(self._train_data)
+
+	@property
+	def num_test_examples(self):
+		return 0 if self._test_data is None else len(self._test_data)
+
+	def resize(self, input, output=None, height=None, width=None, *args, **kwargs):
+		if height is None:
+			height = self._image_height
+		if width is None:
+			width = self._image_width
+
+		"""
+		hi, wi = input.shape[:2]
+		if wi >= width:
+			return cv2.resize(input, (width, height), interpolation=cv2.INTER_AREA)
+		else:
+			aspect_ratio = height / hi
+			min_width = min(width, int(wi * aspect_ratio))
+			input = cv2.resize(input, (min_width, height), interpolation=cv2.INTER_AREA)
+			if min_width < width:
+				image_zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
+				image_zeropadded[:,:min_width] = input[:,:min_width]
+				return image_zeropadded
+			else:
+				return input
+		"""
+		hi, wi = input.shape[:2]
+		aspect_ratio = height / hi
+		min_width = min(width, int(wi * aspect_ratio))
+		zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
+		zeropadded[:,:min_width] = cv2.resize(input, (min_width, height), interpolation=cv2.INTER_AREA)
+		return zeropadded
+		"""
+		return cv2.resize(input, (width, height), interpolation=cv2.INTER_AREA)
+		"""
+
+	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
+		return self._create_batch_generator(self._train_data, batch_size, shuffle, is_training=True)
+
+	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
+		return self._create_batch_generator(self._test_data, batch_size, shuffle, is_training=False)
+
+	def _create_batch_generator(self, data, batch_size, shuffle, is_training=False):
+		images, labels_str, labels_int = data
+
+		num_examples = len(images)
+		if len(labels_str) != num_examples or len(labels_int) != num_examples:
+			raise ValueError('Invalid data length: {} != {} != {}'.format(num_examples, len(labels_str), len(labels_int)))
+		if batch_size is None:
+			batch_size = num_examples
+		if batch_size <= 0:
+			raise ValueError('Invalid batch size: {}'.format(batch_size))
+
+		indices = np.arange(num_examples)
+		if shuffle:
+			np.random.shuffle(indices)
+
+		start_idx = 0
+		while True:
+			end_idx = start_idx + batch_size
+			batch_indices = indices[start_idx:end_idx]
+			if batch_indices.size > 0:  # If batch_indices is non-empty.
+				# FIXME [fix] >> Does not work correctly in time-major data.
+				batch_data1, batch_data2, batch_data3 = images[batch_indices], labels_str[batch_indices], labels_int[batch_indices]
+				if batch_data1.size > 0 and batch_data2.size > 0 and batch_data3.size > 0:  # If batch_data1, batch_data2, and batch_data3 are non-empty.
+				#batch_data3 = swl_ml_util.sequences_to_sparse(batch_data3, dtype=np.int32)  # Sparse tensor.
+				#if batch_data1.size > 0 and batch_data2.size > 0 and batch_data3[2][0] > 0:  # If batch_data1, batch_data2, and batch_data3 are non-empty.
+					yield (batch_data1, batch_data2, batch_data3), batch_indices.size
+				else:
+					yield (None, None, None), 0
+			else:
+				yield (None, None, None), 0
+
+			if end_idx >= num_examples:
+				break
+			start_idx = end_idx
+
+	def _load_data(self, image_filepaths, label_filepaths, image_height, image_width, image_channel, max_label_len):
+		if len(image_filepaths) != len(label_filepaths):
+			print('[SWL] Error: Different lengths of image and label files, {} != {}.'.format(len(image_filepaths), len(label_filepaths)))
+			return
+		for img_fpath, lbl_fpath in zip(image_filepaths, label_filepaths):
+			img_fname, lbl_fname = os.path.splitext(os.path.basename(img_fpath))[0], os.path.splitext(os.path.basename(lbl_fpath))[0]
+			if img_fname != lbl_fname:
+				print('[SWL] Warning: Different file names of image and label pair, {} != {}.'.format(img_fname, lbl_fname))
+				continue
+
+		images, labels_str, labels_int = list(), list(), list()
+		for img_fpath, lbl_fpath in zip(image_filepaths, label_filepaths):
+			with open(lbl_fpath, 'r', encoding='UTF8') as fd:
+				#label_str = fd.read()
+				#label_str = fd.read().rstrip()
+				label_str = fd.read().rstrip('\n')
+			if len(label_str) > max_label_len:
+				print('[SWL] Warning: Too long label: {} > {}.'.format(len(label_str), max_label_len))
+				continue
+			img = cv2.imread(img_fpath, cv2.IMREAD_GRAYSCALE if 1 == image_channel else cv2.IMREAD_COLOR)
+			if img is None:
+				print('[SWL] Error: Failed to load an image: {}.'.format(img_fpath))
+				continue
+
+			img = self.resize(img, None, image_height, image_width)
+			try:
+				label_int = self.encode_label(label_str)
+			except Exception:
+				#print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
+				continue
+			if label_str != self.decode_label(label_int):
+				print('[SWL] Error: Mismatched encoded and decoded labels: {} != {}.'.format(label_str, self.decode_label(label_int)))
+				continue
+
+			images.append(img)
+			labels_str.append(label_str)
+			labels_int.append(label_int)
+
+		#images = list(map(lambda image: self.resize(image), images))
+		images = self._transform_images(np.array(images), use_NWHC=self._use_NWHC)
+		images, _ = self.preprocess(images, None)
+
+		return images, labels_str, labels_int
+
+#--------------------------------------------------------------------
+
 class JsonBasedTextLineDatasetBase(TextLineDatasetBase):
 	def __init__(self, image_height, image_width, image_channel, num_classes=0, use_NWHC=True, default_value=-1):
 		super().__init__(labels=None, use_NWHC=use_NWHC, default_value=default_value)

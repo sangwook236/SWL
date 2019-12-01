@@ -13,7 +13,7 @@ def load_pascal_voc_format_test():
 	data_dir_path = data_base_dir_path + '/text/receipt_epapyrus/epapyrus_20190618/Reciept_1'
 	save_dir_path = data_base_dir_path + '/text/receipt_epapyrus/epapyrus_20190618/receipt_text_line'
 
-	xml_filepaths = glob.glob(os.path.join(data_dir_path, '*.xml'))
+	xml_filepaths = sorted(glob.glob(os.path.join(data_dir_path, '*.xml')))
 	if not xml_filepaths:
 		print('Error: No xml files.')
 		return
@@ -40,16 +40,27 @@ def load_pascal_voc_format_test():
 			continue
 
 		for obj in objects:
-			#name = obj['name']
-			#bbox = obj['bndbox']
+			name = obj['name']
+			bbox = obj['bndbox']
 
-			x1, y1, x2, y2 = int(obj['bndbox']['xmin']), int(obj['bndbox']['ymin']), int(obj['bndbox']['xmax']), int(obj['bndbox']['ymax'])
+			if name:
+				x1, y1, x2, y2 = int(bbox['xmin']), int(bbox['ymin']), int(bbox['xmax']), int(bbox['ymax'])
+				patch = img[y1:y2+1,x1:x2+1]
 
-			fpath = os.path.join(save_dir_path, 'file_{:06}.png'.format(save_file_id))
-			patch = img[y1:y2+1,x1:x2+1]
-			cv2.imwrite(fpath, patch)
+				patch_fpath = os.path.join(save_dir_path, 'file_{:06}.png'.format(save_file_id))
+				cv2.imwrite(patch_fpath, patch)
+				label_fpath = os.path.join(save_dir_path, 'file_{:06}.txt'.format(save_file_id))
+				try:
+					with open(label_fpath, 'w', encoding='UTF8') as fd:
+						fd.write(name)
+				except FileNotFoundError as ex:
+					print('File not found: {}.'.format(label_fpath))
+				except UnicodeDecodeError as ex:
+					print('Unicode decode error: {}.'.format(label_fpath))
 
-			save_file_id += 1
+				save_file_id += 1
+			else:
+				print('Warning: Null name in bbox ({}, {}, {}, {}).'.format(int(bbox['xmin']), int(bbox['ymin']), int(bbox['xmax']), int(bbox['ymax'])))
 
 def main():
 	load_pascal_voc_format_test()

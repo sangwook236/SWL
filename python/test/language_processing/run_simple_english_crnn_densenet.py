@@ -965,10 +965,13 @@ def main():
 	is_trained, is_tested, is_inferred = True, True, True
 	is_training_resumed = False
 
-	train_test_ratio = 0.8
-	is_fine_tuned = False
-
 	is_dataset_generated_at_runtime = True
+	is_fine_tuned = False
+	if is_fine_tuned:
+		train_test_ratio = 0.9
+	else:
+		train_test_ratio = 0.8
+
 	if not is_dataset_generated_at_runtime and (is_trained or is_tested):
 		if is_fine_tuned:
 			if 'posix' == os.name:
