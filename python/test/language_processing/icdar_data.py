@@ -8,7 +8,7 @@ import text_line_data
 # REF [site] >> https://rrc.cvc.uab.es/?ch=13
 class Icdar2019SroieTextLineDataset(text_line_data.FileBasedTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
-		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True)
+		super().__init__(image_height, image_width, image_channel, labels=None, num_classes=0, use_NWHC=True, default_value=-1)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))

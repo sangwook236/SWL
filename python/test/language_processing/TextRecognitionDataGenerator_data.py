@@ -9,13 +9,10 @@ import text_line_data
 # REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
 
 class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDatasetBase):
-	def __init__(self, image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True):
-		super().__init__(labels=None, default_value=default_value)
+	def __init__(self, image_height, image_width, image_channel, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
+		super().__init__(labels=labels, num_classes=num_classes, use_NWHC=use_NWHC, default_value=default_value)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
-		self._num_classes = num_classes
-		self._use_NWHC = use_NWHC
-
 		self._train_data, self._test_data = None, None
 
 	@property
@@ -289,7 +286,7 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 
 class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True):
-		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True)
+		super().__init__(image_height, image_width, image_channel, labels=None, num_classes=0, use_NWHC=True, default_value=-1)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
@@ -389,7 +386,7 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 
 class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True):
-		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True)
+		super().__init__(image_height, image_width, image_channel, labels=None, num_classes=0, use_NWHC=True, default_value=-1)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
@@ -503,7 +500,7 @@ class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 
 class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True):
-		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=False)
+		super().__init__(image_height, image_width, image_channel, labels=None, num_classes=0, use_NWHC=False, default_value=-1)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))

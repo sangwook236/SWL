@@ -8,14 +8,19 @@ import hangeul_util as hg_util
 #--------------------------------------------------------------------
 
 class TextLineDatasetBase(abc.ABC):
-	def __init__(self, labels=None, use_NWHC=True, default_value=-1):
+	UNKNOWN = '<UNK>'  # Unknown label token.
+
+	def __init__(self, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
 		super().__init__()
 
 		self._labels = labels
+		self._num_classes = num_classes
 		self._use_NWHC = use_NWHC
 		self._default_value = default_value
 
-		self._UNKNOWN = '<UNK>'  # Unknown label token.
+	@property
+	def num_classes(self):
+		return self._num_classes
 
 	@property
 	def default_value(self):
@@ -23,21 +28,23 @@ class TextLineDatasetBase(abc.ABC):
 
 	# String label -> integer label.
 	def encode_label(self, label_str, *args, **kwargs):
-		def char2index(ch):
+		def label2index(ch):
 			try:
 				return self._labels.index(ch)
-			except Exception:
-				print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
+			except ValueError:
+				print('[SWL] Error: Failed to encode a label, {} in {}.'.format(ch, label_str))
 				return self._labels.index(self._UNKNOWN)
-		return list(char2index(ch) for ch in label_str)
+		return list(label2index(ch) for ch in label_str)
 
 	# Integer label -> string label.
 	def decode_label(self, label_int, *args, **kwargs):
-		try:
-			return ''.join(list(self._labels[id] for id in label_int if id != self._default_value))
-		except Exception as ex:
-			print('[SWL] Error: Failed to decode a label {}.'.format(label_int))
-			raise
+		def index2label(id):
+			try:
+				return self._labels[id]
+			except IndexError:
+				print('[SWL] Error: Failed to decode a label, {} in {}.'.format(id, label_str))
+				return self._UNKNOWN  # TODO [check] >> Is it correct?
+		return ''.join(list(index2label(id) for id in label_int if id != self._default_value))
 
 	# String labels -> Integer labels.
 	def encode_labels(self, labels_str, dtype=np.int16, *args, **kwargs):
@@ -146,26 +153,21 @@ class TextLineDatasetBase(abc.ABC):
 #--------------------------------------------------------------------
 
 class RunTimeTextLineDatasetBase(TextLineDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
-		super().__init__(labels=None, use_NWHC=use_NWHC, default_value=default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, labels=None, num_classes=0, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
+		super().__init__(labels=labels, num_classes=num_classes, use_NWHC=use_NWHC, default_value=default_value)
 
 		self._textGenerator = None
 		self._color_functor = color_functor
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
-		self._num_classes = num_classes
 		if max_label_len > 0:
-			self._text_set = set(filter(lambda word: len(word) <= max_label_len, text_set))
+			self._text_set = set(filter(lambda txt: len(txt) <= max_label_len, text_set))
 		else:
 			self._text_set = text_set
 
 	@property
 	def shape(self):
 		return self._image_height, self._image_width, self._image_channel
-
-	@property
-	def num_classes(self):
-		return self._num_classes
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		"""
@@ -294,7 +296,7 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 # This class is independent of language.
 class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 	def __init__(self, text_set, image_height, image_width, image_channel, font_list, labels=None, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
+		super().__init__(text_set, image_height, image_width, image_channel, labels=labels, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
 
 		#--------------------
 		#self._SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
@@ -302,9 +304,9 @@ class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 
 		#--------------------
 		if labels:
-			charset = labels
+			self._labels = labels
 		else:
-			charset = functools.reduce(lambda x, word: x.union(word), self._text_set, set())
+			charset = functools.reduce(lambda x, txt: x.union(txt), self._text_set, set())
 			charset.add(self._UNKNOWN)
 
 			self._labels = sorted(charset)
@@ -334,8 +336,8 @@ class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 #--------------------------------------------------------------------
 
 class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, color_functor, num_classes=0, max_label_len=0, use_NWHC=True, default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, num_classes, max_label_len, use_NWHC, color_functor, default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, color_functor, labels=None, num_classes=0, max_label_len=0, use_NWHC=True, default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, labels, num_classes, max_label_len, use_NWHC, color_functor, default_value)
 
 	def _create_batch_generator(self, textGenerator, color_functor, text_set, batch_size, steps_per_epoch, shuffle, is_training=False):
 		if steps_per_epoch:
@@ -390,7 +392,7 @@ class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
 # This class is independent of language.
 class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor, labels=None, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, color_functor, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
+		super().__init__(text_set, image_height, image_width, image_channel, color_functor, labels=labels, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
 
 		#--------------------
 		#self._SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
@@ -398,9 +400,9 @@ class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 
 		#--------------------
 		if labels:
-			charset = labels
+			self._labels = labels
 		else:
-			charset = functools.reduce(lambda x, word: x.union(word), self._text_set, set())
+			charset = functools.reduce(lambda x, txt: x.union(txt), self._text_set, set())
 			charset.add(self._UNKNOWN)
 
 			self._labels = sorted(charset)
@@ -431,7 +433,7 @@ class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 # This class is independent of language.
 class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor, labels=None, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, color_functor, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
+		super().__init__(text_set, image_height, image_width, image_channel, color_functor, labels=labels, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
 
 		#--------------------
 		#self._SOJC = '<SOJC>'  # All Hangeul jamo strings will start with the Start-Of-Jamo-Character token.
@@ -445,9 +447,9 @@ class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatas
 
 		#--------------------
 		if labels:
-			charset = labels
+			self._labels = labels
 		else:
-			charset = functools.reduce(lambda x, word: x.union(self._hangeul2jamo_functor(word)), self._text_set, set())
+			charset = functools.reduce(lambda x, txt: x.union(self._hangeul2jamo_functor(txt)), self._text_set, set())
 			charset.add(self._UNKNOWN)
 
 			self._labels = sorted(charset)
@@ -519,26 +521,15 @@ class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatas
 #--------------------------------------------------------------------
 
 class FileBasedTextLineDatasetBase(TextLineDatasetBase):
-	def __init__(self, image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True):
-		super().__init__(labels=None, default_value=default_value)
+	def __init__(self, image_height, image_width, image_channel, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
+		super().__init__(labels=labels, num_classes=num_classes, use_NWHC=use_NWHC, default_value=default_value)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
-		self._num_classes = num_classes
-		self._use_NWHC = use_NWHC
-
 		self._train_data, self._test_data = None, None
 
 	@property
 	def shape(self):
 		return self._image_height, self._image_width, self._image_channel
-
-	@property
-	def num_classes(self):
-		return self._num_classes
-
-	@property
-	def default_value(self):
-		return self._default_value
 
 	@property
 	def train_examples(self):
@@ -675,19 +666,14 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 #--------------------------------------------------------------------
 
 class JsonBasedTextLineDatasetBase(TextLineDatasetBase):
-	def __init__(self, image_height, image_width, image_channel, num_classes=0, use_NWHC=True, default_value=-1):
-		super().__init__(labels=None, use_NWHC=use_NWHC, default_value=default_value)
+	def __init__(self, image_height, image_width, image_channel, labels=labels, num_classes=0, use_NWHC=True, default_value=-1):
+		super().__init__(labels=labels, num_classes=num_classes, use_NWHC=use_NWHC, default_value=default_value)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
-		self._num_classes = num_classes
 
 	@property
 	def shape(self):
 		return self._image_height, self._image_width, self._image_channel
-
-	@property
-	def num_classes(self):
-		return self._num_classes
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		"""
@@ -902,7 +888,7 @@ class JsonBasedHangeulJamoTextLineDataset(JsonBasedTextLineDatasetBase):
 		print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 
 		if labels:
-			charset = labels
+			self._labels = labels
 		else:
 			charset = set(self._hangeul2jamo_functor(list(set(train_charset + test_charset))))
 			charset.add(self._UNKNOWN)
@@ -977,8 +963,8 @@ class TextLinePairDatasetBase(TextLineDatasetBase):
 	"""A base dataset for paired text lines, input & output text line images.
 	"""
 
-	def __init__(self, labels=None, use_NWHC=True, color_functor=None, default_value=-1):
-		super().__init__(labels, use_NWHC=use_NWHC, default_value=default_value)
+	def __init__(self, labels=None, num_classes=0, use_NWHC=True, color_functor=None, default_value=-1):
+		super().__init__(labels=labels, num_classes=num_classes, use_NWHC=use_NWHC, default_value=default_value)
 
 		self._textGenerator = None
 		self._color_functor = color_functor
@@ -1103,13 +1089,12 @@ class TextLinePairDatasetBase(TextLineDatasetBase):
 #--------------------------------------------------------------------
 
 class RunTimeTextLinePairDatasetBase(TextLinePairDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
-		super().__init__(labels=None, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, labels=None, num_classes=0, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
+		super().__init__(labels=labels, num_classes=num_classes, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
-		self._num_classes = num_classes
 		if max_label_len > 0:
-			self._text_set = set(filter(lambda word: len(word) <= max_label_len, text_set))
+			self._text_set = set(filter(lambda txt: len(txt) <= max_label_len, text_set))
 		else:
 			self._text_set = text_set
 
@@ -1117,14 +1102,10 @@ class RunTimeTextLinePairDatasetBase(TextLinePairDatasetBase):
 	def shape(self):
 		return self._image_height, self._image_width, self._image_channel
 
-	@property
-	def num_classes(self):
-		return self._num_classes
-
 # This class is independent of language.
 class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, corrupt_functor, labels=None, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
+		super().__init__(text_set, image_height, image_width, image_channel, labels=None, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
 
 		#--------------------
 		#self._SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
@@ -1132,9 +1113,9 @@ class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 
 		#--------------------
 		if labels:
-			charset = labels
+			self._labels = labels
 		else:
-			charset = functools.reduce(lambda x, word: x.union(word), self._text_set, set())
+			charset = functools.reduce(lambda x, txt: x.union(txt), self._text_set, set())
 			charset.add(self._UNKNOWN)
 
 			self._labels = sorted(charset)
@@ -1224,7 +1205,7 @@ class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 # This class is independent of language.
 class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 	def __init__(self, text_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, corrupt_functor, labels=None, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
-		super().__init__(text_set, hr_image_height, hr_image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
+		super().__init__(text_set, hr_image_height, hr_image_width, image_channel, labels=None, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
 
 		self._lr_image_height, self._lr_image_width = lr_image_height, lr_image_width
 
@@ -1234,7 +1215,7 @@ class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 
 		#--------------------
 		if labels:
-			charset = labels
+			self._labels = labels
 		else:
 			charset = functools.reduce(lambda x, txt: x.union(txt), self._text_set, set())
 			charset.add(self._UNKNOWN)

@@ -231,6 +231,54 @@ class MyRunTimeAlphaMatteTextLineDataset(text_line_data.RunTimeAlphaMatteTextLin
 			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
 			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
+class MyFileBasedTextLineDataset(text_line_data.FileBasedTextLineDatasetBase):
+	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, labels, max_label_len):
+		super().__init__(image_height, image_width, image_channel, labels=labels, num_classes=0, use_NWHC=True, default_value=-1)
+
+		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
+			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
+
+		#--------------------
+		self._labels = labels
+		print('[SWL] Info: Labels = {}.'.format(self._labels))
+		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
+
+		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+		self._num_classes = len(self._labels) + 1  # Labels + blank label.
+
+		#--------------------
+		# Load data.
+		if data_dir_path:
+			print('[SWL] Info: Start loading dataset...')
+			start_time = time.time()
+			image_filepaths, label_filepaths = sorted(glob.glob(os.path.join(data_dir_path, '*.png'), recursive=False)), sorted(glob.glob(os.path.join(data_dir_path, '*.txt'), recursive=False))
+			images, labels_str, labels_int = self._load_data(image_filepaths, label_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
+			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
+			labels_str, labels_int = np.array(labels_str), np.array(labels_int)
+
+			num_examples = len(images)
+			indices = np.arange(num_examples)
+			np.random.shuffle(indices)
+			test_offset = round(train_test_ratio * num_examples)
+			train_indices, test_indices = indices[:test_offset], indices[test_offset:]
+			self._train_data, self._test_data = (images[train_indices], labels_str[train_indices], labels_int[train_indices]), (images[test_indices], labels_str[test_indices], labels_int[test_indices])
+		else:
+			print('[SWL] Info: Dataset were not loaded.')
+			self._train_data, self._test_data = None, None
+			num_examples = 0
+
+	def augment(self, inputs, outputs, *args, **kwargs):
+		if outputs is None:
+			return self._augmenter.augment_images(inputs), None
+		else:
+			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
+			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
+
+	def preprocess(self, inputs, outputs, *args, **kwargs):
+		inputs = (inputs.astype(np.float32) / 255.0) * 2.0 - 1.0  # Normalization.
+
+		return inputs, outputs
+
 #--------------------------------------------------------------------
 
 class MyModel(object):
@@ -622,7 +670,7 @@ def create_formatted_numbers(num_examples=100000):
 
 	return valid_examples
 
-def create_random_words(min_char_len=1, max_char_len=10):
+def create_random_numbers(min_char_len=1, max_char_len=10):
 	import string, random
 
 	chars = \
@@ -702,7 +750,7 @@ def generate_texts(numbers, min_word_len=1, max_word_len=3):
 	return texts
 
 class MyRunner(object):
-	def __init__(self):
+	def __init__(self, data_dir_path, train_test_ratio, is_fine_tuned):
 		# Set parameters.
 		# TODO [modify] >> Depends on a model.
 		#	model_output_time_steps = image_width / width_downsample_factor or image_width / width_downsample_factor - 1.
@@ -742,38 +790,46 @@ class MyRunner(object):
 			draw_character_histogram(numbers, charset=None)
 
 		#--------------------
-		if 'posix' == os.name:
-			system_font_dir_path = '/usr/share/fonts'
-			font_base_dir_path = '/home/sangwook/work/font'
-		else:
-			system_font_dir_path = 'C:/Windows/Fonts'
-			font_base_dir_path = 'D:/work/font'
-		font_dir_path = font_base_dir_path + '/eng'
-
-		import text_generation_util as tg_util
-		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
-		font_list = tg_util.generate_font_list(font_filepaths)
-		#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
-		char_images_dict = None
+		UNKNOWN = '<UNK>'
 
 		import string
 		charset = \
 			string.digits + \
 			string.punctuation + \
 			' '
-		charset = list(charset) + [self._UNKNOWN]
+		charset = list(charset) + [UNKNOWN]
 
 		labels = sorted(charset)
 		#labels = ''.join(sorted(charset))
+		num_classes = len(labels) + 1  # Labels + blank label.
 
-		print('[SWL] Info: Start creating an English dataset...')
-		start_time = time.time()
-		self._dataset = MyRunTimeTextLineDataset(set(numbers), image_height, image_width, image_channel, font_list, char_images_dict, labels=labels, max_label_len=max_label_len)
-		#self._dataset = MyRunTimeAlphaMatteTextLineDataset(set(numbers), image_height, image_width, image_channel, font_list, char_images_dict, labels=labels, max_label_len=max_label_len)
-		print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
+		if is_fine_tuned:
+			self._dataset = MyFileBasedTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, labels=labels, max_label_len=max_label_len)
 
-		self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000  # Uses a subset of texts per epoch.
-		#self._train_examples_per_epoch, self._test_examples_per_epoch = None, None  # Uses the whole set of texts per epoch.
+			self._train_examples_per_epoch, self._test_examples_per_epoch = None, None
+		else:
+			if 'posix' == os.name:
+				system_font_dir_path = '/usr/share/fonts'
+				font_base_dir_path = '/home/sangwook/work/font'
+			else:
+				system_font_dir_path = 'C:/Windows/Fonts'
+				font_base_dir_path = 'D:/work/font'
+			font_dir_path = font_base_dir_path + '/eng'
+
+			import text_generation_util as tg_util
+			font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+			font_list = tg_util.generate_font_list(font_filepaths)
+			#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
+			char_images_dict = None
+
+			print('[SWL] Info: Start creating an English dataset...')
+			start_time = time.time()
+			self._dataset = MyRunTimeTextLineDataset(set(numbers), image_height, image_width, image_channel, font_list, labels=labels, max_label_len=max_label_len)
+			#self._dataset = MyRunTimeAlphaMatteTextLineDataset(set(numbers), image_height, image_width, image_channel, font_list, char_images_dict, labels=labels, max_label_len=max_label_len)
+			print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
+
+			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000  # Uses a subset of texts per epoch.
+			#self._train_examples_per_epoch, self._test_examples_per_epoch = None, None  # Uses the whole set of texts per epoch.
 
 	@property
 	def dataset(self):
@@ -1116,8 +1172,8 @@ class MyRunner(object):
 
 #--------------------------------------------------------------------
 
-def check_data(num_epochs, batch_size):
-	runner = MyRunner()
+def check_data(data_dir_path, train_test_ratio, is_fine_tuned, num_epochs, batch_size):
+	runner = MyRunner(data_dir_path, train_test_ratio, is_fine_tuned)
 	default_value = -1
 
 	train_examples_per_epoch, test_examples_per_epoch = None, None
@@ -1170,11 +1226,32 @@ def main():
 	is_trained, is_tested, is_inferred = True, True, False
 	is_training_resumed = False
 
+	is_fine_tuned = False
+	if is_fine_tuned:
+		train_test_ratio = 0.9
+	else:
+		train_test_ratio = 0.8
+
+	if is_fine_tuned and (is_trained or is_tested):
+		if 'posix' == os.name:
+			data_base_dir_path = '/home/sangwook/work/dataset'
+		else:
+			data_base_dir_path = 'D:/work/dataset'
+
+		# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_vision/pascal_voc_test.py
+		data_dir_path = data_base_dir_path + '/text/receipt_epapyrus/epapyrus_20190618/receipt_text_line'
+
+		if not os.path.isdir(data_dir_path) or not os.path.exists(data_dir_path):
+			print('[SWL] Error: Data directory not found, {}.'.format(data_dir_path))
+			return
+	else:
+		data_dir_path = None
+
 	#--------------------
 	if False:
 		print('[SWL] Info: Start checking data...')
 		start_time = time.time()
-		check_data(num_epochs, batch_size)
+		check_data(data_dir_path, train_test_ratio, is_fine_tuned, num_epochs, batch_size)
 		print('[SWL] Info: End checking data: {} secs.'.format(time.time() - start_time))
 		return
 
@@ -1196,7 +1273,7 @@ def main():
 		inference_dir_path = os.path.join(output_dir_path, 'inference')
 
 	#--------------------
-	runner = MyRunner()
+	runner = MyRunner(data_dir_path, train_test_ratio, is_fine_tuned)
 
 	if is_trained:
 		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
@@ -1226,6 +1303,7 @@ def main():
 			os.makedirs(inference_dir_path, exist_ok=True)
 
 		image_filepaths = glob.glob('./number_test/*.jpg', recursive=False)
+		#image_filepaths = glob.glob('./receipt_epapyrus/epapyrus_20190618/receipt_text_line_test/*.png', recursive=False)
 		if not image_filepaths:
 			print('[SWL] Error: No image file for inference.')
 			return

@@ -389,7 +389,7 @@ class HangeulJamoOcropusTextLineDataset(OcropusTextLineDatasetBase):
 			string.digits + \
 			string.punctuation + \
 			' '
-		charset = list(charset) + [UNKNOWN, EOJC]
+		charset = list(charset) + [self._UNKNOWN, self._EOJC]
 
 		self._labels = sorted(charset)
 		#self._labels = ''.join(sorted(charset))

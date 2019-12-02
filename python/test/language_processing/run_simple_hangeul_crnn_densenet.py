@@ -195,7 +195,7 @@ class MyHangeulTextLineDataset(TextRecognitionDataGenerator_data.HangeulTextReco
 
 class MyFileBasedTextLineDataset(text_line_data.FileBasedTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
-		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True)
+		super().__init__(image_height, image_width, image_channel, labels=None, num_classes=0, use_NWHC=True, default_value=-1)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
@@ -655,7 +655,7 @@ class MyRunner(object):
 
 			print('[SWL] Info: Start creating a Hangeul dataset...')
 			start_time = time.time()
-			self._dataset = MyRunTimeTextLineDataset(set(texts), image_height, image_width, image_channel, font_list, char_images_dict, max_label_len=max_label_len)
+			self._dataset = MyRunTimeTextLineDataset(set(texts), image_height, image_width, image_channel, font_list, max_label_len=max_label_len)
 			#self._dataset = MyRunTimeAlphaMatteTextLineDataset(set(texts), image_height, image_width, image_channel, font_list, char_images_dict, max_label_len=max_label_len)
 			print('[SWL] Info: End creating a Hangeul dataset: {} secs.'.format(time.time() - start_time))
 

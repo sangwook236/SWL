@@ -720,7 +720,7 @@ class MyRunner(object):
 
 			print('[SWL] Info: Start creating a Hangeul dataset...')
 			start_time = time.time()
-			self._dataset = MyRunTimeTextLineDataset(set(texts), image_height, image_width, image_channel, font_list, char_images_dict, max_label_len=max_label_len)
+			self._dataset = MyRunTimeTextLineDataset(set(texts), image_height, image_width, image_channel, font_list, max_label_len=max_label_len)
 			#self._dataset = MyRunTimeAlphaMatteTextLineDataset(set(texts), image_height, image_width, image_channel, font_list, char_images_dict, max_label_len=max_label_len)
 			print('[SWL] Info: End creating a Hangeul dataset: {} secs.'.format(time.time() - start_time))
 
