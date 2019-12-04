@@ -92,8 +92,8 @@ def generate_font_colors(image_depth):
 	return font_color, bg_color
 
 class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, max_label_len=0, use_NWHC=True, default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, font_list, max_label_len, use_NWHC, functools.partial(generate_font_colors, image_depth=image_channel), default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, labels, num_classes, use_NWHC=True, default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, font_list, functools.partial(generate_font_colors, image_depth=image_channel), labels, num_classes, use_NWHC, default_value)
 
 		self._augmenter = create_augmenter()
 
@@ -168,8 +168,8 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 				break
 
 class MyRunTimeAlphaMatteTextLineDataset(text_line_data.RunTimeAlphaMatteTextLineDataset):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, font_list, char_images_dict, functools.partial(generate_font_colors, image_depth=image_channel), max_label_len, use_NWHC, alpha_matte_mode, default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, labels, num_classes, alpha_matte_mode='1', use_NWHC=True, default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, font_list, char_images_dict, functools.partial(generate_font_colors, image_depth=image_channel), labels, num_classes, alpha_matte_mode, use_NWHC, default_value)
 
 		self._augmenter = create_augmenter()
 
@@ -181,8 +181,8 @@ class MyRunTimeAlphaMatteTextLineDataset(text_line_data.RunTimeAlphaMatteTextLin
 			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
 class MyEnglishTextLineDataset(TextRecognitionDataGenerator_data.EnglishTextRecognitionDataGeneratorTextLineDataset):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True):
-		super().__init__(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle)
+	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle=True, use_NWHC=True, default_value=-1):
+		super().__init__(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle, use_NWHC, default_value)
 
 		self._augmenter = create_augmenter()
 
@@ -533,9 +533,22 @@ class MyRunner(object):
 			texts = generate_texts(random_words, min_word_len=1, max_word_len=5)
 			print('[SWL] Info: End generating texts, {} texts generated: {} secs.'.format(len(texts), time.time() - start_time))
 
+			if max_label_len > 0:
+				texts = set(filter(lambda txt: len(txt) <= max_label_len, texts))
+
 			if False:
 				from swl.language_processing.util import draw_character_histogram
 				draw_character_histogram(texts, charset=None)
+
+			labels = functools.reduce(lambda x, txt: x.union(txt), texts, set())
+			labels.add(MyRunTimeTextLineDataset.UNKNOWN)
+			labels = sorted(labels)
+			#labels = ''.join(sorted(labels))
+			print('[SWL] Info: Labels = {}.'.format(labels))
+			print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+			# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+			num_classes = len(labels) + 1  # Labels + blank label.
 
 			#--------------------
 			if 'posix' == os.name:
@@ -555,17 +568,33 @@ class MyRunner(object):
 
 			print('[SWL] Info: Start creating an English dataset...')
 			start_time = time.time()
-			self._dataset = MyRunTimeTextLineDataset(set(texts), image_height, image_width, image_channel, font_list, max_label_len=max_label_len)
-			#self._dataset = MyRunTimeAlphaMatteTextLineDataset(set(texts), image_height, image_width, image_channel, font_list, char_images_dict, max_label_len=max_label_len)
+			self._dataset = MyRunTimeTextLineDataset(texts, image_height, image_width, image_channel, font_list, labels, num_classes)
+			#self._dataset = MyRunTimeAlphaMatteTextLineDataset(texts, image_height, image_width, image_channel, font_list, char_images_dict, labels, num_classes)
 			print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000  # Uses a subset of texts per epoch.
 			#self._train_examples_per_epoch, self._test_examples_per_epoch = None, None  # Uses the whole set of texts per epoch.
 		else:
+			import string
+			labels = \
+				string.ascii_uppercase + \
+				string.ascii_lowercase + \
+				string.digits + \
+				string.punctuation + \
+				' '
+			labels = list(labels) + [icdar_data.Icdar2019SroieTextLineDataset.UNKNOWN]
+			labels.sort()
+			#labels = ''.join(sorted(labels))
+			print('[SWL] Info: Labels = {}.'.format(labels))
+			print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+			# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+			num_classes = len(labels) + 1  # Labels + blank label.
+
 			if is_fine_tuned:
-				self._dataset = icdar_data.Icdar2019SroieTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
+				self._dataset = icdar_data.Icdar2019SroieTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes)
 			else:
-				self._dataset = MyEnglishTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
+				self._dataset = MyEnglishTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes)
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = None, None
 

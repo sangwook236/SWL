@@ -95,9 +95,19 @@ def BasicRunTimeTextLineDataset_test():
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 		#color_functor = None
 
+		labels = functools.reduce(lambda x, txt: x.union(txt), korean_word_set, set())
+		labels.add(text_line_data.BasicRunTimeTextLineDataset.UNKNOWN)
+		labels = sorted(labels)
+		#labels = ''.join(sorted(labels))
+		print('[SWL] Info: Labels = {}.'.format(labels))
+		print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+		num_classes = len(labels) + 1  # Labels + blank label.
+
 		print('Start creating a Korean dataset...')
 		start_time = time.time()
-		dataset = text_line_data.BasicRunTimeTextLineDataset(korean_word_set, image_height, image_width, image_channel, font_list, color_functor=color_functor)
+		dataset = text_line_data.BasicRunTimeTextLineDataset(korean_word_set, image_height, image_width, image_channel, font_list, color_functor=color_functor, labels=labels, num_classes=num_classes)
 		print('End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -116,9 +126,19 @@ def BasicRunTimeTextLineDataset_test():
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 		#color_functor = None
 
+		labels = functools.reduce(lambda x, txt: x.union(txt), english_word_set, set())
+		labels.add(text_line_data.BasicRunTimeTextLineDataset.UNKNOWN)
+		labels = sorted(labels)
+		#labels = ''.join(sorted(labels))
+		print('[SWL] Info: Labels = {}.'.format(labels))
+		print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+		num_classes = len(labels) + 1  # Labels + blank label.
+
 		print('Start creating an English dataset...')
 		start_time = time.time()
-		dataset = text_line_data.BasicRunTimeTextLineDataset(english_word_set, image_height, image_width, image_channel, font_list, color_functor=color_functor)
+		dataset = text_line_data.BasicRunTimeTextLineDataset(english_word_set, image_height, image_width, image_channel, font_list, color_functor=color_functor, labels=labels, num_classes=num_classes)
 		print('End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -139,9 +159,19 @@ def BasicRunTimeTextLineDataset_test():
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 		#color_functor = None
 
+		labels = functools.reduce(lambda x, txt: x.union(txt), all_word_set, set())
+		labels.add(text_line_data.BasicRunTimeTextLineDataset.UNKNOWN)
+		labels = sorted(labels)
+		#labels = ''.join(sorted(labels))
+		print('[SWL] Info: Labels = {}.'.format(labels))
+		print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+		num_classes = len(labels) + 1  # Labels + blank label.
+
 		print('Start creating a Korean+English dataset...')
 		start_time = time.time()
-		dataset = text_line_data.BasicRunTimeTextLineDataset(all_word_set, image_height, image_width, image_channel, font_list, color_functor=color_functor)
+		dataset = text_line_data.BasicRunTimeTextLineDataset(all_word_set, image_height, image_width, image_channel, font_list, color_functor=color_functor, labels=labels, num_classes=num_classes)
 		print('End creating a Korean+English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -195,9 +225,19 @@ def RunTimeAlphaMatteTextLineDataset_test():
 		image_height, image_width, image_channel = 64, 640, 1
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
+		labels = functools.reduce(lambda x, txt: x.union(txt), korean_word_set, set())
+		labels.add(text_line_data.RunTimeAlphaMatteTextLineDataset.UNKNOWN)
+		labels = sorted(labels)
+		#labels = ''.join(sorted(labels))
+		print('[SWL] Info: Labels = {}.'.format(labels))
+		print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+		num_classes = len(labels) + 1  # Labels + blank label.
+
 		print('Start creating a Korean dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(korean_word_set, image_height, image_width, image_channel, font_list, char_images_dict, alpha_matte_mode='1', color_functor=color_functor)
+		dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(korean_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, labels=labels, num_classes=num_classes, alpha_matte_mode='1')
 		print('End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -217,9 +257,19 @@ def RunTimeAlphaMatteTextLineDataset_test():
 		image_height, image_width, image_channel = 32, 320, 1
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
+		labels = functools.reduce(lambda x, txt: x.union(txt), english_word_set, set())
+		labels.add(text_line_data.RunTimeAlphaMatteTextLineDataset.UNKNOWN)
+		labels = sorted(labels)
+		#labels = ''.join(sorted(labels))
+		print('[SWL] Info: Labels = {}.'.format(labels))
+		print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+		num_classes = len(labels) + 1  # Labels + blank label.
+
 		print('Start creating an English dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(english_word_set, image_height, image_width, image_channel, font_list, char_images_dict, alpha_matte_mode='1', color_functor=color_functor)
+		dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(english_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, labels=labels, num_classes=num_classes, alpha_matte_mode='1')
 		print('End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -241,9 +291,19 @@ def RunTimeAlphaMatteTextLineDataset_test():
 		image_height, image_width, image_channel = 64, 640, 1
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
+		labels = functools.reduce(lambda x, txt: x.union(txt), all_word_set, set())
+		labels.add(text_line_data.RunTimeAlphaMatteTextLineDataset.UNKNOWN)
+		labels = sorted(labels)
+		#labels = ''.join(sorted(labels))
+		print('[SWL] Info: Labels = {}.'.format(labels))
+		print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+		num_classes = len(labels) + 1  # Labels + blank label.
+
 		print('Start creating a Korean+English dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(all_word_set, image_height, image_width, image_channel, font_list, char_images_dict, alpha_matte_mode='1', color_functor=color_functor)
+		dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(all_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, labels=labels, num_classes=num_classes, alpha_matte_mode='1')
 		print('End creating a Korean+English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -296,9 +356,20 @@ def RunTimeHangeulJamoAlphaMatteTextLineDataset_test():
 		image_height, image_width, image_channel = 64, 640, 1
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
+		labels = functools.reduce(lambda x, txt: x.union(text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset.hangeul2jamo(txt)), korean_word_set, set())
+		labels.add(text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset.UNKNOWN)
+		#labels.add(text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset.EOJC)
+		labels = sorted(labels)
+		#labels = ''.join(sorted(labels))
+		print('[SWL] Info: Labels = {}.'.format(labels))
+		print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+		num_classes = len(labels) + 1  # Labels + blank label.
+
 		print('Start creating a Korean dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset(korean_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor)
+		dataset = text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset(korean_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, labels=labels, num_classes=num_classes, alpha_matte_mode='1')
 		print('End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -320,9 +391,20 @@ def RunTimeHangeulJamoAlphaMatteTextLineDataset_test():
 		image_height, image_width, image_channel = 64, 640, 1
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
+		labels = functools.reduce(lambda x, txt: x.union(text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset.hangeul2jamo(txt)), all_word_set, set())
+		labels.add(text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset.UNKNOWN)
+		#labels.add(text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset.EOJC)
+		labels = sorted(labels)
+		#labels = ''.join(sorted(labels))
+		print('[SWL] Info: Labels = {}.'.format(labels))
+		print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+		num_classes = len(labels) + 1  # Labels + blank label.
+
 		print('Start creating a Korean+English dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset(all_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor)
+		dataset = text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset(all_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, labels=labels, num_classes=num_classes, alpha_matte_mode='1')
 		print('End creating a Korean+English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -336,10 +418,27 @@ def JsonBasedTextLineDataset_test():
 	train_json_filepath = './text_train_dataset/text_dataset.json'
 	test_json_filepath = './text_test_dataset/text_dataset.json'
 
+	image_height, image_width, image_channel = 64, 640, 1
+
+	import string
+	labels = \
+		string.ascii_uppercase + \
+		string.ascii_lowercase + \
+		string.digits + \
+		string.punctuation + \
+		' '
+	labels = list(labels) + [text_line_data.JsonBasedTextLineDataset.UNKNOWN]
+	labels.sort()
+	#labels = ''.join(sorted(labels))
+	print('[SWL] Info: Labels = {}.'.format(labels))
+	print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+	num_classes = len(labels) + 1  # Labels + blank label.
+
 	print('Start creating a JsonBasedTextLineDataset...')
 	start_time = time.time()
-	image_height, image_width, image_channel = 64, 640, 1
-	dataset = text_line_data.JsonBasedTextLineDataset(train_json_filepath, test_json_filepath, image_height, image_width, image_channel)
+	dataset = text_line_data.JsonBasedTextLineDataset(train_json_filepath, test_json_filepath, image_height, image_width, image_channel, labels, num_classes)
 	print('End creating a JsonBasedTextLineDataset: {} secs.'.format(time.time() - start_time))
 
 	train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -353,10 +452,32 @@ def JsonBasedHangeulJamoTextLineDataset_test():
 	train_json_filepath = './text_train_dataset/text_dataset.json'
 	test_json_filepath = './text_test_dataset/text_dataset.json'
 
+	image_height, image_width, image_channel = 64, 640, 1
+
+	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+	hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
+
+	import string
+	labels = \
+		hangeul_jamo_charset + \
+		string.ascii_uppercase + \
+		string.ascii_lowercase + \
+		string.digits + \
+		string.punctuation + \
+		' '
+	labels = list(labels) + [text_line_data.JsonBasedHangeulJamoTextLineDataset.UNKNOWN, text_line_data.JsonBasedHangeulJamoTextLineDataset.EOJC]
+	labels.sort()
+	#labels = ''.join(sorted(labels))  # Error.
+	print('[SWL] Info: Labels = {}.'.format(labels))
+	print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+	num_classes = len(labels) + 1  # Labels + blank label.
+
 	print('Start creating a JsonBasedHangeulJamoTextLineDataset...')
 	start_time = time.time()
-	image_height, image_width, image_channel = 64, 640, 1
-	dataset = text_line_data.JsonBasedHangeulJamoTextLineDataset(train_json_filepath, test_json_filepath, image_height, image_width, image_channel)
+	dataset = text_line_data.JsonBasedHangeulJamoTextLineDataset(train_json_filepath, test_json_filepath, image_height, image_width, image_channel, labels, num_classes)
 	print('End creating a JsonBasedHangeulJamoTextLineDataset: {} secs.'.format(time.time() - start_time))
 
 	train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -418,6 +539,25 @@ def create_corrupter():
 		])
 	])
 
+class MyRunTimeCorruptedTextLinePairDataset(text_line_data.RunTimeCorruptedTextLinePairDatasetBase):
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=None, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor, labels, num_classes, use_NWHC, default_value)
+
+		self._corrupter = create_corrupter()
+
+	def augment(self, inputs, outputs, *args, **kwargs):
+		return inputs, outputs
+
+	def corrupt(self, inputs, *args, **kwargs):
+		return self._corrupter.augment_images(inputs)
+
+	def corrupt2(self, inputs, outputs, *args, **kwargs):
+		if outputs is None:
+			return self._corrupter.augment_images(inputs), None
+		else:
+			augmenter_det = self._corrupter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
+			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
+
 def RunTimeCorruptedTextLinePairDataset_test():
 	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
 	#english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
@@ -445,12 +585,6 @@ def RunTimeCorruptedTextLinePairDataset_test():
 	all_word_set = set(korean_words + english_words)
 
 	#--------------------
-	corrupter = create_corrupter()
-
-	def corrupt(inputs, *args, **kwargs):
-		return corrupter.augment_images(inputs)
-
-	#--------------------
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
 		font_base_dir_path = '/home/sangwook/work/font'
@@ -471,9 +605,19 @@ def RunTimeCorruptedTextLinePairDataset_test():
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 		#color_functor = None
 
+		labels = functools.reduce(lambda x, txt: x.union(txt), korean_word_set, set())
+		labels.add(MyRunTimeCorruptedTextLinePairDataset.UNKNOWN)
+		labels = sorted(labels)
+		#labels = ''.join(sorted(labels))
+		print('[SWL] Info: Labels = {}.'.format(labels))
+		print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+		num_classes = len(labels) + 1  # Labels + blank label.
+
 		print('Start creating a Korean dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeCorruptedTextLinePairDataset(korean_word_set, image_height, image_width, image_channel, font_list, char_images_dict, corrupt_functor=corrupt, color_functor=color_functor)
+		dataset = MyRunTimeCorruptedTextLinePairDataset(korean_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, labels=labels, num_classes=num_classes)
 		print('End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -495,9 +639,19 @@ def RunTimeCorruptedTextLinePairDataset_test():
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 		#color_functor = None
 
+		labels = functools.reduce(lambda x, txt: x.union(txt), english_word_set, set())
+		labels.add(MyRunTimeCorruptedTextLinePairDataset.UNKNOWN)
+		labels = sorted(labels)
+		#labels = ''.join(sorted(labels))
+		print('[SWL] Info: Labels = {}.'.format(labels))
+		print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+		num_classes = len(labels) + 1  # Labels + blank label.
+
 		print('Start creating an English dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeCorruptedTextLinePairDataset(english_word_set, image_height, image_width, image_channel, font_list, char_images_dict, corrupt_functor=corrupt, color_functor=color_functor)
+		dataset = MyRunTimeCorruptedTextLinePairDataset(english_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, labels=labels, num_classes=num_classes)
 		print('End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -522,9 +676,19 @@ def RunTimeCorruptedTextLinePairDataset_test():
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 		#color_functor = None
 
+		labels = functools.reduce(lambda x, txt: x.union(txt), all_word_set, set())
+		labels.add(MyRunTimeCorruptedTextLinePairDataset.UNKNOWN)
+		labels = sorted(labels)
+		#labels = ''.join(sorted(labels))
+		print('[SWL] Info: Labels = {}.'.format(labels))
+		print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+		num_classes = len(labels) + 1  # Labels + blank label.
+
 		print('Start creating a Korean+English dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeCorruptedTextLinePairDataset(all_word_set, image_height, image_width, image_channel, font_list, char_images_dict, corrupt_functor=corrupt, color_functor=color_functor)
+		dataset = MyRunTimeCorruptedTextLinePairDataset(all_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, labels=labels, num_classes=num_classes)
 		print('End creating a Korean+English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -532,6 +696,25 @@ def RunTimeCorruptedTextLinePairDataset_test():
 
 		dataset.visualize(train_generator, num_examples=10)
 		dataset.visualize(test_generator, num_examples=10)
+
+class MyRunTimeSuperResolvedTextLinePairDataset(text_line_data.RunTimeSuperResolvedTextLinePairDatasetBase):
+	def __init__(self, text_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, color_functor=None, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
+		super().__init__(text_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, color_functor, labels, num_classes, use_NWHC, default_value)
+
+		self._corrupter = create_corrupter()
+
+	def augment(self, inputs, outputs, *args, **kwargs):
+		return inputs, outputs
+
+	def corrupt(self, inputs, *args, **kwargs):
+		return self._corrupter.augment_images(inputs)
+
+	def corrupt2(self, inputs, outputs, *args, **kwargs):
+		if outputs is None:
+			return self._corrupter.augment_images(inputs), None
+		else:
+			augmenter_det = self._corrupter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
+			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
 def RunTimeSuperResolvedTextLinePairDataset_test():
 	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
@@ -560,12 +743,6 @@ def RunTimeSuperResolvedTextLinePairDataset_test():
 	all_word_set = set(korean_words + english_words)
 
 	#--------------------
-	corrupter = create_corrupter()
-
-	def corrupt(inputs, *args, **kwargs):
-		return corrupter.augment_images(inputs)
-
-	#--------------------
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
 		font_base_dir_path = '/home/sangwook/work/font'
@@ -588,9 +765,19 @@ def RunTimeSuperResolvedTextLinePairDataset_test():
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 		#color_functor = None
 
+		labels = functools.reduce(lambda x, txt: x.union(txt), korean_word_set, set())
+		labels.add(MyRunTimeSuperResolvedTextLinePairDataset.UNKNOWN)
+		labels = sorted(labels)
+		#labels = ''.join(sorted(labels))
+		print('[SWL] Info: Labels = {}.'.format(labels))
+		print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+		num_classes = len(labels) + 1  # Labels + blank label.
+
 		print('Start creating a Korean dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeSuperResolvedTextLinePairDataset(korean_word_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, corrupt_functor=corrupt, color_functor=color_functor)
+		dataset = MyRunTimeSuperResolvedTextLinePairDataset(korean_word_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, labels=labels, num_classes=num_classes)
 		print('End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -614,9 +801,19 @@ def RunTimeSuperResolvedTextLinePairDataset_test():
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 		#color_functor = None
 
+		labels = functools.reduce(lambda x, txt: x.union(txt), english_word_set, set())
+		labels.add(MyRunTimeSuperResolvedTextLinePairDataset.UNKNOWN)
+		labels = sorted(labels)
+		#labels = ''.join(sorted(labels))
+		print('[SWL] Info: Labels = {}.'.format(labels))
+		print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+		num_classes = len(labels) + 1  # Labels + blank label.
+
 		print('Start creating an English dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeSuperResolvedTextLinePairDataset(english_word_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, corrupt_functor=corrupt, color_functor=color_functor)
+		dataset = MyRunTimeSuperResolvedTextLinePairDataset(english_word_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, labels=labels, num_classes=num_classes)
 		print('End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -643,8 +840,18 @@ def RunTimeSuperResolvedTextLinePairDataset_test():
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 		#color_functor = None
 
+		labels = functools.reduce(lambda x, txt: x.union(txt), all_word_set, set())
+		labels.add(MyRunTimeSuperResolvedTextLinePairDataset.UNKNOWN)
+		labels = sorted(labels)
+		#labels = ''.join(sorted(labels))
+		print('[SWL] Info: Labels = {}.'.format(labels))
+		print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+		num_classes = len(labels) + 1  # Labels + blank label.
+
 		print('Start creating a Korean+English dataset...')
-		dataset = text_line_data.RunTimeSuperResolvedTextLinePairDataset(all_word_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, corrupt_functor=corrupt, color_functor=color_functor)
+		dataset = MyRunTimeSuperResolvedTextLinePairDataset(all_word_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, labels=labels, num_classes=num_classes)
 		print('End creating a Korean+English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)

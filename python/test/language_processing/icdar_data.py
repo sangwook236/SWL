@@ -7,29 +7,11 @@ import text_line_data
 
 # REF [site] >> https://rrc.cvc.uab.es/?ch=13
 class Icdar2019SroieTextLineDataset(text_line_data.FileBasedTextLineDatasetBase):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
-		super().__init__(image_height, image_width, image_channel, labels=None, num_classes=0, use_NWHC=True, default_value=-1)
+	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
+		super().__init__(image_height, image_width, image_channel, labels, num_classes, use_NWHC, default_value)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
-
-		#--------------------
-		import string
-		charset = \
-			string.ascii_uppercase + \
-			string.ascii_lowercase + \
-			string.digits + \
-			string.punctuation + \
-			' '
-		charset = list(charset) + [self._UNKNOWN]
-
-		self._labels = sorted(charset)
-		#self._labels = ''.join(sorted(charset))
-		print('[SWL] Info: Labels = {}.'.format(self._labels))
-		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
-
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		self._num_classes = len(self._labels) + 1  # Labels + blank label.
 
 		#--------------------
 		# Load data.
@@ -37,6 +19,8 @@ class Icdar2019SroieTextLineDataset(text_line_data.FileBasedTextLineDatasetBase)
 			print('[SWL] Info: Start loading dataset...')
 			start_time = time.time()
 			image_filepaths, label_filepaths = sorted(glob.glob(os.path.join(data_dir_path, '*.jpg'), recursive=False)), sorted(glob.glob(os.path.join(data_dir_path, '*.txt'), recursive=False))
+			if not image_filepaths or not label_filepaths:
+				raise IOError('Failed to load data from {}.'.format(data_dir_path))
 			images, labels_str, labels_int = self._load_data(image_filepaths, label_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
 			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 			labels_str, labels_int = np.array(labels_str), np.array(labels_int)

@@ -8,6 +8,10 @@ import hangeul_util as hg_util
 #--------------------------------------------------------------------
 
 class TextLineDatasetBase(abc.ABC):
+	#SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
+	#EOS = '<EOS>'  # All strings will end with the End-Of-String token.
+	#SOJC = '<SOJC>'  # All Hangeul jamo strings will start with the Start-Of-Jamo-Character token.
+	EOJC = '<EOJC>'  # All Hangeul jamo strings will end with the End-Of-Jamo-Character token.
 	UNKNOWN = '<UNK>'  # Unknown label token.
 
 	def __init__(self, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
@@ -33,7 +37,7 @@ class TextLineDatasetBase(abc.ABC):
 				return self._labels.index(ch)
 			except ValueError:
 				print('[SWL] Error: Failed to encode a label, {} in {}.'.format(ch, label_str))
-				return self._labels.index(self._UNKNOWN)
+				return self._labels.index(TextLineDatasetBase.UNKNOWN)
 		return list(label2index(ch) for ch in label_str)
 
 	# Integer label -> string label.
@@ -43,7 +47,7 @@ class TextLineDatasetBase(abc.ABC):
 				return self._labels[id]
 			except IndexError:
 				print('[SWL] Error: Failed to decode a label, {} in {}.'.format(id, label_str))
-				return self._UNKNOWN  # TODO [check] >> Is it correct?
+				return TextLineDatasetBase.UNKNOWN  # TODO [check] >> Is it correct?
 		return ''.join(list(index2label(id) for id in label_int if id != self._default_value))
 
 	# String labels -> Integer labels.
@@ -150,20 +154,26 @@ class TextLineDatasetBase(abc.ABC):
 
 		return images
 
+	@staticmethod
+	def hangeul2jamo(label):
+        # NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
+		return hg_util.hangeul2jamo(label, eojc_str=TextLineDatasetBase.EOJC, use_separate_consonants=False, use_separate_vowels=True)
+
+	@staticmethod
+	def jamo2hangeul(label):
+        # NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
+		return hg_util.jamo2hangeul(label, eojc_str=TextLineDatasetBase.EOJC, use_separate_consonants=False, use_separate_vowels=True)
+
 #--------------------------------------------------------------------
 
 class RunTimeTextLineDatasetBase(TextLineDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, labels=None, num_classes=0, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
-		super().__init__(labels=labels, num_classes=num_classes, use_NWHC=use_NWHC, default_value=default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, color_functor=None, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
+		super().__init__(labels, num_classes, use_NWHC, default_value)
 
-		self._textGenerator = None
-		self._color_functor = color_functor
-
+		self._text_set = text_set
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
-		if max_label_len > 0:
-			self._text_set = set(filter(lambda txt: len(txt) <= max_label_len, text_set))
-		else:
-			self._text_set = text_set
+		self._color_functor = color_functor
+		self._textGenerator = None
 
 	@property
 	def shape(self):
@@ -295,27 +305,8 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 
 # This class is independent of language.
 class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, labels=None, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, labels=labels, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
-
-		#--------------------
-		#self._SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
-		#self._EOS = '<EOS>'  # All strings will end with the End-Of-String token.
-
-		#--------------------
-		if labels:
-			self._labels = labels
-		else:
-			charset = functools.reduce(lambda x, txt: x.union(txt), self._text_set, set())
-			charset.add(self._UNKNOWN)
-
-			self._labels = sorted(charset)
-			#self._labels = ''.join(sorted(charset))
-		print('[SWL] Info: Labels = {}.'.format(self._labels))
-		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
-
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		self._num_classes = len(self._labels) + 1  # Labels + blank label.
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, color_functor=None, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, color_functor=color_functor, labels=labels, num_classes=num_classes, use_NWHC=use_NWHC, default_value=default_value)
 
 		#--------------------
 		min_font_size, max_font_size = round(image_height * 0.8), round(image_height * 1.25)
@@ -336,8 +327,8 @@ class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 #--------------------------------------------------------------------
 
 class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, color_functor, labels=None, num_classes=0, max_label_len=0, use_NWHC=True, default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, labels, num_classes, max_label_len, use_NWHC, color_functor, default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, color_functor=None, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, color_functor, labels, num_classes, use_NWHC, default_value)
 
 	def _create_batch_generator(self, textGenerator, color_functor, text_set, batch_size, steps_per_epoch, shuffle, is_training=False):
 		if steps_per_epoch:
@@ -391,27 +382,8 @@ class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
 
 # This class is independent of language.
 class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor, labels=None, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, color_functor, labels=labels, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
-
-		#--------------------
-		#self._SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
-		#self._EOS = '<EOS>'  # All strings will end with the End-Of-String token.
-
-		#--------------------
-		if labels:
-			self._labels = labels
-		else:
-			charset = functools.reduce(lambda x, txt: x.union(txt), self._text_set, set())
-			charset.add(self._UNKNOWN)
-
-			self._labels = sorted(charset)
-			#self._labels = ''.join(sorted(charset))
-		print('[SWL] Info: Labels = {}.'.format(self._labels))
-		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
-
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		self._num_classes = len(self._labels) + 1  # Labels + blank label.
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=None, labels=None, num_classes=0, alpha_matte_mode='1', use_NWHC=True, default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, color_functor, labels, num_classes, use_NWHC, default_value)
 
 		#--------------------
 		min_font_size, max_font_size = round(image_height * 0.8), round(image_height * 1.25)
@@ -432,33 +404,8 @@ class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 
 # This class is independent of language.
 class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor, labels=None, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, color_functor, labels=labels, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
-
-		#--------------------
-		#self._SOJC = '<SOJC>'  # All Hangeul jamo strings will start with the Start-Of-Jamo-Character token.
-		self._EOJC = '<EOJC>'  # All Hangeul jamo strings will end with the End-Of-Jamo-Character token.
-		#self._SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
-		#self._EOS = '<EOS>'  # All strings will end with the End-Of-String token.
-		#self._UNKNOWN = '<UNK>'  # Unknown label token.
-
-		self._hangeul2jamo_functor = functools.partial(hg_util.hangeul2jamo, eojc_str=self._EOJC, use_separate_consonants=False, use_separate_vowels=True)
-		self._jamo2hangeul_functor = functools.partial(hg_util.jamo2hangeul, eojc_str=self._EOJC, use_separate_consonants=False, use_separate_vowels=True)
-
-		#--------------------
-		if labels:
-			self._labels = labels
-		else:
-			charset = functools.reduce(lambda x, txt: x.union(self._hangeul2jamo_functor(txt)), self._text_set, set())
-			charset.add(self._UNKNOWN)
-
-			self._labels = sorted(charset)
-			#self._labels = ''.join(sorted(charset))  # Error.
-		print('[SWL] Info: Labels = {}.'.format(self._labels))
-		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
-
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		self._num_classes = len(self._labels) + 1  # Labels + blank label.
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=None, labels=None, num_classes=0, alpha_matte_mode='1', use_NWHC=True, default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, color_functor, labels, num_classes, use_NWHC, default_value)
 
 		#--------------------
 		min_font_size, max_font_size = round(image_height * 0.8), round(image_height * 1.25)
@@ -477,7 +424,7 @@ class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatas
 	# String label -> integer label.
 	def encode_label(self, label_str, *args, **kwargs):
 		try:
-			label_str = self._hangeul2jamo_functor(label_str)
+			label_str = RunTimeHangeulJamoAlphaMatteTextLineDataset.hangeul2jamo(label_str)
 			return list(self._labels.index(ch) for ch in label_str)
 		except Exception as ex:
 			print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
@@ -487,14 +434,14 @@ class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatas
 	def decode_label(self, label_int, *args, **kwargs):
 		try:
 			label_str = ''.join(list(self._labels[id] for id in label_int if id != self._default_value))
-			return self._jamo2hangeul_functor(label_str)
+			return RunTimeHangeulJamoAlphaMatteTextLineDataset.jamo2hangeul(label_str)
 		except Exception as ex:
 			print('[SWL] Error: Failed to decode a label: {}.'.format(label_int))
 			raise
 
 	# String labels -> Integer labels.
 	def encode_labels(self, labels_str, dtype=np.int16, *args, **kwargs):
-		labels_str = list(map(lambda label: self._hangeul2jamo_functor(label), labels_str))
+		labels_str = list(map(lambda label: RunTimeHangeulJamoAlphaMatteTextLineDataset.hangeul2jamo(label), labels_str))
 
 		max_label_len = functools.reduce(lambda x, y: max(x, len(y)), labels_str, 0)
 		labels_int = np.full((len(labels_str), max_label_len), self._default_value, dtype=dtype)
@@ -510,7 +457,7 @@ class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatas
 		def int2str(label):
 			try:
 				label = ''.join(list(self._labels[id] for id in label if id != self._default_value))
-				return self._jamo2hangeul_functor(label)
+				return RunTimeHangeulJamoAlphaMatteTextLineDataset.jamo2hangeul(label)
 			except ValueError:
 				return None
 		return list(map(int2str, labels_int))
@@ -522,7 +469,7 @@ class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatas
 
 class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 	def __init__(self, image_height, image_width, image_channel, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
-		super().__init__(labels=labels, num_classes=num_classes, use_NWHC=use_NWHC, default_value=default_value)
+		super().__init__(labels, num_classes, use_NWHC, default_value)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 		self._train_data, self._test_data = None, None
@@ -531,21 +478,44 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 	def shape(self):
 		return self._image_height, self._image_width, self._image_channel
 
-	@property
-	def train_examples(self):
-		return self._train_data
+	def preprocess(self, inputs, outputs, *args, **kwargs):
+		"""
+		if inputs is not None:
+			# Contrast limited adaptive histogram equalization (CLAHE).
+			#clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+			#inputs = np.array([clahe.apply(inp) for inp in inputs])
 
-	@property
-	def test_examples(self):
-		return self._test_data
+			# TODO [check] >> Preprocessing has influence on recognition rate.
 
-	@property
-	def num_train_examples(self):
-		return 0 if self._train_data is None else len(self._train_data)
+			# Normalization, standardization, etc.
+			#inputs = inputs.astype(np.float32)
 
-	@property
-	def num_test_examples(self):
-		return 0 if self._test_data is None else len(self._test_data)
+			if False:
+				inputs = preprocessing.scale(inputs, axis=0, with_mean=True, with_std=True, copy=True)
+				#inputs = preprocessing.minmax_scale(inputs, feature_range=(0, 1), axis=0, copy=True)  # [0, 1].
+				#inputs = preprocessing.maxabs_scale(inputs, axis=0, copy=True)  # [-1, 1].
+				#inputs = preprocessing.robust_scale(inputs, axis=0, with_centering=True, with_scaling=True, quantile_range=(25.0, 75.0), copy=True)
+			elif False:
+				# NOTE [info] >> Not good.
+				inputs = (inputs - np.mean(inputs, axis=None)) / np.std(inputs, axis=None)  # Standardization.
+			elif False:
+				# NOTE [info] >> Not bad.
+				in_min, in_max = 0, 255 #np.min(inputs), np.max(inputs)
+				out_min, out_max = 0, 1 #-1, 1
+				inputs = (inputs - in_min) * (out_max - out_min) / (in_max - in_min) + out_min  # Normalization.
+			elif False:
+				inputs /= 255.0  # Normalization.
+			elif True:
+				inputs = (inputs / 255.0) * 2.0 - 1.0  # Normalization.
+
+		if outputs is not None:
+			# One-hot encoding.
+			#outputs = tf.keras.utils.to_categorical(outputs, num_classes, np.uint16)
+			pass
+		"""
+		inputs = (inputs.astype(np.float32) / 255.0) * 2.0 - 1.0  # Normalization.
+
+		return inputs, outputs
 
 	def resize(self, input, output=None, height=None, width=None, *args, **kwargs):
 		if height is None:
@@ -665,85 +635,19 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 
 #--------------------------------------------------------------------
 
-class JsonBasedTextLineDatasetBase(TextLineDatasetBase):
-	def __init__(self, image_height, image_width, image_channel, labels=labels, num_classes=0, use_NWHC=True, default_value=-1):
-		super().__init__(labels=labels, num_classes=num_classes, use_NWHC=use_NWHC, default_value=default_value)
-
-		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
-
-	@property
-	def shape(self):
-		return self._image_height, self._image_width, self._image_channel
-
-	def preprocess(self, inputs, outputs, *args, **kwargs):
-		"""
-		if inputs is not None:
-			# Contrast limited adaptive histogram equalization (CLAHE).
-			#clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-			#inputs = np.array([clahe.apply(inp) for inp in inputs])
-
-			# TODO [check] >> Preprocessing has influence on recognition rate.
-
-			# Normalization, standardization, etc.
-			#inputs = inputs.astype(np.float32)
-
-			if False:
-				inputs = preprocessing.scale(inputs, axis=0, with_mean=True, with_std=True, copy=True)
-				#inputs = preprocessing.minmax_scale(inputs, feature_range=(0, 1), axis=0, copy=True)  # [0, 1].
-				#inputs = preprocessing.maxabs_scale(inputs, axis=0, copy=True)  # [-1, 1].
-				#inputs = preprocessing.robust_scale(inputs, axis=0, with_centering=True, with_scaling=True, quantile_range=(25.0, 75.0), copy=True)
-			elif False:
-				# NOTE [info] >> Not good.
-				inputs = (inputs - np.mean(inputs, axis=None)) / np.std(inputs, axis=None)  # Standardization.
-			elif False:
-				# NOTE [info] >> Not bad.
-				in_min, in_max = 0, 255 #np.min(inputs), np.max(inputs)
-				out_min, out_max = 0, 1 #-1, 1
-				inputs = (inputs - in_min) * (out_max - out_min) / (in_max - in_min) + out_min  # Normalization.
-			elif False:
-				inputs /= 255.0  # Normalization.
-			elif True:
-				inputs = (inputs / 255.0) * 2.0 - 1.0  # Normalization.
-
-		if outputs is not None:
-			# One-hot encoding.
-			#outputs = tf.keras.utils.to_categorical(outputs, num_classes, np.uint16)
-			pass
-		"""
-		inputs = (inputs.astype(np.float32) / 255.0) * 2.0 - 1.0  # Normalization.
-
-		return inputs, outputs
-
-	def resize(self, input, output=None, height=None, width=None, *args, **kwargs):
-		if height is None:
-			height = self._image_height
-		if width is None:
-			width = self._image_width
-
-		hh, ww = input.shape
-		if ww >= width:
-			return cv2.resize(input, (width, height), interpolation=cv2.INTER_AREA)
-		else:
-			ratio = height / hh
-			min_width = min(width, int(ww * ratio))
-			input = cv2.resize(input, (min_width, height), interpolation=cv2.INTER_AREA)
-			if min_width < width:
-				image_zeropadded = np.zeros((height, width), dtype=input.dtype)
-				image_zeropadded[:,0:min_width] = input[:,0:min_width]
-				return image_zeropadded
-			else:
-				return input
-		"""
-		return cv2.resize(input, (width, height), interpolation=cv2.INTER_AREA)
-		"""
+class JsonBasedTextLineDatasetBase(FileBasedTextLineDatasetBase):
+	def __init__(self, image_height, image_width, image_channel, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
+		super().__init__(image_height, image_width, image_channel, labels, num_classes, use_NWHC, default_value)
 
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
-		return self._create_batch_generator(self._train_images, self._train_labels, batch_size, shuffle, is_training=True, default_value=self._default_value)
+		return self._create_batch_generator(self._train_data, batch_size, shuffle, is_training=True, default_value=self._default_value)
 
 	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
-		return self._create_batch_generator(self._test_images, self._test_labels, batch_size, shuffle, is_training=False, default_value=self._default_value)
+		return self._create_batch_generator(self._test_data, batch_size, shuffle, is_training=False, default_value=self._default_value)
 
-	def _create_batch_generator(self, images, labels_str, batch_size, shuffle, is_training=False, default_value=-1):
+	def _create_batch_generator(self, data, batch_size, shuffle, is_training=False, default_value=-1):
+		images, labels_str = data
+
 		num_examples = len(images)
 		if len(labels_str) != num_examples:
 			raise ValueError('Invalid data length: {} != {}'.format(num_examples, len(labels_str)))
@@ -814,7 +718,7 @@ class JsonBasedTextLineDatasetBase(TextLineDatasetBase):
 
 		images, label_list = list(), list()
 		for idx, datum in enumerate(dataset['data']):
-			img = cv2.imread(datum['file'], cv2.IMREAD_GRAYSCALE)
+			img = cv2.imread(datum['file'], cv2.IMREAD_GRAYSCALE if 1 == self._image_channel else cv2.IMREAD_COLOR)
 			if img is None:
 				print('[SWL] Warning: Failed to load an image: {}.'.format(datum['file']))
 				continue
@@ -832,53 +736,49 @@ class JsonBasedTextLineDatasetBase(TextLineDatasetBase):
 # REF [function] >> generate_simple_text_lines_test() and generate_text_lines_test() in text_generation_util_test.py.
 # This class is independent of language.
 class JsonBasedTextLineDataset(JsonBasedTextLineDatasetBase):
-	def __init__(self, train_json_filepath, test_json_filepath, image_height, image_width, image_channel, use_NWHC=True, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, num_classes=0, use_NWHC=use_NWHC, default_value=default_value)
+	def __init__(self, train_json_filepath, test_json_filepath, image_height, image_width, image_channel, labels, num_classes, use_NWHC=True, default_value=-1):
+		super().__init__(image_height, image_width, image_channel, labels=labels, num_classes=num_classes, use_NWHC=use_NWHC, default_value=default_value)
 
 		#--------------------
 		print('[SWL] Info: Start loading dataset...')
 		start_time = time.time()
-		self._train_images, self._train_labels, train_charset = self._text_dataset_to_numpy(train_json_filepath)
-		self._test_images, self._test_labels, test_charset = self._text_dataset_to_numpy(test_json_filepath)
+		train_images, train_labels, train_charset = self._text_dataset_to_numpy(train_json_filepath)
+		test_images, test_labels, test_charset = self._text_dataset_to_numpy(test_json_filepath)
 		print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 
-		#self._labels = sorted(set(train_charset + test_charset))
-		self._labels = ''.join(sorted(set(train_charset + test_charset)))
+		self._train_data = train_images, train_labels
+		self._test_data = test_images, test_labels
+
+		"""
+		self._labels = set(train_charset + test_charset)
+		self._labels.add(JsonBasedHangeulJamoTextLineDataset.UNKNOWN)
+		self._labels = sorted(self._labels)
+		#self._labels = ''.join(sorted(self._labels))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
+		"""
+
+		#train_labels = np.array(train_labels).flatten()
+		#test_labels = np.array(test_labels).flatten()
+		train_labels = np.array(train_labels)
+		test_labels = np.array(test_labels)
 
 		#--------------------
-		#self._train_labels = np.array(self._train_labels).flatten()
-		#self._test_labels = np.array(self._test_labels).flatten()
-		self._train_labels = np.array(self._train_labels)
-		self._test_labels = np.array(self._test_labels)
-
-		#--------------------
-		print('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_images.shape, self._train_images.dtype, np.min(self._train_images), np.max(self._train_images)))
-		print('Train label: shape = {}, dtype = {}.'.format(self._train_labels.shape, self._train_labels.dtype))
-		print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
-		print('Test label: shape = {}, dtype = {}.'.format(self._test_labels.shape, self._test_labels.dtype))
+		print('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(train_images.shape, train_images.dtype, np.min(train_images), np.max(train_images)))
+		print('Train label: shape = {}, dtype = {}.'.format(train_labels.shape, train_labels.dtype))
+		print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(test_images.shape, test_images.dtype, np.min(test_images), np.max(test_images)))
+		print('Test label: shape = {}, dtype = {}.'.format(test_labels.shape, test_labels.dtype))
 
 	def augment(self, inputs, outputs, *args, **kwargs):
 		return inputs, outputs
 
 # This class is independent of language.
 class JsonBasedHangeulJamoTextLineDataset(JsonBasedTextLineDatasetBase):
-	def __init__(self, train_json_filepath, test_json_filepath, image_height, image_width, image_channel, labels=None, use_NWHC=True, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, num_classes=0, use_NWHC=use_NWHC, default_value=default_value)
-
-		#--------------------
-		#self._SOJC = '<SOJC>'  # All Hangeul jamo strings will start with the Start-Of-Jamo-Character token.
-		self._EOJC = '<EOJC>'  # All Hangeul jamo strings will end with the End-Of-Jamo-Character token.
-		#self._SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
-		#self._EOS = '<EOS>'  # All strings will end with the End-Of-String token.
-		#self._UNKNOWN = '<UNK>'  # Unknown label token.
-
-		self._hangeul2jamo_functor = functools.partial(hg_util.hangeul2jamo, eojc_str=self._EOJC, use_separate_consonants=False, use_separate_vowels=True)
-		self._jamo2hangeul_functor = functools.partial(hg_util.jamo2hangeul, eojc_str=self._EOJC, use_separate_consonants=False, use_separate_vowels=True)
+	def __init__(self, train_json_filepath, test_json_filepath, image_height, image_width, image_channel, labels, num_classes, use_NWHC=True, default_value=-1):
+		super().__init__(image_height, image_width, image_channel, labels=labels, num_classes=num_classess, use_NWHC=use_NWHC, default_value=default_value)
 
 		#--------------------
 		print('[SWL] Info: Start loading dataset...')
@@ -887,21 +787,18 @@ class JsonBasedHangeulJamoTextLineDataset(JsonBasedTextLineDatasetBase):
 		self._test_images, self._test_labels, test_charset = self._text_dataset_to_numpy(test_json_filepath)
 		print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 
-		if labels:
-			self._labels = labels
-		else:
-			charset = set(self._hangeul2jamo_functor(list(set(train_charset + test_charset))))
-			charset.add(self._UNKNOWN)
-
-			self._labels = sorted(charset)
-			#self._labels = ''.join(sorted(charset))  # Error.
+		"""
+		self._labels = set(JsonBasedHangeulJamoTextLineDataset.hangeul2jamo(list(set(train_charset + test_charset))))
+		self._labels.add(JsonBasedHangeulJamoTextLineDataset.UNKNOWN)
+		self._labels = sorted(self._labels)
+		#self._labels = ''.join(sorted(self._labels))  # Error.
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
+		"""
 
-		#--------------------
 		#self._train_labels = np.array(self._train_labels).flatten()
 		#self._test_labels = np.array(self._test_labels).flatten()
 		self._train_labels = np.array(self._train_labels)
@@ -916,7 +813,7 @@ class JsonBasedHangeulJamoTextLineDataset(JsonBasedTextLineDatasetBase):
 	# String label -> integer label.
 	def encode_label(self, label_str, *args, **kwargs):
 		try:
-			label_str = self._hangeul2jamo_functor(label_str)
+			label_str = JsonBasedHangeulJamoTextLineDataset.hangeul2jamo(label_str)
 			return list(self._labels.index(ch) for ch in label_str)
 		except Exception as ex:
 			print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
@@ -926,14 +823,14 @@ class JsonBasedHangeulJamoTextLineDataset(JsonBasedTextLineDatasetBase):
 	def decode_label(self, label_int, *args, **kwargs):
 		try:
 			label_str = ''.join(list(self._labels[id] for id in label_int if id != self._default_value))
-			return self._jamo2hangeul_functor(label_str)
+			return JsonBasedHangeulJamoTextLineDataset.jamo2hangeul(label_str)
 		except Exception as ex:
 			print('[SWL] Error: Failed to decode a label: {}.'.format(label_int))
 			raise
 
 	# String labels -> Integer labels.
 	def encode_labels(self, labels_str, dtype=np.int16, *args, **kwargs):
-		labels_str = list(map(lambda label: self._hangeul2jamo_functor(label), labels_str))
+		labels_str = list(map(lambda label: JsonBasedHangeulJamoTextLineDataset.hangeul2jamo(label), labels_str))
 
 		max_label_len = functools.reduce(lambda x, y: max(x, len(y)), labels_str, 0)
 		labels_int = np.full((len(labels_str), max_label_len), self._default_value, dtype=dtype)
@@ -949,7 +846,7 @@ class JsonBasedHangeulJamoTextLineDataset(JsonBasedTextLineDatasetBase):
 		def int2str(label):
 			try:
 				label = ''.join(list(self._labels[id] for id in label if id != self._default_value))
-				return self._jamo2hangeul_functor(label)
+				return JsonBasedHangeulJamoTextLineDataset.jamo2hangeul(label)
 			except ValueError:
 				return None
 		return list(map(int2str, labels_int))
@@ -963,11 +860,16 @@ class TextLinePairDatasetBase(TextLineDatasetBase):
 	"""A base dataset for paired text lines, input & output text line images.
 	"""
 
-	def __init__(self, labels=None, num_classes=0, use_NWHC=True, color_functor=None, default_value=-1):
-		super().__init__(labels=labels, num_classes=num_classes, use_NWHC=use_NWHC, default_value=default_value)
+	def __init__(self, image_height, image_width, image_channel, color_functor=None, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
+		super().__init__(labels, num_classes, use_NWHC, default_value)
 
-		self._textGenerator = None
+		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 		self._color_functor = color_functor
+		self._textGenerator = None
+
+	@property
+	def shape(self):
+		return self._image_height, self._image_width, self._image_channel
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		"""
@@ -1039,15 +941,6 @@ class TextLinePairDatasetBase(TextLineDatasetBase):
 		return cv2.resize(input, (width, height), interpolation=cv2.INTER_AREA)
 		"""
 
-	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
-		return self._create_batch_generator(self._textGenerator, self._color_functor, self._text_set, batch_size, steps_per_epoch, shuffle, is_training=True)
-
-	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
-		return self._create_batch_generator(self._textGenerator, self._color_functor, self._text_set, batch_size, steps_per_epoch, shuffle, is_training=False)
-
-	def _create_batch_generator(self, textGenerator, color_functor, text_set, batch_size, steps_per_epoch, shuffle, is_training=False):
-		raise NotImplementedError
-
 	def visualize(self, batch_generator, num_examples=10):
 		for batch_data, num_batch_examples in batch_generator:
 			batch_input_images, batch_output_images, batch_labels_str, batch_labels_int = batch_data
@@ -1086,47 +979,28 @@ class TextLinePairDatasetBase(TextLineDatasetBase):
 			break  # For a single batch.
 		cv2.destroyAllWindows()
 
+	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
+		return self._create_batch_generator(self._textGenerator, self._color_functor, self._text_set, batch_size, steps_per_epoch, shuffle, is_training=True)
+
+	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
+		return self._create_batch_generator(self._textGenerator, self._color_functor, self._text_set, batch_size, steps_per_epoch, shuffle, is_training=False)
+
+	@abc.abstractmethod
+	def _create_batch_generator(self, textGenerator, color_functor, text_set, batch_size, steps_per_epoch, shuffle, is_training=False):
+		raise NotImplementedError
+
 #--------------------------------------------------------------------
 
 class RunTimeTextLinePairDatasetBase(TextLinePairDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, labels=None, num_classes=0, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
-		super().__init__(labels=labels, num_classes=num_classes, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, color_functor=None, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
+		super().__init__(image_height, image_width, image_channel, color_functor, labels, num_classes, use_NWHC, default_value)
 
-		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
-		if max_label_len > 0:
-			self._text_set = set(filter(lambda txt: len(txt) <= max_label_len, text_set))
-		else:
-			self._text_set = text_set
-
-	@property
-	def shape(self):
-		return self._image_height, self._image_width, self._image_channel
+		self._text_set = text_set
 
 # This class is independent of language.
-class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, corrupt_functor, labels=None, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, labels=None, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
-
-		#--------------------
-		#self._SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
-		#self._EOS = '<EOS>'  # All strings will end with the End-Of-String token.
-
-		#--------------------
-		if labels:
-			self._labels = labels
-		else:
-			charset = functools.reduce(lambda x, txt: x.union(txt), self._text_set, set())
-			charset.add(self._UNKNOWN)
-
-			self._labels = sorted(charset)
-			#self._labels = ''.join(sorted(charset))
-		print('[SWL] Info: Labels = {}.'.format(self._labels))
-		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
-
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		self._num_classes = len(self._labels) + 1  # Labels + blank label.
-
-		self._corrupt_functor = corrupt_functor
+class RunTimeCorruptedTextLinePairDatasetBase(RunTimeTextLinePairDatasetBase):
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=None, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, color_functor, labels, num_classes, use_NWHC, default_value)
 
 		#--------------------
 		min_font_size, max_font_size = round(image_height * 0.8), round(image_height * 1.25)
@@ -1141,8 +1015,9 @@ class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 		else:
 			raise ValueError('Invalid image channel, {}'.format(image_channel))
 
-	def augment(self, inputs, outputs, *args, **kwargs):
-		return inputs, outputs
+	@abc.abstractmethod
+	def corrupt(self, inputs, *args, **kwargs):
+		raise NotImplementedError
 
 	def _create_batch_generator(self, textGenerator, color_functor, text_set, batch_size, steps_per_epoch, shuffle, is_training=False):
 		#min_height, max_height = round(self._image_height * 0.5), self._image_height
@@ -1154,7 +1029,7 @@ class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 			interpolation = random.choice([cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4])
 			return cv2.resize(image, (round(image.shape[1] * height / image.shape[0]), height), interpolation=interpolation)
 		apply_corruption = lambda img: \
-			self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(reduce_image(img), axis=0)), axis=0))
+			self.resize(np.squeeze(self.corrupt(np.expand_dims(reduce_image(img), axis=0)), axis=0))
 
 		if steps_per_epoch:
 			generator = textGenerator.create_subset_generator(text_set, batch_size, color_functor)
@@ -1171,12 +1046,12 @@ class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 			# Reduce -> corrupt -> enlarge.
 			##corrupted_scenes = list(map(lambda image: cv2.pyrDown(cv2.pyrDown(image)), corrupted_scenes))
 			#corrupted_scenes = list(map(lambda image: reduce_image(image), corrupted_scenes))
-			#corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(image, axis=0)), axis=0)), corrupted_scenes))
+			#corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self.corrupt(np.expand_dims(image, axis=0)), axis=0)), corrupted_scenes))
 			corrupted_scenes = list(map(apply_corruption, corrupted_scenes))
 			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
 			"""
 			corrupted_scenes = scene_text_masks
-			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(image, axis=0)), axis=0)), corrupted_scenes))
+			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self.corrupt(np.expand_dims(image, axis=0)), axis=0)), corrupted_scenes))
 			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
 			#corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32) * 255, use_NWHC=self._use_NWHC)
 			#corrupted_scenes = 255 - corrupted_scenes  # Invert.
@@ -1203,32 +1078,11 @@ class RunTimeCorruptedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 				break
 
 # This class is independent of language.
-class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
-	def __init__(self, text_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, corrupt_functor, labels=None, max_label_len=0, use_NWHC=True, color_functor=None, default_value=-1):
-		super().__init__(text_set, hr_image_height, hr_image_width, image_channel, labels=None, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, color_functor=color_functor, default_value=default_value)
+class RunTimeSuperResolvedTextLinePairDatasetBase(RunTimeTextLinePairDatasetBase):
+	def __init__(self, text_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, color_functor=None, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
+		super().__init__(text_set, hr_image_height, hr_image_width, image_channel, color_functor, labels, num_classes, use_NWHC, default_value)
 
 		self._lr_image_height, self._lr_image_width = lr_image_height, lr_image_width
-
-		#--------------------
-		#self._SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
-		#self._EOS = '<EOS>'  # All strings will end with the End-Of-String token.
-
-		#--------------------
-		if labels:
-			self._labels = labels
-		else:
-			charset = functools.reduce(lambda x, txt: x.union(txt), self._text_set, set())
-			charset.add(self._UNKNOWN)
-
-			self._labels = sorted(charset)
-			#self._labels = ''.join(sorted(charset))
-		print('[SWL] Info: Labels = {}.'.format(self._labels))
-		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
-
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		self._num_classes = len(self._labels) + 1  # Labels + blank label.
-
-		self._corrupt_functor = corrupt_functor
 
 		#--------------------
 		min_font_size, max_font_size = round(hr_image_height * 0.8), round(hr_image_height * 1.25)
@@ -1247,8 +1101,9 @@ class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 	def shape(self):
 		return self._image_height, self._image_width, self._lr_image_height, self._lr_image_width, self._image_channel
 
-	def augment(self, inputs, outputs, *args, **kwargs):
-		return inputs, outputs
+	@abc.abstractmethod
+	def corrupt(self, inputs, *args, **kwargs):
+		raise NotImplementedError
 
 	def _create_batch_generator(self, textGenerator, color_functor, text_set, batch_size, steps_per_epoch, shuffle, is_training=False):
 		#min_height, max_height = round(self._lr_image_height * 0.5), self._lr_image_height
@@ -1259,7 +1114,7 @@ class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 			interpolation = random.choice([cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4])
 			return cv2.resize(image, (round(image.shape[1] * height / image.shape[0]), height), interpolation=interpolation)
 		apply_corruption = lambda img: \
-			self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(reduce_image(img), axis=0)), axis=0), None, self._lr_image_height, self._lr_image_width)
+			self.resize(np.squeeze(self.corrupt(np.expand_dims(reduce_image(img), axis=0)), axis=0), None, self._lr_image_height, self._lr_image_width)
 
 		if steps_per_epoch:
 			generator = textGenerator.create_subset_generator(text_set, batch_size, color_functor)
@@ -1276,12 +1131,12 @@ class RunTimeSuperResolvedTextLinePairDataset(RunTimeTextLinePairDatasetBase):
 			# Reduce -> corrupt -> enlarge.
 			##corrupted_scenes = list(map(lambda image: cv2.pyrDown(cv2.pyrDown(image)), corrupted_scenes))
 			#corrupted_scenes = list(map(lambda image: reduce_image(image), corrupted_scenes))
-			#corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(image, axis=0)), axis=0), None, self._lr_image_height, self._lr_image_width), corrupted_scenes))
+			#corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self.corrupt(np.expand_dims(image, axis=0)), axis=0), None, self._lr_image_height, self._lr_image_width), corrupted_scenes))
 			corrupted_scenes = list(map(apply_corruption, corrupted_scenes))
 			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
 			"""
 			corrupted_scenes = scene_text_masks
-			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(image, axis=0)), axis=0)), corrupted_scenes))
+			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self.corrupt(np.expand_dims(image, axis=0)), axis=0)), corrupted_scenes))
 			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
 			#corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32) * 255, use_NWHC=self._use_NWHC)
 			#corrupted_scenes = 255 - corrupted_scenes  # Invert.

@@ -15,9 +15,188 @@ import TextRecognitionDataGenerator_data
 
 #--------------------------------------------------------------------
 
+def create_augmenter():
+	#import imgaug as ia
+	from imgaug import augmenters as iaa
+
+	"""
+	augmenter = iaa.Sequential([
+		iaa.Sometimes(0.5, iaa.OneOf([
+			iaa.Crop(px=(0, 100)),  # Crop images from each side by 0 to 16px (randomly chosen).
+			iaa.Crop(percent=(0, 0.1)),  # Crop images by 0-10% of their height/width.
+			#iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
+			#iaa.Flipud(0.5),  # Vertically flip 50% of the images.
+		])),
+		iaa.Sometimes(0.5, iaa.OneOf([
+			iaa.Affine(
+				scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+				translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent (per axis).
+				rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
+				shear=(-5, 5),  # Shear by -5 to +5 degrees.
+				#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
+				order=0,  # Use nearest neighbour or bilinear interpolation (fast).
+				#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
+				#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+				#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+			),
+			#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
+			iaa.PerspectiveTransform(scale=(0.01, 0.1)),
+			iaa.ElasticTransformation(alpha=(15.0, 30.0), sigma=5.0),  # Move pixels locally around (with random strengths).
+		])),
+		iaa.Sometimes(0.5, iaa.OneOf([
+			iaa.OneOf([
+				iaa.GaussianBlur(sigma=(1.5, 2.5)),
+				iaa.AverageBlur(k=(3, 6)),
+				iaa.MedianBlur(k=(3, 5)),
+				iaa.MotionBlur(k=(3, 7), angle=(0, 360), direction=(-1.0, 1.0), order=1),
+			]),
+			iaa.OneOf([
+				iaa.AdditiveGaussianNoise(loc=0, scale=(0.1 * 255, 0.3 * 255), per_channel=False),
+				#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.1 * 255, 0.3 * 255), per_channel=False),
+				#iaa.AdditivePoissonNoise(lam=(32, 64), per_channel=False),
+				iaa.CoarseSaltAndPepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
+				iaa.CoarseSalt(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
+				#iaa.CoarsePepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
+				iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.05, 0.3), per_channel=False),
+			]),
+			#iaa.OneOf([
+			#	#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
+			#	#iaa.AddToHueAndSaturation(value=(-255, 255), per_channel=False),
+			#	#iaa.LinearContrast(alpha=(0.5, 1.5), per_channel=False),
+
+			#	iaa.Invert(p=1, per_channel=False),
+
+			#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
+			#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
+			#]),
+		])),
+		#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
+	])
+	"""
+	augmenter = iaa.Sequential([
+		#iaa.Sometimes(0.5, iaa.OneOf([
+		#	iaa.Crop(px=(0, 100)),  # Crop images from each side by 0 to 16px (randomly chosen).
+		#	iaa.Crop(percent=(0, 0.1)),  # Crop images by 0-10% of their height/width.
+		#	#iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
+		#	#iaa.Flipud(0.5),  # Vertically flip 50% of the images.
+		#])),
+		iaa.Sometimes(0.5, iaa.OneOf([
+			iaa.Affine(
+				#scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+				translate_percent={'x': (0.0, 0.1), 'y': (-0.05, 0.05)},  # Translate by 0 to +10 percent along x-axis and -5 to +5 percent along y-axis.
+				rotate=(-2, 2),  # Rotate by -2 to +2 degrees.
+				shear=(-10, 10),  # Shear by -10 to +10 degrees.
+				#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
+				order=0,  # Use nearest neighbour or bilinear interpolation (fast).
+				#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
+				#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+				#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+			),
+			#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
+			#iaa.PerspectiveTransform(scale=(0.01, 0.1)),
+			iaa.ElasticTransformation(alpha=(20.0, 40.0), sigma=(6.0, 8.0)),  # Move pixels locally around (with random strengths).
+		])),
+		iaa.Sometimes(0.5, iaa.OneOf([
+			iaa.OneOf([
+				iaa.GaussianBlur(sigma=(0.5, 1.5)),
+				iaa.AverageBlur(k=(2, 4)),
+				iaa.MedianBlur(k=(3, 3)),
+				iaa.MotionBlur(k=(3, 4), angle=(0, 360), direction=(-1.0, 1.0), order=1),
+			]),
+			iaa.Sequential([
+				iaa.OneOf([
+					iaa.AdditiveGaussianNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
+					#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
+					iaa.AdditivePoissonNoise(lam=(20, 30), per_channel=False),
+					iaa.CoarseSaltAndPepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					iaa.CoarseSalt(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					iaa.CoarsePepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					#iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.8, 0.9), per_channel=False),
+				]),
+				iaa.GaussianBlur(sigma=(0.7, 1.0)),
+			]),
+			#iaa.OneOf([
+			#	#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
+			#	#iaa.AddToHueAndSaturation(value=(-255, 255), per_channel=False),
+			#	#iaa.LinearContrast(alpha=(0.5, 1.5), per_channel=False),
+
+			#	iaa.Invert(p=1, per_channel=False),
+
+			#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
+			#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
+			#]),
+		])),
+		#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
+	])
+
+	return augmenter
+
+def generate_font_colors(image_depth):
+	import random
+	#font_color = (255,) * image_depth  # White font color.
+	#font_color = tuple(random.randrange(256) for _ in range(image_depth))  # An RGB font color.
+	#font_color = (random.randrange(256),) * image_depth  # A grayscale font color.
+	#gray_val = random.randrange(255)
+	#font_color = (gray_val,) * image_depth  # A lighter grayscale font color.
+	font_color = (random.randrange(128, 256),) * image_depth  # A light grayscale font color.
+	#bg_color = (0,) * image_depth  # Black background color.
+	#bg_color = tuple(random.randrange(256) for _ in range(image_depth))  # An RGB background color.
+	#bg_color = (random.randrange(256),) * image_depth  # A grayscale background color.
+	#bg_color = (random.randrange(gray_val + 1, 256),) * image_depth  # A darker grayscale background color.
+	bg_color = (random.randrange(0, 128),) * image_depth  # A dark grayscale background color.
+	return font_color, bg_color
+
+class MyRunTimeAlphaMatteTextLineDataset(text_line_data.RunTimeAlphaMatteTextLineDataset):
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, labels, num_classes, alpha_matte_mode='1', use_NWHC=True, default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, font_list, char_images_dict, functools.partial(generate_font_colors, image_depth=image_channel), labels, num_classes, alpha_matte_mode, use_NWHC, default_value)
+
+		self._train_data, self._test_data = None, None
+		self._augmenter = create_augmenter()
+
+	@property
+	def train_examples(self):
+		return self._train_data
+
+	@property
+	def test_examples(self):
+		return self._test_data
+
+	@property
+	def num_train_examples(self):
+		return 0 if self._train_data is None else len(self._train_data)
+
+	@property
+	def num_test_examples(self):
+		return 0 if self._test_data is None else len(self._test_data)
+
+	def augment(self, inputs, outputs, *args, **kwargs):
+		if outputs is None:
+			return self._augmenter.augment_images(inputs), None
+		else:
+			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
+			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
+
 class MyHangeulTextLineDataset(TextRecognitionDataGenerator_data.HangeulTextRecognitionDataGeneratorTextLineDataset):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True):
-		super().__init__(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle)
+	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle=True, use_NWHC=True, default_value=-1):
+		super().__init__(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle, use_NWHC, default_value)
+
+		self._train_data, self._test_data = None, None
+
+	@property
+	def train_examples(self):
+		return self._train_data
+
+	@property
+	def test_examples(self):
+		return self._test_data
+
+	@property
+	def num_train_examples(self):
+		return 0 if self._train_data is None else len(self._train_data)
+
+	@property
+	def num_test_examples(self):
+		return 0 if self._test_data is None else len(self._test_data)
 
 	#def augment(self, inputs, outputs, *args, **kwargs):
 	#	raise NotImplementedError
@@ -235,21 +414,6 @@ def generate_texts(words, min_word_len=1, max_word_len=5):
 
 	return texts
 
-def generate_font_colors(image_depth):
-	import random
-	#font_color = (255,) * image_depth  # White font color.
-	#font_color = tuple(random.randrange(256) for _ in range(image_depth))  # An RGB font color.
-	#font_color = (random.randrange(256),) * image_depth  # A grayscale font color.
-	#gray_val = random.randrange(255)
-	#font_color = (gray_val,) * image_depth  # A lighter grayscale font color.
-	font_color = (random.randrange(128, 256),) * image_depth  # A light grayscale font color.
-	#bg_color = (0,) * image_depth  # Black background color.
-	#bg_color = tuple(random.randrange(256) for _ in range(image_depth))  # An RGB background color.
-	#bg_color = (random.randrange(256),) * image_depth  # A grayscale background color.
-	#bg_color = (random.randrange(gray_val + 1, 256),) * image_depth  # A darker grayscale background color.
-	bg_color = (random.randrange(0, 128),) * image_depth  # A dark grayscale background color.
-	return font_color, bg_color
-
 class MyRunner(object):
 	def __init__(self, is_dataset_generated_at_runtime, data_dir_path=None, train_test_ratio=0.8):
 		# Set parameters.
@@ -293,9 +457,22 @@ class MyRunner(object):
 			texts = generate_texts(dictionary_words, min_word_len=1, max_word_len=5)
 			print('[SWL] Info: End generating texts, {} texts generated: {} secs.'.format(len(texts), time.time() - start_time))
 
+			if max_label_len > 0:
+				texts = set(filter(lambda txt: len(txt) <= max_label_len, texts))
+
 			if False:
 				from swl.language_processing.util import draw_character_histogram
 				draw_character_histogram(texts, charset=None)
+
+			labels = functools.reduce(lambda x, txt: x.union(txt), texts, set())
+			labels.add(MyRunTimeAlphaMatteTextLineDataset.UNKNOWN)
+			labels = sorted(labels)
+			#labels = ''.join(sorted(labels))
+			print('[SWL] Info: Labels = {}.'.format(labels))
+			print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+			# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+			num_classes = len(labels) + 1  # Labels + blank label.
 
 			#--------------------
 			if 'posix' == os.name:
@@ -314,13 +491,45 @@ class MyRunner(object):
 
 			print('[SWL] Info: Start creating a Hangeul dataset...')
 			start_time = time.time()
-			self._dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(set(texts), image_height, image_width, image_channel, font_list, char_images_dict, max_label_len=self._max_label_len, alpha_matte_mode='1', color_functor=functools.partial(generate_font_colors, image_depth=image_channel))
+			self._dataset = MyRunTimeAlphaMatteTextLineDataset(texts, image_height, image_width, image_channel, font_list, char_images_dict, labels=labels, num_classes=num_classes, alpha_matte_mode='1')
 			print('[SWL] Info: End creating a Hangeul dataset: {} secs.'.format(time.time() - start_time))
 
 			self._train_examples_per_epoch, self._val_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000, 10000 #500000, 10000, 10000  # Uses a subset of texts per epoch.
 			#self._train_examples_per_epoch, self._val_examples_per_epoch, self._test_examples_per_epoch = None, None, None  # Uses the whole set of texts per epoch.
 		else:
-			self._dataset = MyHangeulTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=self._max_label_len)
+			hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
+			#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
+			#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
+			with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
+				#hangeul_charset = fd.read().strip('\n')  # A strings.
+				hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
+				#hangeul_charset = fd.readlines()  # A list of string.
+				#hangeul_charset = fd.read().splitlines()  # A list of strings.
+			#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+			#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+			hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
+
+			import string
+			labels = \
+				hangeul_charset + \
+				hangeul_jamo_charset + \
+				string.ascii_uppercase + \
+				string.ascii_lowercase + \
+				string.digits + \
+				string.punctuation + \
+				' '
+			labels = list(labels) + [MyHangeulTextLineDataset.UNKNOWN]
+			# There are words of Unicode Hangeul letters besides KS X 1001.
+			#labels = functools.reduce(lambda x, fpath: x.union(fpath.split('_')[0]), os.listdir(data_dir_path), set(labels))
+			labels = sorted(labels)
+			#labels = ''.join(sorted(labels))
+			print('[SWL] Info: Labels = {}.'.format(labels))
+			print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+			# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+			num_classes = len(labels) + 1  # Labels + blank label.
+
+			self._dataset = MyHangeulTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes)
 
 			self._train_examples_per_epoch, self._val_examples_per_epoch, self._test_examples_per_epoch = self._dataset.num_train_examples, self._dataset.num_test_examples, self._dataset.num_test_examples
 

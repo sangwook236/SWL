@@ -4,12 +4,12 @@
 import sys
 sys.path.append('../../src')
 
-import os, time
+import os, time, functools
 import TextRecognitionDataGenerator_data
 
 class MyEnglishTextLineDataset(TextRecognitionDataGenerator_data.EnglishTextRecognitionDataGeneratorTextLineDataset):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True):
-		super().__init__(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle)
+	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle=True):
+		super().__init__(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle)
 
 		#--------------------
 		#import imgaug as ia
@@ -87,15 +87,31 @@ def EnglishTextRecognitionDataGeneratorTextLineDataset_test():
 	train_test_ratio = 0.8
 	max_char_count = 50
 
+	import string
+	labels = \
+		string.ascii_uppercase + \
+		string.ascii_lowercase + \
+		string.digits + \
+		string.punctuation + \
+		' '
+	labels = list(labels) + [TextRecognitionDataGenerator_data.EnglishTextRecognitionDataGeneratorTextLineDataset.UNKNOWN]
+	labels.sort()
+	#labels = ''.join(sorted(labels))
+	print('[SWL] Info: Labels = {}.'.format(labels))
+	print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+	num_classes = len(labels) + 1  # Labels + blank label.
+
 	if True:
 		print('Start creating an EnglishTextRecognitionDataGeneratorTextLineDataset...')
 		start_time = time.time()
-		dataset = TextRecognitionDataGenerator_data.EnglishTextRecognitionDataGeneratorTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count)
+		dataset = TextRecognitionDataGenerator_data.EnglishTextRecognitionDataGeneratorTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count, labels, num_classes)
 		print('End creating an EnglishTextRecognitionDataGeneratorTextLineDataset: {} secs.'.format(time.time() - start_time))
 	else:
 		print('Start creating an MyEnglishTextLineDataset...')
 		start_time = time.time()
-		dataset = MyEnglishTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count)
+		dataset = MyEnglishTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count, labels, num_classes, shuffle=True)
 		print('End creating an MyEnglishTextLineDataset: {} secs.'.format(time.time() - start_time))
 
 	train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -114,9 +130,41 @@ def HangeulTextRecognitionDataGeneratorTextLineDataset_test():
 	train_test_ratio = 0.8
 	max_char_count = 50
 
+	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
+	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
+	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
+	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
+		#hangeul_charset = fd.read().strip('\n')  # A strings.
+		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
+		#hangeul_charset = fd.readlines()  # A list of string.
+		#hangeul_charset = fd.read().splitlines()  # A list of strings.
+	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+	hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
+
+	import string
+	labels = \
+		hangeul_charset + \
+		hangeul_jamo_charset + \
+		string.ascii_uppercase + \
+		string.ascii_lowercase + \
+		string.digits + \
+		string.punctuation + \
+		' '
+	labels = list(labels) + [TextRecognitionDataGenerator_data.HangeulTextRecognitionDataGeneratorTextLineDataset.UNKNOWN]
+	# There are words of Unicode Hangeul letters besides KS X 1001.
+	#labels = functools.reduce(lambda x, fpath: x.union(fpath.split('_')[0]), os.listdir(data_dir_path), set(labels))
+	labels = sorted(labels)
+	#labels = ''.join(sorted(labels))
+	print('[SWL] Info: Labels = {}.'.format(labels))
+	print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+	num_classes = len(labels) + 1  # Labels + blank label.
+
 	print('Start creating a HangeulTextRecognitionDataGeneratorTextLineDataset...')
 	start_time = time.time()
-	dataset = TextRecognitionDataGenerator_data.HangeulTextRecognitionDataGeneratorTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count)
+	dataset = TextRecognitionDataGenerator_data.HangeulTextRecognitionDataGeneratorTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count, labels, num_classes)
 	print('End creating a HangeulTextRecognitionDataGeneratorTextLineDataset: {} secs.'.format(time.time() - start_time))
 
 	train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -135,9 +183,32 @@ def HangeulJamoTextRecognitionDataGeneratorTextLineDataset_test():
 	train_test_ratio = 0.8
 	max_char_count = 50
 
+	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+	hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
+
+	import string
+	labels = \
+		hangeul_jamo_charset + \
+		string.ascii_uppercase + \
+		string.ascii_lowercase + \
+		string.digits + \
+		string.punctuation + \
+		' '
+	labels = list(labels) + [TextRecognitionDataGenerator_data.HangeulJamoTextRecognitionDataGeneratorTextLineDataset.UNKNOWN, TextRecognitionDataGenerator_data.HangeulJamoTextRecognitionDataGeneratorTextLineDataset.EOJC]
+	# There are words of Unicode Hangeul letters besides KS X 1001.
+	labels = functools.reduce(lambda x, fpath: x.union(TextRecognitionDataGenerator_data.HangeulJamoTextRecognitionDataGeneratorTextLineDataset.hangeul2jamo(fpath.split('_')[0])), os.listdir(data_dir_path), set(labels))
+	labels = sorted(labels)
+	#labels = ''.join(sorted(labels))
+	print('[SWL] Info: Labels = {}.'.format(labels))
+	print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+	num_classes = len(labels) + 1  # Labels + blank label.
+
 	print('Start creating a HangeulJamoTextRecognitionDataGeneratorTextLineDataset...')
 	start_time = time.time()
-	dataset = TextRecognitionDataGenerator_data.HangeulJamoTextRecognitionDataGeneratorTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count)
+	dataset = TextRecognitionDataGenerator_data.HangeulJamoTextRecognitionDataGeneratorTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count, labels, num_classes)
 	print('End creating a HangeulJamoTextRecognitionDataGeneratorTextLineDataset: {} secs.'.format(time.time() - start_time))
 
 	train_generator = dataset.create_train_batch_generator(batch_size=32)

@@ -18,6 +18,82 @@ import text_line_data
 
 #--------------------------------------------------------------------
 
+def create_corrupter():
+	#import imgaug as ia
+	from imgaug import augmenters as iaa
+
+	corrupter = iaa.Sequential([
+		#iaa.Sometimes(0.5, iaa.OneOf([
+		#	#iaa.Affine(
+		#	#	scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+		#	#	translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent (per axis).
+		#	#	rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
+		#	#	shear=(-5, 5),  # Shear by -5 to +5 degrees.
+		#	#	#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
+		#	#	order=0,  # Use nearest neighbour or bilinear interpolation (fast).
+		#	#	#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
+		#	#	#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+		#	#	#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+		#	#),
+		#	#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
+		#	#iaa.PerspectiveTransform(scale=(0.01, 0.1)),
+		#	iaa.ElasticTransformation(alpha=(10.0, 30.0), sigma=(6.0, 8.0)),  # Move pixels locally around (with random strengths).
+		#])),
+		iaa.OneOf([
+			iaa.OneOf([
+				iaa.GaussianBlur(sigma=(0.5, 1.5)),
+				iaa.AverageBlur(k=(2, 4)),
+				iaa.MedianBlur(k=(3, 3)),
+				iaa.MotionBlur(k=(3, 4), angle=(0, 360), direction=(-1.0, 1.0), order=1),
+			]),
+			iaa.Sequential([
+				iaa.OneOf([
+					iaa.AdditiveGaussianNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
+					#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
+					iaa.AdditivePoissonNoise(lam=(20, 30), per_channel=False),
+					iaa.CoarseSaltAndPepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					iaa.CoarseSalt(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					iaa.CoarsePepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					#iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.8, 0.9), per_channel=False),
+				]),
+				iaa.GaussianBlur(sigma=(0.7, 1.0)),
+			]),
+			#iaa.OneOf([
+			#	#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
+			#	#iaa.AddToHueAndSaturation(value=(-255, 255), per_channel=False),
+			#	#iaa.LinearContrast(alpha=(0.5, 1.5), per_channel=False),
+
+			#	iaa.Invert(p=1, per_channel=False),
+
+			#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
+			#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
+			#]),
+		]),
+	])
+
+	return corrupter
+
+class MyRunTimeSuperResolvedTextLinePairDataset(text_line_data.RunTimeSuperResolvedTextLinePairDatasetBase):
+	def __init__(self, text_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, color_functor=None, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
+		super().__init__(ext_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, color_functor, labels, num_classes, use_NWHC, default_value)
+
+		self._corrupter = create_corrupter()
+
+	def augment(self, inputs, outputs, *args, **kwargs):
+		return inputs, outputs
+
+	def corrupt(self, inputs, *args, **kwargs):
+		return self._corrupter.augment_images(inputs)
+
+	def corrupt2(self, inputs, outputs, *args, **kwargs):
+		if outputs is None:
+			return self._corrupter.augment_images(inputs), None
+		else:
+			augmenter_det = self._corrupter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
+			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
+
+#--------------------------------------------------------------------
+
 class MyModel(object):
 	def __init__(self, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel):
 		self._input_shape = (lr_image_height, lr_image_width, image_channel)
@@ -143,61 +219,6 @@ class MyModel(object):
 
 #--------------------------------------------------------------------
 
-def create_corrupter():
-	#import imgaug as ia
-	from imgaug import augmenters as iaa
-
-	corrupter = iaa.Sequential([
-		#iaa.Sometimes(0.5, iaa.OneOf([
-		#	#iaa.Affine(
-		#	#	scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
-		#	#	translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent (per axis).
-		#	#	rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
-		#	#	shear=(-5, 5),  # Shear by -5 to +5 degrees.
-		#	#	#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
-		#	#	order=0,  # Use nearest neighbour or bilinear interpolation (fast).
-		#	#	#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
-		#	#	#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
-		#	#	#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
-		#	#),
-		#	#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
-		#	#iaa.PerspectiveTransform(scale=(0.01, 0.1)),
-		#	iaa.ElasticTransformation(alpha=(10.0, 30.0), sigma=(6.0, 8.0)),  # Move pixels locally around (with random strengths).
-		#])),
-		iaa.OneOf([
-			iaa.OneOf([
-				iaa.GaussianBlur(sigma=(0.5, 1.5)),
-				iaa.AverageBlur(k=(2, 4)),
-				iaa.MedianBlur(k=(3, 3)),
-				iaa.MotionBlur(k=(3, 4), angle=(0, 360), direction=(-1.0, 1.0), order=1),
-			]),
-			iaa.Sequential([
-				iaa.OneOf([
-					iaa.AdditiveGaussianNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
-					#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
-					iaa.AdditivePoissonNoise(lam=(20, 30), per_channel=False),
-					iaa.CoarseSaltAndPepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
-					iaa.CoarseSalt(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
-					iaa.CoarsePepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
-					#iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.8, 0.9), per_channel=False),
-				]),
-				iaa.GaussianBlur(sigma=(0.7, 1.0)),
-			]),
-			#iaa.OneOf([
-			#	#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
-			#	#iaa.AddToHueAndSaturation(value=(-255, 255), per_channel=False),
-			#	#iaa.LinearContrast(alpha=(0.5, 1.5), per_channel=False),
-
-			#	iaa.Invert(p=1, per_channel=False),
-
-			#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
-			#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
-			#]),
-		]),
-	])
-
-	return corrupter
-
 def generate_texts(words, min_word_len=1, max_word_len=5):
 	import random
 
@@ -244,8 +265,6 @@ class MyRunner(object):
 		model_output_time_steps = 80 #160
 		max_label_len = model_output_time_steps  # max_label_len <= model_output_time_steps.
 
-		self._corrupter = create_corrupter()
-
 		#--------------------
 		# Create a dataset.
 		#word_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
@@ -264,9 +283,22 @@ class MyRunner(object):
 		texts = generate_texts(dictionary_words, min_word_len=1, max_word_len=5)
 		print('[SWL] Info: End generating texts, {} texts generated: {} secs.'.format(len(texts), time.time() - start_time))
 
+		if max_label_len > 0:
+			texts = set(filter(lambda txt: len(txt) <= max_label_len, texts))
+
 		if False:
 			from swl.language_processing.util import draw_character_histogram
 			draw_character_histogram(texts, charset=None)
+
+		labels = functools.reduce(lambda x, txt: x.union(txt), texts, set())
+		labels.add(MyRunTimeSuperResolvedTextLinePairDataset.UNKNOWN)
+		labels = sorted(labels)
+		#labels = ''.join(sorted(labels))
+		print('[SWL] Info: Labels = {}.'.format(labels))
+		print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+		num_classes = len(labels) + 1  # Labels + blank label.
 
 		#--------------------
 		if 'posix' == os.name:
@@ -286,7 +318,7 @@ class MyRunner(object):
 
 		print('[SWL] Info: Start creating an English dataset...')
 		start_time = time.time()
-		self._dataset = text_line_data.RunTimeSuperResolvedTextLinePairDataset(set(texts), hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, max_label_len=max_label_len, use_NWHC=False, corrupt_functor=self._corrupt, color_functor=functools.partial(generate_font_colors, image_depth=image_channel))
+		self._dataset = MyRunTimeSuperResolvedTextLinePairDataset(texts, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, color_functor=functools.partial(generate_font_colors, image_depth=image_channel), labels=labels, num_classes=num_classes, use_NWHC=False)
 		print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		#self._train_examples_per_epoch, self._test_examples_per_epoch = 500000, 10000  # Uses a subset of texts per epoch.
@@ -574,16 +606,6 @@ class MyRunner(object):
 					cv2.imwrite(inp_filepath, np.round(inp * 255).astype(np.uint8))
 			else:
 				print('[SWL] Warning: Invalid inference results.')
-
-	def _corrupt(self, inputs, *args, **kwargs):
-		return self._corrupter.augment_images(inputs)
-
-	def _corrupt2(self, inputs, outputs, *args, **kwargs):
-		if outputs is None:
-			return self._corrupter.augment_images(inputs), None
-		else:
-			augmenter_det = self._corrupter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
-			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
 #--------------------------------------------------------------------
 

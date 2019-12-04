@@ -92,8 +92,8 @@ def generate_font_colors(image_depth):
 	return font_color, bg_color
 
 class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, max_label_len=0, use_NWHC=True, default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, font_list, max_label_len, use_NWHC, functools.partial(generate_font_colors, image_depth=image_channel), default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, labels, num_classes, use_NWHC=True, default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, font_list, functools.partial(generate_font_colors, image_depth=image_channel), labels, num_classes, use_NWHC, default_value)
 
 		self._augmenter = create_augmenter()
 
@@ -168,8 +168,8 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 				break
 
 class MyRunTimeAlphaMatteTextLineDataset(text_line_data.RunTimeAlphaMatteTextLineDataset):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, font_list, char_images_dict, functools.partial(generate_font_colors, image_depth=image_channel), max_label_len, use_NWHC, alpha_matte_mode, default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, labels, num_classes, alpha_matte_mode='1', use_NWHC=True, default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, font_list, char_images_dict, functools.partial(generate_font_colors, image_depth=image_channel), labels, num_classes, alpha_matte_mode, use_NWHC, default_value)
 
 		self._augmenter = create_augmenter()
 
@@ -181,8 +181,8 @@ class MyRunTimeAlphaMatteTextLineDataset(text_line_data.RunTimeAlphaMatteTextLin
 			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
 class MyHangeulTextLineDataset(TextRecognitionDataGenerator_data.HangeulTextRecognitionDataGeneratorTextLineDataset):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True):
-		super().__init__(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle)
+	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle=True, use_NWHC=True, default_value=-1):
+		super().__init__(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle, use_NWHC, default_value)
 
 		self._augmenter = create_augmenter()
 
@@ -194,43 +194,11 @@ class MyHangeulTextLineDataset(TextRecognitionDataGenerator_data.HangeulTextReco
 			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
 class MyFileBasedTextLineDataset(text_line_data.FileBasedTextLineDatasetBase):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
-		super().__init__(image_height, image_width, image_channel, labels=None, num_classes=0, use_NWHC=True, default_value=-1)
+	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, use_NWHC=True, default_value=-1):
+		super().__init__(image_height, image_width, image_channel, labels, num_classes, use_NWHC, default_value)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
-
-		#--------------------
-		import string
-
-		hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
-		#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
-		#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
-		with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
-			#hangeul_charset = fd.read().strip('\n')  # A strings.
-			hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
-			#hangeul_charset = fd.readlines()  # A list of string.
-			#hangeul_charset = fd.read().splitlines()  # A list of strings.
-		#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-		#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-		hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
-
-		charset = \
-			hangeul_charset + \
-			string.ascii_uppercase + \
-			string.ascii_lowercase + \
-			string.digits + \
-			string.punctuation + \
-			' '
-		charset = list(charset) + [self._UNKNOWN]
-
-		self._labels = sorted(charset)
-		#self._labels = ''.join(sorted(charset))
-		print('[SWL] Info: Labels = {}.'.format(self._labels))
-		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
-
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		self._num_classes = len(self._labels) + 1  # Labels + blank label.
 
 		#--------------------
 		# Load data.
@@ -238,6 +206,8 @@ class MyFileBasedTextLineDataset(text_line_data.FileBasedTextLineDatasetBase):
 			print('[SWL] Info: Start loading dataset...')
 			start_time = time.time()
 			image_filepaths, label_filepaths = sorted(glob.glob(os.path.join(data_dir_path, '*.png'), recursive=False)), sorted(glob.glob(os.path.join(data_dir_path, '*.txt'), recursive=False))
+			if not image_filepaths or not label_filepaths:
+				raise IOError('Failed to load data from {}.'.format(data_dir_path))
 			images, labels_str, labels_int = self._load_data(image_filepaths, label_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
 			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 			labels_str, labels_int = np.array(labels_str), np.array(labels_int)
@@ -633,9 +603,22 @@ class MyRunner(object):
 			texts = generate_texts(random_words, min_word_len=1, max_word_len=5)
 			print('[SWL] Info: End generating texts, {} texts generated: {} secs.'.format(len(texts), time.time() - start_time))
 
+			if max_label_len > 0:
+				texts = set(filter(lambda txt: len(txt) <= max_label_len, texts))
+
 			if False:
 				from swl.language_processing.util import draw_character_histogram
 				draw_character_histogram(texts, charset=None)
+
+			labels = functools.reduce(lambda x, txt: x.union(txt), texts, set())
+			labels.add(MyRunTimeTextLineDataset.UNKNOWN)
+			labels = sorted(labels)
+			#labels = ''.join(sorted(labels))
+			print('[SWL] Info: Labels = {}.'.format(labels))
+			print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+			# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+			num_classes = len(labels) + 1  # Labels + blank label.
 
 			#--------------------
 			if 'posix' == os.name:
@@ -655,17 +638,49 @@ class MyRunner(object):
 
 			print('[SWL] Info: Start creating a Hangeul dataset...')
 			start_time = time.time()
-			self._dataset = MyRunTimeTextLineDataset(set(texts), image_height, image_width, image_channel, font_list, max_label_len=max_label_len)
-			#self._dataset = MyRunTimeAlphaMatteTextLineDataset(set(texts), image_height, image_width, image_channel, font_list, char_images_dict, max_label_len=max_label_len)
+			self._dataset = MyRunTimeTextLineDataset(texts, image_height, image_width, image_channel, font_list, labels, num_classes)
+			#self._dataset = MyRunTimeAlphaMatteTextLineDataset(texts, image_height, image_width, image_channel, font_list, char_images_dict, labels, num_classes)
 			print('[SWL] Info: End creating a Hangeul dataset: {} secs.'.format(time.time() - start_time))
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000  # Uses a subset of texts per epoch.
 			#self._train_examples_per_epoch, self._test_examples_per_epoch = None, None  # Uses the whole set of texts per epoch.
 		else:
+			hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
+			#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
+			#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
+			with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
+				#hangeul_charset = fd.read().strip('\n')  # A strings.
+				hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
+				#hangeul_charset = fd.readlines()  # A list of string.
+				#hangeul_charset = fd.read().splitlines()  # A list of strings.
+			#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+			#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+			hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
+
+			import string
+			labels = \
+				hangeul_charset + \
+				hangeul_jamo_charset + \
+				string.ascii_uppercase + \
+				string.ascii_lowercase + \
+				string.digits + \
+				string.punctuation + \
+				' '
+			labels = list(labels) + [MyFileBasedTextLineDataset.UNKNOWN]
+			# There are words of Unicode Hangeul letters besides KS X 1001.
+			#labels = functools.reduce(lambda x, fpath: x.union(fpath.split('_')[0]), os.listdir(data_dir_path), set(labels))
+			labels = sorted(labels)
+			#labels = ''.join(sorted(labels))
+			print('[SWL] Info: Labels = {}.'.format(labels))
+			print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+			# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+			num_classes = len(labels) + 1  # Labels + blank label.
+
 			if is_fine_tuned:
-				self._dataset = MyFileBasedTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
+				self._dataset = MyFileBasedTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes)
 			else:
-				self._dataset = MyHangeulTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
+				self._dataset = MyHangeulTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes)
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = None, None
 

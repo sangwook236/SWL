@@ -144,8 +144,8 @@ def generate_font_colors(image_depth):
 	return font_color, bg_color
 
 class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, labels, max_label_len=0, use_NWHC=True, default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, font_list, labels, max_label_len, use_NWHC, functools.partial(generate_font_colors, image_depth=image_channel), default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, labels, num_classes, use_NWHC=True, default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, font_list, functools.partial(generate_font_colors, image_depth=image_channel), labels, num_classes, use_NWHC, default_value)
 
 		self._augmenter = create_augmenter()
 
@@ -219,8 +219,8 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 					break
 
 class MyRunTimeAlphaMatteTextLineDataset(text_line_data.RunTimeAlphaMatteTextLineDataset):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, labels, max_label_len=0, use_NWHC=True, alpha_matte_mode='1', default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, font_list, char_images_dict, labels, functools.partial(generate_font_colors, image_depth=image_channel), max_label_len, use_NWHC, alpha_matte_mode, default_value)
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, labels, num_classes, alpha_matte_mode='1', use_NWHC=True, default_value=-1):
+		super().__init__(text_set, image_height, image_width, image_channel, font_list, char_images_dict, functools.partial(generate_font_colors, image_depth=image_channel), labels, num_classes, alpha_matte_mode, use_NWHC, default_value)
 
 		self._augmenter = create_augmenter()
 
@@ -232,19 +232,11 @@ class MyRunTimeAlphaMatteTextLineDataset(text_line_data.RunTimeAlphaMatteTextLin
 			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
 class MyFileBasedTextLineDataset(text_line_data.FileBasedTextLineDatasetBase):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, labels, max_label_len):
-		super().__init__(image_height, image_width, image_channel, labels=labels, num_classes=0, use_NWHC=True, default_value=-1)
+	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, use_NWHC=True, default_value=-1):
+		super().__init__(image_height, image_width, image_channel, labels, num_classes, use_NWHC, default_value)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
-
-		#--------------------
-		self._labels = labels
-		print('[SWL] Info: Labels = {}.'.format(self._labels))
-		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
-
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		self._num_classes = len(self._labels) + 1  # Labels + blank label.
 
 		#--------------------
 		# Load data.
@@ -252,6 +244,8 @@ class MyFileBasedTextLineDataset(text_line_data.FileBasedTextLineDatasetBase):
 			print('[SWL] Info: Start loading dataset...')
 			start_time = time.time()
 			image_filepaths, label_filepaths = sorted(glob.glob(os.path.join(data_dir_path, '*.png'), recursive=False)), sorted(glob.glob(os.path.join(data_dir_path, '*.txt'), recursive=False))
+			if not image_filepaths or not label_filepaths:
+				raise IOError('Failed to load data from {}.'.format(data_dir_path))
 			images, labels_str, labels_int = self._load_data(image_filepaths, label_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
 			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 			labels_str, labels_int = np.array(labels_str), np.array(labels_int)
@@ -785,26 +779,31 @@ class MyRunner(object):
 		import random
 		random.shuffle(numbers)
 
+		if max_label_len > 0:
+			numbers = set(filter(lambda txt: len(txt) <= max_label_len, numbers))
+
 		if False:
 			from swl.language_processing.util import draw_character_histogram
 			draw_character_histogram(numbers, charset=None)
 
-		#--------------------
-		UNKNOWN = '<UNK>'
-
 		import string
-		charset = \
+		labels = \
 			string.digits + \
 			string.punctuation + \
 			' '
-		charset = list(charset) + [UNKNOWN]
+		labels = list(labels) + [MyFileBasedTextLineDataset.UNKNOWN]
+		#labels = list(labels) + [MyRunTimeTextLineDataset.UNKNOWN]
+		labels.sort()
+		#labels = ''.join(sorted(labels))
+		print('[SWL] Info: Labels = {}.'.format(labels))
+		print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-		labels = sorted(charset)
-		#labels = ''.join(sorted(charset))
+		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 		num_classes = len(labels) + 1  # Labels + blank label.
 
+		#--------------------
 		if is_fine_tuned:
-			self._dataset = MyFileBasedTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, labels=labels, max_label_len=max_label_len)
+			self._dataset = MyFileBasedTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes)
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = None, None
 		else:
@@ -824,8 +823,8 @@ class MyRunner(object):
 
 			print('[SWL] Info: Start creating an English dataset...')
 			start_time = time.time()
-			self._dataset = MyRunTimeTextLineDataset(set(numbers), image_height, image_width, image_channel, font_list, labels=labels, max_label_len=max_label_len)
-			#self._dataset = MyRunTimeAlphaMatteTextLineDataset(set(numbers), image_height, image_width, image_channel, font_list, char_images_dict, labels=labels, max_label_len=max_label_len)
+			self._dataset = MyRunTimeTextLineDataset(numbers, image_height, image_width, image_channel, font_list, labels, num_classes)
+			#self._dataset = MyRunTimeAlphaMatteTextLineDataset(numbers, image_height, image_width, image_channel, font_list, char_images_dict, labels, num_classes)
 			print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000  # Uses a subset of texts per epoch.
