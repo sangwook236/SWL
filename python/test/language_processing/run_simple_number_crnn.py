@@ -365,7 +365,7 @@ class MyModel(object):
 
 	def _create_model(self, inputs, num_classes):
 		# TODO [decide] >>
-		kernel_initializer = None
+		#kernel_initializer = None
 		#kernel_initializer = tf.initializers.he_normal()
 		#kernel_initializer = tf.initializers.he_uniform()
 		#kernel_initializer = tf.initializers.truncated_normal(mean=0.0, stddev=1.0)
@@ -373,11 +373,11 @@ class MyModel(object):
 		#kernel_initializer = tf.initializers.variance_scaling(scale=1.0, mode='fan_in', distribution='truncated_normal')
 		#kernel_initializer = tf.initializers.glorot_normal()  # Xavier normal initialization.
 		#kernel_initializer = tf.initializers.glorot_uniform()  # Xavier uniform initialization.
-		#kernel_initializer = tf.initializers.orthogonal()
+		kernel_initializer = tf.initializers.orthogonal()
 
 		# TODO [decide] >>
-		create_cnn_functor = MyModel._create_cnn_without_batch_normalization
-		#create_cnn_functor = MyModel._create_cnn_with_batch_normalization
+		#create_cnn_functor = MyModel._create_cnn_without_batch_normalization
+		create_cnn_functor = MyModel._create_cnn_with_batch_normalization
 
 		#--------------------
 		# Preprocessing.
@@ -394,7 +394,7 @@ class MyModel(object):
 			self._model_output_len = rnn_input.shape[1]  # Model output time-steps.
 
 			# TODO [decide] >>
-			#rnn_input = tf.layers.dense(rnn_input, 64, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
+			rnn_input = tf.layers.dense(rnn_input, 64, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
 
 			rnn_output = MyModel._create_bidirectionnal_rnn(rnn_input, self._model_output_len_ph, kernel_initializer)
 
@@ -560,8 +560,8 @@ class MyModel(object):
 			conv4 = tf.nn.relu(conv4, name='relu1')
 
 			# TODO [decide] >>
-			conv4 = tf.layers.conv2d(conv4, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=None, name='conv2')
-			#conv4 = tf.layers.conv2d(conv4, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv2')
+			#conv4 = tf.layers.conv2d(conv4, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=None, name='conv2')
+			conv4 = tf.layers.conv2d(conv4, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv2')
 			conv4 = tf.layers.batch_normalization(conv4, name='batchnorm2')
 			conv4 = tf.nn.relu(conv4, name='relu2')
 			conv4 = tf.layers.max_pooling2d(conv4, pool_size=(1, 2), strides=(1, 2), padding='same', name='maxpool')
@@ -594,7 +594,7 @@ class MyModel(object):
 			outputs_2, _ = tf.nn.bidirectional_dynamic_rnn(fw_cell_2, bw_cell_2, outputs_1, input_len, dtype=tf.float32)
 			outputs_2 = tf.concat(outputs_2, 2)
 			# TODO [decide] >>
-			#outputs_2 = tf.layers.batch_normalization(outputs_2, name='batchnorm')
+			outputs_2 = tf.layers.batch_normalization(outputs_2, name='batchnorm')
 
 		return outputs_2
 
@@ -967,7 +967,8 @@ class MyRunner(object):
 
 						val_loss += batch_loss * num_batch_examples
 						#val_acc += batch_acc * num_batch_examples
-						val_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(model.decode_label(batch_labels_int), batch_data[1]))))
+						#val_acc += len(list(filter(lambda x: self._dataset.decode_label(x[0]) == x[1], zip(model.decode_label(batch_labels_int), batch_data[1]))))
+						val_acc += len(list(filter(lambda x: x[0] == x[1], zip(model.decode_label(batch_labels_int), batch_data[2]))))
 						num_examples += num_batch_examples
 
 						# Show some results.
@@ -1302,7 +1303,7 @@ def main():
 			os.makedirs(inference_dir_path, exist_ok=True)
 
 		image_filepaths = glob.glob('./number_test/*.jpg', recursive=False)
-		#image_filepaths = glob.glob('./receipt_epapyrus/epapyrus_20190618/receipt_text_line_test/*.png', recursive=False)
+		#image_filepaths = glob.glob('./receipt_sminds/receipt_text_line/*.png', recursive=False)
 		if not image_filepaths:
 			print('[SWL] Error: No image file for inference.')
 			return

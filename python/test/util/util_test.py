@@ -3,9 +3,21 @@
 import sys
 sys.path.append('../../src')
 
-import os, math
+import os, math, time
 import numpy as np
 from swl.util import util as swl_util
+
+def download_test():
+	url = 'http://www.example.com/example.tar.zip'
+	#url = 'http://www.example.com/example.tar.gz'
+	#url = 'http://www.example.com/example.tar.bzip2'
+	#url = 'http://www.example.com/example.tar.xz'
+	output_dir_path = './uncompressed'
+
+	print('Start downloading files...')
+	start_time = time.time()
+	download(url, output_dir_path)  # Not yet completely tested.
+	print('End downloading files: {} secs.'.format(time.time() - start_time))
 
 def generate_dataset(num_examples, is_output_augmented=False):
 	if is_output_augmented:
@@ -141,6 +153,8 @@ def load_data_from_npz_file_test():
 			print('Failed to loaded an npz file:', npz_filepath)
 
 def main():
+	#download_test()
+
 	load_filepaths_from_npy_file_info_test()
 	load_data_from_npy_files_test()
 	#shuffle_data_in_npy_files_test()

@@ -1168,7 +1168,7 @@ def main():
 		#image_filepaths = glob.glob('./text_line_samples_kr_test/**/*.jpg', recursive=False)
 		# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_vision/pascal_voc_test.py
 		image_filepaths = glob.glob('./receipt_epapyrus/epapyrus_20190618/receipt_text_line/*.png', recursive=False)
-		#image_filepaths = glob.glob('./receipt_epapyrus/epapyrus_20190618/receipt_text_line_test/*.png', recursive=False)
+		#image_filepaths = glob.glob('./receipt_sminds/receipt_text_line/*.png', recursive=False)
 		if not image_filepaths:
 			print('[SWL] Error: No image file for inference.')
 			return
