@@ -15,6 +15,7 @@ int main(int argc, char *argv[])
 	void morphology_test();
 	void image_filter_test();
 	void scale_space_test();
+	void non_maximum_suppression_test();
 
 	void boundary_extraction();
 
@@ -37,12 +38,16 @@ int main(int argc, char *argv[])
 
 		//-----------------------------------------------------------
 		// Convolution & image filtering.
-		convolution_test();
-		morphology_test();
+		//convolution_test();
+		//morphology_test();
 
 		//-----------------------------------------------------------
 		// Image filter.
 		//image_filter_test();
+
+		//-----------------------------------------------------------
+		// Non-Maximum Suppression.
+		non_maximum_suppression_test();
 
 		//-----------------------------------------------------------
 		// Scale space representation.

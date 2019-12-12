@@ -23,7 +23,7 @@
     <ProjectGuid>{5BC48680-BFFF-490D-A226-6EBB047D4F31}</ProjectGuid>
     <RootNamespace>swl_gps_aided_imu_filter_app</RootNamespace>
     <Keyword>MFCProj</Keyword>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">

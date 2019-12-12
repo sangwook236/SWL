@@ -22,7 +22,7 @@
     <ProjectGuid>{FDF0F6E1-E575-46C9-BC03-DED292EC0BCB}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>swl_data_analysis_tool</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
     <ProjectName>swl_data_analysis_tool</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
