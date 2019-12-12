@@ -1082,7 +1082,7 @@ def main():
 	is_trained, is_tested, is_inferred = True, True, True
 	is_training_resumed = False
 
-	is_dataset_generated_at_runtime = False
+	is_dataset_generated_at_runtime = True
 	is_fine_tuned = False
 	if is_fine_tuned:
 		train_test_ratio = 0.9

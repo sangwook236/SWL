@@ -10,6 +10,7 @@ import tensorflow as tf
 import swl.machine_learning.util as swl_ml_util
 import text_line_data
 import TextRecognitionDataGenerator_data
+import my_keras_applications
 
 #--------------------------------------------------------------------
 
@@ -145,7 +146,7 @@ def generate_font_colors(image_depth):
 	return font_color, bg_color
 
 class MyRunTimeHangeulJamoAlphaMatteTextLineDataset(text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, labels, num_classes, alpha_matte_mode='1', use_NWHC=True, default_value=-1):
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, labels, num_classes, alpha_matte_mode='1', use_NWHC=False, default_value=-1):
 		super().__init__(text_set, image_height, image_width, image_channel, font_list, char_images_dict, functools.partial(generate_font_colors, image_depth=image_channel), labels, num_classes, alpha_matte_mode, use_NWHC, default_value)
 
 		self._augmenter = create_augmenter()
@@ -158,7 +159,7 @@ class MyRunTimeHangeulJamoAlphaMatteTextLineDataset(text_line_data.RunTimeHangeu
 			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
 class MyHangeulJamoTextLineDataset(TextRecognitionDataGenerator_data.HangeulJamoTextRecognitionDataGeneratorTextLineDataset):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle=True, use_NWHC=True, default_value=-1):
+	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle=True, use_NWHC=False, default_value=-1):
 		super().__init__(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle, use_NWHC, default_value)
 
 		self._augmenter = create_augmenter()
@@ -184,6 +185,9 @@ class MyModel(object):
 		self._is_sparse_output = True
 		self._model_output_len = 0
 		self._default_value = default_value
+
+		# FIXME [check] >> Different input shape is used.
+		self._input_shape = (image_height, image_width, image_channel)
 
 		self._input_ph = tf.placeholder(tf.float32, shape=(None, image_height, image_width, image_channel), name='input_ph')
 		if self._is_sparse_output:
@@ -271,10 +275,6 @@ class MyModel(object):
 		#kernel_initializer = tf.initializers.glorot_uniform()  # Xavier uniform initialization.
 		kernel_initializer = tf.initializers.orthogonal()
 
-		# TODO [decide] >>
-		#create_cnn_functor = MyModel._create_cnn_without_batch_normalization
-		create_cnn_functor = MyModel._create_cnn_with_batch_normalization
-
 		#--------------------
 		# Preprocessing.
 		#with tf.variable_scope('preprocessing', reuse=tf.AUTO_REUSE):
@@ -282,7 +282,7 @@ class MyModel(object):
 
 		#--------------------
 		with tf.variable_scope('cnn', reuse=tf.AUTO_REUSE):
-			cnn_output = create_cnn_functor(inputs, kernel_initializer)
+			cnn_output = MyModel._create_densenet121(inputs, kernel_initializer, input_shape=self._input_shape, weights=None)
 
 		with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
 			rnn_input_shape = cnn_output.shape #cnn_output.shape.as_list()
@@ -372,118 +372,24 @@ class MyModel(object):
 
 		return accuracy
 
+	# REF [function] >> densenet_test() in ${SWDT_PYTHON_HOME}/rnd/test/machine_learning/keras/keras_applications_test.py.
 	@staticmethod
-	def _create_cnn_without_batch_normalization(inputs, kernel_initializer=None):
-		with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
-			conv1 = tf.layers.conv2d(inputs, filters=64, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv')
-			conv1 = tf.nn.relu(conv1, name='relu')
-			conv1 = tf.layers.max_pooling2d(conv1, pool_size=(2, 2), strides=2, name='maxpool')
+	def _create_densenet121(inputs, kernel_initializer=None, input_shape=None, weights=None):
+		kwargs = {'backend': tf.keras.backend, 'layers': tf.keras.layers, 'models': tf.keras.models, 'utils': tf.keras.utils}
 
-			# (None, height/2, width/2, 64).
+		# DenseNet121, DenseNet169, DenseNet201.
+		model = my_keras_applications.densenet.DenseNet121_Text(
+			include_top=False,
+			weights=weights,
+			input_tensor=None,
+			input_shape=input_shape,
+			pooling=None,
+			classes=None,
+			**kwargs
+		)
+		#print(model.summary())
 
-		with tf.variable_scope('conv2', reuse=tf.AUTO_REUSE):
-			conv2 = tf.layers.conv2d(conv1, filters=128, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv')
-			conv2 = tf.nn.relu(conv2, name='relu')
-			conv2 = tf.layers.max_pooling2d(conv2, pool_size=(2, 2), strides=2, name='maxpool')
-
-			# (None, height/4, width/4, 128).
-
-		with tf.variable_scope('conv3', reuse=tf.AUTO_REUSE):
-			conv3 = tf.layers.conv2d(conv2, filters=256, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv1')
-			conv3 = tf.nn.relu(conv3, name='relu1')
-			conv3 = tf.layers.batch_normalization(conv3, name='batchnorm')
-
-			conv3 = tf.layers.conv2d(conv3, filters=256, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv2')
-			conv3 = tf.nn.relu(conv3, name='relu2')
-			# TODO [decide] >>
-			#conv3 = tf.layers.max_pooling2d(conv3, pool_size=(2, 2), strides=(1, 2), padding='same', name='maxpool')
-			conv3 = tf.layers.max_pooling2d(conv3, pool_size=(2, 2), strides=(2, 2), padding='same', name='maxpool')
-
-			# (None, height/4, width/8, 256) -> (None, height/8, width/8, 256).
-
-		# TODO [decide] >> Is these layers required?
-		with tf.variable_scope('conv4', reuse=tf.AUTO_REUSE):
-			conv4 = tf.layers.conv2d(conv3, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv1')
-			conv4 = tf.nn.relu(conv4, name='relu1')
-			conv4 = tf.layers.batch_normalization(conv4, name='batchnorm')
-
-			conv4 = tf.layers.conv2d(conv4, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv2')
-			conv4 = tf.nn.relu(conv4, name='relu2')
-			# TODO [decide] >>
-			#conv4 = tf.layers.max_pooling2d(conv4, pool_size=(2, 2), strides=(1, 2), padding='same', name='maxpool')
-			conv4 = tf.layers.max_pooling2d(conv4, pool_size=(2, 2), strides=(1, 1), padding='same', name='maxpool')
-
-			# (None, height/4, width/16, 512) -> (None, height/8, width/8, 512).
-
-		with tf.variable_scope('conv5', reuse=tf.AUTO_REUSE):
-			# TODO [decide] >> filters = 512?
-			conv5 = tf.layers.conv2d(conv4, filters=512, kernel_size=(2, 2), padding='valid', kernel_initializer=kernel_initializer, name='conv')
-			#conv5 = tf.layers.conv2d(conv4, filters=512, kernel_size=(2, 2), padding='same', kernel_initializer=kernel_initializer, name='conv')
-			conv5 = tf.nn.relu(conv5, name='relu')
-
-			# (None, height/4, width/16, 512) -> (None, height/8, width/8, 512).
-
-		return conv5
-
-	@staticmethod
-	def _create_cnn_with_batch_normalization(inputs, kernel_initializer=None):
-		with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
-			conv1 = tf.layers.conv2d(inputs, filters=64, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv')
-			conv1 = tf.layers.batch_normalization(conv1, name='batchnorm')
-			conv1 = tf.nn.relu(conv1, name='relu')
-			conv1 = tf.layers.max_pooling2d(conv1, pool_size=(2, 2), strides=2, name='maxpool')
-
-			# (None, height/2, width/2, 64).
-
-		with tf.variable_scope('conv2', reuse=tf.AUTO_REUSE):
-			conv2 = tf.layers.conv2d(conv1, filters=128, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv')
-			conv2 = tf.layers.batch_normalization(conv2, name='batchnorm')
-			conv2 = tf.nn.relu(conv2, name='relu')
-			conv2 = tf.layers.max_pooling2d(conv2, pool_size=(2, 2), strides=2, name='maxpool')
-
-			# (None, height/4, width/4, 128).
-
-		with tf.variable_scope('conv3', reuse=tf.AUTO_REUSE):
-			conv3 = tf.layers.conv2d(conv2, filters=256, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv1')
-			conv3 = tf.layers.batch_normalization(conv3, name='batchnorm')
-			conv3 = tf.nn.relu(conv3, name='relu1')
-
-			conv3 = tf.layers.conv2d(conv3, filters=256, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv2')
-			conv3 = tf.layers.batch_normalization(conv3, name='batchnorm2')
-			conv3 = tf.nn.relu(conv3, name='relu2')
-			# TODO [decide] >>
-			#conv3 = tf.layers.max_pooling2d(conv3, pool_size=(1, 2), strides=(1, 2), padding='same', name='maxpool')
-			conv3 = tf.layers.max_pooling2d(conv3, pool_size=(2, 2), strides=(2, 2), padding='same', name='maxpool')
-
-			# (None, height/4, width/8, 256) -> (None, height/8, width/8, 256).
-
-		# TODO [decide] >> Is these layers required?
-		with tf.variable_scope('conv4', reuse=tf.AUTO_REUSE):
-			conv4 = tf.layers.conv2d(conv3, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv1')
-			conv4 = tf.layers.batch_normalization(conv4, name='batchnorm')
-			conv4 = tf.nn.relu(conv4, name='relu1')
-
-			# TODO [decide] >>
-			conv4 = tf.layers.conv2d(conv4, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=None, name='conv2')
-			#conv4 = tf.layers.conv2d(conv4, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv2')
-			conv4 = tf.layers.batch_normalization(conv4, name='batchnorm2')
-			conv4 = tf.nn.relu(conv4, name='relu2')
-			# TODO [decide] >>
-			#conv4 = tf.layers.max_pooling2d(conv4, pool_size=(1, 2), strides=(1, 2), padding='same', name='maxpool')
-			conv4 = tf.layers.max_pooling2d(conv4, pool_size=(2, 2), strides=(1, 1), padding='same', name='maxpool')
-
-			# (None, height/4, width/16, 512) -> (None, height/8, width/8, 512).
-
-		with tf.variable_scope('conv5', reuse=tf.AUTO_REUSE):
-			# TODO [decide] >> filters = 512?
-			conv5 = tf.layers.conv2d(conv4, filters=512, kernel_size=(2, 2), padding='same', kernel_initializer=kernel_initializer, name='conv')
-			#conv5 = tf.layers.conv2d(conv4, filters=512, kernel_size=(2, 2), padding='valid', kernel_initializer=kernel_initializer, name='conv')
-			conv5 = tf.layers.batch_normalization(conv5, name='batchnorm')
-			conv5 = tf.nn.relu(conv5, name='relu')
-
-			# (None, height/4, width/16, 512) -> (None, height/8, width/8, 512).
-
-		return conv5
+		return model(inputs)
 
 	@staticmethod
 	def _create_bidirectionnal_rnn(inputs, input_len=None, kernel_initializer=None):
@@ -517,7 +423,7 @@ class MyModel(object):
 			outputs_2, _ = tf.nn.bidirectional_dynamic_rnn(fw_cell_2, bw_cell_2, outputs_1, input_len, dtype=tf.float32)
 			outputs_2 = tf.concat(outputs_2, 2)
 			# TODO [decide] >>
-			#outputs_2 = tf.layers.batch_normalization(outputs_2, name='batchnorm')
+			outputs_2 = tf.layers.batch_normalization(outputs_2, name='batchnorm')
 
 		return outputs_2
 
@@ -561,12 +467,12 @@ class MyRunner(object):
 		#	REF [function] >> MyModel.create_model().
 		#width_downsample_factor = 8
 		if False:
-			image_height, image_width, image_channel = 32, 160, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
-			model_output_time_steps = 80  # (image_height / width_downsample_factor) * (image_width / width_downsample_factor).
+			image_height, image_width, image_channel = 32, 320, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+			model_output_time_steps = 160  # (image_height / width_downsample_factor) * (image_width / width_downsample_factor).
 		else:
-			image_height, image_width, image_channel = 64, 320, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
-			model_output_time_steps = 320  # (image_height / width_downsample_factor) * (image_width / width_downsample_factor).
-		max_label_len = model_output_time_steps  # max_label_len <= model_output_time_steps.
+			image_height, image_width, image_channel = 64, 640, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+			model_output_time_steps = 640  # (image_height / width_downsample_factor) * (image_width / width_downsample_factor).
+		max_label_len = 80 #model_output_time_steps  # max_label_len <= model_output_time_steps.
 
 		#--------------------
 		# Create a dataset.
@@ -665,10 +571,10 @@ class MyRunner(object):
 			model_output, loss, accuracy = model.create_model(self._dataset.num_classes, is_training=True)
 
 			# Create a trainer.
-			#optimizer = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-08)
+			optimizer = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-08)
 			##optimizer = keras.optimizers.Adadelta(lr=1.0, rho=0.95, epsilon=None, decay=0.0)
 			#optimizer = tf.keras.optimizers.Adadelta(lr=0.001, rho=0.95, epsilon=1e-07)
-			optimizer = tf.train.AdadeltaOptimizer(learning_rate=1.0, rho=0.95, epsilon=1e-08)
+			#optimizer = tf.train.AdadeltaOptimizer(learning_rate=1.0, rho=0.95, epsilon=1e-08)
 			train_op = optimizer.minimize(loss)
 
 			# Create a saver.
@@ -999,7 +905,7 @@ def check_data(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio,
 			print('type(batch_data[2]) = {}, len(batch_data[2]) = {}.'.format(type(batch_data[2]), len(batch_data[2])))
 
 		if batch_size != batch_data[0].shape[0]:
-			print('Invalid image size: {} != {}.'format(batch_size, batch_data[0].shape[0]))
+			print('Invalid image size: {} != {}.'.format(batch_size, batch_data[0].shape[0]))
 		if batch_size != len(batch_data[1]) or batch_size != len(batch_data[2]):
 			print('Invalid label size: {0} != {1} or {0} != {2}.'.format(batch_size, len(batch_data[1]), len(batch_data[1])))
 
@@ -1040,7 +946,7 @@ def main():
 
 	train_test_ratio = 0.8
 
-	is_dataset_generated_at_runtime = False
+	is_dataset_generated_at_runtime = True
 	if not is_dataset_generated_at_runtime and (is_trained or is_tested):
 		# Data generation.
 		#	REF [function] >> generate_single_letter_dataset() in text_generation_util_test.py.
@@ -1067,7 +973,7 @@ def main():
 	#--------------------
 	output_dir_path = None
 	if not output_dir_path:
-		output_dir_prefix = 'hangeul_jamo_carnet'
+		output_dir_prefix = 'hangeul_jamo_carnet_densenet'
 		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 
@@ -1113,7 +1019,9 @@ def main():
 
 		#image_filepaths = glob.glob('./single_letters_test/*.jpg', recursive=False)
 		#image_filepaths = glob.glob('./double_letters_test/*.jpg', recursive=False)
-		image_filepaths = glob.glob('./text_line_samples_kr_test/**/*.jpg', recursive=False)
+		#image_filepaths = glob.glob('./text_line_samples_kr_test/**/*.jpg', recursive=False)
+		image_filepaths = glob.glob('./receipt_epapyrus/epapyrus_20190618/receipt_text_line/*.png', recursive=False)
+		#image_filepaths = glob.glob('./receipt_sminds/receipt_text_line/*.png', recursive=False)
 		if not image_filepaths:
 			print('[SWL] Error: No image file for inference.')
 			return

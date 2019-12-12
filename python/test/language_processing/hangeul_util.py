@@ -1,5 +1,4 @@
 import functools, operator
-import hgtk
 
 def hangeul2jamo(text, eojc_str, compose_code='\u1d25', use_separate_consonants=False, use_separate_vowels=False):
 	"""Convert a string to a list of jamos and letters.
@@ -13,6 +12,8 @@ def hangeul2jamo(text, eojc_str, compose_code='\u1d25', use_separate_consonants=
 	Outputs:
 		jamo_text (a list of str): A list of jamos decomposed from the input string.
 	"""
+
+	import hgtk
 
 	consonants = {'ㄲ': 'ㄱㄱ', 'ㄳ': 'ㄱㅅ', 'ㄵ': 'ㄴㅈ', 'ㄶ': 'ㄴㅎ', 'ㄸ': 'ㄷㄷ', 'ㄺ': 'ㄹㄱ', 'ㄻ': 'ㄹㅁ', 'ㄼ': 'ㄹㅂ', 'ㄽ': 'ㄹㅅ', 'ㄾ': 'ㄹㅌ', 'ㄿ': 'ㄹㅍ', 'ㅀ': 'ㄹㅎ', 'ㅃ': 'ㅂㅂ', 'ㅄ': 'ㅂㅅ', 'ㅆ': 'ㅅㅅ', 'ㅉ': 'ㅈㅈ'}
 	vowels = {'ㅘ': 'ㅗㅏ', 'ㅙ': 'ㅗㅐ', 'ㅚ': 'ㅗㅣ', 'ㅝ': 'ㅜㅓ', 'ㅞ': 'ㅜㅔ', 'ㅟ': 'ㅜㅣ', 'ㅢ': 'ㅡㅣ'}
@@ -43,6 +44,8 @@ def jamo2hangeul(jamo_text, eojc_str, compose_code='\u1d25', use_separate_conson
 	Outputs:
 		text (str): Input string.
 	"""
+
+	import hgtk
 
 	consonants = {'ㄱㄱ': 'ㄲ', 'ㄱㅅ': 'ㄳ', 'ㄴㅈ': 'ㄵ', 'ㄴㅎ': 'ㄶ', 'ㄷㄷ': 'ㄸ', 'ㄹㄱ': 'ㄺ', 'ㄹㅁ': 'ㄻ', 'ㄹㅂ': 'ㄼ', 'ㄹㅅ': 'ㄽ', 'ㄹㅌ': 'ㄾ', 'ㄹㅍ': 'ㄿ', 'ㄹㅎ': 'ㅀ', 'ㅂㅂ': 'ㅃ', 'ㅂㅅ': 'ㅄ', 'ㅅㅅ': 'ㅆ', 'ㅈㅈ': 'ㅉ'}
 	vowels = {'ㅗㅏ': 'ㅘ', 'ㅗㅐ': 'ㅙ', 'ㅗㅣ': 'ㅚ', 'ㅜㅓ': 'ㅝ', 'ㅜㅔ': 'ㅞ', 'ㅜㅣ': 'ㅟ', 'ㅡㅣ': 'ㅢ'}

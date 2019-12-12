@@ -4,8 +4,6 @@ import numpy as np
 import cv2
 import swl.language_processing.util as swl_langproc_util
 from swl.language_processing.text_generator import Transformer, HangeulJamoGenerator, HangeulLetterGenerator, TextGenerator, SceneProvider, SceneTextGenerator
-import swl.language_processing.hangeul_handwriting_dataset as hg_hw_dataset
-import swl.machine_vision.util as swl_cv_util
 
 def generate_random_word_set(num_words, charset, min_char_count, max_char_count):
 	charset_len = len(charset)
@@ -66,6 +64,8 @@ def generate_hangeul_font_list(font_filepaths):
 
 def generate_phd08_dict(from_npy=True):
 	if from_npy:
+		import swl.language_processing.hangeul_handwriting_dataset as hg_hw_dataset
+
 		# Loads PHD08 npy dataset.
 		# Generate an info file for npy files generated from the PHD08 dataset.
 		#	Refer to generate_npy_dataset_from_phd08_conversion_result() in ${SWL_PYTHON_HOME}/test/language_processing/phd08_datset_test.py.
@@ -108,17 +108,31 @@ def constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color, t
 		A text line (numpy.array): A single text line constructed from character alpha mattes.
 	"""
 
+	import swl.machine_vision.util as swl_cv_util
+
 	if text_line_size is None:
 		text_line_size = reduce(lambda x, y: (max(x[0], y[0]), max(x[1], y[1])), map(lambda alpha, coord: (coord[0] + alpha.shape[0], coord[1] + alpha.shape[1]), char_alpha_list, char_alpha_coordinate_list))
 
-	text_line = np.zeros(text_line_size + (3,), dtype=np.float32)
+	image_channel = len(font_color)
 	text_line_alpha = np.zeros(text_line_size, dtype=np.float32)
 	font_color = list(map(lambda x: x / 255, font_color))
-	for alpha, (sy, sx) in zip(char_alpha_list, char_alpha_coordinate_list):
-		#pixels = np.where(alpha > 0)
-		#text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]][pixels] = alpha[pixels]	
-		text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]] = swl_cv_util.blend_image(np.full(alpha.shape + (3,), font_color, dtype=np.float32), text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]], alpha)
-		text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]] = swl_cv_util.blend_image(np.full_like(alpha, 1.0, dtype=np.float32), text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]], alpha)
+	if 1 == image_channel:
+		text_line = np.zeros(text_line_size, dtype=np.float32)
+		def apply_blending(alpha, alpha_coords):
+			sy, sx = alpha_coords
+			#pixels = np.where(alpha > 0)
+			#text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]][pixels] = alpha[pixels]	
+			text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1],:] = swl_cv_util.blend_image(np.full(alpha.shape, font_color, dtype=np.float32), text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]], alpha)
+			text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]] = swl_cv_util.blend_image(np.full_like(alpha, 1.0, dtype=np.float32), text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]], alpha)		
+	else:
+		text_line = np.zeros(text_line_size + (image_channel,), dtype=np.float32)
+		def apply_blending(alpha, alpha_coords):
+			sy, sx = alpha_coords
+			#pixels = np.where(alpha > 0)
+			#text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]][pixels] = alpha[pixels]	
+			text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1],:] = swl_cv_util.blend_image(np.full(alpha.shape + (image_channel,), font_color, dtype=np.float32), text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]], alpha)
+			text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]] = swl_cv_util.blend_image(np.full_like(alpha, 1.0, dtype=np.float32), text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]], alpha)		
+	map(apply_blending, char_alpha_list, char_alpha_coordinate_list)
 
 	#return text_line, text_line_alpha
 	return np.round(text_line * 255).astype(np.uint8), text_line_alpha
@@ -881,6 +895,8 @@ class SimpleAlphaMatteSceneTextGenerator(object):
 			A scene text mask (numpy.array) or a list of text masks (list of numpy.array's): A scene mask containing masks of transformed text lines in a scene.
 			A list of transformed bounding rectangles (list of numpy.array's): A list of transformed bounding rectangles (4 x 2) in a scene.
 		"""
+
+		import swl.machine_vision.util as swl_cv_util
 
 		scene_size = scene.shape[:2]
 

@@ -2,7 +2,6 @@ import math, random, functools
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import cv2
-import jellyfish
 
 def compute_simple_text_recognition_accuracy(text_pairs, case_sensitive=True):
 	total_text_count = len(text_pairs)
@@ -29,6 +28,8 @@ def compute_simple_text_recognition_accuracy(text_pairs, case_sensitive=True):
 	return correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count
 
 def compute_string_distance(text_pairs, case_sensitive=True):
+	import jellyfish
+
 	#string_distance_functor = jellyfish.hamming_distance
 	string_distance_functor = jellyfish.levenshtein_distance
 	#string_distance_functor = jellyfish.damerau_levenshtein_distance

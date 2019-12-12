@@ -1173,7 +1173,7 @@ def main():
 
 	train_test_ratio = 0.8
 
-	is_dataset_generated_at_runtime = False
+	is_dataset_generated_at_runtime = True
 	if not is_dataset_generated_at_runtime and (is_trained or is_tested):
 		# Data generation.
 		#	REF [function] >> HangeulTextRecognitionDataGeneratorTextLineDataset_test() in TextRecognitionDataGenerator_data_test.py.
