@@ -122,7 +122,7 @@ def constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color, t
 			sy, sx = alpha_coords
 			#pixels = np.where(alpha > 0)
 			#text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]][pixels] = alpha[pixels]	
-			text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1],:] = swl_cv_util.blend_image(np.full(alpha.shape, font_color, dtype=np.float32), text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]], alpha)
+			text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]] = swl_cv_util.blend_image(np.full(alpha.shape, font_color, dtype=np.float32), text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]], alpha)
 			text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]] = swl_cv_util.blend_image(np.full_like(alpha, 1.0, dtype=np.float32), text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]], alpha)		
 	else:
 		text_line = np.zeros(text_line_size + (image_channel,), dtype=np.float32)
@@ -130,9 +130,10 @@ def constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color, t
 			sy, sx = alpha_coords
 			#pixels = np.where(alpha > 0)
 			#text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]][pixels] = alpha[pixels]	
-			text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1],:] = swl_cv_util.blend_image(np.full(alpha.shape + (image_channel,), font_color, dtype=np.float32), text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]], alpha)
+			text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]] = swl_cv_util.blend_image(np.full(alpha.shape + (image_channel,), font_color, dtype=np.float32), text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]], alpha)
 			text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]] = swl_cv_util.blend_image(np.full_like(alpha, 1.0, dtype=np.float32), text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]], alpha)		
-	map(apply_blending, char_alpha_list, char_alpha_coordinate_list)
+	for alpha, alpha_coords in zip(char_alpha_list, char_alpha_coordinate_list):
+		apply_blending(alpha, alpha_coords)
 
 	#return text_line, text_line_alpha
 	return np.round(text_line * 255).astype(np.uint8), text_line_alpha
