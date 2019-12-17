@@ -561,12 +561,12 @@ class MyRunner(object):
 		#	REF [function] >> MyModel.create_model().
 		#width_downsample_factor = 8
 		if False:
-			image_height, image_width, image_channel = 32, 160, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
-			model_output_time_steps = 80  # (image_height / width_downsample_factor) * (image_width / width_downsample_factor).
+			image_height, image_width, image_channel = 32, 320, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+			model_output_time_steps = 160  # (image_height / width_downsample_factor) * (image_width / width_downsample_factor).
 		else:
-			image_height, image_width, image_channel = 64, 320, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
-			model_output_time_steps = 320  # (image_height / width_downsample_factor) * (image_width / width_downsample_factor).
-		max_label_len = model_output_time_steps  # max_label_len <= model_output_time_steps.
+			image_height, image_width, image_channel = 64, 640, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+			model_output_time_steps = 640  # (image_height / width_downsample_factor) * (image_width / width_downsample_factor).
+		max_label_len = 80 #model_output_time_steps  # max_label_len <= model_output_time_steps.
 
 		#--------------------
 		# Create a dataset.
@@ -665,10 +665,10 @@ class MyRunner(object):
 			model_output, loss, accuracy = model.create_model(self._dataset.num_classes, is_training=True)
 
 			# Create a trainer.
-			#optimizer = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-08)
+			optimizer = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-08)
 			##optimizer = keras.optimizers.Adadelta(lr=1.0, rho=0.95, epsilon=None, decay=0.0)
 			#optimizer = tf.keras.optimizers.Adadelta(lr=0.001, rho=0.95, epsilon=1e-07)
-			optimizer = tf.train.AdadeltaOptimizer(learning_rate=1.0, rho=0.95, epsilon=1e-08)
+			#optimizer = tf.train.AdadeltaOptimizer(learning_rate=1.0, rho=0.95, epsilon=1e-08)
 			train_op = optimizer.minimize(loss)
 
 			# Create a saver.
@@ -999,20 +999,21 @@ def check_data(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio,
 			print('type(batch_data[2]) = {}, len(batch_data[2]) = {}.'.format(type(batch_data[2]), len(batch_data[2])))
 
 		if batch_size != batch_data[0].shape[0]:
-			print('Invalid image size: {} != {}.'format(batch_size, batch_data[0].shape[0]))
+			print('Invalid image size: {} != {}.'.format(batch_size, batch_data[0].shape[0]))
 		if batch_size != len(batch_data[1]) or batch_size != len(batch_data[2]):
 			print('Invalid label size: {0} != {1} or {0} != {2}.'.format(batch_size, len(batch_data[1]), len(batch_data[1])))
 
-		for idx, (lbl, lbl_int) in enumerate(zip(batch_data[1], batch_data[2])):
-			if len(lbl) != len(lbl_int):
-				print('Unmatched label length: {} != {} ({}: {}).'.format(lbl, lbl_int, idx, batch_data[1]))
+		batch_data2_decoded = map(lambda x: runner.dataset.decode_label(x), batch_data[2])
+		for idx, (lbl, lbl_int, lbl_int_decoded) in enumerate(zip(batch_data[1], batch_data[2], batch_data2_decoded)):
+			if len(lbl) != len(lbl_int_decoded):
+				print('Unmatched label length: {} != {}.'.format(lbl, lbl_int))
 			if 0 == len(lbl_int):
-				print('Zero-length label: {}, {} ({}: {}).'.format(lbl, lbl_int, idx, batch_data[1]))
+				print('Zero-length label: {}, {}.'.format(lbl, lbl_int))
 
 			jamo_lbl = MyRunTimeHangeulJamoAlphaMatteTextLineDataset.hangeul2jamo(lbl)
 			letter_lbl = MyRunTimeHangeulJamoAlphaMatteTextLineDataset.jamo2hangeul(jamo_lbl)
 			if letter_lbl != lbl:
-				print('Unmatched encoded/decoded labels: {} != {} ({}) ({}: {}).'.format(lbl, letter_lbl, jamo_lbl, idx, batch_data[1]))
+				print('Unmatched encoded/decoded labels: {} != {} ({}).'.format(lbl, letter_lbl, jamo_lbl))
 
 		sparse = swl_ml_util.sequences_to_sparse(batch_data[2], dtype=np.int32)
 		sequences = swl_ml_util.sparse_to_sequences(*sparse, dtype=np.int32)
@@ -1040,7 +1041,7 @@ def main():
 
 	train_test_ratio = 0.8
 
-	is_dataset_generated_at_runtime = False
+	is_dataset_generated_at_runtime = True
 	if not is_dataset_generated_at_runtime and (is_trained or is_tested):
 		# Data generation.
 		#	REF [function] >> generate_single_letter_dataset() in text_generation_util_test.py.
@@ -1113,7 +1114,9 @@ def main():
 
 		#image_filepaths = glob.glob('./single_letters_test/*.jpg', recursive=False)
 		#image_filepaths = glob.glob('./double_letters_test/*.jpg', recursive=False)
-		image_filepaths = glob.glob('./text_line_samples_kr_test/**/*.jpg', recursive=False)
+		#image_filepaths = glob.glob('./text_line_samples_kr_test/**/*.jpg', recursive=False)
+		image_filepaths = glob.glob('./receipt_epapyrus/epapyrus_20190618/receipt_text_line/*.png', recursive=False)
+		#image_filepaths = glob.glob('./receipt_sminds/receipt_text_line/*.png', recursive=False)
 		if not image_filepaths:
 			print('[SWL] Error: No image file for inference.')
 			return

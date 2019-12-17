@@ -909,16 +909,17 @@ def check_data(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio,
 		if batch_size != len(batch_data[1]) or batch_size != len(batch_data[2]):
 			print('Invalid label size: {0} != {1} or {0} != {2}.'.format(batch_size, len(batch_data[1]), len(batch_data[1])))
 
-		for idx, (lbl, lbl_int) in enumerate(zip(batch_data[1], batch_data[2])):
-			if len(lbl) != len(lbl_int):
-				print('Unmatched label length: {} != {} ({}: {}).'.format(lbl, lbl_int, idx, batch_data[1]))
+		batch_data2_decoded = map(lambda x: runner.dataset.decode_label(x), batch_data[2])
+		for idx, (lbl, lbl_int, lbl_int_decoded) in enumerate(zip(batch_data[1], batch_data[2], batch_data2_decoded)):
+			if len(lbl) != len(lbl_int_decoded):
+				print('Unmatched label length: {} != {}.'.format(lbl, lbl_int))
 			if 0 == len(lbl_int):
-				print('Zero-length label: {}, {} ({}: {}).'.format(lbl, lbl_int, idx, batch_data[1]))
+				print('Zero-length label: {}, {}.'.format(lbl, lbl_int))
 
 			jamo_lbl = MyRunTimeHangeulJamoAlphaMatteTextLineDataset.hangeul2jamo(lbl)
 			letter_lbl = MyRunTimeHangeulJamoAlphaMatteTextLineDataset.jamo2hangeul(jamo_lbl)
 			if letter_lbl != lbl:
-				print('Unmatched encoded/decoded labels: {} != {} ({}) ({}: {}).'.format(lbl, letter_lbl, jamo_lbl, idx, batch_data[1]))
+				print('Unmatched encoded/decoded labels: {} != {} ({}).'.format(lbl, letter_lbl, jamo_lbl))
 
 		sparse = swl_ml_util.sequences_to_sparse(batch_data[2], dtype=np.int32)
 		sequences = swl_ml_util.sparse_to_sequences(*sparse, dtype=np.int32)
