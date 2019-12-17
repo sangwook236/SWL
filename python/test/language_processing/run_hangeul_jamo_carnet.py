@@ -145,7 +145,7 @@ def generate_font_colors(image_depth):
 	return font_color, bg_color
 
 class MyRunTimeHangeulJamoAlphaMatteTextLineDataset(text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, labels, num_classes, alpha_matte_mode='1', use_NWHC=True, default_value=-1):
+	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, labels, num_classes, alpha_matte_mode='1', use_NWHC=False, default_value=-1):
 		super().__init__(text_set, image_height, image_width, image_channel, font_list, char_images_dict, functools.partial(generate_font_colors, image_depth=image_channel), labels, num_classes, alpha_matte_mode, use_NWHC, default_value)
 
 		self._augmenter = create_augmenter()
@@ -158,7 +158,7 @@ class MyRunTimeHangeulJamoAlphaMatteTextLineDataset(text_line_data.RunTimeHangeu
 			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
 class MyHangeulJamoTextLineDataset(TextRecognitionDataGenerator_data.HangeulJamoTextRecognitionDataGeneratorTextLineDataset):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle=True, use_NWHC=True, default_value=-1):
+	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle=True, use_NWHC=False, default_value=-1):
 		super().__init__(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle, use_NWHC, default_value)
 
 		self._augmenter = create_augmenter()
