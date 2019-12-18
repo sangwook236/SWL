@@ -27,7 +27,7 @@ class EnglishOcropusTextLineDataset(OcropusTextLineDatasetBase):
 			image_filepaths, label_filepaths = sorted(glob.glob(data_dir_path + '/**/*.bin.png', recursive=False)), sorted(glob.glob(data_dir_path + '/**/*.gt.txt', recursive=False))
 			if not image_filepaths or not label_filepaths:
 				raise IOError('Failed to load data from {}.'.format(data_dir_path))
-			images, labels_str, labels_int = self._load_data(image_filepaths, label_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
+			images, labels_str, labels_int = self._load_data_from_image_and_label_files(image_filepaths, label_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
 			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 			labels_str, labels_int = np.array(labels_str), np.array(labels_int)
 
@@ -94,7 +94,7 @@ class HangeulOcropusTextLineDataset(OcropusTextLineDatasetBase):
 			image_filepaths, label_filepaths = sorted(glob.glob(data_dir_path + '/**/*.bin.png', recursive=False)), sorted(glob.glob(data_dir_path + '/**/*.gt.txt', recursive=False))
 			if not image_filepaths or not label_filepaths:
 				raise IOError('Failed to load data from {}.'.format(data_dir_path))
-			images, labels_str, labels_int = self._load_data(image_filepaths, label_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
+			images, labels_str, labels_int = self._load_data_from_image_and_label_files(image_filepaths, label_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
 			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 			labels_str, labels_int = np.array(labels_str), np.array(labels_int)
 
@@ -163,7 +163,7 @@ class HangeulJamoOcropusTextLineDataset(OcropusTextLineDatasetBase):
 			image_filepaths, label_filepaths = sorted(glob.glob(data_dir_path + '/**/*.bin.png', recursive=False)), sorted(glob.glob(data_dir_path + '/**/*.gt.txt', recursive=False))
 			if not image_filepaths or not label_filepaths:
 				raise IOError('Failed to load data from {}.'.format(data_dir_path))
-			images, labels_str, labels_int = self._load_data(image_filepaths, label_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
+			images, labels_str, labels_int = self._load_data_from_image_and_label_files(image_filepaths, label_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
 			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 			labels_str, labels_int = np.array(labels_str), np.array(labels_int)
 

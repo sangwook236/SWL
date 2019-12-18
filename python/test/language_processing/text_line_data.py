@@ -589,7 +589,7 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 				break
 			start_idx = end_idx
 
-	def _load_data(self, image_filepaths, label_filepaths, image_height, image_width, image_channel, max_label_len):
+	def _load_data_from_image_and_label_files(self, image_filepaths, label_filepaths, image_height, image_width, image_channel, max_label_len):
 		if len(image_filepaths) != len(label_filepaths):
 			print('[SWL] Error: Different lengths of image and label files, {} != {}.'.format(len(image_filepaths), len(label_filepaths)))
 			return
@@ -601,13 +601,69 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 
 		images, labels_str, labels_int = list(), list(), list()
 		for img_fpath, lbl_fpath in zip(image_filepaths, label_filepaths):
-			with open(lbl_fpath, 'r', encoding='UTF8') as fd:
-				#label_str = fd.read()
-				#label_str = fd.read().rstrip()
-				label_str = fd.read().rstrip('\n')
+			try:
+				with open(lbl_fpath, 'r', encoding='UTF8') as fd:
+					#label_str = fd.read()
+					#label_str = fd.read().rstrip()
+					label_str = fd.read().rstrip('\n')
+			except FileNotFoundError as ex:
+				print('[SWL] Error: File not found: {}.'.format(lbl_fpath))
+				continue
+			except UnicodeDecodeError as ex:
+				print('[SWL] Error: Unicode decode error: {}.'.format(lbl_fpath))
+				continue
 			if len(label_str) > max_label_len:
 				print('[SWL] Warning: Too long label: {} > {}.'.format(len(label_str), max_label_len))
 				continue
+			img = cv2.imread(img_fpath, cv2.IMREAD_GRAYSCALE if 1 == image_channel else cv2.IMREAD_COLOR)
+			if img is None:
+				print('[SWL] Error: Failed to load an image: {}.'.format(img_fpath))
+				continue
+
+			img = self.resize(img, None, image_height, image_width)
+			try:
+				label_int = self.encode_label(label_str)
+			except Exception:
+				#print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
+				continue
+			if label_str != self.decode_label(label_int):
+				print('[SWL] Error: Mismatched encoded and decoded labels: {} != {}.'.format(label_str, self.decode_label(label_int)))
+				continue
+
+			images.append(img)
+			labels_str.append(label_str)
+			labels_int.append(label_int)
+
+		#images = list(map(lambda image: self.resize(image), images))
+		images = self._transform_images(np.array(images), use_NWHC=self._use_NWHC)
+		images, _ = self.preprocess(images, None)
+
+		return images, labels_str, labels_int
+
+	def _load_data_from_label_file(self, label_filepath, image_height, image_width, image_channel, max_label_len, image_label_separator=' '):
+		# In a label file:
+		#	Each line consists of 'image-filepath + image-label-separator + label'.
+
+		try:
+			with open(label_filepath, 'r') as fd:
+				#lines = fd.readlines()  # A list of strings.
+				lines = fd.read().splitlines()  # A list of strings.
+		except FileNotFoundError as ex:
+			print('[SWL] Error: File not found: {}.'.format(label_filepath))
+			raise
+		except UnicodeDecodeError as ex:
+			print('[SWL] Error: Unicode decode error: {}.'.format(label_filepath))
+			raise
+
+		dir_path = os.path.dirname(label_filepath)
+		images, labels_str, labels_int = list(), list(), list()
+		for line in lines:
+			img_fpath, label_str = line.split(image_label_separator, 1)
+
+			if len(label_str) > max_label_len:
+				print('[SWL] Warning: Too long label: {} > {}.'.format(len(label_str), max_label_len))
+				continue
+			img_fpath = os.path.join(dir_path, img_fpath)
 			img = cv2.imread(img_fpath, cv2.IMREAD_GRAYSCALE if 1 == image_channel else cv2.IMREAD_COLOR)
 			if img is None:
 				print('[SWL] Error: Failed to load an image: {}.'.format(img_fpath))

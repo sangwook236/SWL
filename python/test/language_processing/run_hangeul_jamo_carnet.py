@@ -517,7 +517,7 @@ class MyModel(object):
 			outputs_2, _ = tf.nn.bidirectional_dynamic_rnn(fw_cell_2, bw_cell_2, outputs_1, input_len, dtype=tf.float32)
 			outputs_2 = tf.concat(outputs_2, 2)
 			# TODO [decide] >>
-			#outputs_2 = tf.layers.batch_normalization(outputs_2, name='batchnorm')
+			outputs_2 = tf.layers.batch_normalization(outputs_2, name='batchnorm')
 
 		return outputs_2
 

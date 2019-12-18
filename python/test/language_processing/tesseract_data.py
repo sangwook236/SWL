@@ -12,7 +12,7 @@ class TesseractTextLineDatasetBase(text_line_data.FileBasedTextLineDatasetBase):
 	def __init__(self, image_height, image_width, image_channel, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
 		super().__init__(image_height, image_width, image_channel, labels, num_classes, use_NWHC, default_value)
 
-	def _load_data(self, image_filepaths, box_filepaths, image_height, image_width, image_channel, max_label_len):
+	def _load_data_from_image_and_label_files(self, image_filepaths, box_filepaths, image_height, image_width, image_channel, max_label_len):
 		images, labels_str, labels_int = list(), list(), list()
 		for img_fpath, box_fpath in zip(image_filepaths, box_filepaths):
 			retval, images = cv2.imreadmulti(img_fpath, flags=cv2.IMREAD_GRAYSCALE if 1 == image_channel else cv2.IMREAD_COLOR)
@@ -92,7 +92,7 @@ class EnglishTesseractTextLineDataset(TesseractTextLineDatasetBase):
 		# Load data.
 		print('[SWL] Info: Start loading dataset...')
 		start_time = time.time()
-		images, labels_str, labels_int = self._load_data(image_filepaths, box_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
+		images, labels_str, labels_int = self._load_data_from_image_and_label_files(image_filepaths, box_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
 		if not images or not labels_str or not labels_int:
 			raise IOError('Failed to load data from {} and {}.'.format(image_filepaths, box_filepaths))
 		print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
@@ -153,7 +153,7 @@ class HangeulTesseractTextLineDataset(TesseractTextLineDatasetBase):
 		# Load data.
 		print('[SWL] Info: Start loading dataset...')
 		start_time = time.time()
-		images, labels_str, labels_int = self._load_data(image_filepaths, box_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
+		images, labels_str, labels_int = self._load_data_from_image_and_label_files(image_filepaths, box_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
 		if not images or not labels_str or not labels_int:
 			raise IOError('Failed to load data from {} and {}.'.format(image_filepaths, box_filepaths))
 		print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
@@ -216,7 +216,7 @@ class HangeulJamoTesseractTextLineDataset(TesseractTextLineDatasetBase):
 		# Load data.
 		print('[SWL] Info: Start loading dataset...')
 		start_time = time.time()
-		images, labels_str, labels_int = self._load_data(image_filepaths, box_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
+		images, labels_str, labels_int = self._load_data_from_image_and_label_files(image_filepaths, box_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
 		if not images or not labels_str or not labels_int:
 			raise IOError('Failed to load data from {} and {}.'.format(image_filepaths, box_filepaths))
 		print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))

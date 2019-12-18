@@ -12,7 +12,7 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.FileBasedTe
 	def __init__(self, image_height, image_width, image_channel, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
 		super().__init__(image_height, image_width, image_channel, labels, num_classes, use_NWHC, default_value)
 
-	def _load_data(self, data_dir_path, image_height, image_width, image_channel, max_label_len, label_filename=None, use_NWHC=True):
+	def _load_data_from_image_and_label_files(self, data_dir_path, image_height, image_width, image_channel, max_label_len, label_filename=None, use_NWHC=True):
 		if label_filename is None:
 			images, labels_str, labels_int = self._load_data_with_label_in_filename(data_dir_path, image_height, image_width, image_channel, max_label_len)
 		else:
@@ -186,7 +186,7 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 			start_time = time.time()
 			label_filename = 'labels.txt'
 			#label_filename = None
-			images, labels_str, labels_int, num_examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len, label_filename, use_NWHC=self._use_NWHC)
+			images, labels_str, labels_int, num_examples = self._load_data_from_image_and_label_files(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len, label_filename, use_NWHC=self._use_NWHC)
 			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 
 			test_offset = round(train_test_ratio * num_examples)
@@ -266,7 +266,7 @@ class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 			start_time = time.time()
 			label_filename = 'labels.txt'
 			#label_filename = None
-			images, labels_str, labels_int, num_examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len, label_filename, use_NWHC=self._use_NWHC)
+			images, labels_str, labels_int, num_examples = self._load_data_from_image_and_label_files(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len, label_filename, use_NWHC=self._use_NWHC)
 			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 
 			test_offset = round(train_test_ratio * num_examples)
@@ -346,7 +346,7 @@ class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionData
 			start_time = time.time()
 			label_filename = 'labels.txt'
 			#label_filename = None
-			images, labels_str, labels_int, num_examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len, label_filename, use_NWHC=self._use_NWHC)
+			images, labels_str, labels_int, num_examples = self._load_data_from_image_and_label_files(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len, label_filename, use_NWHC=self._use_NWHC)
 			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 
 			test_offset = round(train_test_ratio * num_examples)
