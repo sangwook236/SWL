@@ -565,6 +565,24 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 		if batch_size <= 0:
 			raise ValueError('Invalid batch size: {}'.format(batch_size))
 
+		if is_training and hasattr(self, 'augment'):
+			def apply_transform(images):
+				apply_augmentation = lambda img: \
+					self.resize(np.squeeze(self.augment(np.expand_dims(img, axis=0), None)[0], axis=0))
+
+				# Augment -> resize.
+				images = list(map(apply_augmentation, images))
+				images = self._transform_images(np.array(images, dtype=np.float32), use_NWHC=self._use_NWHC)
+				return images
+		else:
+			def apply_transform(images):
+				images = list(map(lambda image: self.resize(image), images))
+				images = self._transform_images(np.array(images, dtype=np.float32), use_NWHC=self._use_NWHC)
+				return images
+
+		images = apply_transform(images)
+		images, _ = self.preprocess(images, None)
+
 		indices = np.arange(num_examples)
 		if shuffle:
 			np.random.shuffle(indices)
@@ -620,7 +638,7 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 				print('[SWL] Error: Failed to load an image: {}.'.format(img_fpath))
 				continue
 
-			img = self.resize(img, None, image_height, image_width)
+			#img = self.resize(img, None, image_height, image_width)
 			try:
 				label_int = self.encode_label(label_str)
 			except Exception:
@@ -634,28 +652,28 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 			labels_str.append(label_str)
 			labels_int.append(label_int)
 
-		#images = list(map(lambda image: self.resize(image), images))
-		images = self._transform_images(np.array(images), use_NWHC=self._use_NWHC)
-		images, _ = self.preprocess(images, None)
+		##images = list(map(lambda image: self.resize(image), images))
+		#images = self._transform_images(np.array(images), use_NWHC=self._use_NWHC)
+		#images, _ = self.preprocess(images, None)
 
 		return images, labels_str, labels_int
 
-	def _load_data_from_label_file(self, label_filepath, image_height, image_width, image_channel, max_label_len, image_label_separator=' '):
-		# In a label file:
+	def _load_data_from_image_label_info(self, image_label_info_filepath, image_height, image_width, image_channel, max_label_len, image_label_separator=' '):
+		# In a image-label info file:
 		#	Each line consists of 'image-filepath + image-label-separator + label'.
 
 		try:
-			with open(label_filepath, 'r') as fd:
+			with open(image_label_info_filepath, 'r', encoding='UTF8') as fd:
 				#lines = fd.readlines()  # A list of strings.
 				lines = fd.read().splitlines()  # A list of strings.
 		except FileNotFoundError as ex:
-			print('[SWL] Error: File not found: {}.'.format(label_filepath))
+			print('[SWL] Error: File not found: {}.'.format(image_label_info_filepath))
 			raise
 		except UnicodeDecodeError as ex:
-			print('[SWL] Error: Unicode decode error: {}.'.format(label_filepath))
+			print('[SWL] Error: Unicode decode error: {}.'.format(image_label_info_filepath))
 			raise
 
-		dir_path = os.path.dirname(label_filepath)
+		dir_path = os.path.dirname(image_label_info_filepath)
 		images, labels_str, labels_int = list(), list(), list()
 		for line in lines:
 			img_fpath, label_str = line.split(image_label_separator, 1)
@@ -669,7 +687,7 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 				print('[SWL] Error: Failed to load an image: {}.'.format(img_fpath))
 				continue
 
-			img = self.resize(img, None, image_height, image_width)
+			#img = self.resize(img, None, image_height, image_width)
 			try:
 				label_int = self.encode_label(label_str)
 			except Exception:
@@ -683,9 +701,9 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 			labels_str.append(label_str)
 			labels_int.append(label_int)
 
-		#images = list(map(lambda image: self.resize(image), images))
-		images = self._transform_images(np.array(images), use_NWHC=self._use_NWHC)
-		images, _ = self.preprocess(images, None)
+		##images = list(map(lambda image: self.resize(image), images))
+		#images = self._transform_images(np.array(images), use_NWHC=self._use_NWHC)
+		#images, _ = self.preprocess(images, None)
 
 		return images, labels_str, labels_int
 
