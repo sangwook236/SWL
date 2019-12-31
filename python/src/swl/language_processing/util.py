@@ -697,3 +697,93 @@ def draw_character_histogram(texts, charset=None):
 
 	fig.savefig('./character_frequency.png')
 	plt.close(fig)
+
+def generate_text_mask_and_distribution(mask, pdf, text, font, text_offset=(0, 0), rotation_angle=None):
+	import scipy.stats
+
+	text_size = font.getsize(text)  # (width, height). This is erroneous for multiline text.
+	#text_size = (math.ceil(len(text) * font_size * 1.1), math.ceil((text.count('\n') + 1) * font_size * 1.1))
+
+	# Draw a distribution of character centers.
+	char_img = Image.new('L', text_size, 0)
+	char_draw = ImageDraw.Draw(char_img)
+	char_draw.text(xy=(0, 0), text=text, font=font, fill=255)
+
+	x, y = np.mgrid[0:char_img.size[0], 0:char_img.size[1]]
+	#x, y = np.mgrid[0:char_img.size[0]:0.5, 0:char_img.size[1]:0.5]
+	pos = np.dstack((x, y))
+	text_pdf_unnormalized = np.zeros(x.shape, dtype=np.float32)
+	offset = [0, 0]
+	for ch in text:
+		#char_size = font.getsize(ch)  # (width, height). This is erroneous for multiline text.
+		char_size = char_draw.textsize(ch, font=font)  # (width, height).
+		font_offset = font.getoffset(ch)  # (x, y).
+		text_rect = (offset[0], offset[1], offset[0] + char_size[0] + font_offset[0], offset[1] + char_size[1] + font_offset[1])
+
+		if True:
+			pts = cv2.findNonZero(np.array(char_img)[text_rect[1]:text_rect[3],text_rect[0]:text_rect[2]]) + offset
+			center, axis, angle = cv2.minAreaRect(pts)
+			angle = math.radians(angle)
+		elif False:
+			try:
+				pts = cv2.findNonZero(np.array(char_img)[text_rect[1]:text_rect[3],text_rect[0]:text_rect[2]])
+				pts = np.squeeze(pts, axis=1)
+				center = np.mean(pts, axis=0)
+				size = np.max(pts, axis=0) - np.min(pts, axis=0)
+				pts = pts - center  # Centering.
+
+				u, s, vh = np.linalg.svd(pts, full_matrices=True)
+				center = center + offset
+				#axis = s * max(size) / max(s)
+				axis = s * math.sqrt((size[0] * size[0] + size[1] * size[1]) / (s[0] * s[0] + s[1] * s[1]))
+				angle = math.atan2(vh[0,1], vh[0,0])
+			except np.linalg.LinAlgError:
+				print('np.linalg.LinAlgError raised.')
+				raise
+
+		cos_theta, sin_theta = math.cos(angle), math.sin(angle)
+		R = np.array([[cos_theta, -sin_theta], [sin_theta, cos_theta]])
+		# TODO [decide] >> Which one is better?
+		if True:
+			cov = np.diag(np.array(axis))  # 1 * sigma.
+		else:
+			cov = np.diag(np.array(axis) * 2)  # 2 * sigma.
+		cov = np.matmul(R, np.matmul(cov, R.T))
+
+		rv = scipy.stats.multivariate_normal(center, cov)
+		# TODO [decide] >> Which one is better?
+		if False:
+			text_pdf_unnormalized += rv.pdf(pos)
+		else:
+			char_pdf = rv.pdf(pos)
+			text_pdf_unnormalized += char_pdf / np.max(char_pdf)
+
+		offset[0] += char_size[0] + font_offset[0]
+
+	mask_img = Image.fromarray(mask)
+	text_pdf_img = Image.fromarray(text_pdf_unnormalized.T)
+	pdf_img = Image.new('F', (pdf.shape[1], pdf.shape[0]))
+
+	if rotation_angle is None:
+		mask_draw = ImageDraw.Draw(mask_img)
+		mask_draw.text(xy=text_offset, text=text, font=font, fill=255)
+
+		pdf_img.paste(text_pdf_img, (text_offset[0], text_offset[1], text_offset[0] + text_pdf_img.size[0], text_offset[1] + text_pdf_img.size[1]))
+	else:
+		text_img = Image.new('L', text_size, 0)
+
+		text_draw = ImageDraw.Draw(text_img)
+		text_draw.text(xy=(0, 0), text=text, font=font, fill=255)
+
+		# Rotates the image around the top-left corner point.
+		text_img = text_img.rotate(rotation_angle, expand=1)
+		text_pdf_img = text_pdf_img.rotate(rotation_angle, expand=1)
+
+		mask_img.paste(text_img, (text_offset[0], text_offset[1], text_offset[0] + text_img.size[0], text_offset[1] + text_img.size[1]), text_img)
+		pdf_img.paste(text_pdf_img, (text_offset[0], text_offset[1], text_offset[0] + text_pdf_img.size[0], text_offset[1] + text_pdf_img.size[1]))
+
+	mask = np.asarray(mask_img, dtype=mask.dtype)
+	pdf0 = np.asarray(pdf_img, dtype=pdf.dtype)
+	pdf = np.where(pdf >= pdf0, pdf, pdf0)
+
+	return mask, pdf

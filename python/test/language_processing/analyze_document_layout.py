@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# coding: utf-8
+# -*- coding: UTF-8 -*-
 
 import glob
 import numpy as np
@@ -8,7 +8,7 @@ import cv2
 
 def analyze_document_layout_based_on_morphology():
 	#image_filepaths = glob.glob('/work/dataset/text/receipt_sminds/rotated/*.png')
-	image_filepaths = glob.glob('/work/dataset/text/receipt_epapyrus/epapyrus_20191203/image/*.png')
+	image_filepaths = glob.glob('/work/dataset/text/receipt_epapyrus/epapyrus_20191203/image_labelme/*.png')
 
 	for image_filepath in image_filepaths:
 		# Read gray image.

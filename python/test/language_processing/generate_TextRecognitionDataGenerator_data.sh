@@ -21,14 +21,17 @@ then
 	TRAIN_DATA_DIR=text_line_samples_${LANG}_train_v${VERSION}
 	TEST_DATA_DIR=text_line_samples_${LANG}_test_v${VERSION}
 
+	OPT="-b 1"
+	#OPT="-k 5 -rk -d 1 -do 2 -b 1"
+
 	for FONT_SIZE in ${FONT_SIZES[*]}
 	do
 		for WORDS in {1..3}
 		do
-			python ${CMD} -c 10000 -f ${FONT_SIZE} -w ${WORDS} -b 1 -t 8 --name_format 2 --output_dir ${TRAIN_DATA_DIR}/dic_h${FONT_SIZE}_w${WORDS}
-			python ${CMD} -c 10000 -f ${FONT_SIZE} -w ${WORDS} -rs -b 1 -t 8 --name_format 2 --output_dir ${TRAIN_DATA_DIR}/rs_h${FONT_SIZE}_w${WORDS}
-			python ${CMD} -c 1000 -f ${FONT_SIZE} -w ${WORDS} -b 1 -t 8 --name_format 2 --output_dir ${TEST_DATA_DIR}/dic_h${FONT_SIZE}_w${WORDS}
-			python ${CMD} -c 1000 -f ${FONT_SIZE} -w ${WORDS} -rs -b 1 -t 8 --name_format 2 --output_dir ${TEST_DATA_DIR}/rs_h${FONT_SIZE}_w${WORDS}
+			python ${CMD} -c 10000 -f ${FONT_SIZE} -w ${WORDS} ${OPT} -t 8 --name_format 2 --output_dir ${TRAIN_DATA_DIR}/dic_h${FONT_SIZE}_w${WORDS}
+			python ${CMD} -c 10000 -f ${FONT_SIZE} -w ${WORDS} ${OPT} -rs1 -t 8 --name_format 2 --output_dir ${TRAIN_DATA_DIR}/rs_h${FONT_SIZE}_w${WORDS}
+			python ${CMD} -c 1000 -f ${FONT_SIZE} -w ${WORDS} ${OPT} -t 8 --name_format 2 --output_dir ${TEST_DATA_DIR}/dic_h${FONT_SIZE}_w${WORDS}
+			python ${CMD} -c 1000 -f ${FONT_SIZE} -w ${WORDS} ${OPT} -rs -t 8 --name_format 2 --output_dir ${TEST_DATA_DIR}/rs_h${FONT_SIZE}_w${WORDS}
 		done
 	done
 
