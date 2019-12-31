@@ -1,5 +1,6 @@
 import os, math, re, csv
 import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 
 def find_most_frequent_value(arr):
 	"""
@@ -32,6 +33,57 @@ def bottom_k_indices(iterable, k):
 	return sorted(range(len(iterable)), key=lambda i: iterable[i])[:k]  # Bottom-k indices.
 	# In descending order.
 	#return sorted(range(len(iterable)), key=lambda i: iterable[i], reverse=True)[-k:]  # Bottom-k indices.
+
+#--------------------------------------------------------------------
+
+def add_mask(mask, sub_mask, bbox=None):
+	if bbox is None:
+		bbox = (0, 0, sub_mask.shape[1], sub_mask.shape[0])
+
+	mask_pil = Image.fromarray(mask)
+	text_mask_pil = Image.fromarray(sub_mask)
+	mask_pil.paste(text_mask_pil, bbox, text_mask_pil)
+	mask = np.asarray(mask_pil, dtype=mask.dtype)
+	"""
+	tmp_mask_pil = Image.fromarray(np.zeros_like(mask))
+	tmp_mask_pil.paste(Image.fromarray(sub_mask), bbox)
+	tmp_mask = np.asarray(tmp_mask_pil, dtype=mask.dtype)
+
+	mask = np.where(mask >= tmp_mask, mask, tmp_mask)
+	"""
+
+	return mask
+
+def add_pdf(pdf, sub_pdf, bbox=None):
+	if bbox is None:
+		bbox = (0, 0, sub_pdf.shape[1], sub_pdf.shape[0])
+
+	tmp_pdf_pil = Image.fromarray(np.zeros_like(pdf))
+	tmp_pdf_pil.paste(Image.fromarray(sub_pdf), bbox)
+	tmp_pdf = np.asarray(tmp_pdf_pil, dtype=pdf.dtype)
+
+	pdf = np.where(pdf >= tmp_pdf, pdf, tmp_pdf)
+	#pdf += tmp_pdf
+	#pdf /= np.sum(pdf)  # sum(pdf) = 1.
+
+	return pdf
+
+def draw_using_mask(img, mask, color, bbox=None):
+	if hasattr(color, '__len__'):
+		text_colored = np.zeros(mask.shape + (len(color),), dtype=img.dtype)
+		for ch in range(img.shape[-1]):
+			text_colored[...,ch] = np.round(mask * (color[ch] / 255))
+	else:
+		text_colored = np.round(mask * (color / 255))
+
+	if bbox is None:
+		bbox = (0, 0, mask.shape[1], mask.shape[0])
+
+	img_pil = Image.fromarray(img)
+	img_pil.paste(Image.fromarray(text_colored), bbox, Image.fromarray(mask))
+	img = np.asarray(img_pil, dtype=img.dtype)
+
+	return img
 
 #--------------------------------------------------------------------
 

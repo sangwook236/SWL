@@ -9,6 +9,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import cv2
 import matplotlib.pyplot as plt
+import swl.util.util as swl_util
 import swl.language_processing.util as swl_langproc_util
 
 def compute_simple_text_recognition_accuracy_test():
@@ -352,6 +353,7 @@ def generate_text_mask_and_distribution_test():
 	image_shape = (800, 1500)
 	mask = np.zeros(image_shape, dtype=np.uint8)
 	pdf = np.zeros(image_shape, dtype=np.float32)
+	rgb = np.zeros(image_shape + (3,), dtype=np.uint8)
 
 	import string
 	text = string.ascii_letters
@@ -359,30 +361,72 @@ def generate_text_mask_and_distribution_test():
 	font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
 	text_offset = (100, 200)  # (x, y).
 	rotation_angle = -15  # [deg].
-	mask, pdf = swl_langproc_util.generate_text_mask_and_distribution(mask, pdf, text, font, text_offset, rotation_angle)
+	text_mask, text_pdf = swl_langproc_util.generate_text_mask_and_distribution(text, font, rotation_angle)
+	text_bbox = (text_offset[0], text_offset[1], text_offset[0] + text_mask.shape[1], text_offset[1] + text_mask.shape[0])
+	mask = swl_util.add_mask(mask, text_mask, text_bbox)
+	pdf = swl_util.add_pdf(pdf, text_pdf, text_bbox)
+	font_color = (127, 63, 255)  # RGB.
+	rgb = swl_util.draw_using_mask(rgb, text_mask, font_color, text_bbox)
+
+	text = string.digits
+	font_size = 64
+	font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
+	text_offset = (800, 650)  # (x, y).
+	rotation_angle = -5  # [deg].
+	text_mask, text_pdf = swl_langproc_util.generate_text_mask_and_distribution(text, font, rotation_angle)
+	text_bbox = (text_offset[0], text_offset[1], text_offset[0] + text_mask.shape[1], text_offset[1] + text_mask.shape[0])
+	mask = swl_util.add_mask(mask, text_mask, text_bbox)
+	pdf = swl_util.add_pdf(pdf, text_pdf, text_bbox)
+	font_color = (255, 0, 0)  # RGB.
+	rgb = swl_util.draw_using_mask(rgb, text_mask, font_color, text_bbox)
+
+	text = string.punctuation
+	font_size = 32
+	font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
+	text_offset = (500, 250)  # (x, y).
+	rotation_angle = 0  # [deg].
+	text_mask, text_pdf = swl_langproc_util.generate_text_mask_and_distribution(text, font, rotation_angle)
+	text_bbox = (text_offset[0], text_offset[1], text_offset[0] + text_mask.shape[1], text_offset[1] + text_mask.shape[0])
+	mask = swl_util.add_mask(mask, text_mask, text_bbox)
+	pdf = swl_util.add_pdf(pdf, text_pdf, text_bbox)
+	font_color = (0, 255, 0)  # RGB.
+	rgb = swl_util.draw_using_mask(rgb, text_mask, font_color, text_bbox)
+
 	text = '가나다라마바사자차카타파하'
 	font_size = 64
 	font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
 	text_offset = (300, 400)  # (x, y).
 	rotation_angle = 10  # [deg].
-	mask, pdf = swl_langproc_util.generate_text_mask_and_distribution(mask, pdf, text, font, text_offset, rotation_angle)
+	text_mask, text_pdf = swl_langproc_util.generate_text_mask_and_distribution(text, font, rotation_angle)
+	text_bbox = (text_offset[0], text_offset[1], text_offset[0] + text_mask.shape[1], text_offset[1] + text_mask.shape[0])
+	mask = swl_util.add_mask(mask, text_mask, text_bbox)
+	pdf = swl_util.add_pdf(pdf, text_pdf, text_bbox)
+	font_color = (0, 0, 255)  # RGB.
+	rgb = swl_util.draw_using_mask(rgb, text_mask, font_color, text_bbox)
 
-	fig = plt.figure()
-	ax1 = fig.add_subplot(221)
-	ax1.imshow(mask, cmap='gray', aspect='equal')
-	ax2 = fig.add_subplot(222)
-	ax2.imshow(pdf, cmap='Reds', aspect='equal')
+	#--------------------
+	fig = plt.figure(tight_layout=True)
 
-	ax3 = fig.add_subplot(223)
-	#text_pdf_blended = 0.5 * text_pdf_unnormalized + 0.5 * mask / 255
+	ax = fig.add_subplot(221)
+	ax.imshow(mask, cmap='gray', aspect='equal')
+	ax.set_title('Text Mask')
+	ax.axis('off')
+
+	ax = fig.add_subplot(222)
+	ax.imshow(pdf, cmap='Reds', aspect='equal')
+	ax.set_title('Text Distribution')
+	ax.axis('off')
+
+	ax = fig.add_subplot(223)
 	text_pdf_blended = 0.5 * pdf / np.max(pdf) + 0.5 * mask / 255
-	ax3.imshow(text_pdf_blended, cmap='gray', aspect='equal')
+	ax.imshow(text_pdf_blended, cmap='gray', aspect='equal')
+	ax.set_title('Text and its Distribution Overlay')
+	ax.axis('off')
 
-	ax4 = fig.add_subplot(224)
-	rgb = np.zeros((800, 1500, 3), dtype=np.uint8)
-	rgb[:,:,0] = mask  # Red text color.
-	rgb[:,:,2] = mask  # Blue text color.
-	ax4.imshow(rgb, aspect='equal')
+	ax = fig.add_subplot(224)
+	ax.imshow(rgb, aspect='equal')
+	ax.set_title('Colored Text')
+	ax.axis('off')
 
 	plt.show()
 

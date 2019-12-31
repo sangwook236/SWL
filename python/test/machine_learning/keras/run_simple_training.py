@@ -269,7 +269,7 @@ class MyRunner(object):
 		else:
 			# Create a model.
 			model = MyModel.create_model(self._dataset.shape, self._dataset.num_classes)
-			#print('Model summary =', model.summary())
+			#model.summary()
 
 		# Create a trainer.
 		loss = tf.keras.losses.categorical_crossentropy
