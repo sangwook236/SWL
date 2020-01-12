@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# coding: UTF-8
+# -*- coding: UTF-8 -*-
 
 import nltk
 from nltk.corpus import treebank, reuters
@@ -189,6 +189,9 @@ def simple_neural_language_model_example():
 def main():
 	#n_gram_language_model_example()
 	simple_neural_language_model_example()
+
+	# Transformer.
+	#	REF [file] >> transformer_test.py
 
 #--------------------------------------------------------------------
 

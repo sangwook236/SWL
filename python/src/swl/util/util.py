@@ -69,12 +69,14 @@ def add_pdf(pdf, sub_pdf, bbox=None):
 	return pdf
 
 def draw_using_mask(img, mask, color, bbox=None):
-	if hasattr(color, '__len__'):
+	if 2 == img.ndim:
+		text_colored = np.round(mask * (color / 255))
+	elif 3 == img.ndim:
 		text_colored = np.zeros(mask.shape + (len(color),), dtype=img.dtype)
 		for ch in range(img.shape[-1]):
 			text_colored[...,ch] = np.round(mask * (color[ch] / 255))
 	else:
-		text_colored = np.round(mask * (color / 255))
+		raise ValueError('Invalid image dimension: {}'.format(img.ndim))
 
 	if bbox is None:
 		bbox = (0, 0, mask.shape[1], mask.shape[0])
