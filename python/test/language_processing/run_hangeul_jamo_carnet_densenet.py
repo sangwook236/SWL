@@ -266,14 +266,14 @@ class MyModel(object):
 	def _create_model(self, inputs, num_classes):
 		# TODO [decide] >>
 		#kernel_initializer = None
-		#kernel_initializer = tf.initializers.he_normal()
+		kernel_initializer = tf.initializers.he_normal()
 		#kernel_initializer = tf.initializers.he_uniform()
 		#kernel_initializer = tf.initializers.truncated_normal(mean=0.0, stddev=1.0)
 		#kernel_initializer = tf.initializers.uniform_unit_scaling(factor=1.0)
 		#kernel_initializer = tf.initializers.variance_scaling(scale=1.0, mode='fan_in', distribution='truncated_normal')
 		#kernel_initializer = tf.initializers.glorot_normal()  # Xavier normal initialization.
 		#kernel_initializer = tf.initializers.glorot_uniform()  # Xavier uniform initialization.
-		kernel_initializer = tf.initializers.orthogonal()
+		#kernel_initializer = tf.initializers.orthogonal()
 
 		#--------------------
 		# Preprocessing.
@@ -571,11 +571,29 @@ class MyRunner(object):
 			model_output, loss, accuracy = model.create_model(self._dataset.num_classes, is_training=True)
 
 			# Create a trainer.
-			optimizer = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-08)
+			#optimizer = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-08)
 			##optimizer = keras.optimizers.Adadelta(lr=1.0, rho=0.95, epsilon=None, decay=0.0)
 			#optimizer = tf.keras.optimizers.Adadelta(lr=0.001, rho=0.95, epsilon=1e-07)
-			#optimizer = tf.train.AdadeltaOptimizer(learning_rate=1.0, rho=0.95, epsilon=1e-08)
-			train_op = optimizer.minimize(loss)
+			optimizer = tf.train.AdadeltaOptimizer(learning_rate=1.0, rho=0.95, epsilon=1e-08)
+			if True:
+				train_op = optimizer.minimize(loss)
+			else:  # Gradient clipping.
+				max_gradient_norm = 5
+				global_step = None
+				var_list = None #tf.trainable_variables()
+				# Method 1.
+				gradients = optimizer.compute_gradients(loss, var_list=var_list)
+				gradients = list(map(lambda gv: (tf.clip_by_norm(gv[0], clip_norm=max_gradient_norm), gv[1]), gradients))
+				train_op = optimizer.apply_gradients(gradients, global_step=global_step)
+				"""
+				# Method 2.
+				#	REF [site] >> https://www.tensorflow.org/tutorials/seq2seq
+				if var_list is None:
+					var_list = tf.trainable_variables()
+				gradients = tf.gradients(loss, var_list)
+				gradients, _ = tf.clip_by_global_norm(gradients, clip_norm=max_gradient_norm)  # Clip gradients.
+				train_op = optimizer.apply_gradients(zip(gradients, var_list), global_step=global_step)
+				"""
 
 			# Create a saver.
 			saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
@@ -593,7 +611,7 @@ class MyRunner(object):
 				ckpt_filepath = ckpt.model_checkpoint_path if ckpt else None
 				#ckpt_filepath = tf.train.latest_checkpoint(checkpoint_dir_path)
 				if ckpt_filepath:
-					initial_epoch = int(ckpt_filepath.split('-')[1])
+					initial_epoch = int(ckpt_filepath.split('-')[1]) + 1
 					saver.restore(sess, ckpt_filepath)
 				else:
 					print('[SWL] Error: Failed to restore a model from {}.'.format(checkpoint_dir_path))
@@ -615,9 +633,9 @@ class MyRunner(object):
 			start_total_time = time.time()
 			train_steps_per_epoch = None if self._train_examples_per_epoch is None else math.ceil(self._train_examples_per_epoch / batch_size)
 			test_steps_per_epoch = None if self._test_examples_per_epoch is None else math.ceil(self._test_examples_per_epoch / batch_size)
-			final_epoch = num_epochs + initial_epoch
-			for epoch in range(initial_epoch + 1, final_epoch + 1):
-				print('Epoch {}/{}:'.format(epoch, final_epoch))
+			final_epoch = initial_epoch + num_epochs
+			for epoch in range(initial_epoch, final_epoch):
+				print('Epoch {}/{}:'.format(epoch, final_epoch - 1))
 
 				start_time = time.time()
 				train_loss, train_acc, num_examples = 0.0, 0.0, 0
@@ -722,7 +740,7 @@ class MyRunner(object):
 				#--------------------
 				print('[SWL] Info: Start saving a model...')
 				start_time = time.time()
-				saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model.ckpt'), global_step=epoch - 1)
+				saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model.ckpt'), global_step=epoch)
 				print('[SWL] Info: End saving a model to {}: {} secs.'.format(saved_model_path, time.time() - start_time))
 
 				sys.stdout.flush()

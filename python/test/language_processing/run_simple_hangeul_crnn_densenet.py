@@ -330,14 +330,14 @@ class MyModel(object):
 	def _create_model(self, inputs, num_classes):
 		# TODO [decide] >>
 		#kernel_initializer = None
-		#kernel_initializer = tf.initializers.he_normal()
+		kernel_initializer = tf.initializers.he_normal()
 		#kernel_initializer = tf.initializers.he_uniform()
 		#kernel_initializer = tf.initializers.truncated_normal(mean=0.0, stddev=1.0)
 		#kernel_initializer = tf.initializers.uniform_unit_scaling(factor=1.0)
 		#kernel_initializer = tf.initializers.variance_scaling(scale=1.0, mode='fan_in', distribution='truncated_normal')
 		#kernel_initializer = tf.initializers.glorot_normal()  # Xavier normal initialization.
 		#kernel_initializer = tf.initializers.glorot_uniform()  # Xavier uniform initialization.
-		kernel_initializer = tf.initializers.orthogonal()
+		#kernel_initializer = tf.initializers.orthogonal()
 
 		#--------------------
 		# Preprocessing.
@@ -736,7 +736,7 @@ class MyRunner(object):
 				ckpt_filepath = ckpt.model_checkpoint_path if ckpt else None
 				#ckpt_filepath = tf.train.latest_checkpoint(checkpoint_dir_path)
 				if ckpt_filepath:
-					initial_epoch = int(ckpt_filepath.split('-')[1])
+					initial_epoch = int(ckpt_filepath.split('-')[1]) + 1
 					saver.restore(sess, ckpt_filepath)
 				else:
 					print('[SWL] Error: Failed to restore a model from {}.'.format(checkpoint_dir_path))
@@ -758,9 +758,9 @@ class MyRunner(object):
 			start_total_time = time.time()
 			train_steps_per_epoch = None if self._train_examples_per_epoch is None else math.ceil(self._train_examples_per_epoch / batch_size)
 			test_steps_per_epoch = None if self._test_examples_per_epoch is None else math.ceil(self._test_examples_per_epoch / batch_size)
-			final_epoch = num_epochs + initial_epoch
-			for epoch in range(initial_epoch + 1, final_epoch + 1):
-				print('Epoch {}/{}:'.format(epoch, final_epoch))
+			final_epoch = initial_epoch + num_epochs
+			for epoch in range(initial_epoch, final_epoch):
+				print('Epoch {}/{}:'.format(epoch, final_epoch - 1))
 
 				start_time = time.time()
 				train_loss, train_acc, num_examples = 0.0, 0.0, 0
@@ -865,7 +865,7 @@ class MyRunner(object):
 				#--------------------
 				print('[SWL] Info: Start saving a model...')
 				start_time = time.time()
-				saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model.ckpt'), global_step=epoch - 1)
+				saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model.ckpt'), global_step=epoch)
 				print('[SWL] Info: End saving a model to {}: {} secs.'.format(saved_model_path, time.time() - start_time))
 
 				sys.stdout.flush()

@@ -181,7 +181,7 @@ class MultiHeadedAttention(nn.Module):
 		x, self.attn = attention(query, key, value, mask=mask, dropout=self.dropout)
 
 		# 3) 'Concat' using a view and apply a final linear.
-		x = x.transpose(1, 2).contiguous() .view(nbatches, -1, self.h * self.d_k)
+		x = x.transpose(1, 2).contiguous().view(nbatches, -1, self.h * self.d_k)
 		return self.linears[-1](x)
 
 class PositionwiseFeedForward(nn.Module):
@@ -357,17 +357,25 @@ def subsequent_mask_test():
 	plt.show()
 
 def positional_encoding_test():
-	d_model = 20
+	d_model, num_terms = 20, 50
+	#d_model, num_terms = 128, 50
 	pe = PositionalEncoding(d_model, dropout=0)
 
-	x = Variable(torch.zeros(1, 100, d_model))
+	x = Variable(torch.zeros(1, num_terms, d_model))
 	y = pe.forward(x)
 	print('x =', x.shape)
 	print('y =', y.shape)
 
 	plt.figure(figsize=(15, 5))
-	plt.plot(np.arange(100), y[0, :, 4:8].data.numpy())
+	plt.plot(np.arange(num_terms), y[0, :, 4:8].data.numpy())
 	plt.legend(['dim %d' % p for p in [4, 5, 6, 7]])
+	plt.show()
+
+	plt.pcolormesh(y[0].data.numpy(), cmap='RdBu')
+	plt.xlabel('Depth')
+	plt.xlim((0, d_model))
+	plt.ylabel('Position')
+	plt.colorbar()
 	plt.show()
 
 def make_model_test():
