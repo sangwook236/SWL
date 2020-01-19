@@ -480,7 +480,8 @@ class MyRunner(object):
 			else:
 				print('[SWL] Warning: Invalid inference results.')
 
-	def visualize(self, checkpoint_dir_path, output_dir_path):
+	# REF [site] >> https://github.com/InFoCusp/tf_cnnvis
+	def visualize_using_tf_cnnvis(self, checkpoint_dir_path, output_dir_path):
 		# NOTE [info] >> Cannot assign a device for operation save/SaveV2: Could not satisfy explicit device specification '/device:GPU:1' because no supported kernel for GPU devices is available.
 		#	Errors occur in tf_cnnvis library when a GPU is assigned.
 		#device_name = '/device:GPU:0'
@@ -491,9 +492,9 @@ class MyRunner(object):
 			with tf.device(device_name):
 				# Create a model.
 				model = MyModel(*self._dataset.shape, self._dataset.num_classes)
-				input_ph, output_ph = model.placeholders
+				input_ph, _ = model.placeholders
 
-				model_output = model.create_model(input_ph)
+				model.create_model(input_ph)
 
 				# Create a saver.
 				saver = tf.train.Saver()
@@ -516,16 +517,188 @@ class MyRunner(object):
 			inf_images, _ = self._dataset.test_data
 			feed_dict = {input_ph: inf_images}
 			input_tensor = None
+			#input_tensor = input_ph
 
 			print('[SWL] Info: Start visualizing activation...')
 			start_time = time.time()
-			is_succeeded = swl_ml_util.visualize_activation(sess, input_ph, feed_dict, output_dir_path)
+			is_succeeded = swl_ml_util.visualize_activation(sess, input_tensor, feed_dict, output_dir_path)
 			print('[SWL] Info: End visualizing activation: {} secs, succeeded? = {}.'.format(time.time() - start_time, 'yes' if is_succeeded else 'no'))
 
 			print('[SWL] Info: Start visualizing by deconvolution...')
 			start_time = time.time()
-			is_succeeded = swl_ml_util.visualize_by_deconvolution(sess, input_ph, feed_dict, output_dir_path)
+			is_succeeded = swl_ml_util.visualize_by_deconvolution(sess, input_tensor, feed_dict, output_dir_path)
 			print('[SWL] Info: End visualizing by deconvolution: {} secs, succeeded? = {}.'.format(time.time() - start_time, 'yes' if is_succeeded else 'no'))
+
+	# REF [site] >> https://github.com/PAIR-code/saliency
+	#	https://github.com/PAIR-code/saliency/blob/master/Examples.ipynb
+	def visualize_using_saliency(self, checkpoint_dir_path, output_dir_path):
+		import saliency
+		from matplotlib import pylab as plt
+
+		graph = tf.Graph()
+		with graph.as_default():
+			# Create a model.
+			model = MyModel(*self._dataset.shape, self._dataset.num_classes)
+			input_ph, _ = model.placeholders
+
+			model_output = model.create_model(input_ph)
+
+			# Create a saver.
+			saver = tf.train.Saver()
+
+		with tf.Session(graph=graph) as sess:
+			# Load a model.
+			print('[SWL] Info: Start loading a model...')
+			start_time = time.time()
+			ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
+			ckpt_filepath = ckpt.model_checkpoint_path if ckpt else None
+			#ckpt_filepath = tf.train.latest_checkpoint(checkpoint_dir_path)
+			if ckpt_filepath:
+				saver.restore(sess, ckpt_filepath)
+			else:
+				print('[SWL] Error: Failed to load a model from {}.'.format(checkpoint_dir_path))
+				return
+			print('[SWL] Info: End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
+
+			#--------------------
+			inf_images, _ = self._dataset.test_data
+			img = inf_images[0]
+			minval, maxval = np.min(img), np.max(img)
+			img_scaled = np.squeeze((img - minval) / (maxval - minval), axis=-1)
+
+			# Construct the scalar neuron tensor.
+			logits = model_output
+			neuron_selector = tf.placeholder(tf.int32)
+			y = logits[0][neuron_selector]
+
+			# Construct tensor for predictions.
+			prediction = tf.argmax(logits, 1)
+
+			# Make a prediction. 
+			prediction_class = sess.run(prediction, feed_dict={input_ph: [img]})[0]
+
+			print('[SWL] Info: Start visualizing saliency...')
+			start_time = time.time()
+			saliency_obj = saliency.Occlusion(sess.graph, sess, y, input_ph)
+
+			# NOTE [info] >> An error exists in GetMask() of ${Saliency_HOME}/saliency/occlusion.py.
+			#	<before>
+			#		occlusion_window = np.array([size, size, x_value.shape[2]])
+			#		occlusion_window.fill(value)
+			#	<after>
+			#		occlusion_window = np.full([size, size, x_value.shape[2]], value)
+			mask_3d = saliency_obj.GetMask(img, feed_dict={neuron_selector: prediction_class})
+
+			# Compute a 2D tensor for visualization.
+			mask_gray = saliency.VisualizeImageGrayscale(mask_3d)
+			mask_div = saliency.VisualizeImageDiverging(mask_3d)
+
+			plt.figure()
+			ax = plt.subplot(1, 3, 1)
+			ax.imshow(img_scaled, cmap=plt.cm.gray, vmin=0, vmax=1)
+			ax.axis('off')
+			ax.set_title('Input')
+			ax = plt.subplot(1, 3, 2)
+			ax.imshow(mask_gray, cmap=plt.cm.gray, vmin=0, vmax=1)
+			ax.axis('off')
+			ax.set_title('Occlusion Grayscale')
+			ax = plt.subplot(1, 3, 3)
+			ax.imshow(mask_div, cmap=plt.cm.gray, vmin=0, vmax=1)
+			ax.axis('off')
+			ax.set_title('Occlusion Diverging')
+			plt.show()
+
+			#--------------------
+			conv_layer = graph.get_tensor_by_name('conv2/conv/BiasAdd:0')
+			saliency_obj = saliency.GradCam(sess.graph, sess, y, input_ph, conv_layer)
+
+			mask_3d = saliency_obj.GetMask(img, feed_dict={neuron_selector: prediction_class})
+
+			# Compute a 2D tensor for visualization.
+			mask_gray = saliency.VisualizeImageGrayscale(mask_3d)
+			mask_div = saliency.VisualizeImageDiverging(mask_3d)
+
+			plt.figure()
+			ax = plt.subplot(1, 3, 1)
+			ax.imshow(img_scaled, cmap=plt.cm.gray, vmin=0, vmax=1)
+			ax.axis('off')
+			ax.set_title('Input')
+			ax = plt.subplot(1, 3, 2)
+			ax.imshow(mask_gray, cmap=plt.cm.gray, vmin=0, vmax=1)
+			ax.axis('off')
+			ax.set_title('Grad-CAM Grayscale')
+			ax = plt.subplot(1, 3, 3)
+			ax.imshow(mask_div, cmap=plt.cm.gray, vmin=0, vmax=1)
+			ax.axis('off')
+			ax.set_title('Grad-CAM Diverging')
+			plt.show()
+
+			#--------------------
+			#saliency_obj = saliency.GradientSaliency(sess.graph, sess, y, input_ph)
+			#saliency_obj = saliency.GuidedBackprop(sess.graph, sess, y, input_ph)
+			saliency_obj = saliency.IntegratedGradients(sess.graph, sess, y, input_ph)
+
+			vanilla_mask_3d = saliency_obj.GetMask(img, feed_dict={neuron_selector: prediction_class})
+			smoothgrad_mask_3d = saliency_obj.GetSmoothedMask(img, feed_dict={neuron_selector: prediction_class})
+
+			# Compute a 2D tensor for visualization.
+			vanilla_mask_gray = saliency.VisualizeImageGrayscale(vanilla_mask_3d)
+			smoothgrad_mask_gray = saliency.VisualizeImageGrayscale(smoothgrad_mask_3d)
+			vanilla_mask_div = saliency.VisualizeImageDiverging(vanilla_mask_3d)
+			smoothgrad_mask_div = saliency.VisualizeImageDiverging(smoothgrad_mask_3d)
+
+			plt.figure()
+			ax = plt.subplot(2, 3, 1)
+			ax.imshow(img_scaled, cmap=plt.cm.gray, vmin=0, vmax=1)
+			ax.axis('off')
+			ax.set_title('Input')
+			ax = plt.subplot(2, 3, 2)
+			ax.imshow(vanilla_mask_gray, cmap=plt.cm.gray, vmin=0, vmax=1)
+			ax.axis('off')
+			ax.set_title('Vanilla Grayscale')
+			ax = plt.subplot(2, 3, 3)
+			ax.imshow(smoothgrad_mask_gray, cmap=plt.cm.gray, vmin=0, vmax=1)
+			ax.axis('off')
+			ax.set_title('SmoothGrad Grayscale')
+			ax = plt.subplot(2, 3, 4)
+			ax.imshow(vanilla_mask_div, cmap=plt.cm.gray, vmin=0, vmax=1)
+			ax.axis('off')
+			ax.set_title('Vanilla Diverging')
+			ax = plt.subplot(2, 3, 5)
+			ax.imshow(smoothgrad_mask_div, cmap=plt.cm.gray, vmin=0, vmax=1)
+			ax.axis('off')
+			ax.set_title('SmoothGrad Diverging')
+			plt.show()
+
+			#--------------------
+			# Create XRAIParameters and set the algorithm to fast mode which will produce an approximate result.
+			xrai_obj = saliency.XRAI(sess.graph, sess, y, input_ph)
+
+			xrai_attributions = xrai_obj.GetMask(img, feed_dict={neuron_selector: prediction_class})
+			#xrai_params = saliency.XRAIParameters()
+			#xrai_params.algorithm = 'fast'
+			#xrai_attributions_fast = xrai_obj.GetMask(img, feed_dict={neuron_selector: prediction_class}, extra_parameters=xrai_params)
+
+			# Show most salient 30% of the image.
+			mask = xrai_attributions > np.percentile(xrai_attributions, 70)
+			img_masked = img_scaled.copy()
+			img_masked[~mask] = 0
+
+			plt.figure()
+			ax = plt.subplot(1, 3, 1)
+			ax.imshow(img_scaled, cmap=plt.cm.gray, vmin=0, vmax=1)
+			ax.axis('off')
+			ax.set_title('Input')
+			ax = plt.subplot(1, 3, 2)
+			ax.imshow(xrai_attributions, cmap=plt.cm.inferno)
+			ax.axis('off')
+			ax.set_title('XRAI Attributions')
+			ax = plt.subplot(1, 3, 3)
+			ax.imshow(img_masked, cmap=plt.cm.gray)
+			ax.axis('off')
+			ax.set_title('Masked Input')
+			plt.show()
+			print('[SWL] Info: End visualizing saliency: {} secs.'.format(time.time() - start_time))
 
 #--------------------------------------------------------------------
 
@@ -704,7 +877,8 @@ def main():
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
-		runner.visualize(checkpoint_dir_path, output_dir_path)
+		#runner.visualize_using_tf_cnnvis(checkpoint_dir_path, output_dir_path)
+		runner.visualize_using_saliency(checkpoint_dir_path, output_dir_path)
 
 #--------------------------------------------------------------------
 
