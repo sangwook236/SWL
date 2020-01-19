@@ -244,7 +244,7 @@ class MyRunner(object):
 				ckpt_filepath = ckpt.model_checkpoint_path if ckpt else None
 				#ckpt_filepath = tf.train.latest_checkpoint(checkpoint_dir_path)
 				if ckpt_filepath:
-					initial_epoch = int(ckpt_filepath.split('-')[1])
+					initial_epoch = int(ckpt_filepath.split('-')[1]) + 1
 					saver.restore(session, ckpt_filepath)
 				else:
 					print('[SWL] Info: Failed to restore a model from {}.'.format(checkpoint_dir_path))
@@ -264,9 +264,9 @@ class MyRunner(object):
 			else:
 				print('[SWL] Info: Start training...')
 			start_total_time = time.time()
-			final_epoch = num_epochs + initial_epoch
-			for epoch in range(initial_epoch + 1, final_epoch + 1):
-				print('Epoch {}/{}:'.format(epoch, final_epoch))
+			final_epoch = initial_epoch + num_epochs
+			for epoch in range(initial_epoch, final_epoch):
+				print('Epoch {}/{}:'.format(epoch, final_epoch - 1))
 
 				#--------------------
 				start_time = time.time()

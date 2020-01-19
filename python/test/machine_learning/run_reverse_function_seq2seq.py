@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 
 # REF [paper] >> "Describing Multimedia Content Using Attention-Based Encoder-Decoder Networks", ToM 2015.
 # REF [paper] >> "Neural Machine Translation by Jointly Learning to Align and Translate", arXiv 2016.

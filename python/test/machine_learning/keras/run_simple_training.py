@@ -622,7 +622,7 @@ def main():
 #--------------------------------------------------------------------
 
 # Usage:
-#	python run_simple_training.py --train --test --infer --epoch 30
+#	python run_simple_training.py --train --test --infer --epoch 30 --gpu 0
 
 if '__main__' == __name__:
 	main()

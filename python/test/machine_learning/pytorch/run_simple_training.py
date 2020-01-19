@@ -120,8 +120,10 @@ class MyRunner(object):
 		else:
 			print('[SWL] Info: Start training...')
 		start_total_time = time.time()
-		for epoch in range(1, num_epochs + 1):
-			print('Epoch {}/{}'.format(epoch, num_epochs))
+		initial_epoch = 0
+		final_epoch = initial_epoch + num_epochs
+		for epoch in range(initial_epoch, final_epoch):
+			print('Epoch {}/{}'.format(epoch, final_epoch - 1))
 
 			start_time = time.time()
 			running_loss = 0.0
@@ -434,7 +436,7 @@ def main():
 #--------------------------------------------------------------------
 
 # Usage:
-#	python run_simple_training.py --train --test --infer --epoch 30
+#	python run_simple_training.py --train --test --infer --epoch 30 --gpu 0
 
 if '__main__' == __name__:
 	main()

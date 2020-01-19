@@ -179,12 +179,14 @@ class MyModel(object):
 	def get_loss(self, y, t):
 		with tf.name_scope('loss'):
 			loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=t, logits=y))
+			tf.summary.scalar('loss', loss)
 			return loss
 
 	def get_accuracy(self, y, t):
 		with tf.name_scope('accuracy'):
 			correct_prediction = tf.equal(tf.argmax(y, axis=-1), tf.argmax(t, axis=-1))
 			accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+			tf.summary.scalar('accuracy', accuracy)
 			return accuracy
 
 #--------------------------------------------------------------------
@@ -196,7 +198,7 @@ class MyRunner(object):
 		num_classes = 10
 		self._dataset = MyDataset(image_height, image_width, image_channel, num_classes)
 
-	def train(self, checkpoint_dir_path, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
+	def train(self, checkpoint_dir_path, output_dir_path, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
@@ -234,13 +236,39 @@ class MyRunner(object):
 				train_op = optimizer.apply_gradients(zip(gradients, var_list), global_step=global_step)
 				"""
 
+			if False:
+				# Visualize gradients.
+				with tf.name_scope('gradient'):
+					gradient_norms = list(map(lambda grad: tf.norm(grad), tf.gradients(loss, tf.trainable_variables())))
+					tf.summary.histogram('gradient', gradient_norms)
+
+			if False:
+				# Visualize filters.
+				with tf.name_scope('filter'):
+					kernel_name = 'conv1/conv/kernel'  # Shape = 5 x 5 x 1 x 32.
+					for var in tf.trainable_variables():
+						if kernel_name in var.name:
+							tensor = graph.get_tensor_by_name(var.name)
+							tensor = tf.transpose(tensor, perm=[3, 0, 1, 2])
+							tf.summary.image(kernel_name, tensor, max_outputs=32)
+
 			# Create a saver.
 			saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
 			initializer = tf.global_variables_initializer()
 
+			# Merge all the summaries.
+			merged_summary = tf.summary.merge_all()
+
+		train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
+		val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
+
 		with tf.Session(graph=graph) as sess:
 			sess.run(initializer)
+
+			# Create writers to write all the summaries out to a directory.
+			train_summary_writer = tf.summary.FileWriter(train_summary_dir_path, sess.graph)
+			val_summary_writer = tf.summary.FileWriter(val_summary_dir_path)
 
 			if is_training_resumed:
 				# Restore a model.
@@ -250,7 +278,7 @@ class MyRunner(object):
 				ckpt_filepath = ckpt.model_checkpoint_path if ckpt else None
 				#ckpt_filepath = tf.train.latest_checkpoint(checkpoint_dir_path)
 				if ckpt_filepath:
-					initial_epoch = int(ckpt_filepath.split('-')[1])
+					initial_epoch = int(ckpt_filepath.split('-')[1]) + 1
 					saver.restore(session, ckpt_filepath)
 				else:
 					print('[SWL] Error: Failed to restore a model from {}.'.format(checkpoint_dir_path))
@@ -270,19 +298,20 @@ class MyRunner(object):
 			else:
 				print('[SWL] Info: Start training...')
 			start_total_time = time.time()
-			final_epoch = num_epochs + initial_epoch
-			for epoch in range(initial_epoch + 1, final_epoch + 1):
-				print('Epoch {}/{}:'.format(epoch, final_epoch))
+			final_epoch = initial_epoch + num_epochs
+			for epoch in range(initial_epoch, final_epoch):
+				print('Epoch {}/{}:'.format(epoch, final_epoch - 1))
 
 				#--------------------
 				start_time = time.time()
 				train_loss, train_acc, num_examples = 0.0, 0.0, 0
 				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_train_batch_generator(batch_size, shuffle=True)):
-					_, batch_loss, batch_accuracy = sess.run([train_op, loss, accuracy], feed_dict={input_ph: batch_data[0], output_ph: batch_data[1]})
+					_, batch_loss, batch_accuracy, summary = sess.run([train_op, loss, accuracy, merged_summary], feed_dict={input_ph: batch_data[0], output_ph: batch_data[1]})
 					train_loss += batch_loss * num_batch_examples
 					train_acc += batch_accuracy * num_batch_examples
 					num_examples += num_batch_examples
 
+					train_summary_writer.add_summary(summary, epoch * batch_size + batch_step)
 					if (batch_step + 1) % 100 == 0:
 						print('\tStep {}: {} secs.'.format(batch_step + 1, time.time() - start_time))
 				train_loss /= num_examples
@@ -295,11 +324,13 @@ class MyRunner(object):
 				#--------------------
 				start_time = time.time()
 				val_loss, val_acc, num_examples = 0.0, 0.0, 0
-				for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, shuffle=False):
-					batch_loss, batch_accuracy = sess.run([loss, accuracy], feed_dict={input_ph: batch_data[0], output_ph: batch_data[1]})
+				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_test_batch_generator(batch_size, shuffle=False)):
+					batch_loss, batch_accuracy, summary = sess.run([loss, accuracy, merged_summary], feed_dict={input_ph: batch_data[0], output_ph: batch_data[1]})
 					val_loss += batch_loss * num_batch_examples
 					val_acc += batch_accuracy * num_batch_examples
 					num_examples += num_batch_examples
+
+					val_summary_writer.add_summary(summary, epoch * batch_size + batch_step)
 				val_loss /= num_examples
 				val_acc /= num_examples
 				print('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
@@ -449,6 +480,53 @@ class MyRunner(object):
 			else:
 				print('[SWL] Warning: Invalid inference results.')
 
+	def visualize(self, checkpoint_dir_path, output_dir_path):
+		# NOTE [info] >> Cannot assign a device for operation save/SaveV2: Could not satisfy explicit device specification '/device:GPU:1' because no supported kernel for GPU devices is available.
+		#	Errors occur in tf_cnnvis library when a GPU is assigned.
+		#device_name = '/device:GPU:0'
+		device_name = '/device:CPU:0'
+
+		graph = tf.Graph()
+		with graph.as_default():
+			with tf.device(device_name):
+				# Create a model.
+				model = MyModel(*self._dataset.shape, self._dataset.num_classes)
+				input_ph, output_ph = model.placeholders
+
+				model_output = model.create_model(input_ph)
+
+				# Create a saver.
+				saver = tf.train.Saver()
+
+		with tf.Session(graph=graph) as sess:
+			# Load a model.
+			print('[SWL] Info: Start loading a model...')
+			start_time = time.time()
+			ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
+			ckpt_filepath = ckpt.model_checkpoint_path if ckpt else None
+			#ckpt_filepath = tf.train.latest_checkpoint(checkpoint_dir_path)
+			if ckpt_filepath:
+				saver.restore(sess, ckpt_filepath)
+			else:
+				print('[SWL] Error: Failed to load a model from {}.'.format(checkpoint_dir_path))
+				return
+			print('[SWL] Info: End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
+
+			#--------------------
+			inf_images, _ = self._dataset.test_data
+			feed_dict = {input_ph: inf_images}
+			input_tensor = None
+
+			print('[SWL] Info: Start visualizing activation...')
+			start_time = time.time()
+			is_succeeded = swl_ml_util.visualize_activation(sess, input_ph, feed_dict, output_dir_path)
+			print('[SWL] Info: End visualizing activation: {} secs, succeeded? = {}.'.format(time.time() - start_time, 'yes' if is_succeeded else 'no'))
+
+			print('[SWL] Info: Start visualizing by deconvolution...')
+			start_time = time.time()
+			is_succeeded = swl_ml_util.visualize_by_deconvolution(sess, input_ph, feed_dict, output_dir_path)
+			print('[SWL] Info: End visualizing by deconvolution: {} secs, succeeded? = {}.'.format(time.time() - start_time, 'yes' if is_succeeded else 'no'))
+
 #--------------------------------------------------------------------
 
 def parse_command_line_options():
@@ -468,6 +546,11 @@ def parse_command_line_options():
 		'--infer',
 		action='store_true',
 		help='Specify whether to infer by a trained model'
+	)
+	parser.add_argument(
+		'--visualize',
+		action='store_true',
+		help='Specify whether to visualize CNN results'
 	)
 	parser.add_argument(
 		'-r',
@@ -557,8 +640,8 @@ def set_logger(log_level):
 def main():
 	args = parse_command_line_options()
 
-	if not args.train and not args.test:
-		print('[SWL] Error: At least one of command line options "--train", "--test", and "--infer" has to be specified.')
+	if not args.train and not args.test and not args.infer and not args.visualize:
+		print('[SWL] Error: At least one of command line options "--train", "--test", "--infer", and "--visualize" has to be specified.')
 		return
 
 	if args.gpu:
@@ -590,8 +673,10 @@ def main():
 	if args.train:
 		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
 			os.makedirs(checkpoint_dir_path, exist_ok=True)
+		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
+			os.makedirs(output_dir_path, exist_ok=True)
 
-		history = runner.train(checkpoint_dir_path, num_epochs, batch_size, initial_epoch, is_training_resumed)
+		history = runner.train(checkpoint_dir_path, output_dir_path, num_epochs, batch_size, initial_epoch, is_training_resumed)
 
 		#print('History =', history)
 		swl_ml_util.display_train_history(history)
@@ -612,10 +697,19 @@ def main():
 
 		runner.infer(checkpoint_dir_path)
 
+	if args.visualize:
+		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
+			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
+			return
+		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
+			os.makedirs(output_dir_path, exist_ok=True)
+
+		runner.visualize(checkpoint_dir_path, output_dir_path)
+
 #--------------------------------------------------------------------
 
 # Usage:
-#	python run_simple_training.py --train --test --infer --epoch 30
+#	python run_simple_training.py --train --test --infer --visualize --epoch 30 --gpu 0
 
 if '__main__' == __name__:
 	main()

@@ -68,7 +68,7 @@ class SimpleCrnnGradientClippingTrainer(GradientClippingNeuralNetTrainer):
 			#learning_rate = tf.train.linear_cosine_decay(init_learning_rate, global_step, decay_steps, num_periods=0.5, alpha=0.0, beta=0.001)
 			#learning_rate = tf.train.noisy_linear_cosine_decay(init_learning_rate, global_step, decay_steps, initial_variance=1.0, variance_decay=0.55, num_periods=0.5, alpha=0.0, beta=0.001)
 			#learning_rate = tf.train.polynomial_decay(init_learning_rate, global_step, decay_steps, end_learning_rate=0.0001, power=1.0, cycle=False)
-			#tf.summary.scalar('learning_rate', learning_rate)
+			tf.summary.scalar('learning_rate', learning_rate)
 		with tf.name_scope('optimizer'):
 			#optimizer = tf.train.AdadeltaOptimizer(learning_rate, rho=0.95, epsilon=1e-8)
 			#optimizer = tf.train.AdagradDAOptimizer(learning_rate, global_step=?, initial_gradient_squared_accumulator_value=0.1, l1_regularization_strength=0.0, l2_regularization_strength=0.0)
