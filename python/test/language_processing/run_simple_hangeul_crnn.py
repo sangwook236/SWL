@@ -796,9 +796,10 @@ class MyRunner(object):
 				global_step = None
 				var_list = None #tf.trainable_variables()
 				# Method 1.
-				gradients = optimizer.compute_gradients(loss, var_list=var_list)
-				gradients = list(map(lambda gv: (tf.clip_by_norm(gv[0], clip_norm=max_gradient_norm), gv[1]), gradients))
-				train_op = optimizer.apply_gradients(gradients, global_step=global_step)
+				grads_and_vars = optimizer.compute_gradients(loss, var_list=var_list)
+				grads_and_vars = list(map(lambda gv: (tf.clip_by_norm(gv[0], clip_norm=max_gradient_norm), gv[1]), grads_and_vars))
+				#gradients = list(map(lambda gv: gv[0], grads_and_vars))
+				train_op = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
 				"""
 				# Method 2.
 				#	REF [site] >> https://www.tensorflow.org/tutorials/seq2seq

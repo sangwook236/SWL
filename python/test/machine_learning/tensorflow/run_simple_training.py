@@ -223,9 +223,10 @@ class MyRunner(object):
 				global_step = None
 				var_list = None #tf.trainable_variables()
 				# Method 1.
-				gradients = optimizer.compute_gradients(loss, var_list=var_list)
-				gradients = list(map(lambda gv: (tf.clip_by_norm(gv[0], clip_norm=max_gradient_norm), gv[1]), gradients))
-				train_op = optimizer.apply_gradients(gradients, global_step=global_step)
+				grads_and_vars = optimizer.compute_gradients(loss, var_list=var_list)
+				grads_and_vars = list(map(lambda gv: (tf.clip_by_norm(gv[0], clip_norm=max_gradient_norm), gv[1]), grads_and_vars))
+				#gradients = list(map(lambda gv: gv[0], grads_and_vars))
+				train_op = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
 				"""
 				# Method 2.
 				#	REF [site] >> https://www.tensorflow.org/tutorials/seq2seq
@@ -529,8 +530,7 @@ class MyRunner(object):
 			is_succeeded = swl_ml_util.visualize_by_deconvolution(sess, input_tensor, feed_dict, output_dir_path)
 			print('[SWL] Info: End visualizing by deconvolution: {} secs, succeeded? = {}.'.format(time.time() - start_time, 'yes' if is_succeeded else 'no'))
 
-	# REF [site] >> https://github.com/PAIR-code/saliency
-	#	https://github.com/PAIR-code/saliency/blob/master/Examples.ipynb
+	# REF [file] >> ${SWDT_PYTHON_HOME}/rnd/test/machine_learning/saliency_test.py
 	def visualize_using_saliency(self, checkpoint_dir_path, output_dir_path):
 		import saliency
 		from matplotlib import pylab as plt
@@ -559,79 +559,6 @@ class MyRunner(object):
 				print('[SWL] Error: Failed to load a model from {}.'.format(checkpoint_dir_path))
 				return
 			print('[SWL] Info: End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
-
-			#--------------------
-			inf_images, _ = self._dataset.test_data
-			img = inf_images[0]
-			minval, maxval = np.min(img), np.max(img)
-			img_scaled = np.squeeze((img - minval) / (maxval - minval), axis=-1)
-
-			# Construct the scalar neuron tensor.
-			logits = model_output
-			neuron_selector = tf.placeholder(tf.int32)
-			y = logits[0][neuron_selector]
-
-			# Construct tensor for predictions.
-			prediction = tf.argmax(logits, 1)
-
-			# Make a prediction. 
-			prediction_class = sess.run(prediction, feed_dict={input_ph: [img]})[0]
-
-			print('[SWL] Info: Start visualizing saliency...')
-			start_time = time.time()
-			saliency_obj = saliency.Occlusion(sess.graph, sess, y, input_ph)
-
-			# NOTE [info] >> An error exists in GetMask() of ${Saliency_HOME}/saliency/occlusion.py.
-			#	<before>
-			#		occlusion_window = np.array([size, size, x_value.shape[2]])
-			#		occlusion_window.fill(value)
-			#	<after>
-			#		occlusion_window = np.full([size, size, x_value.shape[2]], value)
-			mask_3d = saliency_obj.GetMask(img, feed_dict={neuron_selector: prediction_class})
-
-			# Compute a 2D tensor for visualization.
-			mask_gray = saliency.VisualizeImageGrayscale(mask_3d)
-			mask_div = saliency.VisualizeImageDiverging(mask_3d)
-
-			plt.figure()
-			ax = plt.subplot(1, 3, 1)
-			ax.imshow(img_scaled, cmap=plt.cm.gray, vmin=0, vmax=1)
-			ax.axis('off')
-			ax.set_title('Input')
-			ax = plt.subplot(1, 3, 2)
-			ax.imshow(mask_gray, cmap=plt.cm.gray, vmin=0, vmax=1)
-			ax.axis('off')
-			ax.set_title('Occlusion Grayscale')
-			ax = plt.subplot(1, 3, 3)
-			ax.imshow(mask_div, cmap=plt.cm.gray, vmin=0, vmax=1)
-			ax.axis('off')
-			ax.set_title('Occlusion Diverging')
-			plt.show()
-
-			#--------------------
-			conv_layer = graph.get_tensor_by_name('conv2/conv/BiasAdd:0')
-			saliency_obj = saliency.GradCam(sess.graph, sess, y, input_ph, conv_layer)
-
-			mask_3d = saliency_obj.GetMask(img, feed_dict={neuron_selector: prediction_class})
-
-			# Compute a 2D tensor for visualization.
-			mask_gray = saliency.VisualizeImageGrayscale(mask_3d)
-			mask_div = saliency.VisualizeImageDiverging(mask_3d)
-
-			plt.figure()
-			ax = plt.subplot(1, 3, 1)
-			ax.imshow(img_scaled, cmap=plt.cm.gray, vmin=0, vmax=1)
-			ax.axis('off')
-			ax.set_title('Input')
-			ax = plt.subplot(1, 3, 2)
-			ax.imshow(mask_gray, cmap=plt.cm.gray, vmin=0, vmax=1)
-			ax.axis('off')
-			ax.set_title('Grad-CAM Grayscale')
-			ax = plt.subplot(1, 3, 3)
-			ax.imshow(mask_div, cmap=plt.cm.gray, vmin=0, vmax=1)
-			ax.axis('off')
-			ax.set_title('Grad-CAM Diverging')
-			plt.show()
 
 			#--------------------
 			#saliency_obj = saliency.GradientSaliency(sess.graph, sess, y, input_ph)
@@ -671,10 +598,10 @@ class MyRunner(object):
 			plt.show()
 
 			#--------------------
-			# Create XRAIParameters and set the algorithm to fast mode which will produce an approximate result.
 			xrai_obj = saliency.XRAI(sess.graph, sess, y, input_ph)
 
 			xrai_attributions = xrai_obj.GetMask(img, feed_dict={neuron_selector: prediction_class})
+			# Create XRAIParameters and set the algorithm to fast mode which will produce an approximate result.
 			#xrai_params = saliency.XRAIParameters()
 			#xrai_params.algorithm = 'fast'
 			#xrai_attributions_fast = xrai_obj.GetMask(img, feed_dict={neuron_selector: prediction_class}, extra_parameters=xrai_params)
