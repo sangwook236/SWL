@@ -352,7 +352,27 @@ class MyRunner(object):
 			learning_rate = 1.0e-4
 			optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-08)
 			#optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate, decay=0.9, momentum=0.9, epsilon=1e-10)
-			train_op = optimizer.minimize(loss)
+			global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
+			#global_step = None
+			if True:
+				train_op = optimizer.minimize(loss, global_step=global_step)
+			else:  # Gradient clipping.
+				max_gradient_norm = 5
+				var_list = None #tf.trainable_variables()
+				# Method 1.
+				grads_and_vars = optimizer.compute_gradients(loss, var_list=var_list)
+				grads_and_vars = list(map(lambda gv: (tf.clip_by_norm(gv[0], clip_norm=max_gradient_norm), gv[1]), grads_and_vars))
+				#gradients = list(map(lambda gv: gv[0], grads_and_vars))
+				train_op = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
+				"""
+				# Method 2.
+				#	REF [site] >> https://www.tensorflow.org/tutorials/seq2seq
+				if var_list is None:
+					var_list = tf.trainable_variables()
+				gradients = tf.gradients(loss, var_list)
+				gradients, _ = tf.clip_by_global_norm(gradients, clip_norm=max_gradient_norm)  # Clip gradients.
+				train_op = optimizer.apply_gradients(zip(gradients, var_list), global_step=global_step)
+				"""
 
 			# Create a saver.
 			saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
@@ -393,8 +413,10 @@ class MyRunner(object):
 			train_steps_per_epoch = None if self._train_examples_per_epoch is None else math.ceil(self._train_examples_per_epoch / batch_size)
 			test_steps_per_epoch = None if self._test_examples_per_epoch is None else math.ceil(self._test_examples_per_epoch / batch_size)
 			final_epoch = initial_epoch + num_epochs
+			best_performance_measure = None
 			for epoch in range(initial_epoch, final_epoch):
 				print('Epoch {}/{}:'.format(epoch, final_epoch - 1))
+				is_best_model = False
 
 				start_time = time.time()
 				train_loss, train_acc, num_examples = 0.0, 0.0, 0
@@ -459,6 +481,10 @@ class MyRunner(object):
 
 					history['val_loss'].append(val_loss)
 					history['val_acc'].append(val_acc)
+
+					if best_performance_measure is None or val_acc > best_performance_measure:
+						best_performance_measure = val_acc
+						is_best_model = True
 				else:
 					start_time = time.time()
 					val_loss, val_acc, num_examples = 0.0, None, 0
@@ -477,11 +503,16 @@ class MyRunner(object):
 					history['val_loss'].append(val_loss)
 					#history['val_acc'].append(val_acc)
 
+					if best_performance_measure is None or val_loss < best_performance_measure:
+						best_performance_measure = val_loss
+						is_best_model = True
+
 				#--------------------
-				print('[SWL] Info: Start saving a model...')
-				start_time = time.time()
-				saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model.ckpt'), global_step=epoch)
-				print('[SWL] Info: End saving a model to {}: {} secs.'.format(saved_model_path, time.time() - start_time))
+				if is_best_model:
+					print('[SWL] Info: Start saving a model...')
+					start_time = time.time()
+					saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model_ckpt'), global_step=epoch)
+					print('[SWL] Info: End saving a model to {}: {} secs.'.format(saved_model_path, time.time() - start_time))
 
 				sys.stdout.flush()
 				time.sleep(0)

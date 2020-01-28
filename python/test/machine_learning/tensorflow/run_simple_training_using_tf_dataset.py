@@ -208,11 +208,12 @@ class MyRunner(object):
 			#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
 			optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
 			#optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate, decay=0.9, momentum=0.9, epsilon=1e-10)
+			global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
+			#global_step = None
 			if True:
-				train_op = optimizer.minimize(loss)
+				train_op = optimizer.minimize(loss, global_step=global_step)
 			else:  # Gradient clipping.
 				max_gradient_norm = 5
-				global_step = None
 				var_list = None #tf.trainable_variables()
 				# Method 1.
 				grads_and_vars = optimizer.compute_gradients(loss, var_list=var_list)
@@ -266,8 +267,10 @@ class MyRunner(object):
 				print('[SWL] Info: Start training...')
 			start_total_time = time.time()
 			final_epoch = initial_epoch + num_epochs
+			best_performance_measure = 0
 			for epoch in range(initial_epoch, final_epoch):
 				print('Epoch {}/{}:'.format(epoch, final_epoch - 1))
+				is_best_model = False
 
 				#--------------------
 				start_time = time.time()
@@ -319,15 +322,20 @@ class MyRunner(object):
 				history['val_loss'].append(val_loss)
 				history['val_acc'].append(val_acc)
 
+				if val_acc > best_performance_measure:
+					best_performance_measure = val_acc
+					is_best_model = True
+
 				sys.stdout.flush()
 				time.sleep(0)
 			print('[SWL] Info: End training: {} secs.'.format(time.time() - start_total_time))
 
 			#--------------------
-			print('[SWL] Info: Start saving a model...')
-			start_time = time.time()
-			saved_model_path = saver.save(sess, checkpoint_dir_path + '/model.ckpt')
-			print('[SWL] Info: End saving a model to {}: {} secs.'.format(saved_model_path, time.time() - start_time))
+			if is_best_model:
+				print('[SWL] Info: Start saving a model...')
+				start_time = time.time()
+				saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model.ckpt'), global_step=epoch)
+				print('[SWL] Info: End saving a model to {}: {} secs.'.format(saved_model_path, time.time() - start_time))
 
 			return history
 
