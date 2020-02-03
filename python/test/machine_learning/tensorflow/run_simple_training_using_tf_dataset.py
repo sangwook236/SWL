@@ -270,7 +270,6 @@ class MyRunner(object):
 			best_performance_measure = 0
 			for epoch in range(initial_epoch, final_epoch):
 				print('Epoch {}/{}:'.format(epoch, final_epoch - 1))
-				is_best_model = False
 
 				#--------------------
 				start_time = time.time()
@@ -323,19 +322,15 @@ class MyRunner(object):
 				history['val_acc'].append(val_acc)
 
 				if val_acc > best_performance_measure:
+					print('[SWL] Info: Start saving a model...')
+					start_time = time.time()
+					saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model_ckpt'), global_step=epoch)
+					print('[SWL] Info: End saving a model to {}: {} secs.'.format(saved_model_path, time.time() - start_time))
 					best_performance_measure = val_acc
-					is_best_model = True
 
 				sys.stdout.flush()
 				time.sleep(0)
 			print('[SWL] Info: End training: {} secs.'.format(time.time() - start_total_time))
-
-			#--------------------
-			if is_best_model:
-				print('[SWL] Info: Start saving a model...')
-				start_time = time.time()
-				saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model.ckpt'), global_step=epoch)
-				print('[SWL] Info: End saving a model to {}: {} secs.'.format(saved_model_path, time.time() - start_time))
 
 			return history
 

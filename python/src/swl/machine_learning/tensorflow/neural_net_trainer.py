@@ -256,7 +256,7 @@ class NeuralNetTrainer(object):
 
 				# Save a model.
 				if saver is not None and model_save_dir_path is not None and val_acc >= best_val_acc:
-					saved_model_path = saver.save(session, model_save_dir_path + '/model.ckpt', global_step=self._global_step)
+					saved_model_path = saver.save(session, model_save_dir_path + '/model_ckpt', global_step=self._global_step)
 					best_val_acc = val_acc
 
 					print('[SWL] Info: Accuracy is improved and the model is saved at {}.'.format(saved_model_path))
@@ -429,7 +429,7 @@ class NeuralNetTrainer(object):
 
 					# Save a model.
 					if saver is not None and model_save_dir_path is not None and val_acc >= best_val_acc:
-						saved_model_path = saver.save(session, model_save_dir_path + '/model.ckpt', global_step=self._global_step)
+						saved_model_path = saver.save(session, model_save_dir_path + '/model_ckpt', global_step=self._global_step)
 						best_val_acc = val_acc
 
 						print('[SWL] Info: Accuracy is improved and the model is saved at {}.'.format(saved_model_path))
@@ -652,7 +652,7 @@ class NeuralNetTrainer(object):
 
 				# Save a model.
 				if saver is not None and model_save_dir_path is not None and val_acc >= best_val_acc:
-					saved_model_path = saver.save(session, model_save_dir_path + '/model.ckpt', global_step=self._global_step)
+					saved_model_path = saver.save(session, model_save_dir_path + '/model_ckpt', global_step=self._global_step)
 					best_val_acc = val_acc
 
 					print('[SWL] Info: Accuracy is improved and the model is saved at {}.'.format(saved_model_path))
@@ -838,7 +838,7 @@ class NeuralNetTrainer(object):
 
 				# Save a model.
 				if saver is not None and model_save_dir_path is not None and val_loss <= best_val_loss:
-					saved_model_path = saver.save(session, model_save_dir_path + '/model.ckpt', global_step=self._global_step)
+					saved_model_path = saver.save(session, model_save_dir_path + '/model_ckpt', global_step=self._global_step)
 					best_val_loss = val_loss
 
 					print('[SWL] Info: Loss is improved and the model is saved at {}.'.format(saved_model_path))

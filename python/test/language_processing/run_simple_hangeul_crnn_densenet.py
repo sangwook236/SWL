@@ -210,7 +210,7 @@ class MyFileBasedTextLineDataset(text_line_data.FileBasedTextLineDatasetBase):
 				raise IOError('Failed to load data from {}.'.format(data_dir_path))
 			images, labels_str, labels_int = self._load_data_from_image_and_label_files(image_filepaths, label_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
 			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
-			labels_str, labels_int = np.array(labels_str), np.array(labels_int)
+			images, labels_str, labels_int = np.array(images), np.array(labels_str), np.array(labels_int)
 
 			num_examples = len(images)
 			indices = np.arange(num_examples)

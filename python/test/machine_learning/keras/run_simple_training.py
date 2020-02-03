@@ -594,7 +594,7 @@ def main():
 	runner = MyRunner()
 
 	if args.train:
-		model_checkpoint_filepath = os.path.join(output_dir_path, 'model_weights.{epoch:02d}-{val_loss:.2f}.hdf5')
+		model_checkpoint_filepath = os.path.join(output_dir_path, 'model_weights.{epoch:04d}-{val_loss:.5f}.hdf5')
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 

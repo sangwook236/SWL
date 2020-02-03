@@ -85,7 +85,7 @@ def train_neural_net_by_batch_generator(session, nnTrainer, trainBatchGenerator,
 
 		# Save a model.
 		if saver is not None and checkpoint_dir_path is not None and val_acc >= best_val_acc:
-			saved_model_path = saver.save(session, checkpoint_dir_path + '/model.ckpt', global_step=nnTrainer.global_step)
+			saved_model_path = saver.save(session, checkpoint_dir_path + '/model_ckpt', global_step=nnTrainer.global_step)
 			best_val_acc = val_acc
 			print('[SWL] Info: Accuracy is improved and the model is saved at {}.'.format(saved_model_path))
 
@@ -215,7 +215,7 @@ def train_neural_net_by_file_batch_loader(session, nnTrainer, trainFileBatchLoad
 
 		# Save a model.
 		if saver is not None and checkpoint_dir_path is not None and val_acc >= best_val_acc:
-			saved_model_path = saver.save(session, checkpoint_dir_path + '/model.ckpt', global_step=nnTrainer.global_step)
+			saved_model_path = saver.save(session, checkpoint_dir_path + '/model_ckpt', global_step=nnTrainer.global_step)
 			best_val_acc = val_acc
 			print('[SWL] Info: Accuracy is improved and the model is saved at {}.'.format(saved_model_path))
 
@@ -326,7 +326,7 @@ def train_neural_net_by_batch_manager(session, nnTrainer, trainBatchMgr, valBatc
 
 		# Save a model.
 		if saver is not None and checkpoint_dir_path is not None and val_acc >= best_val_acc:
-			saved_model_path = saver.save(session, checkpoint_dir_path + '/model.ckpt', global_step=nnTrainer.global_step)
+			saved_model_path = saver.save(session, checkpoint_dir_path + '/model_ckpt', global_step=nnTrainer.global_step)
 			best_val_acc = val_acc
 			print('[SWL] Info: Accuracy is improved and the model is saved at {}.'.format(saved_model_path))
 
@@ -463,7 +463,7 @@ def train_neural_net_by_file_batch_manager(session, nnTrainer, trainFileBatchMgr
 
 		# Save a model.
 		if saver is not None and checkpoint_dir_path is not None and val_acc >= best_val_acc:
-			saved_model_path = saver.save(session, checkpoint_dir_path + '/model.ckpt', global_step=nnTrainer.global_step)
+			saved_model_path = saver.save(session, checkpoint_dir_path + '/model_ckpt', global_step=nnTrainer.global_step)
 			best_val_acc = val_acc
 			print('[SWL] Info: Accuracy is improved and the model is saved at {}.'.format(saved_model_path))
 
@@ -585,7 +585,7 @@ def train_neural_net_by_batch_list(session, nnTrainer, train_inputs_list, train_
 
 		# Save a model.
 		if saver is not None and checkpoint_dir_path is not None and val_acc >= best_val_acc:
-			saved_model_path = saver.save(session, checkpoint_dir_path + '/model.ckpt', global_step=nnTrainer.global_step)
+			saved_model_path = saver.save(session, checkpoint_dir_path + '/model_ckpt', global_step=nnTrainer.global_step)
 			best_val_acc = val_acc
 			print('[SWL] Info: Accuracy is improved and the model is saved at {}.'.format(saved_model_path))
 

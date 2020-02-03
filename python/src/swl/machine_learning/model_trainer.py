@@ -162,7 +162,7 @@ class ModelTrainer(object):
 
 				# Save a model.
 				if self._saver is not None and self._model_save_dir_path is not None and val_acc >= best_val_acc:
-					saved_model_path = self._saver.save(session, os.path.join(self._model_save_dir_path, 'model.ckpt'), global_step=self._global_step)
+					saved_model_path = self._saver.save(session, os.path.join(self._model_save_dir_path, 'model_ckpt'), global_step=self._global_step)
 					best_val_acc = val_acc
 
 					print('[SWL] Info: Accuracy is improved and the model is saved at {}.'.format(saved_model_path))
