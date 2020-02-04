@@ -1,43 +1,40 @@
-#  Makefile for C++
+# Makefile for C++.
 
 include ../../Makefile_common.cyg
-
 
 #----------------------------------------------------------------------------
 
 ifeq ($(BUILD_MODE),_DEBUG)
-  OUT_DIR=./Debug_Cygwin
-  INSTALL_DIR=../../Lib/Debug_Cygwin
+	OUT_DIR=./Debug_Cygwin
+	INSTALL_DIR=../../Lib/Debug_Cygwin
 else
 ifeq ($(BUILD_MODE),_DEBUG_PROFILE)
-  OUT_DIR=./Profile_Cygwin
-  INSTALL_DIR=../../Lib/Profile_Cygwin
+	OUT_DIR=./Profile_Cygwin
+	INSTALL_DIR=../../Lib/Profile_Cygwin
 else
-  OUT_DIR=./Release_Cygwin
-  INSTALL_DIR=../../Lib/Release_Cygwin
+	OUT_DIR=./Release_Cygwin
+	INSTALL_DIR=../../Lib/Release_Cygwin
 endif
 endif
 
-SRCS=main.cpp TestFsm.cpp TestNotifierAndObserver.cpp tsINotifier.cpp \
-  tsIObserver.cpp tsITurnStyleFsm.cpp tsTurnStyleFsmState.cpp
+SRCS=main.cpp
 OBJS_BASE=$(SRCS:.cpp=.o)
 OBJS=$(addprefix $(OUT_DIR)/, $(OBJS_BASE))
 
 ifeq ($(LIB_BUILD_TYPE),__BUILD_SHARED_LIB)
-  TARGET=TestKernel.exe
+	TARGET=base_test.exe
 else
-  TARGET=TestKernel-static.exe
+	TARGET=base_test.exe
 endif
-
 
 #----------------------------------------------------------------------------
 
 INCS=-I/usr/include/g++-3 -I../../Include
 LIB_SEARCH_PATH=-L./ -L/lib/ -L/usr/lib/ -L../../Lib/Release_Cygwin/
 ifeq ($(LIB_BUILD_TYPE),__BUILD_SHARED_LIB)
-  LIBS=$(LIB_SEARCH_PATH) -lKnState_dll -lKnEvent_dll -lKnBase_dll -lstdc++
+	LIBS=$(LIB_SEARCH_PATH) -lswl_base -lstdc++
 else
-  LIBS=$(LIB_SEARCH_PATH) -lKnState -lKnEvent -lKnBase -lstdc++
+	LIBS=$(LIB_SEARCH_PATH) -lswl_base_static -lstdc++
 endif
 
 BASIC_DEF=
@@ -50,7 +47,6 @@ DEP_INCS=$(INCS)
 DEP_FLAGS=$(DEP_INCS) -MM -MG
 
 STRIP=strip
-
 
 #----------------------------------------------------------------------------
 
@@ -83,8 +79,7 @@ dep :
 $(OUT_DIR)/%.o : %.cpp
 	$(CXX) $(CXXFLAGS) $(BASIC_DEF) $(AUXILIARY_DEF) $(OUTPUT_OPTION) -c $<
 
-
 #----------------------------------------------------------------------------
-#  dependency
+# Dependency.
 
 include Makefile.depend

@@ -17,14 +17,15 @@ else
 endif
 endif
 
-SRCS=main.cpp
+SRCS=main.cpp \
+	WaveDataTest.cpp
 OBJS_BASE=$(SRCS:.cpp=.o)
 OBJS=$(addprefix $(OUT_DIR)/, $(OBJS_BASE))
 
 ifeq ($(LIB_BUILD_TYPE),__BUILD_SHARED_LIB)
-	TARGET=base_test.exe
+	TARGET=util_test.exe
 else
-	TARGET=base_test.exe
+	TARGET=util_test.exe
 endif
 
 #----------------------------------------------------------------------------
@@ -41,9 +42,9 @@ else
 endif
 endif
 ifeq ($(LIB_BUILD_TYPE),__BUILD_SHARED_LIB)
-	LIBS=$(LIB_SEARCH_PATH) -lswl_base -lstdc++
+	LIBS=$(LIB_SEARCH_PATH) -lswl_util -lswl_base -lstdc++
 else
-	LIBS=$(LIB_SEARCH_PATH) -lswl_base_static -lstdc++
+	LIBS=$(LIB_SEARCH_PATH) -lswl_util_static -lswl_base_static -lstdc++
 endif
 
 BASIC_DEF=

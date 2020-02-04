@@ -1,60 +1,50 @@
 # Makefile for C++.
 
-include ../../Makefile_common.linux
+include ../../Makefile_common.dj
 
 #----------------------------------------------------------------------------
 
 ifeq ($(BUILD_MODE),_DEBUG)
-	OUT_DIR=./Debug_Linux
-	INSTALL_DIR=
+	OUT_DIR=./Debug_DJGPP
+	INSTALL_DIR=../../Lib/Debug_DJGPP
 else
 ifeq ($(BUILD_MODE),_DEBUG_PROFILE)
-	OUT_DIR=./Profile_Linux
-	INSTALL_DIR=
+	OUT_DIR=./Profile_DJGPP
+	INSTALL_DIR=../../Lib/Profile_DJGPP
 else
-	OUT_DIR=./Release_Linux
-	INSTALL_DIR=
+	OUT_DIR=./Release_DJGPP
+	INSTALL_DIR=../../Lib/Release_DJGPP
 endif
 endif
 
-SRCS=main.cpp
+SRCS=main.cpp \
+	StatisticTest.cpp
 OBJS_BASE=$(SRCS:.cpp=.o)
 OBJS=$(addprefix $(OUT_DIR)/, $(OBJS_BASE))
 
 ifeq ($(LIB_BUILD_TYPE),__BUILD_SHARED_LIB)
-	TARGET=base_test.exe
+	TARGET=math_test.exe
 else
-	TARGET=base_test.exe
+	TARGET=math_test.exe
 endif
 
 #----------------------------------------------------------------------------
 
-INCS=-I$(SYSTEM_DIR)/usr/include/g++-3 -I../../Include
-LIB_SEARCH_PATH_BASE=-L./ -L/usr/lib/ -L/lib/ -L/usr/local/lib/
-ifeq ($(BUILD_MODE),_DEBUG)
-	LIB_SEARCH_PATH=$(LIB_SEARCH_PATH_BASE)
-else
-ifeq ($(BUILD_MODE),_DEBUG_PROFILE)
-	LIB_SEARCH_PATH=$(LIB_SEARCH_PATH_BASE)
-else
-	LIB_SEARCH_PATH=$(LIB_SEARCH_PATH_BASE)
-endif
-endif
+INCS=-Ie:/DJGPP/lang/cxx-v3 -I../../Include
+LIB_SEARCH_PATH=-L./ -Le:/DJGPP/lib/gcc-lib/djgpp/3.04/ -L../../Lib/Release_DJGPP/
 ifeq ($(LIB_BUILD_TYPE),__BUILD_SHARED_LIB)
-	LIBS=$(LIB_SEARCH_PATH) -lswl_base -lstdc++
+	LIBS=$(LIB_SEARCH_PATH) -lswl_math -lswl_base -lstdcxx
 else
-	LIBS=$(LIB_SEARCH_PATH) -lswl_base_static -lstdc++
+	LIBS=$(LIB_SEARCH_PATH) -lswl_math_static -lswl_base_static -lstdcxx
 endif
 
 BASIC_DEF=
 AUXILIARY_DEF=
 
-#DEP_INCS=-I$(SYSTEM_DIR)/usr/include/g++-3 -I../../Include
+#DEP_INCS=-Ie:/DJGPP/lang/cxx-v3 -I../../Include
 #DEP_FLAGS=-M -MG -nostdinc -nostdinc++
 DEP_INCS=$(INCS)
 DEP_FLAGS=$(DEP_INCS) -MM -MG
-
-STRIP=strip
 
 #----------------------------------------------------------------------------
 
@@ -62,14 +52,16 @@ all : $(OUT_DIR)/$(TARGET) install
 
 $(OUT_DIR)/$(TARGET) : $(OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
-	$(STRIP) $@
 
 install :
+	$(CP) $(OUT_DIR)/$(TARGET) $(INSTALL_DIR)/
 
 uninstall :
+	$(RM) $(INSTALL_DIR)/$(TARGET)
 
 clean :
-	$(RM) $(OUT_DIR)/*.o $(OUT_DIR)/$(TARGET) core
+#	$(RM) $(OBJS) core
+	$(RM) $(OUT_DIR)/*.o $(OUT_DIR)/$(TARGET)
 
 new :
 #	touch $(SRCS); %(MAKE)
@@ -88,4 +80,3 @@ $(OUT_DIR)/%.o : %.cpp
 # Dependency.
 
 include Makefile.depend
-

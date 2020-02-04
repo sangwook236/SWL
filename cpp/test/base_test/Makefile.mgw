@@ -1,43 +1,40 @@
-#  Makefile for C++
+# Makefile for C++.
 
 include ../../Makefile_common.mgw
-
 
 #----------------------------------------------------------------------------
 
 ifeq ($(BUILD_MODE),_DEBUG)
-  OUT_DIR=./Debug_MinGW
-  INSTALL_DIR=../../Lib/Debug_MinGW
+	OUT_DIR=./Debug_MinGW
+	INSTALL_DIR=../../Lib/Debug_MinGW
 else
 ifeq ($(BUILD_MODE),_DEBUG_PROFILE)
-  OUT_DIR=./Profile_MinGW
-  INSTALL_DIR=../../Lib/Profile_MinGW
+	OUT_DIR=./Profile_MinGW
+	INSTALL_DIR=../../Lib/Profile_MinGW
 else
-  OUT_DIR=./Release_MinGW
-  INSTALL_DIR=../../Lib/Release_MinGW
+	OUT_DIR=./Release_MinGW
+	INSTALL_DIR=../../Lib/Release_MinGW
 endif
 endif
 
-SRCS=main.cpp TestFsm.cpp TestNotifierAndObserver.cpp tsINotifier.cpp \
-  tsIObserver.cpp tsITurnStyleFsm.cpp tsTurnStyleFsmState.cpp
+SRCS=main.cpp
 OBJS_BASE=$(SRCS:.cpp=.o)
 OBJS=$(addprefix $(OUT_DIR)/, $(OBJS_BASE))
 
 ifeq ($(LIB_BUILD_TYPE),__BUILD_SHARED_LIB)
-  TARGET=TestKernel.exe
+	TARGET=base_test.exe
 else
-  TARGET=TestKernel-static.exe
+	TARGET=base_test.exe
 endif
-
 
 #----------------------------------------------------------------------------
 
 INCS=-Ie:/MinGW/include/g++-3 -I../../Include
 LIB_SEARCH_PATH=-L./ -L../../Lib/Release_MinGW/
 ifeq ($(LIB_BUILD_TYPE),__BUILD_SHARED_LIB)
-  LIBS=$(LIB_SEARCH_PATH) -lKnState_dll -lKnEvent_dll -lKnBase_dll -lstdc++
+	LIBS=$(LIB_SEARCH_PATH) -lswl_base -lstdc++
 else
-  LIBS=$(LIB_SEARCH_PATH) -lKnState -lKnEvent -lKnBase -lstdc++
+	LIBS=$(LIB_SEARCH_PATH) -lswl_base_static -lstdc++
 endif
 
 BASIC_DEF=
@@ -50,7 +47,6 @@ DEP_INCS=$(INCS)
 DEP_FLAGS=$(DEP_INCS) -MM -MG
 
 STRIP=strip
-
 
 #----------------------------------------------------------------------------
 
@@ -83,8 +79,7 @@ dep :
 $(OUT_DIR)/%.o : %.cpp
 	$(CXX) $(CXXFLAGS) $(BASIC_DEF) $(AUXILIARY_DEF) $(OUTPUT_OPTION) -c $<
 
-
 #----------------------------------------------------------------------------
-#  dependency
+# Dependency.
 
 include Makefile.depend

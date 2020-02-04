@@ -1,55 +1,48 @@
 # Makefile for C++.
 
-include ../../Makefile_common.linux
+include ../../Makefile_common.mgw
 
 #----------------------------------------------------------------------------
 
 ifeq ($(BUILD_MODE),_DEBUG)
-	OUT_DIR=./Debug_Linux
-	INSTALL_DIR=
+	OUT_DIR=./Debug_MinGW
+	INSTALL_DIR=../../Lib/Debug_MinGW
 else
 ifeq ($(BUILD_MODE),_DEBUG_PROFILE)
-	OUT_DIR=./Profile_Linux
-	INSTALL_DIR=
+	OUT_DIR=./Profile_MinGW
+	INSTALL_DIR=../../Lib/Profile_MinGW
 else
-	OUT_DIR=./Release_Linux
-	INSTALL_DIR=
+	OUT_DIR=./Release_MinGW
+	INSTALL_DIR=../../Lib/Release_MinGW
 endif
 endif
 
-SRCS=main.cpp
+SRCS=main.cpp \
+	WaveDataTest.cpp
 OBJS_BASE=$(SRCS:.cpp=.o)
 OBJS=$(addprefix $(OUT_DIR)/, $(OBJS_BASE))
 
 ifeq ($(LIB_BUILD_TYPE),__BUILD_SHARED_LIB)
-	TARGET=base_test.exe
+	TARGET=util_test.exe
 else
-	TARGET=base_test.exe
+	TARGET=util_test.exe
 endif
 
 #----------------------------------------------------------------------------
 
-INCS=-I$(SYSTEM_DIR)/usr/include/g++-3 -I../../Include
-LIB_SEARCH_PATH_BASE=-L./ -L/usr/lib/ -L/lib/ -L/usr/local/lib/
-ifeq ($(BUILD_MODE),_DEBUG)
-	LIB_SEARCH_PATH=$(LIB_SEARCH_PATH_BASE)
-else
-ifeq ($(BUILD_MODE),_DEBUG_PROFILE)
-	LIB_SEARCH_PATH=$(LIB_SEARCH_PATH_BASE)
-else
-	LIB_SEARCH_PATH=$(LIB_SEARCH_PATH_BASE)
-endif
-endif
+INCS=-Ie:/MinGW/include/g++-3 -I../../Include
+LIB_SEARCH_PATH=-L./ -L../../Lib/Release_MinGW/
 ifeq ($(LIB_BUILD_TYPE),__BUILD_SHARED_LIB)
-	LIBS=$(LIB_SEARCH_PATH) -lswl_base -lstdc++
+	LIBS=$(LIB_SEARCH_PATH) -lswl_util -lswl_base -lstdc++
 else
-	LIBS=$(LIB_SEARCH_PATH) -lswl_base_static -lstdc++
+	LIBS=$(LIB_SEARCH_PATH) -lswl_util_static -lswl_base_static -lstdc++
 endif
 
 BASIC_DEF=
-AUXILIARY_DEF=
+#AUXILIARY_DEF=-mno-cygwin -mwindows -mconsole
+AUXILIARY_DEF=-mno-cygwin -mconsole
 
-#DEP_INCS=-I$(SYSTEM_DIR)/usr/include/g++-3 -I../../Include
+#DEP_INCS=-Ie:/MinGW/include/g++-3 -I../../Include
 #DEP_FLAGS=-M -MG -nostdinc -nostdinc++
 DEP_INCS=$(INCS)
 DEP_FLAGS=$(DEP_INCS) -MM -MG
@@ -65,11 +58,14 @@ $(OUT_DIR)/$(TARGET) : $(OBJS)
 	$(STRIP) $@
 
 install :
+	$(CP) $(OUT_DIR)/$(TARGET) $(INSTALL_DIR)/
 
 uninstall :
+	$(RM) $(INSTALL_DIR)/$(TARGET)
 
 clean :
-	$(RM) $(OUT_DIR)/*.o $(OUT_DIR)/$(TARGET) core
+#	$(RM) $(OBJS) core
+	$(RM) $(OUT_DIR)/*.o $(OUT_DIR)/$(TARGET)
 
 new :
 #	touch $(SRCS); %(MAKE)
@@ -88,4 +84,3 @@ $(OUT_DIR)/%.o : %.cpp
 # Dependency.
 
 include Makefile.depend
-

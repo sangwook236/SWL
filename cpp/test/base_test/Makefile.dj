@@ -1,43 +1,40 @@
-#  Makefile for C++
+# Makefile for C++.
 
 include ../../Makefile_common.dj
-
 
 #----------------------------------------------------------------------------
 
 ifeq ($(BUILD_MODE),_DEBUG)
-  OUT_DIR=./Debug_DJGPP
-  INSTALL_DIR=../../Lib/Debug_DJGPP
+	OUT_DIR=./Debug_DJGPP
+	INSTALL_DIR=../../Lib/Debug_DJGPP
 else
 ifeq ($(BUILD_MODE),_DEBUG_PROFILE)
-  OUT_DIR=./Profile_DJGPP
-  INSTALL_DIR=../../Lib/Profile_DJGPP
+	OUT_DIR=./Profile_DJGPP
+	INSTALL_DIR=../../Lib/Profile_DJGPP
 else
-  OUT_DIR=./Release_DJGPP
-  INSTALL_DIR=../../Lib/Release_DJGPP
+	OUT_DIR=./Release_DJGPP
+	INSTALL_DIR=../../Lib/Release_DJGPP
 endif
 endif
 
-SRCS=main.cpp TestFsm.cpp TestNotifierAndObserver.cpp tsINotifier.cpp \
-  tsIObserver.cpp tsITurnStyleFsm.cpp tsTurnStyleFsmState.cpp
+SRCS=main.cpp
 OBJS_BASE=$(SRCS:.cpp=.o)
 OBJS=$(addprefix $(OUT_DIR)/, $(OBJS_BASE))
 
 ifeq ($(LIB_BUILD_TYPE),__BUILD_SHARED_LIB)
-  TARGET=TestKernel.exe
+	TARGET=base_test.exe
 else
-  TARGET=TestKernel-static.exe
+	TARGET=base_test.exe
 endif
-
 
 #----------------------------------------------------------------------------
 
 INCS=-Ie:/DJGPP/lang/cxx-v3 -I../../Include
 LIB_SEARCH_PATH=-L./ -Le:/DJGPP/lib/gcc-lib/djgpp/3.04/ -L../../Lib/Release_DJGPP/
 ifeq ($(LIB_BUILD_TYPE),__BUILD_SHARED_LIB)
-  LIBS=$(LIB_SEARCH_PATH) -lKnState_dll -lKnEvent_dll -lKnBase_dll -lstdcxx
+	LIBS=$(LIB_SEARCH_PATH) -lswl_base -lstdcxx
 else
-  LIBS=$(LIB_SEARCH_PATH) -lKnState -lKnEvent -lKnBase -lstdcxx
+	LIBS=$(LIB_SEARCH_PATH) -lswl_base_static -lstdcxx
 endif
 
 BASIC_DEF=
@@ -47,7 +44,6 @@ AUXILIARY_DEF=
 #DEP_FLAGS=-M -MG -nostdinc -nostdinc++
 DEP_INCS=$(INCS)
 DEP_FLAGS=$(DEP_INCS) -MM -MG
-
 
 #----------------------------------------------------------------------------
 
@@ -79,8 +75,7 @@ dep :
 $(OUT_DIR)/%.o : %.cpp
 	$(CXX) $(CXXFLAGS) $(BASIC_DEF) $(AUXILIARY_DEF) $(OUTPUT_OPTION) -c $<
 
-
 #----------------------------------------------------------------------------
-#  dependency
+# Dependency.
 
 include Makefile.depend
