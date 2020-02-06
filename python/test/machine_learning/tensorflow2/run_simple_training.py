@@ -258,8 +258,9 @@ class MyRunner(object):
 		model = MyModel(self._dataset.num_classes)
 
 		# Create checkpoint objects.
+		#ckpt = tf.train.Checkpoint(net=model)  # Not good.
 		ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=self._optimizer, net=model)
-		ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir_path, max_to_keep=5, keep_checkpoint_every_n_hours=2)
+		ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir_path, max_to_keep=None)
 
 		# Load a model.
 		print('[SWL] Info: Start loading a model...')
@@ -297,8 +298,9 @@ class MyRunner(object):
 		model = MyModel(self._dataset.num_classes)
 
 		# Create checkpoint objects.
+		#ckpt = tf.train.Checkpoint(net=model)  # Not good.
 		ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=self._optimizer, net=model)
-		ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir_path, max_to_keep=5, keep_checkpoint_every_n_hours=2)
+		ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir_path, max_to_keep=None)
 
 		# Load a model.
 		print('[SWL] Info: Start loading a model...')

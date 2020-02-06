@@ -4,7 +4,7 @@
 import sys
 sys.path.append('../../../src')
 
-import os, argparse, logging, time, datetime
+import os, argparse, logging, time, datetime, shutil
 import numpy as np
 import torch
 import torchvision
@@ -19,7 +19,7 @@ class MyDataset(object):
 		self._num_classes = 10
 
 		# Preprocess.
-		self._transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(), torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+		self._transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(), torchvision.transforms.Normalize((0.5,), (0.5,))])
 
 	@property
 	def num_classes(self):
@@ -85,7 +85,7 @@ class MyRunner(object):
 		print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 		print('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(labels.shape, labels.dtype, np.min(labels), np.max(labels)))
 
-	def train(self, model_filepath, num_epochs, device, initial_epoch=0, is_training_resumed=False):
+	def train(self, model_filepath, model_checkpoint_filepath, num_epochs, device, initial_epoch=0, is_training_resumed=False):
 		if is_training_resumed:
 			# Restore a model.
 			try:
@@ -120,12 +120,14 @@ class MyRunner(object):
 		else:
 			print('[SWL] Info: Start training...')
 		start_total_time = time.time()
-		initial_epoch = 0
 		final_epoch = initial_epoch + num_epochs
+		best_performance_measure = 0
+		best_model_filepath = None
 		for epoch in range(initial_epoch, final_epoch):
 			print('Epoch {}/{}'.format(epoch, final_epoch - 1))
 
 			start_time = time.time()
+			train_loss, train_acc, num_examples = 0.0, 0.0, 0
 			running_loss = 0.0
 			for batch_step, batch_data in enumerate(self._train_loader):
 				batch_inputs, batch_outputs = batch_data
@@ -160,28 +162,72 @@ class MyRunner(object):
 				#for p in model.parameters():
 				#	p.data.add_(-lr, p.grad.data)  # p.data = p.data + (-lr * p.grad.data).
 
+				model_outputs = torch.argmax(model_outputs, -1)
+				train_loss += loss.item()
+				train_acc += (model_outputs == batch_outputs).sum().item()
+				num_examples += batch_outputs.size(0)
+
 				# Print statistics.
 				running_loss += loss.item()
 				if (batch_step + 1) % 100 == 0:
 					print('\tStep {}: loss = {:.6f}: {} secs.'.format(batch_step + 1, running_loss / 100, time.time() - start_time))
 					running_loss = 0.0
-			print('\tTrain: {} secs.'.format(time.time() - start_time))
+			train_loss /= batch_step + 1
+			train_acc /= num_examples
+			print('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
 
-			# TODO [implement] >>
-			#history['loss'].append(train_loss)
-			#history['acc'].append(train_acc)
-			#history['val_loss'].append(val_loss)
-			#history['val_acc'].append(val_acc)
+			history['loss'].append(train_loss)
+			history['acc'].append(train_acc)
+
+			start_time = time.time()
+			val_loss, val_acc, num_examples = 0.0, 0.0, 0
+			with torch.no_grad():
+				for batch_step, batch_data in enumerate(self._test_loader):
+					batch_inputs, batch_outputs = batch_data
+
+					"""
+					# One-hot encoding.
+					batch_outputs_onehot = torch.LongTensor(batch_outputs.shape[0], self._dataset.num_classes)
+					batch_outputs_onehot.zero_()
+					batch_outputs_onehot.scatter_(1, batch_outputs.view(batch_outputs.shape[0], -1), 1)
+					"""
+
+					batch_inputs, batch_outputs = batch_inputs.to(device), batch_outputs.to(device)
+					#batch_inputs, batch_outputs, batch_outputs_onehot = batch_inputs.to(device), batch_outputs.to(device), batch_outputs_onehot.to(device)
+
+					model_outputs = model(batch_inputs)
+					loss = criterion(model_outputs, batch_outputs)
+
+					model_outputs = torch.argmax(model_outputs, -1)
+					val_loss += loss.item()
+					val_acc += (model_outputs == batch_outputs).sum().item()
+					num_examples += batch_outputs.size(0)
+				val_loss /= batch_step + 1
+				val_acc /= num_examples
+			print('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
+
+			history['val_loss'].append(val_loss)
+			history['val_acc'].append(val_acc)
+
+			if val_acc > best_performance_measure:
+				print('[SWL] Info: Start saving a model...')
+				start_time = time.time()
+				best_model_filepath = model_checkpoint_filepath.format(epoch=epoch, val_acc=val_acc)
+				torch.save(model, best_model_filepath)  # Saves a model using either a .pt or .pth file extension.
+				print('[SWL] Info: End saving a model to {}: {} secs.'.format(best_model_filepath, time.time() - start_time))
+				best_performance_measure = val_acc
 
 			sys.stdout.flush()
 			time.sleep(0)
 		print('[SWL] Info: End training: {} secs.'.format(time.time() - start_total_time))
 
-		#--------------------
-		print('[SWL] Info: Start saving a model...')
-		start_time = time.time()
-		torch.save(model, model_filepath)  # Saves a model using either a .pt or .pth file extension.
-		print('[SWL] Info: End saving a model to {}: {} secs.'.format(model_filepath, time.time() - start_time))
+		if best_model_filepath:
+			try:
+				shutil.copy(best_model_filepath, model_filepath)
+			except (FileNotFoundError, PermissionError) as ex:
+				print('[SWL] Error: Failed to save a model to {}: {}.'.format(model_filepath, ex))
+		else:
+			torch.save(model, model_filepath)
 
 		return history
 
@@ -203,16 +249,17 @@ class MyRunner(object):
 		print('[SWL] Info: Start testing...')
 		start_time = time.time()
 		inferences, ground_truths = list(), list()
-		for batch_data in self._test_loader:
-			batch_inputs, batch_outputs = batch_data
-			#batch_inputs, batch_outputs = batch_inputs.to(device), batch_outputs.to(device)
-			batch_inputs = batch_inputs.to(device)
+		with torch.no_grad():
+			for batch_data in self._test_loader:
+				batch_inputs, batch_outputs = batch_data
+				#batch_inputs, batch_outputs = batch_inputs.to(device), batch_outputs.to(device)
+				batch_inputs = batch_inputs.to(device)
 
-			model_outputs = model(batch_inputs)
+				model_outputs = model(batch_inputs)
 
-			_, model_outputs = torch.max(model_outputs, 1)
-			inferences.extend(model_outputs.cpu().numpy())
-			ground_truths.extend(batch_outputs.numpy())
+				model_outputs = torch.argmax(model_outputs, -1)
+				inferences.extend(model_outputs.cpu().numpy())
+				ground_truths.extend(batch_outputs.numpy())
 		print('[SWL] Info: End testing: {} secs.'.format(time.time() - start_time))
 
 		inferences, ground_truths = np.array(inferences), np.array(ground_truths)
@@ -250,12 +297,13 @@ class MyRunner(object):
 		print('[SWL] Info: Start inferring...')
 		start_time = time.time()
 		inferences = list()
-		for batch_images in inf_images:
-			batch_images = batch_images.to(device)
-			model_outputs = model(batch_images)
+		with torch.no_grad():
+			for batch_images in inf_images:
+				batch_images = batch_images.to(device)
+				model_outputs = model(batch_images)
 
-			_, model_outputs = torch.max(model_outputs, 1)
-			inferences.extend(model_outputs.cpu().numpy())
+				model_outputs = torch.argmax(model_outputs, -1)
+				inferences.extend(model_outputs.cpu().numpy())
 		print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
 
 		inferences = np.array(inferences)
@@ -333,7 +381,7 @@ def parse_command_line_options():
 		'--batch_size',
 		type=int,
 		help='Batch size',
-		default=128
+		default=32
 	)
 	parser.add_argument(
 		'-g',
@@ -409,15 +457,16 @@ def main():
 	runner = MyRunner(batch_size)
 
 	if args.train:
+		model_checkpoint_filepath = os.path.join(output_dir_path, 'model_ckpt.{epoch:04d}-{val_acc:.5f}.pt')
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
-		history = runner.train(model_filepath, num_epochs, train_device, initial_epoch, is_training_resumed)
+		history = runner.train(model_filepath, model_checkpoint_filepath, num_epochs, train_device, initial_epoch, is_training_resumed)
 
 		#print('History =', history)
-		#swl_ml_util.display_train_history(history)
-		#if os.path.exists(output_dir_path):
-		#	swl_ml_util.save_train_history(history, output_dir_path)
+		swl_ml_util.display_train_history(history)
+		if os.path.exists(output_dir_path):
+			swl_ml_util.save_train_history(history, output_dir_path)
 
 	if args.test:
 		if not model_filepath or not os.path.exists(model_filepath):

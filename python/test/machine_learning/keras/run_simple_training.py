@@ -277,7 +277,7 @@ class MyRunner(object):
 
 		model.compile(loss=loss, optimizer=optimizer, metrics=['accuracy'])
 
-		model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(model_checkpoint_filepath, monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1)
+		model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(model_checkpoint_filepath, monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=False, mode='auto', period=1)
 		early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=10)
 		def lr_schedule(epoch, learning_rate):
 			return learning_rate
@@ -519,7 +519,7 @@ def parse_command_line_options():
 		'--batch_size',
 		type=int,
 		help='Batch size',
-		default=128
+		default=32
 	)
 	parser.add_argument(
 		'-g',
@@ -594,7 +594,7 @@ def main():
 	runner = MyRunner()
 
 	if args.train:
-		model_checkpoint_filepath = os.path.join(output_dir_path, 'model_weights.{epoch:04d}-{val_loss:.5f}.hdf5')
+		model_checkpoint_filepath = os.path.join(output_dir_path, 'model_ckpt.{epoch:04d}-{val_loss:.5f}.hdf5')
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
