@@ -9,7 +9,7 @@ import numpy as np
 import torch
 import torchvision
 import cv2
-#import swl.machine_learning.util as swl_ml_util
+import swl.machine_learning.util as swl_ml_util
 
 #--------------------------------------------------------------------
 
@@ -223,7 +223,7 @@ class MyRunner(object):
 
 		if best_model_filepath:
 			try:
-				shutil.copy(best_model_filepath, model_filepath)
+				shutil.copyfile(best_model_filepath, model_filepath)
 			except (FileNotFoundError, PermissionError) as ex:
 				print('[SWL] Error: Failed to save a model to {}: {}.'.format(model_filepath, ex))
 		else:
@@ -426,7 +426,7 @@ def set_logger(log_level):
 def main():
 	args = parse_command_line_options()
 
-	if not args.train and not args.test:
+	if not args.train and not args.test and not args.infer:
 		print('[SWL] Error: At least one of command line options "--train", "--test", and "--infer" has to be specified.')
 		return
 

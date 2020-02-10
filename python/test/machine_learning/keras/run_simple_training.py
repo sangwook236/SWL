@@ -564,7 +564,7 @@ def set_logger(log_level):
 def main():
 	args = parse_command_line_options()
 
-	if not args.train and not args.test:
+	if not args.train and not args.test and not args.infer:
 		print('[SWL] Error: At least one of command line options "--train", "--test", and "--infer" has to be specified.')
 		return
 
