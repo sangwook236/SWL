@@ -281,7 +281,7 @@ class MyRunner(object):
 				#ckpt_filepath = tf.train.latest_checkpoint(checkpoint_dir_path)
 				if ckpt_filepath:
 					initial_epoch = int(ckpt_filepath.split('-')[1]) + 1
-					saver.restore(session, ckpt_filepath)
+					saver.restore(sess, ckpt_filepath)
 				else:
 					print('[SWL] Error: Failed to restore a model from {}.'.format(checkpoint_dir_path))
 					return
@@ -299,15 +299,15 @@ class MyRunner(object):
 				print('[SWL] Info: Resume training...')
 			else:
 				print('[SWL] Info: Start training...')
-			start_total_time = time.time()
 			final_epoch = initial_epoch + num_epochs
 			best_performance_measure = 0
+			start_total_time = time.time()
 			for epoch in range(initial_epoch, final_epoch):
 				print('Epoch {}/{}:'.format(epoch, final_epoch - 1))
 
 				#--------------------
-				start_time = time.time()
 				train_loss, train_acc, num_examples = 0.0, 0.0, 0
+				start_time = time.time()
 				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_train_batch_generator(batch_size, shuffle=True)):
 					_, batch_loss, batch_accuracy, summary = sess.run([train_op, loss, accuracy, merged_summary], feed_dict={input_ph: batch_data[0], output_ph: batch_data[1]})
 					train_loss += batch_loss * num_batch_examples
@@ -325,8 +325,8 @@ class MyRunner(object):
 				history['acc'].append(train_acc)
 
 				#--------------------
-				start_time = time.time()
 				val_loss, val_acc, num_examples = 0.0, 0.0, 0
+				start_time = time.time()
 				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_test_batch_generator(batch_size, shuffle=False)):
 					batch_loss, batch_accuracy, summary = sess.run([loss, accuracy, merged_summary], feed_dict={input_ph: batch_data[0], output_ph: batch_data[1]})
 					val_loss += batch_loss * num_batch_examples
@@ -382,8 +382,8 @@ class MyRunner(object):
 
 			#--------------------
 			print('[SWL] Info: Start testing...')
-			start_time = time.time()
 			inferences, test_labels = list(), list()
+			start_time = time.time()
 			for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, shuffle=shuffle):
 				inferences.append(sess.run(model_output, feed_dict={input_ph: batch_data[0]}))
 				test_labels.append(batch_data[1])
@@ -448,9 +448,9 @@ class MyRunner(object):
 
 			#--------------------
 			print('[SWL] Info: Start inferring...')
-			start_time = time.time()
 			inferences = list()
 			start_idx = 0
+			start_time = time.time()
 			while True:
 				end_idx = start_idx + batch_size
 				batch_indices = indices[start_idx:end_idx]
@@ -756,8 +756,8 @@ def main():
 
 	#--------------------
 	num_epochs, batch_size = args.epoch, args.batch_size
+	is_training_resumed = args.resume
 	initial_epoch = 0
-	is_training_resumed = False
 
 	#--------------------
 	output_dir_path = None

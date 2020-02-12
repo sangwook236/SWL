@@ -577,8 +577,8 @@ def main():
 
 	#--------------------
 	num_epochs, batch_size = args.epoch, args.batch_size
+	is_training_resumed = args.resume
 	initial_epoch = 0
-	is_training_resumed = False
 
 	model_filepath = args.model_file
 	if model_filepath:

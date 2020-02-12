@@ -4,12 +4,13 @@
 import sys
 sys.path.append('../../../src')
 
-import os, argparse, logging, time, datetime, shutil
+import os, collections, pickle, argparse, logging, time, datetime, shutil
 import numpy as np
 import torch
 import torchvision
 import cv2
-import swl.machine_learning.util as swl_ml_util
+#import swl.machine_learning.util as swl_ml_util
+import utils
 
 #--------------------------------------------------------------------
 
@@ -85,27 +86,36 @@ class MyRunner(object):
 		print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 		print('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(labels.shape, labels.dtype, np.min(labels), np.max(labels)))
 
-	def train(self, model_filepath, model_checkpoint_filepath, num_epochs, device, initial_epoch=0, is_training_resumed=False):
-		if is_training_resumed:
-			# Restore a model.
-			try:
-				print('[SWL] Info: Start restoring a model...')
-				start_time = time.time()
-				model = torch.load(model_filepath)
-				model.eval()
-				print('[SWL] Info: End restoring a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
-			except:
-				print('[SWL] Error: Failed to restore a model from {}.'.format(model_filepath))
-				return
-		else:
-			# Create a model.
-			model = MyModel()
-
+	def train(self, model_filepath, model_checkpoint_filepath, output_dir_path, final_epoch, initial_epoch=0, is_training_resumed=False, log=None, device='cpu'):
+		# Create a model.
+		model = MyModel()
 		model = model.to(device)
+		#device_ids = [0, 1]
+		#model = torch.nn.DataParallel(model, device_ids=device_ids)
 
 		# Create a trainer.
 		criterion = torch.nn.CrossEntropyLoss()
-		optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+		initial_learning_rate, momentum, weight_decay = 0.001, 0.9, 0.0001
+		optimizer = torch.optim.SGD(model.parameters(), lr=initial_learning_rate, momentum=momentum, weight_decay=weight_decay, nesterov=True)
+
+		#--------------------
+		train_history_filepath = os.path.join(output_dir_path, 'train_history.pkl')
+		train_result_image_filepath = os.path.join(output_dir_path, 'results.png')
+		log_print_freq = 100
+		if True:
+			gammas, schedule = None, None
+		else:
+			gammas = [0.1, 0.1]  # LR is multiplied by gamma on schedule.
+			schedule = [150, 225]  # Decrease learning rate at these epochs.
+
+		if log:
+			utils.print_log('Save path: {}.'.format(output_dir_path), log)
+			#state = {k: v for k, v in args._get_kwargs()}
+			#utils.print_log(state, log)
+			utils.print_log('Python version: {}.'.format(sys.version.replace('\n', ' ')), log)
+			utils.print_log('Torch version: {}.'.format(torch.__version__), log)
+			utils.print_log('cuDNN version: {}.'.format(torch.backends.cudnn.version()), log)
+			utils.print_log('=> Model:\n {}.'.format(model), log)
 
 		history = {
 			'acc': list(),
@@ -116,19 +126,64 @@ class MyRunner(object):
 
 		#--------------------
 		if is_training_resumed:
+			if os.path.isfile(model_filepath):
+				# Restore a model.
+				try:
+					print('[SWL] Info: Start restoring a model...')
+					start_time = time.time()
+					if log: utils.print_log("=> loading checkpoint '{}'".format(model_filepath), log)
+					checkpoint = torch.load(model_filepath)
+					initial_epoch = checkpoint['epoch']
+					#architecture = checkpoint['arch']
+					model.load_state_dict(checkpoint['state_dict'])
+					optimizer.load_state_dict(checkpoint['optimizer'])
+					recorder = checkpoint['recorder']
+					best_acc = recorder.max_accuracy(False)
+					if log: utils.print_log("=> loaded checkpoint '{}' accuracy={} (epoch {})" .format(model_filepath, best_acc, checkpoint['epoch']), log)
+					print('[SWL] Info: End restoring a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
+				except:
+					print('[SWL] Error: Failed to restore a model from {}.'.format(model_filepath))
+					return
+			else:
+				print('[SWL] Error: Invalid model file, {}.'.format(model_filepath))
+				return
+			history['acc'] = recorder.epoch_accuracy[:,0].tolist()
+			history['loss'] = recorder.epoch_losses[:,0].tolist()
+			history['val_acc'] = recorder.epoch_accuracy[:,1].tolist()
+			history['val_loss'] = recorder.epoch_losses[:,1].tolist()
+			recorder.resize(final_epoch)
+		else:
+			recorder = utils.RecorderMeter(final_epoch)
+
+		#--------------------
+		if is_training_resumed:
 			print('[SWL] Info: Resume training...')
 		else:
 			print('[SWL] Info: Start training...')
-		start_total_time = time.time()
-		final_epoch = initial_epoch + num_epochs
+		epoch_time = utils.AverageMeter()
 		best_performance_measure = 0
 		best_model_filepath = None
+		start_total_time = start_epoch_time = time.time()
 		for epoch in range(initial_epoch, final_epoch):
 			print('Epoch {}/{}'.format(epoch, final_epoch - 1))
 
-			start_time = time.time()
-			train_loss, train_acc, num_examples = 0.0, 0.0, 0
-			running_loss = 0.0
+			if not gammas or not schedule:
+				current_learning_rate = initial_learning_rate
+			else:
+				current_learning_rate = utils.adjust_learning_rate(optimizer, epoch, initial_learning_rate, gammas, schedule)
+			need_hour, need_mins, need_secs = utils.convert_secs2time(epoch_time.avg * (final_epoch - epoch))
+			need_time = '[Need: {:02d}:{:02d}:{:02d}]'.format(need_hour, need_mins, need_secs)
+			if log: utils.print_log('\n==>>{:s} [Epoch={:03d}/{:03d}] {:s} [learning_rate={:6.4f}]'.format(utils.time_string(), epoch, final_epoch, need_time, current_learning_rate) \
+				+ ' [Best : Accuracy={:.2f}, Error={:.2f}].'.format(recorder.max_accuracy(False), 100 - recorder.max_accuracy(False)), log)
+
+			#--------------------
+			# Switch to train mode.
+			model.train()
+
+			batch_time, data_time = utils.AverageMeter(), utils.AverageMeter()
+			losses, top1, top5 = utils.AverageMeter(), utils.AverageMeter(), utils.AverageMeter()
+			#running_loss = 0.0
+			start_time = start_batch_time = time.time()
 			for batch_step, batch_data in enumerate(self._train_loader):
 				batch_inputs, batch_outputs = batch_data
 
@@ -141,6 +196,8 @@ class MyRunner(object):
 
 				batch_inputs, batch_outputs = batch_inputs.to(device), batch_outputs.to(device)
 				#batch_inputs, batch_outputs, batch_outputs_onehot = batch_inputs.to(device), batch_outputs.to(device), batch_outputs_onehot.to(device)
+
+				data_time.update(time.time() - start_batch_time)
 
 				# Zero the parameter gradients.
 				optimizer.zero_grad()
@@ -162,25 +219,47 @@ class MyRunner(object):
 				#for p in model.parameters():
 				#	p.data.add_(-lr, p.grad.data)  # p.data = p.data + (-lr * p.grad.data).
 
-				model_outputs = torch.argmax(model_outputs, -1)
-				train_loss += loss.item()
-				train_acc += (model_outputs == batch_outputs).sum().item()
-				num_examples += batch_outputs.size(0)
+				# Measure accuracy and record loss.
+				#model_outputs = torch.argmax(model_outputs, -1)
+				prec1, prec5 = utils.accuracy(model_outputs, batch_outputs, topk=(1, 5))
+				losses.update(loss.item(), batch_inputs.size(0))
+				top1.update(prec1.item(), batch_inputs.size(0))
+				top5.update(prec5.item(), batch_inputs.size(0))
 
 				# Print statistics.
+				"""
 				running_loss += loss.item()
 				if (batch_step + 1) % 100 == 0:
 					print('\tStep {}: loss = {:.6f}: {} secs.'.format(batch_step + 1, running_loss / 100, time.time() - start_time))
 					running_loss = 0.0
-			train_loss /= batch_step + 1
-			train_acc /= num_examples
-			print('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
+				"""
+
+				# Measure elapsed time.
+				batch_time.update(time.time() - start_batch_time)
+				start_batch_time = time.time()
+
+				if log and batch_step % log_print_freq == 0:
+					utils.print_log('  Epoch: [{:03d}][{:03d}/{:03d}]   '
+						'Time {batch_time.val:.3f} ({batch_time.avg:.3f})   '
+						'Data {data_time.val:.3f} ({data_time.avg:.3f})   '
+						'Loss {loss.val:.4f} ({loss.avg:.4f})   '
+						'Prec@1 {top1.val:.3f} ({top1.avg:.3f})   '
+						'Prec@5 {top5.val:.3f} ({top5.avg:.3f})   '.format(
+						epoch, batch_step, len(self._train_loader), batch_time=batch_time,
+						data_time=data_time, loss=losses, top1=top1, top5=top5) + utils.time_string(), log)
+			train_loss, train_acc = losses.avg, top1.avg
+			if log: utils.print_log('  **Train** Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f} Error@1 {error1:.3f}.'.format(top1=top1, top5=top5, error1=100 - top1.avg), log)
+			#print('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
 
 			history['loss'].append(train_loss)
 			history['acc'].append(train_acc)
 
+			#--------------------
+			# Switch to evaluation mode.
+			model.eval()
+
+			losses, top1, top5 = utils.AverageMeter(), utils.AverageMeter(), utils.AverageMeter()
 			start_time = time.time()
-			val_loss, val_acc, num_examples = 0.0, 0.0, 0
 			with torch.no_grad():
 				for batch_step, batch_data in enumerate(self._test_loader):
 					batch_inputs, batch_outputs = batch_data
@@ -198,24 +277,51 @@ class MyRunner(object):
 					model_outputs = model(batch_inputs)
 					loss = criterion(model_outputs, batch_outputs)
 
-					model_outputs = torch.argmax(model_outputs, -1)
-					val_loss += loss.item()
-					val_acc += (model_outputs == batch_outputs).sum().item()
-					num_examples += batch_outputs.size(0)
-				val_loss /= batch_step + 1
-				val_acc /= num_examples
-			print('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
+					# Measure accuracy and record loss.
+					#model_outputs = torch.argmax(model_outputs, -1)
+					prec1, prec5 = utils.accuracy(model_outputs.data, batch_outputs, topk=(1, 5))
+					losses.update(loss.item(), batch_inputs.size(0))
+					top1.update(prec1.item(), batch_inputs.size(0))
+					top5.update(prec5.item(), batch_inputs.size(0))
+			val_loss, val_acc = losses.avg, top1.avg
+			if log: utils.print_log('  **Validation** Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f} Error@1 {error1:.3f} Loss: {losses.avg:.3f}.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses), log)
+			#print('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
 
 			history['val_loss'].append(val_loss)
 			history['val_acc'].append(val_acc)
+
+			#--------------------
+			dummy = recorder.update(epoch, train_loss, train_acc, val_loss, val_acc)
 
 			if val_acc > best_performance_measure:
 				print('[SWL] Info: Start saving a model...')
 				start_time = time.time()
 				best_model_filepath = model_checkpoint_filepath.format(epoch=epoch, val_acc=val_acc)
-				torch.save(model, best_model_filepath)  # Saves a model using either a .pt or .pth file extension.
+				torch.save({
+						'epoch': epoch + 1,
+						#'arch': architecture,
+						'state_dict': model.state_dict(),
+						'optimizer' : optimizer.state_dict(),
+						'recorder': recorder,
+					},
+					best_model_filepath)
 				print('[SWL] Info: End saving a model to {}: {} secs.'.format(best_model_filepath, time.time() - start_time))
 				best_performance_measure = val_acc
+
+			# Measure elapsed time.
+			epoch_time.update(time.time() - start_epoch_time)
+			start_epoch_time = time.time()
+			recorder.plot_curve(train_result_image_filepath)
+		
+			#import pdb; pdb.set_trace()
+			train_log = collections.OrderedDict()
+			train_log['train_loss'] = history['loss']
+			train_log['train_acc'] = history['acc']
+			train_log['val_loss'] = history['val_loss']
+			train_log['val_acc'] = history['val_acc']
+
+			pickle.dump(train_log, open(train_history_filepath, 'wb'))
+			utils.plotting(output_dir_path, train_history_filepath)
 
 			sys.stdout.flush()
 			time.sleep(0)
@@ -224,26 +330,52 @@ class MyRunner(object):
 		if best_model_filepath:
 			try:
 				shutil.copyfile(best_model_filepath, model_filepath)
+				print('[SWL] Info: Copied a best model to {}.'.format(model_filepath))
 			except (FileNotFoundError, PermissionError) as ex:
-				print('[SWL] Error: Failed to save a model to {}: {}.'.format(model_filepath, ex))
+				print('[SWL] Error: Failed to save a best model to {}: {}.'.format(model_filepath, ex))
 		else:
-			torch.save(model, model_filepath)
+			torch.save({
+					'epoch': epoch + 1,
+					#'arch': architecture,
+					'state_dict': model.state_dict(),
+					'optimizer' : optimizer.state_dict(),
+					'recorder': recorder,
+				},
+				model_filepath)
+			print('[SWL] Info: Saved a best model to {}.'.format(model_filepath))
 
 		return history
 
-	def test(self, model_filepath, device):
-		# Load a model.
-		try:
-			print('[SWL] Info: Start loading a model...')
-			start_time = time.time()
-			model = torch.load(model_filepath)
-			model.eval()
-			print('[SWL] Info: End loading a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
-		except:
-			print('[SWL] Error: Failed to load a model from {}.'.format(model_filepath))
+	def test(self, model_filepath, log=None, device='cpu'):
+		# Create a model.
+		model = MyModel()
+		model = model.to(device)
+		#device_ids = [0, 1]
+		#model = torch.nn.DataParallel(model, device_ids=device_ids)
+
+		if os.path.isfile(model_filepath):
+			# Load a model.
+			try:
+				print('[SWL] Info: Start loading a model...')
+				start_time = time.time()
+				if log: utils.print_log("=> loading checkpoint '{}'".format(model_filepath), log)
+				checkpoint = torch.load(model_filepath)
+				#architecture = checkpoint['arch']
+				model.load_state_dict(checkpoint['state_dict'])
+				#optimizer.load_state_dict(checkpoint['optimizer'])
+				recorder = checkpoint['recorder']
+				best_acc = recorder.max_accuracy(False)
+				if log: utils.print_log("=> loaded checkpoint '{}' accuracy={} (epoch {})" .format(model_filepath, best_acc, checkpoint['epoch']), log)
+				print('[SWL] Info: End loading a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
+			except:
+				print('[SWL] Error: Failed to load a model from {}.'.format(model_filepath))
+				return
+		else:
+			print('[SWL] Error: Invalid model file, {}.'.format(model_filepath))
 			return
 
-		model = model.to(device)
+		# Switch to evaluation mode.
+		model.eval()
 
 		#--------------------
 		print('[SWL] Info: Start testing...')
@@ -271,22 +403,39 @@ class MyRunner(object):
 		else:
 			print('[SWL] Warning: Invalid test results.')
 
-	def infer(self, model_filepath, device, batch_size, shuffle=False):
+	def infer(self, model_filepath, batch_size, shuffle=False, log=None, device='cpu'):
 		if batch_size is None or batch_size <= 0:
 			raise ValueError('Invalid batch size: {}'.format(batch_size))
 
-		# Load a model.
-		try:
-			print('[SWL] Info: Start loading a model...')
-			start_time = time.time()
-			model = torch.load(model_filepath)
-			model.eval()
-			print('[SWL] Info: End loading a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
-		except:
-			print('[SWL] Error: Failed to load a model from {}.'.format(model_filepath))
+		# Create a model.
+		model = MyModel()
+		model = model.to(device)
+		#device_ids = [0, 1]
+		#model = torch.nn.DataParallel(model, device_ids=device_ids)
+
+		if os.path.isfile(model_filepath):
+			# Load a model.
+			try:
+				print('[SWL] Info: Start loading a model...')
+				start_time = time.time()
+				if log: utils.print_log("=> loading checkpoint '{}'".format(model_filepath), log)
+				checkpoint = torch.load(model_filepath)
+				#architecture = checkpoint['arch']
+				model.load_state_dict(checkpoint['state_dict'])
+				#optimizer.load_state_dict(checkpoint['optimizer'])
+				recorder = checkpoint['recorder']
+				best_acc = recorder.max_accuracy(False)
+				if log: utils.print_log("=> loaded checkpoint '{}' accuracy={} (epoch {})" .format(model_filepath, best_acc, checkpoint['epoch']), log)
+				print('[SWL] Info: End loading a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
+			except:
+				print('[SWL] Error: Failed to load a model from {}.'.format(model_filepath))
+				return
+		else:
+			print('[SWL] Error: Invalid model file, {}.'.format(model_filepath))
 			return
 
-		model = model.to(device)
+		# Switch to evaluation mode.
+		model.eval()
 
 		#--------------------
 		inf_loader = self._dataset.create_test_data_loader(batch_size, shuffle=shuffle, num_workers=4)
@@ -295,8 +444,8 @@ class MyRunner(object):
 
 		#--------------------
 		print('[SWL] Info: Start inferring...')
-		start_time = time.time()
 		inferences = list()
+		start_time = time.time()
 		with torch.no_grad():
 			for batch_images in inf_images:
 				batch_images = batch_images.to(device)
@@ -373,7 +522,7 @@ def parse_command_line_options():
 		'-e',
 		'--epoch',
 		type=int,
-		help='Number of epochs',
+		help='Final epoch',
 		default=30
 	)
 	parser.add_argument(
@@ -436,9 +585,9 @@ def main():
 	#logger = set_logger(args.log_level)
 
 	#--------------------
-	num_epochs, batch_size = args.epoch, args.batch_size
+	final_epoch, batch_size = args.epoch, args.batch_size
+	is_training_resumed = args.resume
 	initial_epoch = 0
-	is_training_resumed = False
 
 	train_device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu else 'cpu')
 	test_device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu else 'cpu')
@@ -454,6 +603,14 @@ def main():
 		model_filepath = os.path.join(output_dir_path, 'model.pt')
 
 	#--------------------
+	if True:
+		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
+			os.makedirs(output_dir_path, exist_ok=True)
+		train_log_filepath = os.path.join(output_dir_path, 'train_log.txt')
+		log = open(train_log_filepath, 'w')
+	else:
+		log = sys.out
+
 	runner = MyRunner(batch_size)
 
 	if args.train:
@@ -461,26 +618,28 @@ def main():
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
-		history = runner.train(model_filepath, model_checkpoint_filepath, num_epochs, train_device, initial_epoch, is_training_resumed)
+		history = runner.train(model_filepath, model_checkpoint_filepath, output_dir_path, final_epoch, initial_epoch, is_training_resumed, log=log, device=train_device)
 
 		#print('History =', history)
-		swl_ml_util.display_train_history(history)
-		if os.path.exists(output_dir_path):
-			swl_ml_util.save_train_history(history, output_dir_path)
+		#swl_ml_util.display_train_history(history)
+		#if os.path.exists(output_dir_path):
+		#	swl_ml_util.save_train_history(history, output_dir_path)
 
 	if args.test:
 		if not model_filepath or not os.path.exists(model_filepath):
 			print('[SWL] Error: Model file, {} does not exist.'.format(model_filepath))
 			return
 
-		runner.test(model_filepath, test_device)
+		runner.test(model_filepath, log=log, device=test_device)
 
 	if args.infer:
 		if not model_filepath or not os.path.exists(model_filepath):
 			print('[SWL] Error: Model file, {} does not exist.'.format(model_filepath))
 			return
 
-		runner.infer(model_filepath, infer_device, batch_size)
+		runner.infer(model_filepath, batch_size, log=log, device=infer_device)
+
+	log.close()
 
 #--------------------------------------------------------------------
 

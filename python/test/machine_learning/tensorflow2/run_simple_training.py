@@ -192,9 +192,9 @@ class MyRunner(object):
 			print('[SWL] Info: Resume training...')
 		else:
 			print('[SWL] Info: Start training...')
-		start_total_time = time.time()
 		final_epoch = initial_epoch + num_epochs
 		best_performance_measure = 0
+		start_total_time = time.time()
 		for epoch in range(initial_epoch, final_epoch):
 			print('Epoch {}/{}:'.format(epoch, final_epoch - 1))
 
@@ -274,8 +274,8 @@ class MyRunner(object):
 
 		#--------------------
 		print('[SWL] Info: Start testing...')
-		start_time = time.time()
 		inferences, ground_truths = list(), list()
+		start_time = time.time()
 		for inputs, outputs in self._dataset.test_data:
 			inferences.append(model(inputs).numpy())
 			ground_truths.append(outputs.numpy())
@@ -314,8 +314,8 @@ class MyRunner(object):
 
 		#--------------------
 		print('[SWL] Info: Start inferring...')
-		start_time = time.time()
 		inferences = list()
+		start_time = time.time()
 		for inputs, _ in self._dataset.test_data:
 			inferences.append(model(inputs).numpy())
 		print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
@@ -455,8 +455,8 @@ def main():
 
 	#--------------------
 	num_epochs, batch_size = args.epoch, args.batch_size
+	is_training_resumed = args.resume
 	initial_epoch = 0
-	is_training_resumed = False
 
 	#--------------------
 	output_dir_path = None
