@@ -341,7 +341,7 @@ class MyRunner(object):
 	def dataset(self):
 		return self._dataset
 
-	def train(self, checkpoint_dir_path, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
+	def train(self, checkpoint_dir_path, batch_size, final_epoch, initial_epoch=0, is_training_resumed=False):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
@@ -412,7 +412,6 @@ class MyRunner(object):
 			start_total_time = time.time()
 			train_steps_per_epoch = None if self._train_examples_per_epoch is None else math.ceil(self._train_examples_per_epoch / batch_size)
 			test_steps_per_epoch = None if self._test_examples_per_epoch is None else math.ceil(self._test_examples_per_epoch / batch_size)
-			final_epoch = initial_epoch + num_epochs
 			best_performance_measure = None
 			for epoch in range(initial_epoch, final_epoch):
 				print('Epoch {}/{}:'.format(epoch, final_epoch - 1))
@@ -651,7 +650,7 @@ class MyRunner(object):
 
 #--------------------------------------------------------------------
 
-def check_data(num_epochs, batch_size):
+def check_data(batch_size):
 	runner = MyRunner()
 	default_value = -1
 
@@ -704,29 +703,30 @@ def main():
 	os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
 
 	#--------------------
-	num_epochs, batch_size = 50, 128  # batch_size affects training.
-	initial_epoch = 0
 	is_trained, is_tested, is_inferred = True, True, True
 	is_training_resumed = False
+	initial_epoch, final_epoch, batch_size = 0, 50, 128  # batch_size affects training.
 
 	#--------------------
 	if False:
 		print('[SWL] Info: Start checking data...')
 		start_time = time.time()
-		check_data(num_epochs, batch_size)
+		check_data(batch_size)
 		print('[SWL] Info: End checking data: {} secs.'.format(time.time() - start_time))
 		return
 
 	#--------------------
-	output_dir_path = None
-	if not output_dir_path:
-		output_dir_prefix = 'simple_english_denoising_autoencoder'
-		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-
-	checkpoint_dir_path = None
-	if not checkpoint_dir_path:
+	checkpoint_dir_path, output_dir_path = None, None
+	if checkpoint_dir_path:
+		if not output_dir_path:
+			output_dir_path = os.path.dirname(checkpoint_dir_path)
+	else:
+		if not output_dir_path:
+			output_dir_prefix = 'simple_english_denoising_autoencoder'
+			output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 		checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
+
 	test_dir_path = None
 	if not test_dir_path:
 		test_dir_path = os.path.join(output_dir_path, 'test')
@@ -741,7 +741,7 @@ def main():
 		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
 			os.makedirs(checkpoint_dir_path, exist_ok=True)
 
-		history = runner.train(checkpoint_dir_path, num_epochs, batch_size, initial_epoch, is_training_resumed)
+		history = runner.train(checkpoint_dir_path, batch_size, final_epoch, initial_epoch, is_training_resumed)
 
 		#print('History =', history)
 		#swl_ml_util.display_train_history(history)

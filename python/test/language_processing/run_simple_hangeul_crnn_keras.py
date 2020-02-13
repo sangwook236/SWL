@@ -533,7 +533,7 @@ class MyRunner(object):
 
 			self._train_examples_per_epoch, self._val_examples_per_epoch, self._test_examples_per_epoch = self._dataset.num_train_examples, self._dataset.num_test_examples, self._dataset.num_test_examples
 
-	def train(self, model_filepath, model_checkpoint_filepath, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
+	def train(self, model_filepath, model_checkpoint_filepath, batch_size, final_epoch, initial_epoch=0, is_training_resumed=False):
 		if is_training_resumed:
 			# Restore a model.
 			try:
@@ -568,6 +568,8 @@ class MyRunner(object):
 
 		train_steps_per_epoch = None if self._train_examples_per_epoch is None else math.ceil(self._train_examples_per_epoch / batch_size)
 		val_steps_per_epoch = None if self._val_examples_per_epoch is None else math.ceil(self._val_examples_per_epoch / batch_size)
+
+		num_epochs = final_epoch - initial_epoch
 
 		#--------------------
 		if is_training_resumed:
@@ -743,11 +745,9 @@ def main():
 	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
 
 	#--------------------
-	num_epochs, batch_size = 100, 64
-	initial_epoch = 0
 	is_trained, is_tested, is_inferred = True, True, False
 	is_training_resumed = False
-
+	initial_epoch, final_epoch, batch_size = 0, 100, 64
 	train_test_ratio = 0.8
 
 	is_dataset_generated_at_runtime = False
@@ -764,13 +764,15 @@ def main():
 		data_dir_path = None
 
 	#--------------------
-	model_filepath = None
+	model_filepath, output_dir_path = None, None
 	if model_filepath:
-		output_dir_path = os.path.dirname(model_filepath)
+		if not output_dir_path:
+			output_dir_path = os.path.dirname(model_filepath)
 	else:
-		output_dir_prefix = 'simple_hangeul_crnn_keras'
-		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+		if not output_dir_path:
+			output_dir_prefix = 'simple_hangeul_crnn_keras'
+			output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 		model_filepath = os.path.join(output_dir_path, 'model.hdf5')
 		#model_weight_filepath = os.path.join(output_dir_path, 'model_weights.hdf5')
 
@@ -789,7 +791,7 @@ def main():
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
-		history = runner.train(model_filepath, model_checkpoint_filepath, num_epochs, batch_size, initial_epoch, is_training_resumed)
+		history = runner.train(model_filepath, model_checkpoint_filepath, batch_size, final_epoch, initial_epoch, is_training_resumed)
 
 		#print('History =', history)
 		swl_ml_util.display_train_history(history)

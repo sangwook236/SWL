@@ -791,10 +791,10 @@ def main():
 	is_training_resumed = args.resume
 	initial_epoch, final_epoch, batch_size = 0, args.epoch, args.batch_size
 
-	checkpoint_dir_path, output_dir_path = args.model_dir, args.out_dir
+	checkpoint_dir_path, output_dir_path = os.path.normpath(args.model_dir), os.path.normpath(args.out_dir)
 	if checkpoint_dir_path:
 		if not output_dir_path:
-			output_dir_path = os.path.dirname(os.path.normpath(checkpoint_dir_path))
+			output_dir_path = os.path.dirname(checkpoint_dir_path)
 	else:
 		if not output_dir_path:
 			output_dir_prefix = 'simple_training'

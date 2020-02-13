@@ -590,10 +590,10 @@ def main():
 	is_training_resumed = args.resume
 	initial_epoch, final_epoch, batch_size = 0, args.epoch, args.batch_size
 
-	model_filepath, output_dir_path = args.model_file, args.out_dir
+	model_filepath, output_dir_path = os.path.normpath(args.model_file), os.path.normpath(args.out_dir)
 	if model_filepath:
 		if not output_dir_path:
-			output_dir_path = os.path.dirname(os.path.normpath(model_filepath))
+			output_dir_path = os.path.dirname(model_filepath)
 	else:
 		if not output_dir_path:
 			output_dir_prefix = 'simple_training'
