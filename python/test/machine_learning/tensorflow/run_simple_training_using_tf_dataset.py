@@ -189,7 +189,7 @@ class MyRunner(object):
 			input_elem, output_elem = iter.get_next()
 			return input_elem, output_elem, iter, train_init_op, val_init_op, test_init_op
 
-	def train(self, checkpoint_dir_path, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
+	def train(self, checkpoint_dir_path, batch_size, initial_epoch=0, final_epoch, is_training_resumed=False):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
@@ -265,7 +265,6 @@ class MyRunner(object):
 				print('[SWL] Info: Resume training...')
 			else:
 				print('[SWL] Info: Start training...')
-			final_epoch = initial_epoch + num_epochs
 			best_performance_measure = 0
 			start_total_time = time.time()
 			for epoch in range(initial_epoch, final_epoch):
@@ -404,9 +403,8 @@ def main():
 	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
 
-	num_epochs, batch_size = 30, 128
-	initial_epoch = 0
 	is_training_resumed = False
+	initial_epoch, final_epoch, batch_size = 0, 30, 128
 
 	#--------------------
 	output_dir_path = None
@@ -426,7 +424,7 @@ def main():
 		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
 			os.makedirs(checkpoint_dir_path, exist_ok=True)
 
-		history = runner.train(checkpoint_dir_path, num_epochs, batch_size, initial_epoch, is_training_resumed)
+		history = runner.train(checkpoint_dir_path, batch_size, final_epoch, initial_epoch, is_training_resumed)
 
 		#print('History =', history)
 		swl_ml_util.display_train_history(history)

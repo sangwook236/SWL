@@ -4,7 +4,7 @@
 import sys
 sys.path.append('../../../src')
 
-import os, collections, pickle, argparse, logging, time, datetime, shutil
+import os, shutil, collections, pickle, argparse, logging, time, datetime
 import numpy as np
 import torch
 import torchvision
@@ -301,7 +301,7 @@ class MyRunner(object):
 						'epoch': epoch + 1,
 						#'arch': architecture,
 						'state_dict': model.state_dict(),
-						'optimizer' : optimizer.state_dict(),
+						'optimizer': optimizer.state_dict(),
 						'recorder': recorder,
 					},
 					best_model_filepath)
@@ -330,19 +330,19 @@ class MyRunner(object):
 		if best_model_filepath:
 			try:
 				shutil.copyfile(best_model_filepath, model_filepath)
-				print('[SWL] Info: Copied a best model to {}.'.format(model_filepath))
+				print('[SWL] Info: Copied the best model to {}.'.format(model_filepath))
 			except (FileNotFoundError, PermissionError) as ex:
-				print('[SWL] Error: Failed to save a best model to {}: {}.'.format(model_filepath, ex))
+				print('[SWL] Error: Failed to copy the best model to {}: {}.'.format(model_filepath, ex))
 		else:
 			torch.save({
 					'epoch': epoch + 1,
 					#'arch': architecture,
 					'state_dict': model.state_dict(),
-					'optimizer' : optimizer.state_dict(),
+					'optimizer': optimizer.state_dict(),
 					'recorder': recorder,
 				},
 				model_filepath)
-			print('[SWL] Info: Saved a best model to {}.'.format(model_filepath))
+			print('[SWL] Info: Saved the best model to {}.'.format(model_filepath))
 
 		return history
 
@@ -503,6 +503,15 @@ def parse_command_line_options():
 		default=None
 	)
 	parser.add_argument(
+		'-o',
+		'--out_dir',
+		type=str,
+		#nargs='?',
+		help='The output directory path to save results such as images and log',
+		#required=True,
+		default=None
+	)
+	parser.add_argument(
 		'-tr',
 		'--train_data_dir',
 		type=str,
@@ -585,24 +594,24 @@ def main():
 	#logger = set_logger(args.log_level)
 
 	#--------------------
-	final_epoch, batch_size = args.epoch, args.batch_size
 	is_training_resumed = args.resume
-	initial_epoch = 0
+	initial_epoch, final_epoch, batch_size = 0, args.epoch, args.batch_size
+
+	model_filepath, output_dir_path = args.model_file, args.out_dir
+	if model_filepath:
+		if not output_dir_path:
+			output_dir_path = os.path.dirname(os.path.normpath(model_filepath))
+	else:
+		if not output_dir_path:
+			output_dir_prefix = 'simple_training'
+			output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+		model_filepath = os.path.join(output_dir_path, 'model.pt')
 
 	train_device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu else 'cpu')
 	test_device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu else 'cpu')
 	infer_device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu else 'cpu')
 
-	model_filepath = args.model_file
-	if model_filepath:
-		output_dir_path = os.path.dirname(model_filepath)
-	else:
-		output_dir_prefix = 'simple_training'
-		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-		model_filepath = os.path.join(output_dir_path, 'model.pt')
-
-	#--------------------
 	if True:
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
@@ -611,6 +620,7 @@ def main():
 	else:
 		log = sys.out
 
+	#--------------------
 	runner = MyRunner(batch_size)
 
 	if args.train:
@@ -618,7 +628,16 @@ def main():
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
-		history = runner.train(model_filepath, model_checkpoint_filepath, output_dir_path, final_epoch, initial_epoch, is_training_resumed, log=log, device=train_device)
+		new_model_filepath = os.path.join(output_dir_path, os.path.basename(model_filepath))
+		if not os.path.samefile(model_filepath, new_model_filepath):
+			try:
+				shutil.copyfile(model_filepath, new_model_filepath)
+			except (FileNotFoundError, PermissionError) as ex:
+				print('[SWL] Error: Failed to copy a model, {}: {}.'.format(model_filepath, ex))
+				return
+
+		history = runner.train(new_model_filepath, model_checkpoint_filepath, output_dir_path, final_epoch, initial_epoch, is_training_resumed, log=log, device=train_device)
+		model_filepath = new_model_filepath
 
 		#print('History =', history)
 		#swl_ml_util.display_train_history(history)

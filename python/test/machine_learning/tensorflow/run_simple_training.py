@@ -198,7 +198,11 @@ class MyRunner(object):
 		num_classes = 10
 		self._dataset = MyDataset(image_height, image_width, image_channel, num_classes)
 
-	def train(self, checkpoint_dir_path, output_dir_path, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
+	@property
+	def dataset(self):
+		return self._dataset
+
+	def train(self, checkpoint_dir_path, output_dir_path, batch_size, final_epoch, initial_epoch=0, is_training_resumed=False):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
@@ -299,7 +303,6 @@ class MyRunner(object):
 				print('[SWL] Info: Resume training...')
 			else:
 				print('[SWL] Info: Start training...')
-			final_epoch = initial_epoch + num_epochs
 			best_performance_measure = 0
 			start_total_time = time.time()
 			for epoch in range(initial_epoch, final_epoch):
@@ -534,7 +537,7 @@ class MyRunner(object):
 			print('[SWL] Info: End visualizing by deconvolution: {} secs, succeeded? = {}.'.format(time.time() - start_time, 'yes' if is_succeeded else 'no'))
 
 	# REF [file] >> ${SWDT_PYTHON_HOME}/rnd/test/machine_learning/saliency_test.py
-	def visualize_using_saliency(self, checkpoint_dir_path, output_dir_path):
+	def visualize_using_saliency(self, checkpoint_dir_path, output_dir_path, image):
 		import saliency
 		from matplotlib import pylab as plt
 
@@ -564,12 +567,27 @@ class MyRunner(object):
 			print('[SWL] Info: End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
 
 			#--------------------
+			minval, maxval = np.min(image), np.max(image)
+			img_scaled = np.squeeze((image - minval) / (maxval - minval), axis=-1)
+
+			# Construct the scalar neuron tensor.
+			logits = model_output
+			neuron_selector = tf.placeholder(tf.int32)
+			y = logits[0][neuron_selector]
+
+			# Construct tensor for predictions.
+			prediction = tf.argmax(logits, 1)
+
+			# Make a prediction. 
+			prediction_class = sess.run(prediction, feed_dict={input_ph: [image]})[0]
+
+			#--------------------
 			#saliency_obj = saliency.GradientSaliency(sess.graph, sess, y, input_ph)
 			#saliency_obj = saliency.GuidedBackprop(sess.graph, sess, y, input_ph)
 			saliency_obj = saliency.IntegratedGradients(sess.graph, sess, y, input_ph)
 
-			vanilla_mask_3d = saliency_obj.GetMask(img, feed_dict={neuron_selector: prediction_class})
-			smoothgrad_mask_3d = saliency_obj.GetSmoothedMask(img, feed_dict={neuron_selector: prediction_class})
+			vanilla_mask_3d = saliency_obj.GetMask(image, feed_dict={neuron_selector: prediction_class})
+			smoothgrad_mask_3d = saliency_obj.GetSmoothedMask(image, feed_dict={neuron_selector: prediction_class})
 
 			# Compute a 2D tensor for visualization.
 			vanilla_mask_gray = saliency.VisualizeImageGrayscale(vanilla_mask_3d)
@@ -577,7 +595,7 @@ class MyRunner(object):
 			vanilla_mask_div = saliency.VisualizeImageDiverging(vanilla_mask_3d)
 			smoothgrad_mask_div = saliency.VisualizeImageDiverging(smoothgrad_mask_3d)
 
-			plt.figure()
+			fig = plt.figure()
 			ax = plt.subplot(2, 3, 1)
 			ax.imshow(img_scaled, cmap=plt.cm.gray, vmin=0, vmax=1)
 			ax.axis('off')
@@ -590,31 +608,34 @@ class MyRunner(object):
 			ax.imshow(smoothgrad_mask_gray, cmap=plt.cm.gray, vmin=0, vmax=1)
 			ax.axis('off')
 			ax.set_title('SmoothGrad Grayscale')
-			ax = plt.subplot(2, 3, 4)
+			ax = plt.subplot(2, 3, 5)
 			ax.imshow(vanilla_mask_div, cmap=plt.cm.gray, vmin=0, vmax=1)
 			ax.axis('off')
 			ax.set_title('Vanilla Diverging')
-			ax = plt.subplot(2, 3, 5)
+			ax = plt.subplot(2, 3, 6)
 			ax.imshow(smoothgrad_mask_div, cmap=plt.cm.gray, vmin=0, vmax=1)
 			ax.axis('off')
 			ax.set_title('SmoothGrad Diverging')
+			fig.suptitle('Integrated Gradients', fontsize=16)
+			fig.tight_layout()
+			plt.savefig(os.path.join(output_dir_path, 'visualization_grad.png'))
 			plt.show()
 
 			#--------------------
 			xrai_obj = saliency.XRAI(sess.graph, sess, y, input_ph)
 
-			xrai_attributions = xrai_obj.GetMask(img, feed_dict={neuron_selector: prediction_class})
+			xrai_attributions = xrai_obj.GetMask(image, feed_dict={neuron_selector: prediction_class})
 			# Create XRAIParameters and set the algorithm to fast mode which will produce an approximate result.
 			#xrai_params = saliency.XRAIParameters()
 			#xrai_params.algorithm = 'fast'
-			#xrai_attributions_fast = xrai_obj.GetMask(img, feed_dict={neuron_selector: prediction_class}, extra_parameters=xrai_params)
+			#xrai_attributions_fast = xrai_obj.GetMask(image, feed_dict={neuron_selector: prediction_class}, extra_parameters=xrai_params)
 
 			# Show most salient 30% of the image.
 			mask = xrai_attributions > np.percentile(xrai_attributions, 70)
 			img_masked = img_scaled.copy()
 			img_masked[~mask] = 0
 
-			plt.figure()
+			fig = plt.figure()
 			ax = plt.subplot(1, 3, 1)
 			ax.imshow(img_scaled, cmap=plt.cm.gray, vmin=0, vmax=1)
 			ax.axis('off')
@@ -627,13 +648,16 @@ class MyRunner(object):
 			ax.imshow(img_masked, cmap=plt.cm.gray)
 			ax.axis('off')
 			ax.set_title('Masked Input')
+			fig.suptitle('XRAI', fontsize=16)
+			fig.tight_layout()
+			plt.savefig(os.path.join(output_dir_path, 'visualization_xrai.png'))
 			plt.show()
 			print('[SWL] Info: End visualizing saliency: {} secs.'.format(time.time() - start_time))
 
 #--------------------------------------------------------------------
 
 def parse_command_line_options():
-	parser = argparse.ArgumentParser(description='Train, test, or infer a CNN model for MNIST dataset.')
+	parser = argparse.ArgumentParser(description='Train, test, infer, or visulize a CNN model for MNIST dataset.')
 
 	parser.add_argument(
 		'--train',
@@ -671,6 +695,15 @@ def parse_command_line_options():
 		default=None
 	)
 	parser.add_argument(
+		'-o',
+		'--out_dir',
+		type=str,
+		#nargs='?',
+		help='The output directory path to save results such as images and log',
+		#required=True,
+		default=None
+	)
+	parser.add_argument(
 		'-tr',
 		'--train_data_dir',
 		type=str,
@@ -690,7 +723,7 @@ def parse_command_line_options():
 		'-e',
 		'--epoch',
 		type=int,
-		help='Number of epochs',
+		help='Final epoch',
 		default=30
 	)
 	parser.add_argument(
@@ -755,19 +788,18 @@ def main():
 	#logger = set_logger(args.log_level)
 
 	#--------------------
-	num_epochs, batch_size = args.epoch, args.batch_size
 	is_training_resumed = args.resume
-	initial_epoch = 0
+	initial_epoch, final_epoch, batch_size = 0, args.epoch, args.batch_size
 
-	#--------------------
-	output_dir_path = None
-	if not output_dir_path:
-		output_dir_prefix = 'simple_training'
-		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-
-	checkpoint_dir_path = args.model_dir
-	if not checkpoint_dir_path:
+	checkpoint_dir_path, output_dir_path = args.model_dir, args.out_dir
+	if checkpoint_dir_path:
+		if not output_dir_path:
+			output_dir_path = os.path.dirname(os.path.normpath(checkpoint_dir_path))
+	else:
+		if not output_dir_path:
+			output_dir_prefix = 'simple_training'
+			output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 		checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
 
 	#--------------------
@@ -779,7 +811,9 @@ def main():
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
-		history = runner.train(checkpoint_dir_path, output_dir_path, num_epochs, batch_size, initial_epoch, is_training_resumed)
+		# TODO [check] >> Make sure whether the checkpoint directory ('tf_checkpoint') is copied to 'output_dir_path'.
+
+		history = runner.train(checkpoint_dir_path, output_dir_path, batch_size, final_epoch, initial_epoch, is_training_resumed)
 
 		#print('History =', history)
 		swl_ml_util.display_train_history(history)
@@ -808,7 +842,8 @@ def main():
 			os.makedirs(output_dir_path, exist_ok=True)
 
 		#runner.visualize_using_tf_cnnvis(checkpoint_dir_path, output_dir_path)
-		runner.visualize_using_saliency(checkpoint_dir_path, output_dir_path)
+		images, _ = runner.dataset.test_data
+		runner.visualize_using_saliency(checkpoint_dir_path, output_dir_path, images[0])
 
 #--------------------------------------------------------------------
 

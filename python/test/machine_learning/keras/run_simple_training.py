@@ -4,7 +4,7 @@
 import sys
 sys.path.append('../../../src')
 
-import os, math, argparse, logging, time, datetime
+import os, math, shutil, argparse, logging, time, datetime
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
@@ -247,7 +247,7 @@ class MyRunner(object):
 		num_classes = 10
 		self._dataset = MyDataset(image_height, image_width, image_channel, num_classes)
 
-	def train(self, model_filepath, model_checkpoint_filepath, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
+	def train(self, model_filepath, model_checkpoint_filepath, batch_size, final_epoch, initial_epoch=0, is_training_resumed=False):
 		if is_training_resumed:
 			# Restore a model.
 			try:
@@ -286,6 +286,8 @@ class MyRunner(object):
 		csv_logger_callback = tf.keras.callbacks.CSVLogger('./train_log.csv')  # epoch, acc, loss, lr, val_acc, val_loss.
 		#callbacks = [model_checkpoint_callback, early_stopping_callback, lr_schedule_callback, lr_reduce_callback, csv_logger_callback]
 		callbacks = [model_checkpoint_callback, early_stopping_callback, csv_logger_callback]
+
+		num_epochs = final_epoch - initial_epoch
 
 		#--------------------
 		if is_training_resumed:
@@ -492,6 +494,15 @@ def parse_command_line_options():
 		default=None
 	)
 	parser.add_argument(
+		'-o',
+		'--out_dir',
+		type=str,
+		#nargs='?',
+		help='The output directory path to save results such as images and log',
+		#required=True,
+		default=None
+	)
+	parser.add_argument(
 		'-tr',
 		'--train_data_dir',
 		type=str,
@@ -511,7 +522,7 @@ def parse_command_line_options():
 		'-e',
 		'--epoch',
 		type=int,
-		help='Number of epochs',
+		help='Final epoch',
 		default=30
 	)
 	parser.add_argument(
@@ -576,17 +587,18 @@ def main():
 	#logger = set_logger(args.log_level)
 
 	#--------------------
-	num_epochs, batch_size = args.epoch, args.batch_size
 	is_training_resumed = args.resume
-	initial_epoch = 0
+	initial_epoch, final_epoch, batch_size = 0, args.epoch, args.batch_size
 
-	model_filepath = args.model_file
+	model_filepath, output_dir_path = args.model_file, args.out_dir
 	if model_filepath:
-		output_dir_path = os.path.dirname(model_filepath)
+		if not output_dir_path:
+			output_dir_path = os.path.dirname(os.path.normpath(model_filepath))
 	else:
-		output_dir_prefix = 'simple_training'
-		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+		if not output_dir_path:
+			output_dir_prefix = 'simple_training'
+			output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 		model_filepath = os.path.join(output_dir_path, 'model.hdf5')
 		#model_weight_filepath = os.path.join(output_dir_path, 'model_weights.hdf5')
 
@@ -598,7 +610,16 @@ def main():
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
-		history = runner.train(model_filepath, model_checkpoint_filepath, num_epochs, batch_size, initial_epoch, is_training_resumed)
+		new_model_filepath = os.path.join(output_dir_path, os.path.basename(model_filepath))
+		if not os.path.samefile(model_filepath, new_model_filepath):
+			try:
+				shutil.copyfile(model_filepath, new_model_filepath)
+			except (FileNotFoundError, PermissionError) as ex:
+				print('[SWL] Error: Failed to copy a model, {}: {}.'.format(model_filepath, ex))
+				return
+
+		history = runner.train(new_model_filepath, model_checkpoint_filepath, batch_size, final_epoch, initial_epoch, is_training_resumed)
+		model_filepath = new_model_filepath
 
 		#print('History =', history)
 		swl_ml_util.display_train_history(history)

@@ -129,7 +129,7 @@ class MyRunner(object):
 		self._test_loss = tf.keras.metrics.Mean(name='test_loss')
 		self._test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
 
-	def train(self, checkpoint_dir_path, output_dir_path, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
+	def train(self, checkpoint_dir_path, output_dir_path, batch_size, final_epoch, initial_epoch=0, is_training_resumed=False):
 		@tf.function
 		def train_step(model, inputs, outputs):
 			with tf.GradientTape() as tape:
@@ -192,7 +192,6 @@ class MyRunner(object):
 			print('[SWL] Info: Resume training...')
 		else:
 			print('[SWL] Info: Start training...')
-		final_epoch = initial_epoch + num_epochs
 		best_performance_measure = 0
 		start_total_time = time.time()
 		for epoch in range(initial_epoch, final_epoch):
@@ -370,6 +369,15 @@ def parse_command_line_options():
 		default=None
 	)
 	parser.add_argument(
+		'-o',
+		'--out_dir',
+		type=str,
+		#nargs='?',
+		help='The output directory path to save results such as images and log',
+		#required=True,
+		default=None
+	)
+	parser.add_argument(
 		'-tr',
 		'--train_data_dir',
 		type=str,
@@ -389,7 +397,7 @@ def parse_command_line_options():
 		'-e',
 		'--epoch',
 		type=int,
-		help='Number of epochs',
+		help='Final epoch',
 		default=30
 	)
 	parser.add_argument(
@@ -454,19 +462,18 @@ def main():
 	#logger = set_logger(args.log_level)
 
 	#--------------------
-	num_epochs, batch_size = args.epoch, args.batch_size
 	is_training_resumed = args.resume
-	initial_epoch = 0
+	initial_epoch, final_epoch, batch_size = 0, args.epoch, args.batch_size
 
-	#--------------------
-	output_dir_path = None
-	if not output_dir_path:
-		output_dir_prefix = 'simple_training'
-		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-
-	checkpoint_dir_path = args.model_dir
-	if not checkpoint_dir_path:
+	checkpoint_dir_path, output_dir_path = args.model_dir, args.out_dir
+	if checkpoint_dir_path:
+		if not output_dir_path:
+			output_dir_path = os.path.dirname(os.path.normpath(checkpoint_dir_path))
+	else:
+		if not output_dir_path:
+			output_dir_prefix = 'simple_training'
+			output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 		checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
 
 	#--------------------
@@ -478,7 +485,9 @@ def main():
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
-		history = runner.train(checkpoint_dir_path, output_dir_path, num_epochs, batch_size, initial_epoch, is_training_resumed)
+		# TODO [check] >> Make sure whether the checkpoint directory ('tf_checkpoint') is copied to 'output_dir_path'.
+
+		history = runner.train(checkpoint_dir_path, output_dir_path, batch_size, final_epoch, initial_epoch, is_training_resumed)
 
 		#print('History =', history)
 		swl_ml_util.display_train_history(history)
