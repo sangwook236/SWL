@@ -559,16 +559,17 @@ def main():
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
+		# Copy the model file to the output directory.
 		new_model_filepath = os.path.join(output_dir_path, os.path.basename(model_filepath))
-		if not os.path.samefile(model_filepath, new_model_filepath):
+		if os.path.exists(model_filepath) and not os.path.samefile(model_filepath, new_model_filepath):
 			try:
 				shutil.copyfile(model_filepath, new_model_filepath)
 			except (FileNotFoundError, PermissionError) as ex:
 				print('[SWL] Error: Failed to copy a model, {}: {}.'.format(model_filepath, ex))
 				return
-
-		history = runner.train(new_model_filepath, model_checkpoint_filepath, output_dir_path, final_epoch, initial_epoch, is_training_resumed, device=train_device)
 		model_filepath = new_model_filepath
+
+		history = runner.train(model_filepath, model_checkpoint_filepath, output_dir_path, final_epoch, initial_epoch, is_training_resumed, device=train_device)
 
 		#print('History =', history)
 		#swl_ml_util.display_train_history(history)

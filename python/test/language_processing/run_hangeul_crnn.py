@@ -433,15 +433,17 @@ def main():
 		return
 
 	#--------------------
-	output_dir_path = None
-	if not output_dir_path:
-		output_dir_prefix = 'hangeul_crnn'
-		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-
-	checkpoint_dir_path = None
-	if not checkpoint_dir_path:
+	checkpoint_dir_path, output_dir_path = None, None
+	if checkpoint_dir_path:
+		if not output_dir_path:
+			output_dir_path = os.path.dirname(checkpoint_dir_path)
+	else:
+		if not output_dir_path:
+			output_dir_prefix = 'hangeul_crnn'
+			output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 		checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
+
 	inference_dir_path = None
 	if not inference_dir_path:
 		inference_dir_path = os.path.join(output_dir_path, 'inference')
