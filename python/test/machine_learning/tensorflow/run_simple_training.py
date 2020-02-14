@@ -4,7 +4,7 @@
 import sys
 sys.path.append('../../../src')
 
-import os, argparse, logging, time, datetime
+import os, argparse, logging, logging.handlers, time, datetime
 import numpy as np
 import tensorflow as tf
 #from sklearn import preprocessing
@@ -14,16 +14,16 @@ import swl.machine_learning.util as swl_ml_util
 #--------------------------------------------------------------------
 
 class MyDataset(object):
-	def __init__(self, image_height, image_width, image_channel, num_classes):
+	def __init__(self, image_height, image_width, image_channel, num_classes, logger):
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 		self._num_classes = num_classes
 
 		#--------------------
 		# Load data.
-		print('Start loading dataset...')
+		logger.info('[SWL] Start loading dataset...')
 		start_time = time.time()
 		self._train_images, self._train_labels, self._test_images, self._test_labels = MyDataset._load_data(self._image_height, self._image_width, self._image_channel, self._num_classes)
-		print('End loading dataset: {} secs.'.format(time.time() - start_time))
+		logger.info('[SWL] End loading dataset: {} secs.'.format(time.time() - start_time))
 
 		self._num_train_examples = len(self._train_images)
 		if len(self._train_labels) != self._num_train_examples:
@@ -33,10 +33,10 @@ class MyDataset(object):
 			raise ValueError('Invalid test data length: {} != {}'.format(self._num_test_examples, len(self._test_labels)))
 
 		#--------------------
-		print('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_images.shape, self._train_images.dtype, np.min(self._train_images), np.max(self._train_images)))
-		print('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_labels.shape, self._train_labels.dtype, np.min(self._train_labels), np.max(self._train_labels)))
-		print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
-		print('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_labels.shape, self._test_labels.dtype, np.min(self._test_labels), np.max(self._test_labels)))
+		logger.info('[SWL] Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_images.shape, self._train_images.dtype, np.min(self._train_images), np.max(self._train_images)))
+		logger.info('[SWL] Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_labels.shape, self._train_labels.dtype, np.min(self._train_labels), np.max(self._train_labels)))
+		logger.info('[SWL] Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
+		logger.info('[SWL] Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_labels.shape, self._test_labels.dtype, np.min(self._test_labels), np.max(self._test_labels)))
 
 	@property
 	def shape(self):
@@ -192,11 +192,13 @@ class MyModel(object):
 #--------------------------------------------------------------------
 
 class MyRunner(object):
-	def __init__(self):
+	def __init__(self, logger):
+		self._logger = logger
+
 		# Create a dataset.
 		image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
 		num_classes = 10
-		self._dataset = MyDataset(image_height, image_width, image_channel, num_classes)
+		self._dataset = MyDataset(image_height, image_width, image_channel, num_classes, self._logger)
 
 	@property
 	def dataset(self):
@@ -278,7 +280,7 @@ class MyRunner(object):
 
 			if is_training_resumed:
 				# Restore a model.
-				print('[SWL] Info: Start restoring a model...')
+				self._logger.info('[SWL] Start restoring a model...')
 				start_time = time.time()
 				ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
 				ckpt_filepath = ckpt.model_checkpoint_path if ckpt else None
@@ -287,9 +289,9 @@ class MyRunner(object):
 					initial_epoch = int(ckpt_filepath.split('-')[1]) + 1
 					saver.restore(sess, ckpt_filepath)
 				else:
-					print('[SWL] Error: Failed to restore a model from {}.'.format(checkpoint_dir_path))
+					self._logger.error('[SWL] Failed to restore a model from {}.'.format(checkpoint_dir_path))
 					return
-				print('[SWL] Info: End restoring a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
+				self._logger.info('[SWL] End restoring a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
 
 			history = {
 				'acc': list(),
@@ -300,13 +302,13 @@ class MyRunner(object):
 
 			#--------------------
 			if is_training_resumed:
-				print('[SWL] Info: Resume training...')
+				self._logger.info('[SWL] Resume training...')
 			else:
-				print('[SWL] Info: Start training...')
+				self._logger.info('[SWL] Start training...')
 			best_performance_measure = 0
 			start_total_time = time.time()
 			for epoch in range(initial_epoch, final_epoch):
-				print('Epoch {}/{}:'.format(epoch, final_epoch - 1))
+				self._logger.info('[SWL] Epoch {}/{}:'.format(epoch, final_epoch - 1))
 
 				#--------------------
 				train_loss, train_acc, num_examples = 0.0, 0.0, 0
@@ -319,10 +321,10 @@ class MyRunner(object):
 
 					train_summary_writer.add_summary(summary, epoch * batch_size + batch_step)
 					if (batch_step + 1) % 100 == 0:
-						print('\tStep {}: {} secs.'.format(batch_step + 1, time.time() - start_time))
+						self._logger.info('[SWL]    Step {}: {} secs.'.format(batch_step + 1, time.time() - start_time))
 				train_loss /= num_examples
 				train_acc /= num_examples
-				print('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
+				self._logger.info('[SWL]    Train:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
 
 				history['loss'].append(train_loss)
 				history['acc'].append(train_acc)
@@ -339,21 +341,21 @@ class MyRunner(object):
 					val_summary_writer.add_summary(summary, epoch * batch_size + batch_step)
 				val_loss /= num_examples
 				val_acc /= num_examples
-				print('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
+				self._logger.info('[SWL]    Validation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
 
 				history['val_loss'].append(val_loss)
 				history['val_acc'].append(val_acc)
 
 				if val_acc > best_performance_measure:
-					print('[SWL] Info: Start saving a model...')
+					self._logger.info('[SWL] Start saving a model...')
 					start_time = time.time()
 					saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model_ckpt'), global_step=epoch)
-					print('[SWL] Info: End saving a model to {}: {} secs.'.format(saved_model_path, time.time() - start_time))
+					self._logger.info('[SWL] End saving a model to {}: {} secs.'.format(saved_model_path, time.time() - start_time))
 					best_performance_measure = val_acc
 
 				sys.stdout.flush()
 				time.sleep(0)
-			print('[SWL] Info: End training: {} secs.'.format(time.time() - start_total_time))
+			self._logger.info('[SWL] End training: {} secs.'.format(time.time() - start_total_time))
 
 			return history
 
@@ -371,7 +373,7 @@ class MyRunner(object):
 
 		with tf.Session(graph=graph) as sess:
 			# Load a model.
-			print('[SWL] Info: Start loading a model...')
+			self._logger.info('[SWL] Start loading a model...')
 			start_time = time.time()
 			ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
 			ckpt_filepath = ckpt.model_checkpoint_path if ckpt else None
@@ -379,22 +381,22 @@ class MyRunner(object):
 			if ckpt_filepath:
 				saver.restore(sess, ckpt_filepath)
 			else:
-				print('[SWL] Error: Failed to load a model from {}.'.format(checkpoint_dir_path))
+				self._logger.error('[SWL] Failed to load a model from {}.'.format(checkpoint_dir_path))
 				return
-			print('[SWL] Info: End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
+			self._logger.info('[SWL] End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
 
 			#--------------------
-			print('[SWL] Info: Start testing...')
+			self._logger.info('[SWL] Start testing...')
 			inferences, test_labels = list(), list()
 			start_time = time.time()
 			for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, shuffle=shuffle):
 				inferences.append(sess.run(model_output, feed_dict={input_ph: batch_data[0]}))
 				test_labels.append(batch_data[1])
-			print('[SWL] Info: End testing: {} secs.'.format(time.time() - start_time))
+			self._logger.info('[SWL] End testing: {} secs.'.format(time.time() - start_time))
 
 			inferences, test_labels = np.vstack(inferences), np.vstack(test_labels)
 			if inferences is not None and test_labels is not None:
-				print('\tTest: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+				self._logger.info('[SWL] Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 				if self._dataset.num_classes > 2:
 					inferences = np.argmax(inferences, -1)
@@ -406,9 +408,9 @@ class MyRunner(object):
 					raise ValueError('Invalid number of classes')
 
 				correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
-				print('\tTest: accuracy = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+				self._logger.info('[SWL] Test: accuracy = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
 			else:
-				print('[SWL] Warning: Invalid test results.')
+				self._logger.warning('[SWL] Invalid test results.')
 
 	def infer(self, checkpoint_dir_path, batch_size=None, shuffle=False):
 		graph = tf.Graph()
@@ -424,7 +426,7 @@ class MyRunner(object):
 
 		with tf.Session(graph=graph) as sess:
 			# Load a model.
-			print('[SWL] Info: Start loading a model...')
+			self._logger.info('[SWL] Start loading a model...')
 			start_time = time.time()
 			ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
 			ckpt_filepath = ckpt.model_checkpoint_path if ckpt else None
@@ -432,9 +434,9 @@ class MyRunner(object):
 			if ckpt_filepath:
 				saver.restore(sess, ckpt_filepath)
 			else:
-				print('[SWL] Error: Failed to load a model from {}.'.format(checkpoint_dir_path))
+				self._logger.error('[SWL] Failed to load a model from {}.'.format(checkpoint_dir_path))
 				return
-			print('[SWL] Info: End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
+			self._logger.info('[SWL] End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
 
 			#--------------------
 			inf_images, _ = self._dataset.test_data
@@ -450,7 +452,7 @@ class MyRunner(object):
 				np.random.shuffle(indices)
 
 			#--------------------
-			print('[SWL] Info: Start inferring...')
+			self._logger.info('[SWL] Start inferring...')
 			inferences = list()
 			start_idx = 0
 			start_time = time.time()
@@ -466,11 +468,11 @@ class MyRunner(object):
 				if end_idx >= num_examples:
 					break
 				start_idx = end_idx
-			print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
+			self._logger.info('[SWL] End inferring: {} secs.'.format(time.time() - start_time))
 
 			inferences = np.vstack(inferences)
 			if inferences is not None:
-				print('\tInference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+				self._logger.info('[SWL] Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 				if self._dataset.num_classes > 2:
 					inferences = np.argmax(inferences, -1)
@@ -479,13 +481,14 @@ class MyRunner(object):
 				else:
 					raise ValueError('Invalid number of classes')
 
-				print('\tInference results: index,inference')
+				results = dict()
 				for idx, inf in enumerate(inferences):
-					print('{},{}'.format(idx, inf))
+					results[idx] = inf
 					if (idx + 1) >= 10:
 						break
+				self._logger.info('[SWL] Inference results (index,inference): {}.'.format(results))
 			else:
-				print('[SWL] Warning: Invalid inference results.')
+				self._logger.warning('[SWL] Invalid inference results.')
 
 	# REF [site] >> https://github.com/InFoCusp/tf_cnnvis
 	def visualize_using_tf_cnnvis(self, checkpoint_dir_path, output_dir_path):
@@ -508,7 +511,7 @@ class MyRunner(object):
 
 		with tf.Session(graph=graph) as sess:
 			# Load a model.
-			print('[SWL] Info: Start loading a model...')
+			self._logger.info('[SWL] Start loading a model...')
 			start_time = time.time()
 			ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
 			ckpt_filepath = ckpt.model_checkpoint_path if ckpt else None
@@ -516,9 +519,9 @@ class MyRunner(object):
 			if ckpt_filepath:
 				saver.restore(sess, ckpt_filepath)
 			else:
-				print('[SWL] Error: Failed to load a model from {}.'.format(checkpoint_dir_path))
+				self._logger.error('[SWL] Failed to load a model from {}.'.format(checkpoint_dir_path))
 				return
-			print('[SWL] Info: End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
+			self._logger.info('[SWL] End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
 
 			#--------------------
 			inf_images, _ = self._dataset.test_data
@@ -526,15 +529,15 @@ class MyRunner(object):
 			input_tensor = None
 			#input_tensor = input_ph
 
-			print('[SWL] Info: Start visualizing activation...')
+			self._logger.info('[SWL] Start visualizing activation...')
 			start_time = time.time()
 			is_succeeded = swl_ml_util.visualize_activation(sess, input_tensor, feed_dict, output_dir_path)
-			print('[SWL] Info: End visualizing activation: {} secs, succeeded? = {}.'.format(time.time() - start_time, 'yes' if is_succeeded else 'no'))
+			self._logger.info('[SWL] End visualizing activation: {} secs, succeeded? = {}.'.format(time.time() - start_time, 'yes' if is_succeeded else 'no'))
 
-			print('[SWL] Info: Start visualizing by deconvolution...')
+			self._logger.info('[SWL] Start visualizing by deconvolution...')
 			start_time = time.time()
 			is_succeeded = swl_ml_util.visualize_by_deconvolution(sess, input_tensor, feed_dict, output_dir_path)
-			print('[SWL] Info: End visualizing by deconvolution: {} secs, succeeded? = {}.'.format(time.time() - start_time, 'yes' if is_succeeded else 'no'))
+			self._logger.info('[SWL] End visualizing by deconvolution: {} secs, succeeded? = {}.'.format(time.time() - start_time, 'yes' if is_succeeded else 'no'))
 
 	# REF [file] >> ${SWDT_PYTHON_HOME}/rnd/test/machine_learning/saliency_test.py
 	def visualize_using_saliency(self, checkpoint_dir_path, output_dir_path, image):
@@ -554,7 +557,7 @@ class MyRunner(object):
 
 		with tf.Session(graph=graph) as sess:
 			# Load a model.
-			print('[SWL] Info: Start loading a model...')
+			self._logger.info('[SWL] Start loading a model...')
 			start_time = time.time()
 			ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
 			ckpt_filepath = ckpt.model_checkpoint_path if ckpt else None
@@ -562,11 +565,12 @@ class MyRunner(object):
 			if ckpt_filepath:
 				saver.restore(sess, ckpt_filepath)
 			else:
-				print('[SWL] Error: Failed to load a model from {}.'.format(checkpoint_dir_path))
+				self._logger.error('[SWL] Failed to load a model from {}.'.format(checkpoint_dir_path))
 				return
-			print('[SWL] Info: End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
+			self._logger.info('[SWL] End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
 
 			#--------------------
+			self._logger.info('[SWL] Start visualizing saliency...')
 			minval, maxval = np.min(image), np.max(image)
 			img_scaled = np.squeeze((image - minval) / (maxval - minval), axis=-1)
 
@@ -652,7 +656,7 @@ class MyRunner(object):
 			fig.tight_layout()
 			plt.savefig(os.path.join(output_dir_path, 'visualization_xrai.png'))
 			plt.show()
-			print('[SWL] Info: End visualizing saliency: {} secs.'.format(time.time() - start_time))
+			self._logger.info('[SWL] End visualizing saliency: {} secs.'.format(time.time() - start_time))
 
 #--------------------------------------------------------------------
 
@@ -744,40 +748,44 @@ def parse_command_line_options():
 		'-l',
 		'--log_level',
 		type=int,
-		help='Log level, [0, 50]',  # {NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL}.
+		help='Log level, [0, 50]',  # {NOTSET=0, DEBUG=10, INFO=20, WARNING=WARN=30, ERROR=40, CRITICAL=FATAL=50}.
 		default=None
 	)
 
 	return parser.parse_args()
 
-def set_logger(log_level):
-	"""
-	# When log_level is string.
-	if log_level is not None:
-		log_level = getattr(logging, log_level.upper(), None)
-		if not isinstance(log_level, int):
-			raise ValueError('Invalid log level: {}'.format(log_level))
+def get_logger(name, log_level, is_rotating=True):
+	if not os.path.isdir('log'):
+		os.mkdir('log')
+
+	log_filepath = './log/' + (name if name else 'swl') + '.log'
+	if is_rotating:
+		file_handler = logging.handlers.RotatingFileHandler(log_filepath, maxBytes=10000000, backupCount=10)
 	else:
-		log_level = logging.WARNING
-	"""
-	print('[SWL] Info: Log level = {}.'.format(log_level))
+		file_handler = logging.FileHandler(log_filepath)
+	stream_handler = logging.StreamHandler()
 
-	handler = logging.handlers.RotatingFileHandler('./simple_training.log', maxBytes=5000, backupCount=10)
-	formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
-	handler.setFormatter(formatter)
+	formatter = logging.Formatter('[%(levelname)s][%(filename)s:%(lineno)s][%(asctime)s] %(message)s')
+	#formatter = logging.Formatter('[%(levelname)s][%(asctime)s] %(message)s')
+	file_handler.setFormatter(formatter)
+	stream_handler.setFormatter(formatter)
 
-	#logger = logging.getLogger(__name__)
-	logger = logging.getLogger('simple_training_logger')
-	logger.addHandler(handler) 
-	logger.setLevel(log_level)
+	logger = logging.getLogger(name if name else __name__)
+	logger.setLevel(log_level)  # {NOTSET=0, DEBUG=10, INFO=20, WARNING=WARN=30, ERROR=40, CRITICAL=FATAL=50}.
+	logger.addHandler(file_handler) 
+	logger.addHandler(stream_handler) 
 
 	return logger
 
 def main():
 	args = parse_command_line_options()
 
+	logger = get_logger(os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, is_rotating=True)
+	logger.info('[SWL] Logger: name = {}, level = {}.'.format(logger.name, logger.level))
+	logger.info('[SWL] Command-line options: {}.'.format(vars(args)))
+
 	if not args.train and not args.test and not args.infer and not args.visualize:
-		print('[SWL] Error: At least one of command line options "--train", "--test", "--infer", and "--visualize" has to be specified.')
+		logger.error('[SWL] At least one of command line options "--train", "--test", "--infer", and "--visualize" has to be specified.')
 		return
 
 	if args.gpu:
@@ -785,13 +793,11 @@ def main():
 	if args.log_level:
 		os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
 
-	#logger = set_logger(args.log_level)
-
 	#--------------------
 	is_training_resumed = args.resume
 	initial_epoch, final_epoch, batch_size = 0, args.epoch, args.batch_size
 
-	checkpoint_dir_path, output_dir_path = os.path.normpath(args.model_dir), os.path.normpath(args.out_dir)
+	checkpoint_dir_path, output_dir_path = os.path.normpath(args.model_dir) if args.model_dir else None, os.path.normpath(args.out_dir) if args.out_dir else None
 	if checkpoint_dir_path:
 		if not output_dir_path:
 			output_dir_path = os.path.dirname(checkpoint_dir_path)
@@ -803,7 +809,7 @@ def main():
 		checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
 
 	#--------------------
-	runner = MyRunner()
+	runner = MyRunner(logger)
 
 	if args.train:
 		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
@@ -815,28 +821,28 @@ def main():
 
 		history = runner.train(checkpoint_dir_path, output_dir_path, batch_size, final_epoch, initial_epoch, is_training_resumed)
 
-		#print('History =', history)
+		#logger.info('[SWL] Train history = {}.'.format(history))
 		swl_ml_util.display_train_history(history)
 		if os.path.exists(output_dir_path):
 			swl_ml_util.save_train_history(history, output_dir_path)
 
 	if args.test:
 		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
-			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
+			logger.error('[SWL] Model directory, {} does not exist.'.format(checkpoint_dir_path))
 			return
 
 		runner.test(checkpoint_dir_path, batch_size)
 
 	if args.infer:
 		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
-			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
+			logger.error('[SWL] Model directory, {} does not exist.'.format(checkpoint_dir_path))
 			return
 
 		runner.infer(checkpoint_dir_path)
 
 	if args.visualize:
 		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
-			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
+			logger.error('[SWL] Model directory, {} does not exist.'.format(checkpoint_dir_path))
 			return
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)

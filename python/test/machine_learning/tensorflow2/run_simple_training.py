@@ -4,7 +4,7 @@
 import sys
 sys.path.append('../../../src')
 
-import os, argparse, logging, time, datetime, functools
+import os, argparse, logging, logging.handlers, time, datetime, functools
 import numpy as np
 import tensorflow as tf
 #from sklearn import preprocessing
@@ -14,15 +14,15 @@ import swl.machine_learning.util as swl_ml_util
 #--------------------------------------------------------------------
 
 class MyDataset(object):
-	def __init__(self, batch_size):
+	def __init__(self, batch_size, logger):
 		self._num_classes = 10
 
 		#--------------------
 		# Load data.
-		print('Start loading dataset...')
+		logger.info('[SWL] Start loading dataset...')
 		start_time = time.time()
-		self._train_ds, self._test_ds, self._shape = MyDataset._load_data(self._num_classes, batch_size)
-		print('End loading dataset: {} secs.'.format(time.time() - start_time))
+		self._train_ds, self._test_ds, self._shape = MyDataset._load_data(self._num_classes, batch_size, logger)
+		logger.info('[SWL] End loading dataset: {} secs.'.format(time.time() - start_time))
 
 	@property
 	def shape(self):
@@ -76,7 +76,7 @@ class MyDataset(object):
 		return inputs, outputs
 
 	@staticmethod
-	def _load_data(num_classes, batch_size):
+	def _load_data(num_classes, batch_size, logger):
 		# Pixel value: [0, 255].
 		(train_inputs, train_outputs), (test_inputs, test_outputs) = tf.keras.datasets.mnist.load_data()
 
@@ -86,10 +86,10 @@ class MyDataset(object):
 		assert train_inputs.shape[1:] == test_inputs.shape[1:]
 
 		#--------------------
-		print('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(train_inputs.shape, train_inputs.dtype, np.min(train_inputs), np.max(train_inputs)))
-		print('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(train_outputs.shape, train_outputs.dtype, np.min(train_outputs), np.max(train_outputs)))
-		print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(test_inputs.shape, test_inputs.dtype, np.min(test_inputs), np.max(test_inputs)))
-		print('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(test_outputs.shape, test_outputs.dtype, np.min(test_outputs), np.max(test_outputs)))
+		logger.info('[SWL] Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(train_inputs.shape, train_inputs.dtype, np.min(train_inputs), np.max(train_inputs)))
+		logger.info('[SWL] Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(train_outputs.shape, train_outputs.dtype, np.min(train_outputs), np.max(train_outputs)))
+		logger.info('[SWL] Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(test_inputs.shape, test_inputs.dtype, np.min(test_inputs), np.max(test_inputs)))
+		logger.info('[SWL] Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(test_outputs.shape, test_outputs.dtype, np.min(test_outputs), np.max(test_outputs)))
 
 		#--------------------
 		train_ds = tf.data.Dataset.from_tensor_slices((train_inputs, train_outputs)).shuffle(batch_size).batch(batch_size)
@@ -116,9 +116,11 @@ class MyModel(tf.keras.Model):
 #--------------------------------------------------------------------
 
 class MyRunner(object):
-	def __init__(self, batch_size):
+	def __init__(self, batch_size, logger):
+		self._logger = logger
+
 		# Create a dataset.
-		self._dataset = MyDataset(batch_size)
+		self._dataset = MyDataset(batch_size, self._logger)
 
 		self._loss_object = tf.keras.losses.SparseCategoricalCrossentropy()
 		self._optimizer = tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=False)
@@ -165,13 +167,13 @@ class MyRunner(object):
 
 		if is_training_resumed:
 			# Restore a model.
-			print('[SWL] Info: Start restoring a model...')
+			self._logger.info('[SWL] Start restoring a model...')
 			start_time = time.time()
 			ckpt.restore(ckpt_manager.latest_checkpoint)
 			if ckpt_manager.latest_checkpoint:
-				print('[SWL] Info: End restoring a model from {}: {} secs.'.format(ckpt_manager.latest_checkpoint, time.time() - start_time))
+				self._logger.info('[SWL] End restoring a model from {}: {} secs.'.format(ckpt_manager.latest_checkpoint, time.time() - start_time))
 			else:
-				print('[SWL] Error: Failed to restore a model from {}.'.format(checkpoint_dir_path))
+				self._logger.error('[SWL] Failed to restore a model from {}.'.format(checkpoint_dir_path))
 				return
 
 		history = {
@@ -189,13 +191,13 @@ class MyRunner(object):
 
 		#--------------------
 		if is_training_resumed:
-			print('[SWL] Info: Resume training...')
+			self._logger.info('[SWL] Resume training...')
 		else:
-			print('[SWL] Info: Start training...')
+			self._logger.info('[SWL] Start training...')
 		best_performance_measure = 0
 		start_total_time = time.time()
 		for epoch in range(initial_epoch, final_epoch):
-			print('Epoch {}/{}:'.format(epoch, final_epoch - 1))
+			self._logger.info('[SWL] Epoch {}/{}:'.format(epoch, final_epoch - 1))
 
 			#--------------------
 			start_time = time.time()
@@ -205,7 +207,7 @@ class MyRunner(object):
 				tf.summary.scalar('loss', self._train_loss.result(), step=epoch)
 				tf.summary.scalar('accuracy', self._train_accuracy.result(), step=epoch)
 			train_loss, train_acc = self._train_loss.result().numpy(), self._train_accuracy.result().numpy()
-			print('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
+			self._logger.info('[SWL]    Train:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
 
 			history['loss'].append(train_loss)
 			history['acc'].append(train_acc)
@@ -218,24 +220,24 @@ class MyRunner(object):
 				tf.summary.scalar('loss', self._test_loss.result(), step=epoch)
 				tf.summary.scalar('accuracy', self._test_accuracy.result(), step=epoch)
 			val_loss, val_acc = self._test_loss.result().numpy(), self._test_accuracy.result().numpy()
-			print('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
+			self._logger.info('[SWL]    Validation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
 
 			history['val_loss'].append(val_loss)
 			history['val_acc'].append(val_acc)
 
 			ckpt.step.assign_add(1)
 			if val_acc > best_performance_measure:
-				print('[SWL] Info: Start saving a model...')
+				self._logger.info('[SWL] Start saving a model...')
 				start_time = time.time()
 				saved_model_path = ckpt_manager.save()
-				print('[SWL] Info: End saving a model to {} for step {}: {} secs.'.format(saved_model_path, int(ckpt.step), time.time() - start_time))
+				self._logger.info('[SWL] End saving a model to {} for step {}: {} secs.'.format(saved_model_path, int(ckpt.step), time.time() - start_time))
 				best_performance_measure = val_acc
 			"""
 			if val_acc > best_performance_measure or int(ckpt.step) % 100 == 0:
-				print('[SWL] Info: Start saving a model...')
+				self._logger.info('[SWL] Start saving a model...')
 				start_time = time.time()
 				saved_model_path = ckpt_manager.save()
-				print('[SWL] Info: End saving a model to {} for step {}: {} secs.'.format(saved_model_path, int(ckpt.step), time.time() - start_time))
+				self._logger.info('[SWL] End saving a model to {} for step {}: {} secs.'.format(saved_model_path, int(ckpt.step), time.time() - start_time))
 				if val_acc > best_performance_measure:
 					best_performance_measure = val_acc
 			"""
@@ -248,7 +250,7 @@ class MyRunner(object):
 
 			sys.stdout.flush()
 			time.sleep(0)
-		print('[SWL] Info: End training: {} secs.'.format(time.time() - start_total_time))
+		self._logger.info('[SWL] End training: {} secs.'.format(time.time() - start_total_time))
 
 		return history
 
@@ -262,35 +264,35 @@ class MyRunner(object):
 		ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir_path, max_to_keep=None)
 
 		# Load a model.
-		print('[SWL] Info: Start loading a model...')
+		self._logger.info('[SWL] Start loading a model...')
 		start_time = time.time()
 		ckpt.restore(ckpt_manager.latest_checkpoint)
 		if ckpt_manager.latest_checkpoint:
-			print('[SWL] Info: End loading a model from {}: {} secs.'.format(ckpt_manager.latest_checkpoint, time.time() - start_time))
+			self._logger.info('[SWL] End loading a model from {}: {} secs.'.format(ckpt_manager.latest_checkpoint, time.time() - start_time))
 		else:
-			print('[SWL] Error: Failed to load a model from {}.'.format(checkpoint_dir_path))
+			self._logger.error('[SWL] Failed to load a model from {}.'.format(checkpoint_dir_path))
 			return
 
 		#--------------------
-		print('[SWL] Info: Start testing...')
+		self._logger.info('[SWL] Start testing...')
 		inferences, ground_truths = list(), list()
 		start_time = time.time()
 		for inputs, outputs in self._dataset.test_data:
 			inferences.append(model(inputs).numpy())
 			ground_truths.append(outputs.numpy())
-		print('[SWL] Info: End testing: {} secs.'.format(time.time() - start_time))
+		self._logger.info('[SWL] End testing: {} secs.'.format(time.time() - start_time))
 
 		inferences, ground_truths = np.vstack(inferences), np.concatenate(ground_truths)
 		if inferences is not None and ground_truths is not None:
-			print('\tTest: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+			self._logger.info('[SWL] Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 			inferences = np.argmax(inferences, -1)
 			#ground_truths = np.argmax(ground_truths, -1)
 
 			correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
-			print('\tTest: accuracy = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+			self._logger.info('[SWL] Test: accuracy = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
 		else:
-			print('[SWL] Warning: Invalid test results.')
+			self._logger.warning('[SWL] Invalid test results.')
 
 	def infer(self, checkpoint_dir_path, batch_size=None, shuffle=False):
 		# Create a model.
@@ -302,36 +304,37 @@ class MyRunner(object):
 		ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir_path, max_to_keep=None)
 
 		# Load a model.
-		print('[SWL] Info: Start loading a model...')
+		self._logger.info('[SWL] Start loading a model...')
 		start_time = time.time()
 		ckpt.restore(ckpt_manager.latest_checkpoint)
 		if ckpt_manager.latest_checkpoint:
-			print('[SWL] Info: End loading a model from {}: {} secs.'.format(ckpt_manager.latest_checkpoint, time.time() - start_time))
+			self._logger.info('[SWL] End loading a model from {}: {} secs.'.format(ckpt_manager.latest_checkpoint, time.time() - start_time))
 		else:
-			print('[SWL] Error: Failed to load a model from {}.'.format(checkpoint_dir_path))
+			self._logger.error('[SWL] Failed to load a model from {}.'.format(checkpoint_dir_path))
 			return
 
 		#--------------------
-		print('[SWL] Info: Start inferring...')
+		self._logger.info('[SWL] Start inferring...')
 		inferences = list()
 		start_time = time.time()
 		for inputs, _ in self._dataset.test_data:
 			inferences.append(model(inputs).numpy())
-		print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
+		self._logger.info('[SWL] End inferring: {} secs.'.format(time.time() - start_time))
 
 		inferences = np.vstack(inferences)
 		if inferences is not None:
-			print('\tInference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+			self._logger.info('[SWL] Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 			inferences = np.argmax(inferences, -1)
 
-			print('\tInference results: index,inference')
+			results = dict()
 			for idx, inf in enumerate(inferences):
-				print('{},{}'.format(idx, inf))
+				results[idx] = inf
 				if (idx + 1) >= 10:
 					break
+			self._logger.info('[SWL] Inference results (index,inference): {}.'.format(results))
 		else:
-			print('[SWL] Warning: Invalid inference results.')
+			self._logger.warning('[SWL] Invalid inference results.')
 
 #--------------------------------------------------------------------
 
@@ -418,40 +421,44 @@ def parse_command_line_options():
 		'-l',
 		'--log_level',
 		type=int,
-		help='Log level, [0, 50]',  # {NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL}.
+		help='Log level, [0, 50]',  # {NOTSET=0, DEBUG=10, INFO=20, WARNING=WARN=30, ERROR=40, CRITICAL=FATAL=50}.
 		default=None
 	)
 
 	return parser.parse_args()
 
-def set_logger(log_level):
-	"""
-	# When log_level is string.
-	if log_level is not None:
-		log_level = getattr(logging, log_level.upper(), None)
-		if not isinstance(log_level, int):
-			raise ValueError('Invalid log level: {}'.format(log_level))
+def get_logger(name, log_level, is_rotating=True):
+	if not os.path.isdir('log'):
+		os.mkdir('log')
+
+	log_filepath = './log/' + (name if name else 'swl') + '.log'
+	if is_rotating:
+		file_handler = logging.handlers.RotatingFileHandler(log_filepath, maxBytes=10000000, backupCount=10)
 	else:
-		log_level = logging.WARNING
-	"""
-	print('[SWL] Info: Log level = {}.'.format(log_level))
+		file_handler = logging.FileHandler(log_filepath)
+	stream_handler = logging.StreamHandler()
 
-	handler = logging.handlers.RotatingFileHandler('./simple_training.log', maxBytes=5000, backupCount=10)
-	formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
-	handler.setFormatter(formatter)
+	formatter = logging.Formatter('[%(levelname)s][%(filename)s:%(lineno)s][%(asctime)s] %(message)s')
+	#formatter = logging.Formatter('[%(levelname)s][%(asctime)s] %(message)s')
+	file_handler.setFormatter(formatter)
+	stream_handler.setFormatter(formatter)
 
-	#logger = logging.getLogger(__name__)
-	logger = logging.getLogger('simple_training_logger')
-	logger.addHandler(handler) 
-	logger.setLevel(log_level)
+	logger = logging.getLogger(name if name else __name__)
+	logger.setLevel(log_level)  # {NOTSET=0, DEBUG=10, INFO=20, WARNING=WARN=30, ERROR=40, CRITICAL=FATAL=50}.
+	logger.addHandler(file_handler) 
+	logger.addHandler(stream_handler) 
 
 	return logger
 
 def main():
 	args = parse_command_line_options()
 
+	logger = get_logger(os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, is_rotating=True)
+	logger.info('[SWL] Logger: name = {}, level = {}.'.format(logger.name, logger.level))
+	logger.info('[SWL] Command-line options: {}.'.format(vars(args)))
+
 	if not args.train and not args.test and not args.infer:
-		print('[SWL] Error: At least one of command line options "--train", "--test", and "--infer" has to be specified.')
+		logger.error('[SWL] At least one of command line options "--train", "--test", and "--infer" has to be specified.')
 		return
 
 	if args.gpu:
@@ -459,13 +466,11 @@ def main():
 	if args.log_level:
 		os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
 
-	#logger = set_logger(args.log_level)
-
 	#--------------------
 	is_training_resumed = args.resume
 	initial_epoch, final_epoch, batch_size = 0, args.epoch, args.batch_size
 
-	checkpoint_dir_path, output_dir_path = os.path.normpath(args.model_dir), os.path.normpath(args.out_dir)
+	checkpoint_dir_path, output_dir_path = os.path.normpath(args.model_dir) if args.model_dir else None, os.path.normpath(args.out_dir) if args.out_dir else None
 	if checkpoint_dir_path:
 		if not output_dir_path:
 			output_dir_path = os.path.dirname(checkpoint_dir_path)
@@ -477,7 +482,7 @@ def main():
 		checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
 
 	#--------------------
-	runner = MyRunner(batch_size)
+	runner = MyRunner(batch_size, logger)
 
 	if args.train:
 		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
@@ -489,21 +494,21 @@ def main():
 
 		history = runner.train(checkpoint_dir_path, output_dir_path, batch_size, final_epoch, initial_epoch, is_training_resumed)
 
-		#print('History =', history)
+		#logger.info('[SWL] Train history = {}.'.format(history))
 		swl_ml_util.display_train_history(history)
 		if os.path.exists(output_dir_path):
 			swl_ml_util.save_train_history(history, output_dir_path)
 
 	if args.test:
 		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
-			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
+			logger.error('[SWL] Model directory, {} does not exist.'.format(checkpoint_dir_path))
 			return
 
 		runner.test(checkpoint_dir_path, batch_size)
 
 	if args.infer:
 		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
-			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
+			logger.error('[SWL] Model directory, {} does not exist.'.format(checkpoint_dir_path))
 			return
 
 		runner.infer(checkpoint_dir_path)
