@@ -98,7 +98,7 @@ class MyRunner(object):
 		model = model.to(device)
 
 		# Create a trainer.
-		criterion = torch.nn.CrossEntropyLoss()
+		criterion = torch.nn.CrossEntropyLoss().to(device)
 		initial_learning_rate, momentum, weight_decay = 0.001, 0.9, 0.0001
 		optimizer = torch.optim.SGD(model.parameters(), lr=initial_learning_rate, momentum=momentum, weight_decay=weight_decay, nesterov=True)
 
@@ -366,12 +366,8 @@ class MyRunner(object):
 		if inferences is not None:
 			self._logger.info('[SWL] Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
-			results = dict()
-			for idx, inf in enumerate(inferences):
-				results[idx] = inf
-				if (idx + 1) >= 10:
-					break
-			self._logger.info('[SWL] Inference results (index,inference): {}.'.format(results))
+			results = {idx: inf for idx, inf in enumerate(inferences) if idx < 100}
+			self._logger.info('[SWL] Inference results (index: inference): {}.'.format(results))
 		else:
 			self._logger.warning('[SWL] Invalid inference results.')
 
@@ -597,7 +593,9 @@ def main():
 	args = parse_command_line_options()
 
 	logger = get_logger(os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, is_rotating=True)
+	logger.info('[SWL] ----------------------------------------------------------------------')
 	logger.info('[SWL] Logger: name = {}, level = {}.'.format(logger.name, logger.level))
+	logger.info('[SWL] Command-line arguments: {}.'.format(sys.argv))
 	logger.info('[SWL] Command-line options: {}.'.format(vars(args)))
 
 	if not args.train and not args.test and not args.infer:
@@ -621,10 +619,6 @@ def main():
 			output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 		model_filepath = os.path.join(output_dir_path, 'model.pt')
-
-	train_device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu else 'cpu')
-	test_device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu else 'cpu')
-	infer_device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu else 'cpu')
 
 	if True:
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
@@ -652,7 +646,8 @@ def main():
 				return
 		model_filepath = new_model_filepath
 
-		history = runner.train(model_filepath, model_checkpoint_filepath, output_dir_path, final_epoch, initial_epoch, is_training_resumed, log=log, device=train_device)
+		device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu else 'cpu')
+		history = runner.train(model_filepath, model_checkpoint_filepath, output_dir_path, final_epoch, initial_epoch, is_training_resumed, log=log, device=device)
 
 		#logger.info('[SWL] Train history = {}.'.format(history))
 		#swl_ml_util.display_train_history(history)
@@ -664,14 +659,16 @@ def main():
 			logger.error('[SWL] Model file, {} does not exist.'.format(model_filepath))
 			return
 
-		runner.test(model_filepath, log=log, device=test_device)
+		device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu else 'cpu')
+		runner.test(model_filepath, log=log, device=device)
 
 	if args.infer:
 		if not model_filepath or not os.path.exists(model_filepath):
 			logger.error('[SWL] Model file, {} does not exist.'.format(model_filepath))
 			return
 
-		runner.infer(model_filepath, batch_size, log=log, device=infer_device)
+		device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu else 'cpu')
+		runner.infer(model_filepath, batch_size, log=log, device=device)
 
 	log.close()
 

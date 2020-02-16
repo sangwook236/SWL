@@ -451,14 +451,10 @@ class MyRunner(object):
 			else:
 				raise ValueError('Invalid number of classes')
 
-			results = dict()
-			for idx, inf in enumerate(inferences):
-				results[idx] = inf
-				if (idx + 1) >= 10:
-					break
-			self._logger.info('[SWL] Inference results (index,inference): {}.'.format(results))
+			results = {idx: inf for idx, inf in enumerate(inferences) if idx < 100}
+			self._logger.info('[SWL] Inference results (index: inference): {}.'.format(results))
 		else:
-			self._logger.info('[SWL] Invalid test results.')
+			self._logger.info('[SWL] Invalid inference results.')
 
 #--------------------------------------------------------------------
 
@@ -578,7 +574,9 @@ def main():
 	args = parse_command_line_options()
 
 	logger = get_logger(os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, is_rotating=True)
+	logger.info('[SWL] ----------------------------------------------------------------------')
 	logger.info('[SWL] Logger: name = {}, level = {}.'.format(logger.name, logger.level))
+	logger.info('[SWL] Command-line arguments: {}.'.format(sys.argv))
 	logger.info('[SWL] Command-line options: {}.'.format(vars(args)))
 
 	if not args.train and not args.test and not args.infer:
