@@ -89,8 +89,8 @@ class RecorderMeter(object):
 		plt.grid()
 		plt.title(title, fontsize=20)
 
-		plt.xlabel('the training epoch', fontsize=16)
-		ax1.set_ylabel('accuracy', fontsize=16)
+		plt.xlabel('Training epoch', fontsize=16)
+		ax1.set_ylabel('Accuracy', fontsize=16)
 
 		y_axis[:] = self.epoch_accuracy[:, 0]
 		ax1.plot(x_axis, y_axis, color='g', linestyle='-', label='train-accuracy', lw=2)
@@ -101,7 +101,7 @@ class RecorderMeter(object):
 		ax1.legend(loc=3, fontsize=legend_fontsize)
 
 		ax2 = ax1.twinx()
-		ax2.set_ylabel('loss', fontsize=16)
+		ax2.set_ylabel('Loss', fontsize=16)
 
 		y_axis[:] = self.epoch_losses[:, 0]
 		ax2.plot(x_axis, y_axis, color='g', linestyle=':', label='train-loss', lw=2)
@@ -155,7 +155,7 @@ def print_log(print_string, log):
 def adjust_learning_rate(optimizer, epoch, initial_learning_rate, gammas, schedule):
 	"""Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
 	lr = initial_learning_rate
-	assert len(gammas) == len(schedule), 'length of gammas and schedule should be equal'
+	assert len(gammas) == len(schedule), 'Length of gammas and schedule should be equal.'
 	for (gamma, step) in zip(gammas, schedule):
 		if (epoch >= step):
 			lr = lr * gamma
@@ -177,8 +177,8 @@ def plotting(exp_dir, log_file):
 	plt.plot(np.asarray(train_dict['val_loss']), label='val_loss')
 		
 	#plt.ylim(0, 2000)
-	plt.xlabel('evaluation step')
-	plt.ylabel('metrics')
+	plt.xlabel('Evaluation step')
+	plt.ylabel('Loss')
 	plt.tight_layout()
 	plt.legend(loc='upper right')
 	plt.savefig(os.path.join(exp_dir, 'loss.png'))
@@ -189,8 +189,8 @@ def plotting(exp_dir, log_file):
 	plt.plot(np.asarray(train_dict['val_acc']), label='val_acc')
 		
 	#plt.ylim(0, 2000)
-	plt.xlabel('evaluation step')
-	plt.ylabel('metrics')
+	plt.xlabel('Evaluation step')
+	plt.ylabel('Accuracy')
 	plt.tight_layout()
 	plt.legend(loc='lower right')
 	plt.savefig(os.path.join(exp_dir, 'acc.png'))

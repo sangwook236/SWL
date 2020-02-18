@@ -248,7 +248,7 @@ class MyRunner(object):
 		num_classes = 10
 		self._dataset = MyDataset(image_height, image_width, image_channel, num_classes, self._logger)
 
-	def train(self, model_filepath, model_checkpoint_filepath, batch_size, final_epoch, initial_epoch=0, is_training_resumed=False):
+	def train(self, model_filepath, model_checkpoint_filepath, csv_log_filepath, batch_size, final_epoch, initial_epoch=0, is_training_resumed=False):
 		if is_training_resumed:
 			# Restore a model.
 			try:
@@ -284,7 +284,7 @@ class MyRunner(object):
 			return learning_rate
 		lr_schedule_callback = tf.keras.callbacks.LearningRateScheduler(schedule=lr_schedule)
 		lr_reduce_callback = tf.keras.callbacks.ReduceLROnPlateau(factor=np.sqrt(0.1), cooldown=0, patience=5, min_lr=0.5e-6)
-		csv_logger_callback = tf.keras.callbacks.CSVLogger('./train_log.csv')  # epoch, acc, loss, lr, val_acc, val_loss.
+		csv_logger_callback = tf.keras.callbacks.CSVLogger(csv_log_filepath)  # epoch, acc, loss, lr, val_acc, val_loss.
 		#callbacks = [model_checkpoint_callback, early_stopping_callback, lr_schedule_callback, lr_reduce_callback, csv_logger_callback]
 		callbacks = [model_checkpoint_callback, early_stopping_callback, csv_logger_callback]
 
@@ -622,7 +622,9 @@ def main():
 				return
 		model_filepath = new_model_filepath
 
-		history = runner.train(model_filepath, model_checkpoint_filepath, batch_size, final_epoch, initial_epoch, is_training_resumed)
+		timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+		csv_log_filepath = os.path.join(output_dir_path, 'train_log_{}.csv'.format(timestamp))
+		history = runner.train(model_filepath, model_checkpoint_filepath, csv_log_filepath, batch_size, final_epoch, initial_epoch, is_training_resumed)
 
 		#logger.info('[SWL] Train history = {}.'.format(history))
 		swl_ml_util.display_train_history(history)

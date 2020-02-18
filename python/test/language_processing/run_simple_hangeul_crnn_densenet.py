@@ -696,16 +696,22 @@ class MyRunner(object):
 			model_output, loss, accuracy = model.create_model(self._dataset.num_classes, is_training=True)
 
 			# Create a trainer.
-			optimizer = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-08)
-			##optimizer = keras.optimizers.Adadelta(lr=1.0, rho=0.95, epsilon=None, decay=0.0)
-			#optimizer = tf.keras.optimizers.Adadelta(lr=0.001, rho=0.95, epsilon=1e-07)
-			#optimizer = tf.train.AdadeltaOptimizer(learning_rate=1.0, rho=0.95, epsilon=1e-08)
 			global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
 			#global_step = None
+			if True:
+				learning_rate = 0.001
+			elif False:
+				lr_boundaries = [20, 30, 40, 50]
+				lr_values = [1.0e-3, 1.0e-4, 1.0e-5, 1.0e-6, 1.0e-7]
+				learning_rate = tf.train.piecewise_constant_decay(global_step, lr_boundaries, lr_values)
+			#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+			#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=True)
+			optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-08)
+			#optimizer = tf.train.AdadeltaOptimizer(learning_rate=1.0, rho=0.95, epsilon=1e-08)
 			if False:
 				train_op = optimizer.minimize(loss, global_step=global_step)
 			else:  # Gradient clipping.
-				max_gradient_norm = 200
+				max_gradient_norm = 100
 				var_list = None #tf.trainable_variables()
 				# Method 1.
 				grads_and_vars = optimizer.compute_gradients(loss, var_list=var_list)

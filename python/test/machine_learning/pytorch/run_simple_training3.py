@@ -106,11 +106,11 @@ class MyRunner(object):
 		train_history_filepath = os.path.join(output_dir_path, 'train_history.pkl')
 		train_result_image_filepath = os.path.join(output_dir_path, 'results.png')
 		log_print_freq = 100
-		if True:
+		if False:
 			gammas, schedule = None, None
 		else:
-			gammas = [0.1, 0.1]  # LR is multiplied by gamma on schedule.
-			schedule = [150, 225]  # Decrease learning rate at these epochs.
+			gammas = [0.1, 0.1, 0.1, 0.1]  # LR is multiplied by gamma on schedule.
+			schedule = [20, 30, 40, 50]  # Decrease learning rate at these epochs.
 
 		if log:
 			utils.print_log('Save path: {}.'.format(output_dir_path), log)

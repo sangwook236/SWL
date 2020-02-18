@@ -745,10 +745,18 @@ class MyRunner(object):
 			model_output, loss, accuracy = model.create_model(self._dataset.num_classes, is_training=True)
 
 			# Create a trainer.
-			learning_rate = 0.0001
-			optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-08)
 			global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
 			#global_step = None
+			if True:
+				learning_rate = 0.0001
+			elif False:
+				lr_boundaries = [20, 30, 40, 50]
+				lr_values = [1.0e-4, 1.0e-5, 1.0e-6, 1.0e-7, 1.0e-8]
+				learning_rate = tf.train.piecewise_constant_decay(global_step, lr_boundaries, lr_values)
+			#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+			#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=True)
+			#optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate, decay=0.9, momentum=0.9, epsilon=1e-10)
+			optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-08)
 			if True:
 				train_op = optimizer.minimize(loss, global_step=global_step)
 			else:  # Gradient clipping.
