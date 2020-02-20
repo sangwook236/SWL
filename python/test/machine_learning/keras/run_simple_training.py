@@ -30,10 +30,10 @@ class MyDataset(object):
 
 		#--------------------
 		# Load data.
-		logger.info('[SWL] Start loading dataset...')
+		logger.info('Start loading dataset...')
 		start_time = time.time()
 		self._train_images, self._train_labels, self._test_images, self._test_labels = MyDataset._load_data(self._image_height, self._image_width, self._image_channel, self._num_classes)
-		logger.info('[SWL] End loading dataset: {} secs.'.format(time.time() - start_time))
+		logger.info('End loading dataset: {} secs.'.format(time.time() - start_time))
 
 		self._num_train_examples = len(self._train_images)
 		if len(self._train_labels) != self._num_train_examples:
@@ -43,10 +43,10 @@ class MyDataset(object):
 			raise ValueError('Invalid test data length: {} != {}'.format(self._num_test_examples, len(self._test_labels)))
 
 		#--------------------
-		logger.info('[SWL] Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_images.shape, self._train_images.dtype, np.min(self._train_images), np.max(self._train_images)))
-		logger.info('[SWL] Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_labels.shape, self._train_labels.dtype, np.min(self._train_labels), np.max(self._train_labels)))
-		logger.info('[SWL] Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
-		logger.info('[SWL] Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_labels.shape, self._test_labels.dtype, np.min(self._test_labels), np.max(self._test_labels)))
+		logger.info('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_images.shape, self._train_images.dtype, np.min(self._train_images), np.max(self._train_images)))
+		logger.info('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_labels.shape, self._train_labels.dtype, np.min(self._train_labels), np.max(self._train_labels)))
+		logger.info('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
+		logger.info('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_labels.shape, self._test_labels.dtype, np.min(self._test_labels), np.max(self._test_labels)))
 
 	@property
 	def shape(self):
@@ -248,11 +248,11 @@ class MyRunner(object):
 		num_classes = 10
 		self._dataset = MyDataset(image_height, image_width, image_channel, num_classes, self._logger)
 
-	def train(self, model_filepath, model_checkpoint_filepath, csv_log_filepath, batch_size, final_epoch, initial_epoch=0, is_training_resumed=False):
+	def train(self, model_filepath, model_checkpoint_filepath, output_dir_path, batch_size, final_epoch, initial_epoch=0, is_training_resumed=False):
 		if is_training_resumed:
 			# Restore a model.
 			try:
-				self._logger.info('[SWL] Start restoring a model...')
+				self._logger.info('Start restoring a model...')
 				start_time = time.time()
 				"""
 				# Load only the architecture of a model.
@@ -263,9 +263,9 @@ class MyRunner(object):
 				"""
 				# Load a model.
 				model = tf.keras.models.load_model(model_filepath)
-				self._logger.info('[SWL] End restoring a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
+				self._logger.info('End restoring a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
 			except (ImportError, IOError):
-				self._logger.error('[SWL] Failed to restore a model from {}.'.format(model_filepath))
+				self._logger.error('Failed to restore a model from {}.'.format(model_filepath))
 				return
 		else:
 			# Create a model.
@@ -274,27 +274,48 @@ class MyRunner(object):
 
 		# Create a trainer.
 		loss = tf.keras.losses.categorical_crossentropy
-		optimizer = tf.keras.optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.0, nesterov=True)
+		optimizer = tf.keras.optimizers.SGD(learning_rate=0.001, momentum=0.9, nesterov=True)
+		#optimizer = tf.keras.optimizers.RMSprop(learning_rate=0.001, rho=0.9, momentum=0.9, epsilon=1.0e-7, centered=False)
+		#optimizer = tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999, epsilon=None, amsgrad=False)  # Not good.
 
 		model.compile(loss=loss, optimizer=optimizer, metrics=['accuracy'])
 
-		model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(model_checkpoint_filepath, monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=False, mode='auto', period=1)
-		early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=10)
-		def lr_schedule(epoch, learning_rate):
-			return learning_rate
-		lr_schedule_callback = tf.keras.callbacks.LearningRateScheduler(schedule=lr_schedule)
-		lr_reduce_callback = tf.keras.callbacks.ReduceLROnPlateau(factor=np.sqrt(0.1), cooldown=0, patience=5, min_lr=0.5e-6)
-		csv_logger_callback = tf.keras.callbacks.CSVLogger(csv_log_filepath)  # epoch, acc, loss, lr, val_acc, val_loss.
-		#callbacks = [model_checkpoint_callback, early_stopping_callback, lr_schedule_callback, lr_reduce_callback, csv_logger_callback]
-		callbacks = [model_checkpoint_callback, early_stopping_callback, csv_logger_callback]
+		def schedule_learning_rate(epoch, learning_rate):
+			if epoch < 10:
+				return 1.0e-2
+			elif epoch < 20:
+				return 1.0e-3
+			elif epoch < 30:
+				return 1.0e-4
+			else:
+				return 1.0e-4 * tf.math.exp(0.1 * (30 - epoch))
+		lr_schedule_callback = tf.keras.callbacks.LearningRateScheduler(schedule=schedule_learning_rate, verbose=0)
+		lr_reduce_callback = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10, verbose=0, mode='auto', min_delta=0.0001, cooldown=0, min_lr=0)
+		early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=0, mode='auto', baseline=None, restore_best_weights=False)
+		if True:
+			timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+			csv_log_filepath = os.path.join(output_dir_path, 'train_log_{}.csv'.format(timestamp))
+			file_logger_callback = tf.keras.callbacks.CSVLogger(csv_log_filepath, separator=',', append=False)  # epoch, acc, loss, lr, val_acc, val_loss.
+		else:
+			import json
+			timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+			json_log_filepath = os.path.join(output_dir_path, 'train_log_{}.json'.format(timestamp))
+			json_log = open(json_log_filepath, mode='wt', encoding='UTF8', buffering=1)
+			file_logger_callback = tf.keras.callbacks.LambdaCallback(
+				on_epoch_end=lambda epoch, logs: json_log.write(json.dumps({'epoch': epoch, 'acc': logs['acc'], 'loss': logs['loss'], 'lr': logs['lr'], 'val_acc': logs['val_acc'], 'val_loss': logs['val_loss']}) + '\n'),
+				on_train_end=lambda logs: json_log.close()
+			)
+		model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(model_checkpoint_filepath, monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=False, mode='auto', save_freq='epoch')
+		#callbacks = [lr_schedule_callback, lr_reduce_callback, early_stopping_callback, file_logger_callback, model_checkpoint_callback]
+		callbacks = [early_stopping_callback, file_logger_callback, model_checkpoint_callback]
 
 		num_epochs = final_epoch - initial_epoch
 
 		#--------------------
 		if is_training_resumed:
-			self._logger.info('[SWL] Resume training...')
+			self._logger.info('Resume training...')
 		else:
-			self._logger.info('[SWL] Start training...')
+			self._logger.info('Start training...')
 		start_time = time.time()
 		if self._use_keras_data_sequence:
 			# Use Keras sequences.
@@ -311,10 +332,10 @@ class MyRunner(object):
 		else:
 			train_images, train_labels = self._dataset.train_data
 			history = model.fit(train_images, train_labels, batch_size=batch_size, epochs=num_epochs, validation_split=0.2, shuffle=True, initial_epoch=initial_epoch, class_weight=None, sample_weight=None, callbacks=callbacks)
-		self._logger.info('[SWL] End training: {} secs.'.format(time.time() - start_time))
+		self._logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 		#--------------------
-		self._logger.info('[SWL] Start evaluating...')
+		self._logger.info('Start evaluating...')
 		start_time = time.time()
 		if self._use_keras_data_sequence:
 			# Use a Keras sequence.
@@ -328,11 +349,11 @@ class MyRunner(object):
 		else:
 			val_images, val_labels = self._dataset.test_data
 			score = model.evaluate(val_images, val_labels, batch_size=batch_size, sample_weight=None)
-		self._logger.info('[SWL]    Validation: loss = {:.6f}, accuracy = {:.6f}.'.format(*score))
-		self._logger.info('[SWL] End evaluating: {} secs.'.format(time.time() - start_time))
+		self._logger.info('\tValidation: loss = {:.6f}, accuracy = {:.6f}.'.format(*score))
+		self._logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 		#--------------------
-		self._logger.info('[SWL] Start saving a model...')
+		self._logger.info('Start saving a model...')
 		start_time = time.time()
 		"""
 		# Save only the architecture of a model.
@@ -343,14 +364,14 @@ class MyRunner(object):
 		"""
 		# Save a model.
 		model.save(model_filepath)
-		self._logger.info('[SWL] End saving a model to {}: {} secs.'.format(model_filepath, time.time() - start_time))
+		self._logger.info('End saving a model to {}: {} secs.'.format(model_filepath, time.time() - start_time))
 
 		return history.history
 
 	def test(self, model_filepath, batch_size=None, shuffle=False):
 		# Load a model.
 		try:
-			self._logger.info('[SWL] Start loading a model...')
+			self._logger.info('Start loading a model...')
 			start_time = time.time()
 			"""
 			# Load only the architecture of a model.
@@ -361,13 +382,13 @@ class MyRunner(object):
 			"""
 			# Load a model.
 			model = tf.keras.models.load_model(model_filepath)
-			self._logger.info('[SWL] End loading a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
+			self._logger.info('End loading a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
 		except (ImportError, IOError):
-			self._logger.error('[SWL] Failed to load a model from {}.'.format(model_filepath))
+			self._logger.error('Failed to load a model from {}.'.format(model_filepath))
 			return
 
 		#--------------------
-		self._logger.info('[SWL] Start testing...')
+		self._logger.info('Start testing...')
 		start_time = time.time()
 		if self._use_keras_data_sequence:
 			# Use a Keras sequence.
@@ -383,10 +404,10 @@ class MyRunner(object):
 		else:
 			test_images, test_labels = self._dataset.test_data
 			inferences = model.predict(test_images, batch_size=batch_size)
-		self._logger.info('[SWL] End testing: {} secs.'.format(time.time() - start_time))
+		self._logger.info('End testing: {} secs.'.format(time.time() - start_time))
 
 		if inferences is not None and test_labels is not None:
-			self._logger.info('[SWL] Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+			self._logger.info('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 			if self._dataset.num_classes > 2:
 				inferences = np.argmax(inferences, -1)
@@ -398,14 +419,14 @@ class MyRunner(object):
 				raise ValueError('Invalid number of classes')
 
 			correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
-			self._logger.info('[SWL] Test: accuracy = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+			self._logger.info('Test: accuracy = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
 		else:
-			self._logger.warning('[SWL] Invalid test results.')
+			self._logger.warning('Invalid test results.')
 
 	def infer(self, model_filepath, batch_size=None, shuffle=False):
 		# Load a model.
 		try:
-			self._logger.info('[SWL] Start loading a model...')
+			self._logger.info('Start loading a model...')
 			start_time = time.time()
 			"""
 			# Load only the architecture of a model.
@@ -416,16 +437,16 @@ class MyRunner(object):
 			"""
 			# Load a model.
 			model = tf.keras.models.load_model(model_filepath)
-			self._logger.info('[SWL] End loading a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
+			self._logger.info('End loading a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
 		except (ImportError, IOError):
-			self._logger.error('[SWL] Failed to load a model from {}.'.format(model_filepath))
+			self._logger.error('Failed to load a model from {}.'.format(model_filepath))
 			return
 
 		#--------------------
 		inf_images, _ = self._dataset.test_data
 
 		#--------------------
-		self._logger.info('[SWL] Start inferring...')
+		self._logger.info('Start inferring...')
 		start_time = time.time()
 		if self._use_keras_data_sequence:
 			# Use a Keras sequence.
@@ -439,10 +460,10 @@ class MyRunner(object):
 			if shuffle:
 				np.random.shuffle(inf_images)
 			inferences = model.predict(inf_images, batch_size=batch_size)
-		self._logger.info('[SWL] End inferring: {} secs.'.format(time.time() - start_time))
+		self._logger.info('End inferring: {} secs.'.format(time.time() - start_time))
 
 		if inferences is not None:
-			self._logger.info('[SWL] Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+			self._logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 			if self._dataset.num_classes > 2:
 				inferences = np.argmax(inferences, -1)
@@ -452,9 +473,9 @@ class MyRunner(object):
 				raise ValueError('Invalid number of classes')
 
 			results = {idx: inf for idx, inf in enumerate(inferences) if idx < 100}
-			self._logger.info('[SWL] Inference results (index: inference): {}.'.format(results))
+			self._logger.info('Inference results (index: inference): {}.'.format(results))
 		else:
-			self._logger.info('[SWL] Invalid inference results.')
+			self._logger.info('Invalid inference results.')
 
 #--------------------------------------------------------------------
 
@@ -558,8 +579,8 @@ def get_logger(name, log_level, is_rotating=True):
 		file_handler = logging.FileHandler(log_filepath)
 	stream_handler = logging.StreamHandler()
 
-	formatter = logging.Formatter('[%(levelname)s][%(filename)s:%(lineno)s][%(asctime)s] %(message)s')
-	#formatter = logging.Formatter('[%(levelname)s][%(asctime)s] %(message)s')
+	formatter = logging.Formatter('[%(levelname)s][%(filename)s:%(lineno)s][%(asctime)s] [SWL] %(message)s')
+	#formatter = logging.Formatter('[%(levelname)s][%(asctime)s] [SWL] %(message)s')
 	file_handler.setFormatter(formatter)
 	stream_handler.setFormatter(formatter)
 
@@ -574,13 +595,13 @@ def main():
 	args = parse_command_line_options()
 
 	logger = get_logger(os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, is_rotating=True)
-	logger.info('[SWL] ----------------------------------------------------------------------')
-	logger.info('[SWL] Logger: name = {}, level = {}.'.format(logger.name, logger.level))
-	logger.info('[SWL] Command-line arguments: {}.'.format(sys.argv))
-	logger.info('[SWL] Command-line options: {}.'.format(vars(args)))
+	logger.info('----------------------------------------------------------------------')
+	logger.info('Logger: name = {}, level = {}.'.format(logger.name, logger.level))
+	logger.info('Command-line arguments: {}.'.format(sys.argv))
+	logger.info('Command-line options: {}.'.format(vars(args)))
 
 	if not args.train and not args.test and not args.infer:
-		logger.error('[SWL] At least one of command line options "--train", "--test", and "--infer" has to be specified.')
+		logger.error('At least one of command line options "--train", "--test", and "--infer" has to be specified.')
 		return
 
 	if args.gpu:
@@ -618,29 +639,27 @@ def main():
 			try:
 				shutil.copyfile(model_filepath, new_model_filepath)
 			except (FileNotFoundError, PermissionError) as ex:
-				logger.error('[SWL] Failed to copy a model, {}: {}.'.format(model_filepath, ex))
+				logger.error('Failed to copy a model, {}: {}.'.format(model_filepath, ex))
 				return
 		model_filepath = new_model_filepath
 
-		timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-		csv_log_filepath = os.path.join(output_dir_path, 'train_log_{}.csv'.format(timestamp))
-		history = runner.train(model_filepath, model_checkpoint_filepath, csv_log_filepath, batch_size, final_epoch, initial_epoch, is_training_resumed)
+		history = runner.train(model_filepath, model_checkpoint_filepath, output_dir_path, batch_size, final_epoch, initial_epoch, is_training_resumed)
 
-		#logger.info('[SWL] Train history = {}.'.format(history))
+		#logger.info('Train history = {}.'.format(history))
 		swl_ml_util.display_train_history(history)
 		if os.path.exists(output_dir_path):
 			swl_ml_util.save_train_history(history, output_dir_path)
 
 	if args.test:
 		if not model_filepath or not os.path.exists(model_filepath):
-			logger.error('[SWL] Model file, {} does not exist.'.format(model_filepath))
+			logger.error('Model file, {} does not exist.'.format(model_filepath))
 			return
 
 		runner.test(model_filepath)
 
 	if args.infer:
 		if not model_filepath or not os.path.exists(model_filepath):
-			logger.error('[SWL] Model file, {} does not exist.'.format(model_filepath))
+			logger.error('Model file, {} does not exist.'.format(model_filepath))
 			return
 
 		runner.infer(model_filepath)
