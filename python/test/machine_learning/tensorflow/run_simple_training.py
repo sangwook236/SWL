@@ -662,6 +662,7 @@ class MyRunner(object):
 			fig.tight_layout()
 			plt.savefig(os.path.join(output_dir_path, 'visualization_xrai.png'))
 			plt.show()
+
 			self._logger.info('End visualizing saliency: {} secs.'.format(time.time() - start_time))
 
 #--------------------------------------------------------------------

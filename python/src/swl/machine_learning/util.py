@@ -277,7 +277,7 @@ def visualize_activation(session, input_tensor, feed_dict, output_dir_path):
 	layers = ['r', 'p', 'c']  # Reconstruction from all the ReLU/Pooling/Convolutional layers.
 	return tf_cnnvis.activation_visualization(sess_graph_path=session, value_feed_dict=feed_dict,
 			input_tensor=input_tensor, layers=layers,
-			path_logdir=os.path.join(output_dir_path, 'vis_activation_log'),
+			path_logdir=os.path.join(output_dir_path, 'vis_log', 'activations'),
 			path_outdir=os.path.join(output_dir_path, 'vis'))
 
 def visualize_by_deconvolution(session, input_tensor, feed_dict, output_dir_path):
@@ -285,7 +285,7 @@ def visualize_by_deconvolution(session, input_tensor, feed_dict, output_dir_path
 	layers = ['r', 'p', 'c']  # Reconstruction from all the ReLU/Pooling/Convolutional layers.
 	return tf_cnnvis.deconv_visualization(sess_graph_path=session, value_feed_dict=feed_dict,
 			input_tensor=input_tensor, layers=layers,
-			path_logdir=os.path.join(output_dir_path, 'vis_deconv_log'),
+			path_logdir=os.path.join(output_dir_path, 'vis_log', 'deconvolution'),
 			path_outdir=os.path.join(output_dir_path, 'vis'))
 
 def visualize_by_partial_occlusion(session, nnInferrer, vis_images, vis_labels, grid_counts, grid_size, occlusion_color, num_classes, batch_size, saver=None, model_dir_path=None):
