@@ -8,35 +8,8 @@ import os, shutil, collections, pickle, argparse, logging, logging.handlers, tim
 import numpy as np
 import torch
 import torchvision
-import cv2
 #import swl.machine_learning.util as swl_ml_util
 import utils
-
-#--------------------------------------------------------------------
-
-class MyDataset(object):
-	def __init__(self):
-		#self._image_height, self._image_width, self._image_channel = 28, 28, 1  # 784 = 28 * 28.
-		self._num_classes = 10
-
-		# Preprocess.
-		self._transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(), torchvision.transforms.Normalize((0.5,), (0.5,))])
-
-	@property
-	def num_classes(self):
-		return self._num_classes
-
-	def create_train_data_loader(self, batch_size, shuffle=True, num_workers=4):
-		train_set = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=self._transform)
-		train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-
-		return train_loader
-
-	def create_test_data_loader(self, batch_size, shuffle=False, num_workers=4):
-		test_set = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=self._transform)
-		test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-
-		return test_loader
 
 #--------------------------------------------------------------------
 
@@ -65,30 +38,25 @@ class MyModel(torch.nn.Module):
 #--------------------------------------------------------------------
 
 class MyRunner(object):
-	def __init__(self, batch_size, logger):
+	def __init__(self, logger):
 		self._logger = logger
 
-		# Create a dataset.
+		# Create datasets.
+		transform = torchvision.transforms.Compose([
+			torchvision.transforms.ToTensor(),
+			torchvision.transforms.Normalize((0.5,), (0.5,))
+		])
+
 		self._logger.info('Start loading dataset...')
 		start_time = time.time()
-		self._dataset = MyDataset()
-		self._train_loader = self._dataset.create_train_data_loader(batch_size, shuffle=True, num_workers=4)
-		self._test_loader = self._dataset.create_test_data_loader(batch_size, shuffle=False, num_workers=4)
+		self._train_dataset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
+		self._test_dataset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
 		self._logger.info('End loading dataset: {} secs.'.format(time.time() - start_time))
 
-		data_iter = iter(self._train_loader)
-		images, labels = data_iter.next()
-		images, labels = images.numpy(), labels.numpy()
-		self._logger.info('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
-		self._logger.info('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(labels.shape, labels.dtype, np.min(labels), np.max(labels)))
+	def train(self, model_filepath, model_checkpoint_filepath, output_dir_path, batch_size, final_epoch, initial_epoch=0, is_training_resumed=False, log=None, device='cpu'):
+		if batch_size is None or batch_size <= 0:
+			raise ValueError('Invalid batch size: {}'.format(batch_size))
 
-		data_iter = iter(self._test_loader)
-		images, labels = data_iter.next()
-		images, labels = images.numpy(), labels.numpy()
-		self._logger.info('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
-		self._logger.info('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(labels.shape, labels.dtype, np.min(labels), np.max(labels)))
-
-	def train(self, model_filepath, model_checkpoint_filepath, output_dir_path, final_epoch, initial_epoch=0, is_training_resumed=False, log=None, device='cpu'):
 		# Create a model.
 		model = MyModel()
 
@@ -101,6 +69,10 @@ class MyRunner(object):
 		criterion = torch.nn.CrossEntropyLoss().to(device)
 		initial_learning_rate, momentum, weight_decay = 0.001, 0.9, 0.0001
 		optimizer = torch.optim.SGD(model.parameters(), lr=initial_learning_rate, momentum=momentum, weight_decay=weight_decay, nesterov=True)
+
+		# Create data loaders.
+		train_dataloader = torch.utils.data.DataLoader(self._train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+		test_dataloader = torch.utils.data.DataLoader(self._test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 
 		#--------------------
 		train_history_filepath = os.path.join(output_dir_path, 'train_history.pkl')
@@ -181,7 +153,8 @@ class MyRunner(object):
 				+ ' [Best : Accuracy={:.2f}, Error={:.2f}].'.format(recorder.max_accuracy(False), 100 - recorder.max_accuracy(False)), log)
 
 			#--------------------
-			losses, top1, top5 = self._train(self._train_loader, optimizer, model, criterion, epoch, log_print_freq, log, device)
+			#start_time = time.time()
+			losses, top1, top5 = self._train(train_dataloader, optimizer, model, criterion, epoch, log_print_freq, log, device)
 			train_loss, train_acc = losses.avg, top1.avg
 			if log: utils.print_log('  **Train** Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f} Error@1 {error1:.3f}.'.format(top1=top1, top5=top5, error1=100 - top1.avg), log)
 			#self._logger.info('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
@@ -190,7 +163,8 @@ class MyRunner(object):
 			history['acc'].append(train_acc)
 
 			#--------------------
-			losses, top1, top5 = self._evaluate(self._test_loader, model, criterion, device)
+			#start_time = time.time()
+			losses, top1, top5 = self._evaluate(test_dataloader, model, criterion, device)
 			val_loss, val_acc = losses.avg, top1.avg
 			if log: utils.print_log('  **Validation** Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f} Error@1 {error1:.3f} Loss: {losses.avg:.3f}.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses), log)
 			#self._logger.info('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
@@ -254,7 +228,10 @@ class MyRunner(object):
 
 		return history
 
-	def test(self, model_filepath, log=None, device='cpu'):
+	def test(self, model_filepath, batch_size, log=None, device='cpu'):
+		if batch_size is None or batch_size <= 0:
+			raise ValueError('Invalid batch size: {}'.format(batch_size))
+
 		# Create a model.
 		model = MyModel()
 		model = model.to(device)
@@ -285,12 +262,15 @@ class MyRunner(object):
 		# Switch to evaluation mode.
 		model.eval()
 
+		# Create a data loader.
+		dataloader = torch.utils.data.DataLoader(self._test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
+
 		#--------------------
 		self._logger.info('Start testing...')
-		start_time = time.time()
 		inferences, ground_truths = list(), list()
+		start_time = time.time()
 		with torch.no_grad():
-			for batch_data in self._test_loader:
+			for batch_data in dataloader:
 				batch_inputs, batch_outputs = batch_data
 				#batch_inputs, batch_outputs = batch_inputs.to(device), batch_outputs.to(device)
 				batch_inputs = batch_inputs.to(device)
@@ -345,9 +325,9 @@ class MyRunner(object):
 		# Switch to evaluation mode.
 		model.eval()
 
-		#--------------------
-		inf_loader = self._dataset.create_test_data_loader(batch_size, shuffle=shuffle, num_workers=4)
-		inf_images = list(batch_data[0] for batch_data in inf_loader)
+		# Create a data loader.
+		dataloader = torch.utils.data.DataLoader(self._test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=4)
+		inf_images = list(batch_data[0] for batch_data in dataloader)
 
 		#--------------------
 		self._logger.info('Start inferring...')
@@ -371,15 +351,33 @@ class MyRunner(object):
 		else:
 			self._logger.warning('Invalid inference results.')
 
-	def _train(self, data_loader, optimizer, model, criterion, epoch, log_print_freq, log, device):
+	def show_data_info(self, batch_size):
+		# Create data loaders.
+		train_dataloader = torch.utils.data.DataLoader(self._train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+		test_dataloader = torch.utils.data.DataLoader(self._test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
+
+		data_iter = iter(train_dataloader)
+		images, labels = data_iter.next()
+		images, labels = images.numpy(), labels.numpy()
+		self._logger.info('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
+		self._logger.info('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(labels.shape, labels.dtype, np.min(labels), np.max(labels)))
+
+		data_iter = iter(test_dataloader)
+		images, labels = data_iter.next()
+		images, labels = images.numpy(), labels.numpy()
+		self._logger.info('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
+		self._logger.info('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(labels.shape, labels.dtype, np.min(labels), np.max(labels)))
+
+	def _train(self, dataloader, optimizer, model, criterion, epoch, log_print_freq, log, device):
 		# Switch to train mode.
 		model.train()
 
 		batch_time, data_time = utils.AverageMeter(), utils.AverageMeter()
 		losses, top1, top5 = utils.AverageMeter(), utils.AverageMeter(), utils.AverageMeter()
 		#running_loss = 0.0
-		start_time = start_batch_time = time.time()
-		for batch_step, batch_data in enumerate(data_loader):
+		#start_time = start_batch_time = time.time()
+		start_batch_time = time.time()
+		for batch_step, batch_data in enumerate(dataloader):
 			batch_inputs, batch_outputs = batch_data
 
 			"""
@@ -421,8 +419,8 @@ class MyRunner(object):
 			top1.update(prec1.item(), batch_inputs.size(0))
 			top5.update(prec5.item(), batch_inputs.size(0))
 
-			# Print statistics.
 			"""
+			# Print statistics.
 			running_loss += loss.item()
 			if (batch_step + 1) % 100 == 0:
 				self._logger.info('\tStep {}: loss = {:.6f}: {} secs.'.format(batch_step + 1, running_loss / 100, time.time() - start_time))
@@ -440,18 +438,17 @@ class MyRunner(object):
 					'Loss {loss.val:.4f} ({loss.avg:.4f})   '
 					'Prec@1 {top1.val:.3f} ({top1.avg:.3f})   '
 					'Prec@5 {top5.val:.3f} ({top5.avg:.3f})   '.format(
-					epoch, batch_step, len(self._train_loader), batch_time=batch_time,
+					epoch, batch_step, len(dataloader), batch_time=batch_time,
 					data_time=data_time, loss=losses, top1=top1, top5=top5) + utils.time_string(), log)
 		return losses, top1, top5
 
-	def _evaluate(self, data_loader, model, criterion, device):
+	def _evaluate(self, dataloader, model, criterion, device):
 		# Switch to evaluation mode.
 		model.eval()
 
 		losses, top1, top5 = utils.AverageMeter(), utils.AverageMeter(), utils.AverageMeter()
-		start_time = time.time()
 		with torch.no_grad():
-			for batch_step, batch_data in enumerate(data_loader):
+			for batch_step, batch_data in enumerate(dataloader):
 				batch_inputs, batch_outputs = batch_data
 
 				"""
@@ -629,7 +626,8 @@ def main():
 		log = sys.out
 
 	#--------------------
-	runner = MyRunner(batch_size, logger)
+	runner = MyRunner(logger)
+	runner.show_data_info(batch_size)
 
 	if args.train:
 		model_checkpoint_filepath = os.path.join(output_dir_path, 'model_ckpt.{epoch:04d}-{val_acc:.5f}.pt')
@@ -647,7 +645,7 @@ def main():
 		model_filepath = new_model_filepath
 
 		device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu else 'cpu')
-		history = runner.train(model_filepath, model_checkpoint_filepath, output_dir_path, final_epoch, initial_epoch, is_training_resumed, log=log, device=device)
+		history = runner.train(model_filepath, model_checkpoint_filepath, output_dir_path, batch_size, final_epoch, initial_epoch, is_training_resumed, log=log, device=device)
 
 		#logger.info('Train history = {}.'.format(history))
 		#swl_ml_util.display_train_history(history)
@@ -660,7 +658,7 @@ def main():
 			return
 
 		device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu else 'cpu')
-		runner.test(model_filepath, log=log, device=device)
+		runner.test(model_filepath, batch_size, log=log, device=device)
 
 	if args.infer:
 		if not model_filepath or not os.path.exists(model_filepath):

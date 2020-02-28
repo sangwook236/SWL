@@ -8,7 +8,7 @@ import sys, os, time, datetime
 import numpy as np
 import tensorflow as tf
 #from sklearn import preprocessing
-import cv2
+#import cv2
 import swl.machine_learning.util as swl_ml_util
 
 #--------------------------------------------------------------------
@@ -33,12 +33,6 @@ class MyDataset(object):
 		if len(self._test_labels) != self._num_test_examples:
 			raise ValueError('Invalid test data length: {} != {}'.format(self._num_test_examples, len(self._test_labels)))
 
-		#--------------------
-		print('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_images.shape, self._train_images.dtype, np.min(self._train_images), np.max(self._train_images)))
-		print('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_labels.shape, self._train_labels.dtype, np.min(self._train_labels), np.max(self._train_labels)))
-		print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
-		print('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_labels.shape, self._test_labels.dtype, np.min(self._test_labels), np.max(self._test_labels)))
-
 	@property
 	def shape(self):
 		return self._image_height, self._image_width, self._image_channel
@@ -54,6 +48,12 @@ class MyDataset(object):
 	@property
 	def test_data(self):
 		return self._test_images, self._test_labels
+
+	def show_data_info(self):
+		print('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_images.shape, self._train_images.dtype, np.min(self._train_images), np.max(self._train_images)))
+		print('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_labels.shape, self._train_labels.dtype, np.min(self._train_labels), np.max(self._train_labels)))
+		print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
+		print('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_labels.shape, self._test_labels.dtype, np.min(self._test_labels), np.max(self._test_labels)))
 
 	@staticmethod
 	def _preprocess(inputs, outputs, image_height, image_width, image_channel, num_classes):
@@ -165,6 +165,7 @@ class MyRunner(object):
 		image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
 		num_classes = 10
 		self._dataset = MyDataset(image_height, image_width, image_channel, num_classes)
+		self._dataset.show_data_info()
 
 	def _create_tf_dataset(self, input_ph, output_ph, batch_size):
 		if not self._use_reinitializable_iterator:

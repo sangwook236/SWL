@@ -7,10 +7,9 @@ sys.path.append('../../../src')
 import os, math, shutil, argparse, logging, logging.handlers, time, datetime
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 #import sklearn
-import cv2
-import matplotlib.pyplot as plt
+#import cv2
+#import matplotlib.pyplot as plt
 import swl.machine_learning.util as swl_ml_util
 
 #--------------------------------------------------------------------
@@ -42,12 +41,6 @@ class MyDataset(object):
 		if len(self._test_labels) != self._num_test_examples:
 			raise ValueError('Invalid test data length: {} != {}'.format(self._num_test_examples, len(self._test_labels)))
 
-		#--------------------
-		logger.info('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_images.shape, self._train_images.dtype, np.min(self._train_images), np.max(self._train_images)))
-		logger.info('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_labels.shape, self._train_labels.dtype, np.min(self._train_labels), np.max(self._train_labels)))
-		logger.info('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
-		logger.info('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_labels.shape, self._test_labels.dtype, np.min(self._test_labels), np.max(self._test_labels)))
-
 	@property
 	def shape(self):
 		return self._image_height, self._image_width, self._image_channel
@@ -77,6 +70,12 @@ class MyDataset(object):
 
 	def create_test_batch_generator(self, batch_size, shuffle=False):
 		return MyDataset.create_batch_generator(self._test_images, self._test_labels, batch_size, shuffle)
+
+	def show_data_info(self, logger):
+		logger.info('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_images.shape, self._train_images.dtype, np.min(self._train_images), np.max(self._train_images)))
+		logger.info('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_labels.shape, self._train_labels.dtype, np.min(self._train_labels), np.max(self._train_labels)))
+		logger.info('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
+		logger.info('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_labels.shape, self._test_labels.dtype, np.min(self._test_labels), np.max(self._test_labels)))
 
 	@staticmethod
 	def create_batch_generator(data1, data2, batch_size, shuffle):
@@ -213,16 +212,16 @@ class MyModel(object):
 		model = tf.keras.models.Sequential()
 
 		# Layer 1.
-		model.add(Conv2D(filters=32, kernel_size=5, strides=1, activation='relu', input_shape=input_shape))
-		model.add(MaxPooling2D(pool_size=2, strides=2))
+		model.add(tf.keras.layers.Conv2D(filters=32, kernel_size=5, strides=1, activation='relu', input_shape=input_shape))
+		model.add(tf.keras.layers.MaxPooling2D(pool_size=2, strides=2))
 		# Layer 2.
-		model.add(Conv2D(filters=64, kernel_size=3, strides=1, activation='relu'))
-		model.add(MaxPooling2D(pool_size=2, strides=2))
-		model.add(Flatten())
+		model.add(tf.keras.layers.Conv2D(filters=64, kernel_size=3, strides=1, activation='relu'))
+		model.add(tf.keras.layers.MaxPooling2D(pool_size=2, strides=2))
+		model.add(tf.keras.layers.Flatten())
 		# Layer 3.
-		model.add(Dense(units=1024, activation='relu'))
+		model.add(tf.keras.layers.Dense(units=1024, activation='relu'))
 		# Layer 4.
-		model.add(Dense(units=num_classes, activation='softmax'))
+		model.add(tf.keras.layers.Dense(units=num_classes, activation='softmax'))
 
 		return model
 
@@ -247,6 +246,7 @@ class MyRunner(object):
 		image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
 		num_classes = 10
 		self._dataset = MyDataset(image_height, image_width, image_channel, num_classes, self._logger)
+		self._dataset.show_data_info(self._logger)
 
 	def train(self, model_filepath, model_checkpoint_filepath, output_dir_path, batch_size, final_epoch, initial_epoch=0, is_training_resumed=False):
 		if is_training_resumed:
@@ -454,7 +454,7 @@ class MyRunner(object):
 			inferences = model.predict_generator(test_sequence, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
 		elif self._use_generator:
 			# Use a generator.
-			test_generator = self._dataset.create_batch_generator(inf_images, None, batch_size, shuffle=shuffle)
+			test_generator = MyDataset.create_batch_generator(inf_images, None, batch_size, shuffle=shuffle)
 			inferences = model.predict_generator(test_generator, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
 		else:
 			if shuffle:

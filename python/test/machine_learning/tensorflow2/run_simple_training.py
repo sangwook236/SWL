@@ -8,20 +8,19 @@ import os, argparse, logging, logging.handlers, time, datetime, functools
 import numpy as np
 import tensorflow as tf
 #from sklearn import preprocessing
-import cv2
+#import cv2
 import swl.machine_learning.util as swl_ml_util
 
 #--------------------------------------------------------------------
 
 class MyDataset(object):
-	def __init__(self, batch_size, logger):
+	def __init__(self, logger):
 		self._num_classes = 10
 
-		#--------------------
 		# Load data.
 		logger.info('Start loading dataset...')
 		start_time = time.time()
-		self._train_ds, self._test_ds, self._shape = MyDataset._load_data(self._num_classes, batch_size, logger)
+		self._train_inputs, self._train_outputs, self._test_inputs, self._test_outputs, self._shape = MyDataset._load_data(self._num_classes, logger)
 		logger.info('End loading dataset: {} secs.'.format(time.time() - start_time))
 
 	@property
@@ -34,11 +33,17 @@ class MyDataset(object):
 
 	@property
 	def train_data(self):
-		return self._train_ds
+		return self._train_inputs, self._train_outputs
 
 	@property
 	def test_data(self):
-		return self._test_ds
+		return self._test_inputs, self._test_outputs
+
+	def show_data_info(self, logger):
+		logger.info('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_inputs.shape, self._train_inputs.dtype, np.min(self._train_inputs), np.max(self._train_inputs)))
+		logger.info('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_outputs.shape, self._train_outputs.dtype, np.min(self._train_outputs), np.max(self._train_outputs)))
+		logger.info('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_inputs.shape, self._test_inputs.dtype, np.min(self._test_inputs), np.max(self._test_inputs)))
+		logger.info('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_outputs.shape, self._test_outputs.dtype, np.min(self._test_outputs), np.max(self._test_outputs)))
 
 	@staticmethod
 	def _preprocess(inputs, outputs, num_classes):
@@ -76,7 +81,7 @@ class MyDataset(object):
 		return inputs, outputs
 
 	@staticmethod
-	def _load_data(num_classes, batch_size, logger):
+	def _load_data(num_classes, logger):
 		# Pixel value: [0, 255].
 		(train_inputs, train_outputs), (test_inputs, test_outputs) = tf.keras.datasets.mnist.load_data()
 
@@ -85,17 +90,7 @@ class MyDataset(object):
 		test_inputs, test_outputs = MyDataset._preprocess(test_inputs, test_outputs, num_classes)
 		assert train_inputs.shape[1:] == test_inputs.shape[1:]
 
-		#--------------------
-		logger.info('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(train_inputs.shape, train_inputs.dtype, np.min(train_inputs), np.max(train_inputs)))
-		logger.info('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(train_outputs.shape, train_outputs.dtype, np.min(train_outputs), np.max(train_outputs)))
-		logger.info('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(test_inputs.shape, test_inputs.dtype, np.min(test_inputs), np.max(test_inputs)))
-		logger.info('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(test_outputs.shape, test_outputs.dtype, np.min(test_outputs), np.max(test_outputs)))
-
-		#--------------------
-		train_ds = tf.data.Dataset.from_tensor_slices((train_inputs, train_outputs)).shuffle(batch_size).batch(batch_size)
-		test_ds = tf.data.Dataset.from_tensor_slices((test_inputs, test_outputs)).batch(batch_size)
-
-		return train_ds, test_ds, train_inputs.shape[1:]
+		return train_inputs, train_outputs, test_inputs, test_outputs, train_inputs.shape[1:]
 
 #--------------------------------------------------------------------
 
@@ -116,12 +111,14 @@ class MyModel(tf.keras.Model):
 #--------------------------------------------------------------------
 
 class MyRunner(object):
-	def __init__(self, batch_size, logger):
+	def __init__(self, logger):
 		self._logger = logger
 
 		# Create a dataset.
-		self._dataset = MyDataset(batch_size, self._logger)
+		self._dataset = MyDataset(self._logger)
+		self._dataset.show_data_info(self._logger)
 
+		# Create an optimizer, a loss, and an accuracy.
 		self._loss_object = tf.keras.losses.SparseCategoricalCrossentropy()
 		self._optimizer = tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=False)
 
@@ -132,6 +129,9 @@ class MyRunner(object):
 		self._test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
 
 	def train(self, checkpoint_dir_path, output_dir_path, batch_size, final_epoch, initial_epoch=0, is_training_resumed=False):
+		if batch_size is None or batch_size <= 0:
+			raise ValueError('Invalid batch size: {}'.format(batch_size))
+
 		@tf.function
 		def train_step(model, inputs, outputs):
 			with tf.GradientTape() as tape:
@@ -176,6 +176,10 @@ class MyRunner(object):
 				self._logger.error('Failed to restore a model from {}.'.format(checkpoint_dir_path))
 				return
 
+		# Create a dataset.
+		train_dataset = tf.data.Dataset.from_tensor_slices(self._dataset.train_data).shuffle(batch_size).batch(batch_size, drop_remainder=False)
+		test_dataset = tf.data.Dataset.from_tensor_slices(self._dataset.test_data).batch(batch_size, drop_remainder=False)
+
 		history = {
 			'acc': list(),
 			'loss': list(),
@@ -201,7 +205,7 @@ class MyRunner(object):
 
 			#--------------------
 			start_time = time.time()
-			for inputs, outputs in self._dataset.train_data:
+			for inputs, outputs in train_dataset:
 				train_step(model, inputs, outputs)
 			with train_summary_writer.as_default():
 				tf.summary.scalar('loss', self._train_loss.result(), step=epoch)
@@ -214,7 +218,7 @@ class MyRunner(object):
 
 			#--------------------
 			start_time = time.time()
-			for inputs, outputs in self._dataset.test_data:
+			for inputs, outputs in test_dataset:
 				test_step(model, inputs, outputs)
 			with val_summary_writer.as_default():
 				tf.summary.scalar('loss', self._test_loss.result(), step=epoch)
@@ -255,6 +259,9 @@ class MyRunner(object):
 		return history
 
 	def test(self, checkpoint_dir_path, batch_size, shuffle=False):
+		if batch_size is None or batch_size <= 0:
+			raise ValueError('Invalid batch size: {}'.format(batch_size))
+
 		# Create a model.
 		model = MyModel(self._dataset.num_classes)
 
@@ -273,11 +280,14 @@ class MyRunner(object):
 			self._logger.error('Failed to load a model from {}.'.format(checkpoint_dir_path))
 			return
 
+		# Create a dataset.
+		dataset = tf.data.Dataset.from_tensor_slices(self._dataset.test_data).batch(batch_size, drop_remainder=False)
+
 		#--------------------
 		self._logger.info('Start testing...')
 		inferences, ground_truths = list(), list()
 		start_time = time.time()
-		for inputs, outputs in self._dataset.test_data:
+		for inputs, outputs in dataset:
 			inferences.append(model(inputs).numpy())
 			ground_truths.append(outputs.numpy())
 		self._logger.info('End testing: {} secs.'.format(time.time() - start_time))
@@ -294,7 +304,10 @@ class MyRunner(object):
 		else:
 			self._logger.warning('Invalid test results.')
 
-	def infer(self, checkpoint_dir_path, batch_size=None, shuffle=False):
+	def infer(self, checkpoint_dir_path, batch_size, shuffle=False):
+		if batch_size is None or batch_size <= 0:
+			raise ValueError('Invalid batch size: {}'.format(batch_size))
+
 		# Create a model.
 		model = MyModel(self._dataset.num_classes)
 
@@ -313,11 +326,14 @@ class MyRunner(object):
 			self._logger.error('Failed to load a model from {}.'.format(checkpoint_dir_path))
 			return
 
+		# Create a dataset.
+		dataset = tf.data.Dataset.from_tensor_slices(self._dataset.test_data).batch(batch_size, drop_remainder=False)
+
 		#--------------------
 		self._logger.info('Start inferring...')
 		inferences = list()
 		start_time = time.time()
-		for inputs, _ in self._dataset.test_data:
+		for inputs, _ in dataset:
 			inferences.append(model(inputs).numpy())
 		self._logger.info('End inferring: {} secs.'.format(time.time() - start_time))
 
@@ -480,7 +496,7 @@ def main():
 		checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
 
 	#--------------------
-	runner = MyRunner(batch_size, logger)
+	runner = MyRunner(logger)
 
 	if args.train:
 		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
@@ -509,7 +525,7 @@ def main():
 			logger.error('Model directory, {} does not exist.'.format(checkpoint_dir_path))
 			return
 
-		runner.infer(checkpoint_dir_path)
+		runner.infer(checkpoint_dir_path, batch_size)
 
 #--------------------------------------------------------------------
 

@@ -8,7 +8,7 @@ import os, argparse, logging, logging.handlers, time, datetime
 import numpy as np
 import tensorflow as tf
 #from sklearn import preprocessing
-import cv2
+#import cv2
 import swl.machine_learning.util as swl_ml_util
 
 #--------------------------------------------------------------------
@@ -32,12 +32,6 @@ class MyDataset(object):
 		if len(self._test_labels) != self._num_test_examples:
 			raise ValueError('Invalid test data length: {} != {}'.format(self._num_test_examples, len(self._test_labels)))
 
-		#--------------------
-		logger.info('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_images.shape, self._train_images.dtype, np.min(self._train_images), np.max(self._train_images)))
-		logger.info('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_labels.shape, self._train_labels.dtype, np.min(self._train_labels), np.max(self._train_labels)))
-		logger.info('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
-		logger.info('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_labels.shape, self._test_labels.dtype, np.min(self._test_labels), np.max(self._test_labels)))
-
 	@property
 	def shape(self):
 		return self._image_height, self._image_width, self._image_channel
@@ -55,6 +49,12 @@ class MyDataset(object):
 
 	def create_test_batch_generator(self, batch_size, shuffle=False):
 		return MyDataset._create_batch_generator(self._test_images, self._test_labels, batch_size, shuffle, is_training=False)
+
+	def show_data_info(self, logger):
+		logger.info('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_images.shape, self._train_images.dtype, np.min(self._train_images), np.max(self._train_images)))
+		logger.info('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_labels.shape, self._train_labels.dtype, np.min(self._train_labels), np.max(self._train_labels)))
+		logger.info('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
+		logger.info('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_labels.shape, self._test_labels.dtype, np.min(self._test_labels), np.max(self._test_labels)))
 
 	@staticmethod
 	def _create_batch_generator(data1, data2, batch_size, shuffle, is_training=False):
@@ -199,6 +199,7 @@ class MyRunner(object):
 		image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
 		num_classes = 10
 		self._dataset = MyDataset(image_height, image_width, image_channel, num_classes, self._logger)
+		self._dataset.show_data_info(self._logger)
 
 	@property
 	def dataset(self):
