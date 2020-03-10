@@ -157,6 +157,9 @@ class MyRunner(object):
 			self._logger.error('Failed to load a model from {}.'.format(model_filepath))
 			return
 
+		#if torch.cuda.device_count() > 1:
+		#	device_ids = [0, 1]
+		#	model = torch.nn.DataParallel(model, device_ids=device_ids)
 		model = model.to(device)
 		# Switch to evaluation mode.
 		model.eval()
@@ -204,6 +207,9 @@ class MyRunner(object):
 			self._logger.error('Failed to load a model from {}.'.format(model_filepath))
 			return
 
+		#if torch.cuda.device_count() > 1:
+		#	device_ids = [0, 1]
+		#	model = torch.nn.DataParallel(model, device_ids=device_ids)
 		model = model.to(device)
 		# Switch to evaluation mode.
 		model.eval()

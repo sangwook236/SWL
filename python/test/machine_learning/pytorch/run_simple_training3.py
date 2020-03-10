@@ -234,9 +234,10 @@ class MyRunner(object):
 
 		# Create a model.
 		model = MyModel()
+		#if torch.cuda.device_count() > 1:
+		#	device_ids = [0, 1]
+		#	model = torch.nn.DataParallel(model, device_ids=device_ids)
 		model = model.to(device)
-		#device_ids = [0, 1]
-		#model = torch.nn.DataParallel(model, device_ids=device_ids)
 
 		if os.path.isfile(model_filepath):
 			# Load a model.
@@ -297,9 +298,10 @@ class MyRunner(object):
 
 		# Create a model.
 		model = MyModel()
+		#if torch.cuda.device_count() > 1:
+		#	device_ids = [0, 1]
+		#	model = torch.nn.DataParallel(model, device_ids=device_ids)
 		model = model.to(device)
-		#device_ids = [0, 1]
-		#model = torch.nn.DataParallel(model, device_ids=device_ids)
 
 		if os.path.isfile(model_filepath):
 			# Load a model.
