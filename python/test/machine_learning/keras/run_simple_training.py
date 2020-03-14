@@ -368,26 +368,7 @@ class MyRunner(object):
 
 		return history.history
 
-	def test(self, model_filepath, batch_size=None, shuffle=False):
-		# Load a model.
-		try:
-			self._logger.info('Start loading a model...')
-			start_time = time.time()
-			"""
-			# Load only the architecture of a model.
-			model = tf.keras.models.model_from_json(json_string)
-			#model = tf.keras.models.model_from_yaml(yaml_string)
-			# Load only the weights of a model.
-			model.load_weights(model_weight_filepath)
-			"""
-			# Load a model.
-			model = tf.keras.models.load_model(model_filepath)
-			self._logger.info('End loading a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
-		except (ImportError, IOError):
-			self._logger.error('Failed to load a model from {}.'.format(model_filepath))
-			return
-
-		#--------------------
+	def test(self, model, batch_size=None, shuffle=False):
 		self._logger.info('Start testing...')
 		start_time = time.time()
 		if self._use_keras_data_sequence:
@@ -423,26 +404,7 @@ class MyRunner(object):
 		else:
 			self._logger.warning('Invalid test results.')
 
-	def infer(self, model_filepath, batch_size=None, shuffle=False):
-		# Load a model.
-		try:
-			self._logger.info('Start loading a model...')
-			start_time = time.time()
-			"""
-			# Load only the architecture of a model.
-			model = tf.keras.models.model_from_json(json_string)
-			#model = tf.keras.models.model_from_yaml(yaml_string)
-			# Load only the weights of a model.
-			model.load_weights(model_weight_filepath)
-			"""
-			# Load a model.
-			model = tf.keras.models.load_model(model_filepath)
-			self._logger.info('End loading a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
-		except (ImportError, IOError):
-			self._logger.error('Failed to load a model from {}.'.format(model_filepath))
-			return
-
-		#--------------------
+	def infer(self, model, batch_size=None, shuffle=False):
 		inf_images, _ = self._dataset.test_data
 
 		#--------------------
@@ -476,6 +438,26 @@ class MyRunner(object):
 			self._logger.info('Inference results (index: inference): {}.'.format(results))
 		else:
 			self._logger.info('Invalid inference results.')
+
+	def load_evaluation_model(self, model_filepath):
+		try:
+			self._logger.info('Start loading a model...')
+			start_time = time.time()
+			"""
+			# Load only the architecture of a model.
+			model = tf.keras.models.model_from_json(json_string)
+			#model = tf.keras.models.model_from_yaml(yaml_string)
+			# Load only the weights of a model.
+			model.load_weights(model_weight_filepath)
+			"""
+			# Load a model.
+			model = tf.keras.models.load_model(model_filepath)
+			self._logger.info('End loading a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
+
+			return model
+		except (ImportError, IOError):
+			self._logger.error('Failed to load a model from {}.'.format(model_filepath))
+			return None
 
 #--------------------------------------------------------------------
 
@@ -568,11 +550,13 @@ def parse_command_line_options():
 
 	return parser.parse_args()
 
-def get_logger(name, log_level, is_rotating=True):
-	if not os.path.isdir('log'):
-		os.mkdir('log')
+def get_logger(name, log_level=None, log_dir_path=None, is_rotating=True):
+	if not log_level: log_level = logging.INFO
+	if not log_dir_path: log_dir_path = './log'
+	if not os.path.isdir(log_dir_path):
+		os.mkdir(log_dir_path)
 
-	log_filepath = './log/' + (name if name else 'swl') + '.log'
+	log_filepath = os.path.join(log_dir_path, (name if name else 'swl') + '.log')
 	if is_rotating:
 		file_handler = logging.handlers.RotatingFileHandler(log_filepath, maxBytes=10000000, backupCount=10)
 	else:
@@ -594,11 +578,13 @@ def get_logger(name, log_level, is_rotating=True):
 def main():
 	args = parse_command_line_options()
 
-	logger = get_logger(os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, is_rotating=True)
+	logger = get_logger(os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, './log', is_rotating=True)
 	logger.info('----------------------------------------------------------------------')
 	logger.info('Logger: name = {}, level = {}.'.format(logger.name, logger.level))
 	logger.info('Command-line arguments: {}.'.format(sys.argv))
 	logger.info('Command-line options: {}.'.format(vars(args)))
+	logger.info('Python version: {}.'.format(sys.version.replace('\n', ' ')))
+	logger.info('TensorFlow version: {}.'.format(tf.__version__))
 
 	if not args.train and not args.test and not args.infer:
 		logger.error('At least one of command line options "--train", "--test", and "--infer" has to be specified.')
@@ -650,24 +636,22 @@ def main():
 		if os.path.exists(output_dir_path):
 			swl_ml_util.save_train_history(history, output_dir_path)
 
-	if args.test:
-		if not model_filepath or not os.path.exists(model_filepath):
+	if args.test or args.infer:
+		if model_filepath and os.path.exists(model_filepath):
+			model = runner.load_evaluation_model(model_filepath)
+
+			if args.test and model:
+				runner.test(model)
+
+			if args.infer and model:
+				runner.infer(model)
+		else:
 			logger.error('Model file, {} does not exist.'.format(model_filepath))
-			return
-
-		runner.test(model_filepath)
-
-	if args.infer:
-		if not model_filepath or not os.path.exists(model_filepath):
-			logger.error('Model file, {} does not exist.'.format(model_filepath))
-			return
-
-		runner.infer(model_filepath)
 
 #--------------------------------------------------------------------
 
 # Usage:
-#	python run_simple_training.py --train --test --infer --epoch 30 --gpu 0
+#	python run_simple_training.py --train --test --infer --epoch 20 --gpu 0
 
 if '__main__' == __name__:
 	main()

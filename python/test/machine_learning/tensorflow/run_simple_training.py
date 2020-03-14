@@ -762,11 +762,13 @@ def parse_command_line_options():
 
 	return parser.parse_args()
 
-def get_logger(name, log_level, is_rotating=True):
-	if not os.path.isdir('log'):
-		os.mkdir('log')
+def get_logger(name, log_level=None, log_dir_path=None, is_rotating=True):
+	if not log_level: log_level = logging.INFO
+	if not log_dir_path: log_dir_path = './log'
+	if not os.path.isdir(log_dir_path):
+		os.mkdir(log_dir_path)
 
-	log_filepath = './log/' + (name if name else 'swl') + '.log'
+	log_filepath = os.path.join(log_dir_path, (name if name else 'swl') + '.log')
 	if is_rotating:
 		file_handler = logging.handlers.RotatingFileHandler(log_filepath, maxBytes=10000000, backupCount=10)
 	else:
@@ -788,11 +790,13 @@ def get_logger(name, log_level, is_rotating=True):
 def main():
 	args = parse_command_line_options()
 
-	logger = get_logger(os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, is_rotating=True)
+	logger = get_logger(os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, './log', is_rotating=True)
 	logger.info('----------------------------------------------------------------------')
 	logger.info('Logger: name = {}, level = {}.'.format(logger.name, logger.level))
 	logger.info('Command-line arguments: {}.'.format(sys.argv))
 	logger.info('Command-line options: {}.'.format(vars(args)))
+	logger.info('Python version: {}.'.format(sys.version.replace('\n', ' ')))
+	logger.info('TensorFlow version: {}.'.format(tf.__version__))
 
 	if not args.train and not args.test and not args.infer and not args.visualize:
 		logger.error('At least one of command line options "--train", "--test", "--infer", and "--visualize" has to be specified.')
@@ -864,7 +868,7 @@ def main():
 #--------------------------------------------------------------------
 
 # Usage:
-#	python run_simple_training.py --train --test --infer --visualize --epoch 30 --gpu 0
+#	python run_simple_training.py --train --test --infer --visualize --epoch 20 --gpu 0
 
 if '__main__' == __name__:
 	main()

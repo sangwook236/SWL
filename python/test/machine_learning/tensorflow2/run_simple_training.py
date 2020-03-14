@@ -258,27 +258,9 @@ class MyRunner(object):
 
 		return history
 
-	def test(self, checkpoint_dir_path, batch_size, shuffle=False):
+	def test(self, model, batch_size, shuffle=False):
 		if batch_size is None or batch_size <= 0:
 			raise ValueError('Invalid batch size: {}'.format(batch_size))
-
-		# Create a model.
-		model = MyModel(self._dataset.num_classes)
-
-		# Create checkpoint objects.
-		#ckpt = tf.train.Checkpoint(net=model)  # Not good.
-		ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=self._optimizer, net=model)
-		ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir_path, max_to_keep=None)
-
-		# Load a model.
-		self._logger.info('Start loading a model...')
-		start_time = time.time()
-		ckpt.restore(ckpt_manager.latest_checkpoint)
-		if ckpt_manager.latest_checkpoint:
-			self._logger.info('End loading a model from {}: {} secs.'.format(ckpt_manager.latest_checkpoint, time.time() - start_time))
-		else:
-			self._logger.error('Failed to load a model from {}.'.format(checkpoint_dir_path))
-			return
 
 		# Create a dataset.
 		dataset = tf.data.Dataset.from_tensor_slices(self._dataset.test_data).batch(batch_size, drop_remainder=False)
@@ -304,27 +286,9 @@ class MyRunner(object):
 		else:
 			self._logger.warning('Invalid test results.')
 
-	def infer(self, checkpoint_dir_path, batch_size, shuffle=False):
+	def infer(self, model, batch_size, shuffle=False):
 		if batch_size is None or batch_size <= 0:
 			raise ValueError('Invalid batch size: {}'.format(batch_size))
-
-		# Create a model.
-		model = MyModel(self._dataset.num_classes)
-
-		# Create checkpoint objects.
-		#ckpt = tf.train.Checkpoint(net=model)  # Not good.
-		ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=self._optimizer, net=model)
-		ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir_path, max_to_keep=None)
-
-		# Load a model.
-		self._logger.info('Start loading a model...')
-		start_time = time.time()
-		ckpt.restore(ckpt_manager.latest_checkpoint)
-		if ckpt_manager.latest_checkpoint:
-			self._logger.info('End loading a model from {}: {} secs.'.format(ckpt_manager.latest_checkpoint, time.time() - start_time))
-		else:
-			self._logger.error('Failed to load a model from {}.'.format(checkpoint_dir_path))
-			return
 
 		# Create a dataset.
 		dataset = tf.data.Dataset.from_tensor_slices(self._dataset.test_data).batch(batch_size, drop_remainder=False)
@@ -347,6 +311,26 @@ class MyRunner(object):
 			self._logger.info('Inference results (index: inference): {}.'.format(results))
 		else:
 			self._logger.warning('Invalid inference results.')
+
+	def load_evaluation_model(self, checkpoint_dir_path):
+		# Create a model.
+		model = MyModel(self._dataset.num_classes)
+
+		# Create checkpoint objects.
+		#ckpt = tf.train.Checkpoint(net=model)  # Not good.
+		ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=self._optimizer, net=model)
+		ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir_path, max_to_keep=None)
+
+		# Load a model.
+		self._logger.info('Start loading a model...')
+		start_time = time.time()
+		ckpt.restore(ckpt_manager.latest_checkpoint)
+		if ckpt_manager.latest_checkpoint:
+			self._logger.info('End loading a model from {}: {} secs.'.format(ckpt_manager.latest_checkpoint, time.time() - start_time))
+			return model
+		else:
+			self._logger.error('Failed to load a model from {}.'.format(checkpoint_dir_path))
+			return None
 
 #--------------------------------------------------------------------
 
@@ -439,11 +423,13 @@ def parse_command_line_options():
 
 	return parser.parse_args()
 
-def get_logger(name, log_level, is_rotating=True):
-	if not os.path.isdir('log'):
-		os.mkdir('log')
+def get_logger(name, log_level=None, log_dir_path=None, is_rotating=True):
+	if not log_level: log_level = logging.INFO
+	if not log_dir_path: log_dir_path = './log'
+	if not os.path.isdir(log_dir_path):
+		os.mkdir(log_dir_path)
 
-	log_filepath = './log/' + (name if name else 'swl') + '.log'
+	log_filepath = os.path.join(log_dir_path, (name if name else 'swl') + '.log')
 	if is_rotating:
 		file_handler = logging.handlers.RotatingFileHandler(log_filepath, maxBytes=10000000, backupCount=10)
 	else:
@@ -465,11 +451,13 @@ def get_logger(name, log_level, is_rotating=True):
 def main():
 	args = parse_command_line_options()
 
-	logger = get_logger(os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, is_rotating=True)
+	logger = get_logger(os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, './log', is_rotating=True)
 	logger.info('----------------------------------------------------------------------')
 	logger.info('Logger: name = {}, level = {}.'.format(logger.name, logger.level))
 	logger.info('Command-line arguments: {}.'.format(sys.argv))
 	logger.info('Command-line options: {}.'.format(vars(args)))
+	logger.info('Python version: {}.'.format(sys.version.replace('\n', ' ')))
+	logger.info('TensorFlow version: {}.'.format(tf.__version__))
 
 	if not args.train and not args.test and not args.infer:
 		logger.error('At least one of command line options "--train", "--test", and "--infer" has to be specified.')
@@ -513,24 +501,22 @@ def main():
 		if os.path.exists(output_dir_path):
 			swl_ml_util.save_train_history(history, output_dir_path)
 
-	if args.test:
-		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
+	if args.test or args.infer:
+		if checkpoint_dir_path and os.path.exists(checkpoint_dir_path):
+			model = runner.load_evaluation_model(checkpoint_dir_path)
+
+			if args.test and model:
+				runner.test(model, batch_size)
+
+			if args.infer and model:
+				runner.infer(model, batch_size)
+		else:
 			logger.error('Model directory, {} does not exist.'.format(checkpoint_dir_path))
-			return
-
-		runner.test(checkpoint_dir_path, batch_size)
-
-	if args.infer:
-		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
-			logger.error('Model directory, {} does not exist.'.format(checkpoint_dir_path))
-			return
-
-		runner.infer(checkpoint_dir_path, batch_size)
 
 #--------------------------------------------------------------------
 
 # Usage:
-#	python run_simple_training.py --train --test --infer --epoch 30 --gpu 0
+#	python run_simple_training.py --train --test --infer --epoch 20 --gpu 0
 
 if '__main__' == __name__:
 	main()

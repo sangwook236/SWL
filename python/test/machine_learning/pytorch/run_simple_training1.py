@@ -143,26 +143,9 @@ class MyRunner(object):
 
 		return history
 
-	def test(self, model_filepath, batch_size, device='cpu'):
+	def test(self, model, batch_size, device='cpu'):
 		if batch_size is None or batch_size <= 0:
 			raise ValueError('Invalid batch size: {}'.format(batch_size))
-
-		# Load a model.
-		try:
-			self._logger.info('Start loading a model...')
-			start_time = time.time()
-			model = torch.load(model_filepath)
-			self._logger.info('End loading a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
-		except:
-			self._logger.error('Failed to load a model from {}.'.format(model_filepath))
-			return
-
-		#if torch.cuda.device_count() > 1:
-		#	device_ids = [0, 1]
-		#	model = torch.nn.DataParallel(model, device_ids=device_ids)
-		model = model.to(device)
-		# Switch to evaluation mode.
-		model.eval()
 
 		# Create a data loader.
 		dataloader = torch.utils.data.DataLoader(self._test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
@@ -193,26 +176,9 @@ class MyRunner(object):
 		else:
 			self._logger.warning('Invalid test results.')
 
-	def infer(self, model_filepath, batch_size, shuffle=False, device='cpu'):
+	def infer(self, model, batch_size, shuffle=False, device='cpu'):
 		if batch_size is None or batch_size <= 0:
 			raise ValueError('Invalid batch size: {}'.format(batch_size))
-
-		# Load a model.
-		try:
-			self._logger.info('Start loading a model...')
-			start_time = time.time()
-			model = torch.load(model_filepath)
-			self._logger.info('End loading a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
-		except:
-			self._logger.error('Failed to load a model from {}.'.format(model_filepath))
-			return
-
-		#if torch.cuda.device_count() > 1:
-		#	device_ids = [0, 1]
-		#	model = torch.nn.DataParallel(model, device_ids=device_ids)
-		model = model.to(device)
-		# Switch to evaluation mode.
-		model.eval()
 
 		# Create a data loader.
 		dataloader = torch.utils.data.DataLoader(self._test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=4)
@@ -239,6 +205,25 @@ class MyRunner(object):
 			self._logger.info('Inference results (index: inference): {}.'.format(results))
 		else:
 			self._logger.warning('Invalid inference results.')
+
+	def load_evaluation_model(self, model_filepath, device='cpu'):
+		try:
+			self._logger.info('Start loading a model...')
+			start_time = time.time()
+			model = torch.load(model_filepath)
+			self._logger.info('End loading a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
+		except:
+			self._logger.error('Failed to load a model from {}.'.format(model_filepath))
+			return None
+
+		#if torch.cuda.device_count() > 1:
+		#	device_ids = [0, 1]
+		#	model = torch.nn.DataParallel(model, device_ids=device_ids)
+		model = model.to(device)
+		# Switch to evaluation mode.
+		model.eval()
+
+		return model
 
 	def show_data_info(self, batch_size):
 		# Create data loaders.
@@ -432,11 +417,13 @@ def parse_command_line_options():
 
 	return parser.parse_args()
 
-def get_logger(name, log_level, is_rotating=True):
-	if not os.path.isdir('log'):
-		os.mkdir('log')
+def get_logger(name, log_level=None, log_dir_path=None, is_rotating=True):
+	if not log_level: log_level = logging.INFO
+	if not log_dir_path: log_dir_path = './log'
+	if not os.path.isdir(log_dir_path):
+		os.mkdir(log_dir_path)
 
-	log_filepath = './log/' + (name if name else 'swl') + '.log'
+	log_filepath = os.path.join(log_dir_path, (name if name else 'swl') + '.log')
 	if is_rotating:
 		file_handler = logging.handlers.RotatingFileHandler(log_filepath, maxBytes=10000000, backupCount=10)
 	else:
@@ -458,11 +445,14 @@ def get_logger(name, log_level, is_rotating=True):
 def main():
 	args = parse_command_line_options()
 
-	logger = get_logger(os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, is_rotating=True)
+	logger = get_logger(os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, './log', is_rotating=True)
 	logger.info('----------------------------------------------------------------------')
 	logger.info('Logger: name = {}, level = {}.'.format(logger.name, logger.level))
 	logger.info('Command-line arguments: {}.'.format(sys.argv))
 	logger.info('Command-line options: {}.'.format(vars(args)))
+	logger.info('Python version: {}.'.format(sys.version.replace('\n', ' ')))
+	logger.info('Torch version: {}.'.format(torch.__version__))
+	logger.info('cuDNN version: {}.'.format(torch.backends.cudnn.version()))
 
 	if not args.train and not args.test and not args.infer:
 		logger.error('At least one of command line options "--train", "--test", and "--infer" has to be specified.')
@@ -470,6 +460,8 @@ def main():
 
 	#if args.gpu:
 	#	os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+	device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu else 'cpu')
+	logger.info('Device: {}.'.format(device))
 
 	#--------------------
 	is_training_resumed = args.resume
@@ -505,7 +497,6 @@ def main():
 				return
 		model_filepath = new_model_filepath
 
-		device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu else 'cpu')
 		history = runner.train(model_filepath, model_checkpoint_filepath, batch_size, final_epoch, initial_epoch, is_training_resumed, device=device)
 
 		#logger.info('Train history = {}.'.format(history))
@@ -513,26 +504,22 @@ def main():
 		if os.path.exists(output_dir_path):
 			swl_ml_util.save_train_history(history, output_dir_path)
 
-	if args.test:
-		if not model_filepath or not os.path.exists(model_filepath):
+	if args.test or args.infer:
+		if model_filepath and os.path.exists(model_filepath):
+			model = runner.load_evaluation_model(model_filepath, device=device)
+
+			if args.test and model:
+				runner.test(model, batch_size, device=device)
+
+			if args.infer and model:
+				runner.infer(model, batch_size, device=device)
+		else:
 			logger.error('Model file, {} does not exist.'.format(model_filepath))
-			return
-
-		device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu else 'cpu')
-		runner.test(model_filepath, batch_size, device=device)
-
-	if args.infer:
-		if not model_filepath or not os.path.exists(model_filepath):
-			logger.error('Model file, {} does not exist.'.format(model_filepath))
-			return
-
-		device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu else 'cpu')
-		runner.infer(model_filepath, batch_size, device=device)
 
 #--------------------------------------------------------------------
 
 # Usage:
-#	python run_simple_training.py --train --test --infer --epoch 30 --gpu 0
+#	python run_simple_training.py --train --test --infer --epoch 20 --gpu 0
 
 if '__main__' == __name__:
 	main()
