@@ -1,17 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-# REF [site] >>
-#	https://github.com/doc-analysis/TableBank
-#	https://github.com/facebookresearch/detectron2
-#	https://detectron2.readthedocs.io/
-
 import os, random, json
 import numpy as np
 import torch, torchvision
 import cv2
 import detectron2
 import detectron2.model_zoo, detectron2.config, detectron2.engine, detectron2.evaluation, detectron2.utils.visualizer, detectron2.data, detectron2.structures
+
+# REF [site] >>
+#	https://github.com/doc-analysis/TableBank
+#	https://github.com/facebookresearch/detectron2
+#	https://detectron2.readthedocs.io/
 
 def check_tablebank_detection_data(data_dir_path):
 	latex_image_dir_path = os.path.join(data_dir_path, 'Detection_data/Latex/images')
@@ -60,6 +60,16 @@ def check_tablebank_detection_data(data_dir_path):
 			bbox = anno_info['bbox']  # (x, y, width, height).
 
 			image_filepath = os.path.join(image_dir_path, image_filename)
+			"""
+			# Remove files with invalid filenames.
+			try:
+				with open(image_filepath, 'rb') as fd:
+					pass
+			except FileNotFoundError as ex:
+				print('File not found: {}.'.format(image_filepath))
+				continue
+			"""
+
 			if prev_image_filename != image_filepath:
 				img = cv2.imread(image_filepath, cv2.IMREAD_COLOR)
 
@@ -96,14 +106,21 @@ def get_tablebank_detection_dicts(data_dir_path):
 	image_dir_path_lst = [latex_image_dir_path, word_image_dir_path]
 	for annos, image_dir_path in zip(annos_lst, image_dir_path_lst):
 		for idx, anno_info in enumerate(annos['annotations']):
-			record = {}
-
 			image_id = anno_info['image_id'] - 1  # 0-based index.
 			image_filename = annos['images'][image_id]['file_name']
 			image_filepath = os.path.join(image_dir_path, image_filename)
 			height, width = annos['images'][image_id]['height'], annos['images'][image_id]['width']
 			#height, width = cv2.imread(image_filepath).shape[:2]
 
+			# Remove files with invalid filenames.
+			try:
+				with open(image_filepath, 'rb') as fd:
+					pass
+			except FileNotFoundError as ex:
+				print('File not found: {}.'.format(image_filepath))
+				continue
+
+			record = {}
 			record['file_name'] = image_filepath
 			record['image_id'] = image_id
 			record['height'] = height
@@ -123,29 +140,45 @@ def get_tablebank_detection_dicts(data_dir_path):
 
 # REF [site] >> https://colab.research.google.com/drive/16jcaJoc6bCFAQ96jDe2HwtXj7BMD_-m5#scrollTo=HUjkwRsOn1O0
 def train_table_detector_using_detectron2(tablebank_data_dir_path):
-	get_tablebank_detection_dicts(tablebank_data_dir_path)
+	dataset_dicts = np.array(get_tablebank_detection_dicts(tablebank_data_dir_path))
 
-	detectron2.data.DatasetCatalog.register('tablebank', lambda: get_tablebank_detection_dicts(tablebank_data_dir_path))
-	detectron2.data.MetadataCatalog.get('tablebank').set(thing_classes=['table'])
-	tablebank_metadata = detectron2.data.MetadataCatalog.get('tablebank')
+	dataset_len = len(dataset_dicts)
+	indices = list(range(dataset_len))
+	random.shuffle(indices)
+	train_val_test_ratio = 0.8
+	train_val_test_split = int(dataset_len * train_val_test_ratio)
+	tablebank_dataset_dicts = {}
+	tablebank_dataset_dicts['train'] = dataset_dicts[indices[:train_val_test_split]]
+	tablebank_dataset_dicts['val'] = dataset_dicts[indices[train_val_test_split:]]
+
+	for d in ['train', 'val']:
+		detectron2.data.DatasetCatalog.register('tablebank_' + d, lambda d=d: tablebank_dataset_dicts[d])
+		detectron2.data.MetadataCatalog.get('tablebank_' + d).set(thing_classes=['table'])
+	tablebank_metadata = detectron2.data.MetadataCatalog.get('tablebank_train')
 
 	#--------------------
-	# Fine-tune a coco-pretrained R50-FPN Mask R-CNN model on the dataset.
+	# Fine-tune a pretrained model on the dataset.
 
 	cfg = detectron2.config.get_cfg()
-	cfg.merge_from_file(detectron2.model_zoo.get_config_file('COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml'))
-	cfg.DATASETS.TRAIN = ('tablebank',)
-	cfg.DATASETS.TEST = ()
+	#cfg.merge_from_file(detectron2.model_zoo.get_config_file('COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml'))
+	cfg.merge_from_file('./tablebank_cfg/faster_rcnn_X_101_32x8d_FPN_3x.yaml')
+	#cfg.merge_from_file('./tablebank_cfg/faster_rcnn_X_152_32x8d_FPN_3x.yaml')  # Error: urllib.error.HTTPError: HTTP Error 403: Forbidden.
+	cfg.DATASETS.TRAIN = ('tablebank_train',)
+	cfg.DATASETS.TEST = ('tablebank_val',)
+	"""
 	cfg.DATALOADER.NUM_WORKERS = 2
 	cfg.MODEL.WEIGHTS = detectron2.model_zoo.get_checkpoint_url('COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml')  # Let training initialize from model zoo.
-	cfg.SOLVER.IMS_PER_BATCH = 2
-	cfg.SOLVER.BASE_LR = 0.00025  # Pick a good LR.
-	cfg.SOLVER.MAX_ITER = 300  # 300 iterations seems good enough for this toy dataset; you may need to train longer for a practical dataset.
+	cfg.SOLVER.IMS_PER_BATCH = 16
+	cfg.SOLVER.BASE_LR = 0.01  # Pick a good LR.
+	cfg.SOLVER.MAX_ITER = 360000  # 360000 iterations seems good enough for this toy dataset; you may need to train longer for a practical dataset.
+	cfg.MODEL.ROI_HEADS.NUM_CLASSES = 2  # Only has one class.
 	cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 128  # Faster, and good enough for this toy dataset (default: 512).
-	cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1  # Only has one class (ballon).
+	"""
+	cfg.DATALOADER.NUM_WORKERS = 8
+	cfg.SOLVER.IMS_PER_BATCH = 4  # #images/batch.
 
 	os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
-	trainer = detectron2.engine.DefaultTrainer(cfg) 
+	trainer = detectron2.engine.DefaultTrainer(cfg)
 	trainer.resume_or_load(resume=False)
 	trainer.train()
 
@@ -157,14 +190,14 @@ def train_table_detector_using_detectron2(tablebank_data_dir_path):
 
 	cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, 'model_final.pth')
 	cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.7  # Set the testing threshold for this model.
-	cfg.DATASETS.TEST = ('tablebank',)
+	cfg.DATASETS.TEST = ('tablebank_val',)
 	predictor = detectron2.engine.DefaultPredictor(cfg)
 
 	#--------------------
 	# Randomly select several samples to visualize the prediction results.
 
-	dataset_dicts = get_tablebank_detection_dicts(tablebank_data_dir_path)
-	for d in random.sample(dataset_dicts, 3):    
+	val_dataset_dicts = tablebank_dataset_dicts['val']
+	for d in random.sample(val_dataset_dicts, 3):    
 		im = cv2.imread(d['file_name'])
 		outputs = predictor(im)
 		v = detectron2.utils.visualizer.Visualizer(im[:,:,::-1],
@@ -180,8 +213,8 @@ def train_table_detector_using_detectron2(tablebank_data_dir_path):
 	#--------------------
 	# Evaluate its performance using AP metric implemented in COCO API.
 
-	evaluator = detectron2.evaluation.COCOEvaluator('tablebank', cfg, False, output_dir='./output/')
-	val_loader = detectron2.data.build_detection_test_loader(cfg, 'tablebank')
+	evaluator = detectron2.evaluation.COCOEvaluator('tablebank_val', cfg, False, output_dir='./output/')
+	val_loader = detectron2.data.build_detection_test_loader(cfg, 'tablebank_val')
 	detectron2.evaluation.inference_on_dataset(trainer.model, val_loader, evaluator)
 
 	# Another equivalent way is to use trainer.test.
