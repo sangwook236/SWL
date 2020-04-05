@@ -73,6 +73,9 @@ def check_tablebank_detection_data(data_dir_path):
 			if prev_image_filename != image_filepath:
 				img = cv2.imread(image_filepath, cv2.IMREAD_COLOR)
 
+			if annos['images'][image_id]['height'] != img.shape[0] or annos['images'][image_id]['width'] != img.shape[1]:
+				print('Unmatched image size: {}, {} != {}.'.format(image_filepath, (annos['images'][image_id]['height'], annos['images'][image_id]['width']), img.shape[:2]))
+
 			for seg in segmentations:
 				cv2.line(img, (seg[0], seg[1]), (seg[2], seg[3]), (0, 0, 255), 2, cv2.LINE_AA)
 				cv2.line(img, (seg[2], seg[3]), (seg[4], seg[5]), (0, 0, 255), 2, cv2.LINE_AA)
@@ -109,8 +112,6 @@ def get_tablebank_detection_dicts(data_dir_path):
 			image_id = anno_info['image_id'] - 1  # 0-based index.
 			image_filename = annos['images'][image_id]['file_name']
 			image_filepath = os.path.join(image_dir_path, image_filename)
-			height, width = annos['images'][image_id]['height'], annos['images'][image_id]['width']
-			#height, width = cv2.imread(image_filepath).shape[:2]
 
 			# Remove files with invalid filenames.
 			try:
@@ -119,6 +120,9 @@ def get_tablebank_detection_dicts(data_dir_path):
 			except FileNotFoundError as ex:
 				print('File not found: {}.'.format(image_filepath))
 				continue
+
+			#height, width = annos['images'][image_id]['height'], annos['images'][image_id]['width']
+			height, width = cv2.imread(image_filepath).shape[:2]
 
 			record = {}
 			record['file_name'] = image_filepath
