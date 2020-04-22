@@ -4,7 +4,10 @@
 import sys
 sys.path.append('../../src')
 
-import os
+import os, glob, time
+import numpy as np
+import torch, torchvision
+import cv2
 import text_data
 import text_generation_util as tg_util
 
@@ -46,17 +49,28 @@ def SingleCharacterDataset_test():
 	charset = hangeul_charset + alphabet_charset + digit_charset + symbol_charset
 
 	#--------------------
+	image_size = (32, 32)
+	train_transform = torchvision.transforms.Compose([
+		torchvision.transforms.Resize(image_size),
+		torchvision.transforms.ToTensor()
+	])
+	test_transform = torchvision.transforms.Compose([
+		torchvision.transforms.Resize(image_size),
+		torchvision.transforms.ToTensor()
+	])
+
+	#--------------------
 	font_size_interval = (10, 50)
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 
 	print('Start creating datasets...')
 	start_time = time.time()
-	train_dataset = text_data.SingleCharacterDataset(charset, font_list, font_size_interval, num_train_examples, transform=None)
-	test_dataset = text_data.SingleCharacterDataset(charset, font_list, font_size_interval, num_test_examples, transform=None)
+	train_dataset = text_data.SingleCharacterDataset(charset, font_list, font_size_interval, num_train_examples, transform=train_transform)
+	test_dataset = text_data.SingleCharacterDataset(charset, font_list, font_size_interval, num_test_examples, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 
 	#--------------------
-	batch_size = 32
+	batch_size = 64
 	shuffle = True
 	num_workers = 4
 
@@ -66,14 +80,34 @@ def SingleCharacterDataset_test():
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
 
+	#--------------------
+	# Show data info.
 	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
-	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
-
 	data_iter = iter(train_dataloader)
 	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels = images.numpy(), labels.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
-	print('Train label: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(labels.shape, labels.dtype, np.min(labels), np.max(labels)))
+	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+
+	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
+	data_iter = iter(test_dataloader)
+	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels = images.numpy(), labels.numpy()
+	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
+	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+
+	#--------------------
+	# Visualize.
+	for dataloader in [train_dataloader, test_dataloader]:
+		data_iter = iter(dataloader)
+		images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
+		images, labels = images.numpy(), labels.numpy()
+		for idx, (img, lbl) in enumerate(zip(images, labels)):
+			print('Label: (int) = {}, (str) = {}.'.format(lbl, charset[lbl]))
+			cv2.imshow('Image', img[0])
+			cv2.waitKey(0)
+			if idx >= 9: break
+		cv2.destroyAllWindows()
 
 def SingleWordDataset_test():
 	if 'posix' == os.name:
@@ -141,17 +175,28 @@ def SingleWordDataset_test():
 	word_set = all_word_set
 
 	#--------------------
+	image_size = (32, 160)
+	train_transform = torchvision.transforms.Compose([
+		torchvision.transforms.Resize(image_size),
+		torchvision.transforms.ToTensor()
+	])
+	test_transform = torchvision.transforms.Compose([
+		torchvision.transforms.Resize(image_size),
+		torchvision.transforms.ToTensor()
+	])
+
+	#--------------------
 	font_size_interval = (10, 50)
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 
 	print('Start creating datasets...')
 	start_time = time.time()
-	train_dataset = text_data.SingleWordDataset(word_set, charset, font_list, font_size_interval, num_train_examples, transform=None)
-	test_dataset = text_data.SingleWordDataset(word_set, charset, font_list, font_size_interval, num_test_examples, transform=None)
+	train_dataset = text_data.SingleWordDataset(word_set, charset, font_list, font_size_interval, num_train_examples, transform=train_transform)
+	test_dataset = text_data.SingleWordDataset(word_set, charset, font_list, font_size_interval, num_test_examples, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 
 	#--------------------
-	batch_size = 32
+	batch_size = 64
 	shuffle = True
 	num_workers = 4
 
@@ -161,18 +206,42 @@ def SingleWordDataset_test():
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
 
+	#--------------------
+	# Show data info.
 	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
-	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
-
 	data_iter = iter(train_dataloader)
 	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels = images.numpy(), labels.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
-	print('Train label: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(labels.shape, labels.dtype, np.min(labels), np.max(labels)))
+	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+
+	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
+	data_iter = iter(test_dataloader)
+	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels = images.numpy(), labels.numpy()
+	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
+	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+
+	#--------------------
+	# Visualize.
+	for dataloader in [train_dataloader, test_dataloader]:
+		data_iter = iter(dataloader)
+		images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
+		images, labels = images.numpy(), labels.numpy()
+		for idx, (img, lbl) in enumerate(zip(images, labels)):
+			print('Label: (int) = {}, (str) = {}.'.format([ll for ll in lbl if ll >= 0], train_dataset.decode_label(lbl)))
+			cv2.imshow('Image', img[0])
+			cv2.waitKey(0)
+			if idx >= 9: break
+	cv2.destroyAllWindows()
+
+def TextLineDataset_test():
+	raise NotImplementedError
 
 def main():
-	SingleCharacterDataset_test()
+	#SingleCharacterDataset_test()
 	SingleWordDataset_test()
+	#TextLineDataset_test()  # Not yet implemented.
 
 #--------------------------------------------------------------------
 

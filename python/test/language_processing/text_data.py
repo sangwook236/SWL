@@ -1,4 +1,5 @@
 import random
+import numpy as np
 import torch
 import swl.language_processing.util as swl_langproc_util
 
@@ -13,20 +14,21 @@ class SingleCharacterDataset(torch.utils.data.Dataset):
 		self.transform = transform
 
 	def __len__(self):
-		return self.num_example
+		return self.num_examples
 
 	def __getitem__(self, idx):
-		#ch = random.choice(charset)
-		#target = charset.index(ch)
-		target = randdom.randrange(len(charset))
-		ch = charset[target]
+		#ch = random.choice(self.charset)
+		#target = self.charset.index(ch)
+		target = random.randrange(len(self.charset))
+		ch = self.charset[target]
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
 		image_depth = 1
 		font_color = (random.randrange(128, 256),) * image_depth  # A light grayscale font color.
 		bg_color = (random.randrange(0, 128),) * image_depth  # A dark grayscale background color.
 		#image, mask = swl_langproc_util.generate_text_image(ch, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode='L', mask=False, mask_mode='1')
-		image, mask = swl_langproc_util.generate_simple_text_image(ch, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode='L')
+		image = swl_langproc_util.generate_simple_text_image(ch, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode='L')
+		#image = np.array(image, np.uint8)
 
 		if self.transform:
 			image = self.transform(image)
@@ -46,22 +48,29 @@ class SingleWordDataset(torch.utils.data.Dataset):
 		self.num_examples = num_examples
 		self.transform = transform
 
+		self.max_word_len = len(max(self.words, key=len))
+		self.default_value = -1
+
 	def __len__(self):
-		return self.num_example
+		return self.num_examples
 
 	def __getitem__(self, idx):
-		word = random.choice(self.words)
-		target = self.encode_label(word)
+		#word = random.choice(self.words)
+		word = random.sample(self.words, 1)[0]
+		target = [self.default_value,] * self.max_word_len
+		target[:len(word)] = self.encode_label(word)
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
 		image_depth = 1
 		font_color = (random.randrange(128, 256),) * image_depth  # A light grayscale font color.
 		bg_color = (random.randrange(0, 128),) * image_depth  # A dark grayscale background color.
 		#image, mask = swl_langproc_util.generate_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode='L', mask=False, mask_mode='1')
-		image, mask = swl_langproc_util.generate_simple_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode='L')
+		image = swl_langproc_util.generate_simple_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode='L')
+		#image = np.array(image, np.uint8)
 
 		if self.transform:
 			image = self.transform(image)
+		target = torch.IntTensor(target)
 
 		return (image, target)
 
@@ -85,5 +94,16 @@ class SingleWordDataset(torch.utils.data.Dataset):
 			except IndexError:
 				print('[SWL] Error: Failed to decode an identifier, {} in {}.'.format(id, label_int))
 				return SingleWordDataset.UNKNOWN  # TODO [check] >> Is it correct?
-		#return ''.join(list(index2label(id) for id in label_int if id != self._default_value))
-		return ''.join(list(index2label(id) for id in label_int))
+		return ''.join(list(index2label(id) for id in label_int if id != self.default_value))
+
+#--------------------------------------------------------------------
+
+class TextLineDataset(torch.utils.data.Dataset):
+	def __init__(self, transform=None):
+		raise NotImplementedError
+
+	def __len__(self):
+		raise NotImplementedError
+
+	def __getitem__(self, idx):
+		raise NotImplementedError
