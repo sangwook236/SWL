@@ -46,7 +46,7 @@ class TextLineDatasetBase(abc.ABC):
 			try:
 				return self._labels[id]
 			except IndexError:
-				print('[SWL] Error: Failed to decode a label, {} in {}.'.format(id, label_str))
+				print('[SWL] Error: Failed to decode a label, {} in {}.'.format(id, label_int))
 				return TextLineDatasetBase.UNKNOWN  # TODO [check] >> Is it correct?
 		return ''.join(list(index2label(id) for id in label_int if id != self._default_value))
 
