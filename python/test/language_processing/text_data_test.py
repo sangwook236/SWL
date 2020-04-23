@@ -45,8 +45,8 @@ def SingleCharacterDataset_test():
 	symbol_charset = string.punctuation
 	#symbol_charset = string.punctuation + ' '
 
-	#charset = hangeul_charset + hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset
-	charset = hangeul_charset + alphabet_charset + digit_charset + symbol_charset
+	#charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset + hangeul_jamo_charset
+	charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset
 
 	#--------------------
 	image_size = (32, 32)
@@ -68,6 +68,9 @@ def SingleCharacterDataset_test():
 	train_dataset = text_data.SingleCharacterDataset(charset, font_list, font_size_interval, num_train_examples, transform=train_transform)
 	test_dataset = text_data.SingleCharacterDataset(charset, font_list, font_size_interval, num_test_examples, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+
+	print('#train classes = {}.'.format(train_dataset.num_classes))
+	print('#test classes = {}.'.format(test_dataset.num_classes))
 
 	#--------------------
 	batch_size = 64
@@ -143,8 +146,8 @@ def SingleWordDataset_test():
 	symbol_charset = string.punctuation
 	#symbol_charset = string.punctuation + ' '
 
-	#charset = hangeul_charset + hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset
-	charset = hangeul_charset + alphabet_charset + digit_charset + symbol_charset
+	#charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset + hangeul_jamo_charset
+	charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset
 
 	#--------------------
 	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
@@ -175,15 +178,20 @@ def SingleWordDataset_test():
 	word_set = all_word_set
 
 	#--------------------
+	class ToIntTensor(object):
+		def __call__(self, lst):
+			return torch.IntTensor(lst)
 	image_size = (32, 160)
 	train_transform = torchvision.transforms.Compose([
 		torchvision.transforms.Resize(image_size),
 		torchvision.transforms.ToTensor()
 	])
+	train_target_transform = ToIntTensor()
 	test_transform = torchvision.transforms.Compose([
 		torchvision.transforms.Resize(image_size),
 		torchvision.transforms.ToTensor()
 	])
+	test_target_transform = ToIntTensor()
 
 	#--------------------
 	font_size_interval = (10, 50)
@@ -191,9 +199,12 @@ def SingleWordDataset_test():
 
 	print('Start creating datasets...')
 	start_time = time.time()
-	train_dataset = text_data.SingleWordDataset(word_set, charset, font_list, font_size_interval, num_train_examples, transform=train_transform)
-	test_dataset = text_data.SingleWordDataset(word_set, charset, font_list, font_size_interval, num_test_examples, transform=test_transform)
+	train_dataset = text_data.SingleWordDataset(word_set, charset, font_list, font_size_interval, num_train_examples, transform=train_transform, target_transform=train_target_transform)
+	test_dataset = text_data.SingleWordDataset(word_set, charset, font_list, font_size_interval, num_test_examples, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+
+	print('#train classes = {}.'.format(train_dataset.num_classes))
+	print('#test classes = {}.'.format(test_dataset.num_classes))
 
 	#--------------------
 	batch_size = 64
@@ -229,7 +240,7 @@ def SingleWordDataset_test():
 		images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
 		images, labels = images.numpy(), labels.numpy()
 		for idx, (img, lbl) in enumerate(zip(images, labels)):
-			print('Label: (int) = {}, (str) = {}.'.format([ll for ll in lbl if ll >= 0], train_dataset.decode_label(lbl)))
+			print('Label: (int) = {}, (str) = {}.'.format([ll for ll in lbl if ll != dataloader.dataset.default_value], train_dataset.decode_label(lbl)))
 			cv2.imshow('Image', img[0])
 			cv2.waitKey(0)
 			if idx >= 9: break
@@ -239,8 +250,8 @@ def TextLineDataset_test():
 	raise NotImplementedError
 
 def main():
-	#SingleCharacterDataset_test()
-	SingleWordDataset_test()
+	SingleCharacterDataset_test()
+	#SingleWordDataset_test()
 	#TextLineDataset_test()  # Not yet implemented.
 
 #--------------------------------------------------------------------

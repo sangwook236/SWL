@@ -6,12 +6,13 @@ import swl.language_processing.util as swl_langproc_util
 #--------------------------------------------------------------------
 
 class SingleCharacterDataset(torch.utils.data.Dataset):
-	def __init__(self, charset, fonts, font_size_interval, num_examples, transform=None):
+	def __init__(self, charset, fonts, font_size_interval, num_examples, transform=None, target_transform=None):
 		self.charset = charset
 		self.fonts = fonts
 		self.font_size_interval = font_size_interval
 		self.num_examples = num_examples
 		self.transform = transform
+		self.target_transform = target_transform
 
 	def __len__(self):
 		return self.num_examples
@@ -24,32 +25,40 @@ class SingleCharacterDataset(torch.utils.data.Dataset):
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
 		image_depth = 1
-		font_color = (random.randrange(128, 256),) * image_depth  # A light grayscale font color.
-		bg_color = (random.randrange(0, 128),) * image_depth  # A dark grayscale background color.
+		font_color = (random.randrange(0, 128),) * image_depth  # A dark grayscale font color.
+		bg_color = (random.randrange(128, 256),) * image_depth  # A light grayscale background color.
 		#image, mask = swl_langproc_util.generate_text_image(ch, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode='L', mask=False, mask_mode='1')
 		image = swl_langproc_util.generate_simple_text_image(ch, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode='L')
+		#image = image.convert('RGB')
 		#image = np.array(image, np.uint8)
 
 		if self.transform:
 			image = self.transform(image)
+		if self.target_transform:
+			target = self.target_transform(target)
 
 		return (image, target)
+
+	@property
+	def num_classes(self):
+		return len(self.charset)
 
 #--------------------------------------------------------------------
 
 class SingleWordDataset(torch.utils.data.Dataset):
 	UNKNOWN = '<UNK>'  # Unknown label token.
 
-	def __init__(self, words, charset, fonts, font_size_interval, num_examples, transform=None):
+	def __init__(self, words, charset, fonts, font_size_interval, num_examples, transform=None, target_transform=None):
 		self.words = words
 		self.charset = list(charset) + [SingleWordDataset.UNKNOWN]
 		self.fonts = fonts
 		self.font_size_interval = font_size_interval
 		self.num_examples = num_examples
 		self.transform = transform
+		self.target_transform = target_transform
 
 		self.max_word_len = len(max(self.words, key=len))
-		self.default_value = -1
+		self._default_value = -1
 
 	def __len__(self):
 		return self.num_examples
@@ -62,17 +71,27 @@ class SingleWordDataset(torch.utils.data.Dataset):
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
 		image_depth = 1
-		font_color = (random.randrange(128, 256),) * image_depth  # A light grayscale font color.
-		bg_color = (random.randrange(0, 128),) * image_depth  # A dark grayscale background color.
+		font_color = (random.randrange(0, 128),) * image_depth  # A dark grayscale font color.
+		bg_color = (random.randrange(128, 256),) * image_depth  # A light grayscale background color.
 		#image, mask = swl_langproc_util.generate_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode='L', mask=False, mask_mode='1')
 		image = swl_langproc_util.generate_simple_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode='L')
+		#image = image.convert('RGB')
 		#image = np.array(image, np.uint8)
 
 		if self.transform:
 			image = self.transform(image)
-		target = torch.IntTensor(target)
+		if self.target_transform:
+			target = self.target_transform(target)
 
 		return (image, target)
+
+	@property
+	def num_classes(self):
+		return len(self.charset)
+
+	@property
+	def default_value(self):
+		return self._default_value
 
 	# String label -> integer label.
 	# REF [function] >> TextLineDatasetBase.encode_label() in text_line_data.py.
@@ -94,7 +113,7 @@ class SingleWordDataset(torch.utils.data.Dataset):
 			except IndexError:
 				print('[SWL] Error: Failed to decode an identifier, {} in {}.'.format(id, label_int))
 				return SingleWordDataset.UNKNOWN  # TODO [check] >> Is it correct?
-		return ''.join(list(index2label(id) for id in label_int if id != self.default_value))
+		return ''.join(list(index2label(id) for id in label_int if id != self._default_value))
 
 #--------------------------------------------------------------------
 
