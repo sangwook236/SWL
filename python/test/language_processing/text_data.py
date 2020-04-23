@@ -43,6 +43,10 @@ class SingleCharacterDataset(torch.utils.data.Dataset):
 	def num_classes(self):
 		return len(self.charset)
 
+	@property
+	def classes(self):
+		return self.charset
+
 #--------------------------------------------------------------------
 
 class SingleWordDataset(torch.utils.data.Dataset):
@@ -88,6 +92,10 @@ class SingleWordDataset(torch.utils.data.Dataset):
 	@property
 	def num_classes(self):
 		return len(self.charset)
+
+	@property
+	def classes(self):
+		return self.charset
 
 	@property
 	def default_value(self):

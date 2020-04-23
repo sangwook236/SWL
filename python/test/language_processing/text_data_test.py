@@ -52,11 +52,13 @@ def SingleCharacterDataset_test():
 	image_size = (32, 32)
 	train_transform = torchvision.transforms.Compose([
 		torchvision.transforms.Resize(image_size),
-		torchvision.transforms.ToTensor()
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
 	test_transform = torchvision.transforms.Compose([
 		torchvision.transforms.Resize(image_size),
-		torchvision.transforms.ToTensor()
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
 
 	#--------------------
@@ -69,8 +71,8 @@ def SingleCharacterDataset_test():
 	test_dataset = text_data.SingleCharacterDataset(charset, font_list, font_size_interval, num_test_examples, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 
-	print('#train classes = {}.'.format(train_dataset.num_classes))
-	print('#test classes = {}.'.format(test_dataset.num_classes))
+	assert train_dataset.num_classes == test_dataset.num_classes
+	print('#classes = {}.'.format(train_dataset.num_classes))
 
 	#--------------------
 	batch_size = 64
@@ -184,12 +186,14 @@ def SingleWordDataset_test():
 	image_size = (32, 160)
 	train_transform = torchvision.transforms.Compose([
 		torchvision.transforms.Resize(image_size),
-		torchvision.transforms.ToTensor()
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
 	train_target_transform = ToIntTensor()
 	test_transform = torchvision.transforms.Compose([
 		torchvision.transforms.Resize(image_size),
-		torchvision.transforms.ToTensor()
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
 	test_target_transform = ToIntTensor()
 
@@ -203,8 +207,8 @@ def SingleWordDataset_test():
 	test_dataset = text_data.SingleWordDataset(word_set, charset, font_list, font_size_interval, num_test_examples, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 
-	print('#train classes = {}.'.format(train_dataset.num_classes))
-	print('#test classes = {}.'.format(test_dataset.num_classes))
+	assert train_dataset.num_classes == test_dataset.num_classes
+	print('#classes = {}.'.format(train_dataset.num_classes))
 
 	#--------------------
 	batch_size = 64
