@@ -4,20 +4,77 @@
 import sys
 sys.path.append('../../src')
 
-import os, glob, time
+import os, random, glob, time
 import numpy as np
-import matplotlib.pyplot as plt
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 import torchvision
-import torchvision.transforms as transforms
-import numpy as np
-import torch, torchvision
+from PIL import Image, ImageOps
 import cv2
+import matplotlib.pyplot as plt
 import text_data
 import text_generation_util as tg_util
+
+def create_augmenter():
+	#import imgaug as ia
+	from imgaug import augmenters as iaa
+
+	augmenter = iaa.Sequential([
+		#iaa.Sometimes(0.5, iaa.OneOf([
+		#	iaa.Crop(px=(0, 100)),  # Crop images from each side by 0 to 16px (randomly chosen).
+		#	iaa.Crop(percent=(0, 0.1)),  # Crop images by 0-10% of their height/width.
+		#	#iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
+		#	#iaa.Flipud(0.5),  # Vertically flip 50% of the images.
+		#])),
+		iaa.Sometimes(0.5, iaa.OneOf([
+			iaa.Affine(
+				#scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+				translate_percent={'x': (0.0, 0.1), 'y': (-0.05, 0.05)},  # Translate by 0 to +10 percent along x-axis and -5 to +5 percent along y-axis.
+				rotate=(-2, 2),  # Rotate by -2 to +2 degrees.
+				shear=(-10, 10),  # Shear by -10 to +10 degrees.
+				#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
+				order=0,  # Use nearest neighbour or bilinear interpolation (fast).
+				#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
+				#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+				#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+			),
+			#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
+			#iaa.PerspectiveTransform(scale=(0.01, 0.1)),
+			iaa.ElasticTransformation(alpha=(20.0, 40.0), sigma=(6.0, 8.0)),  # Move pixels locally around (with random strengths).
+		])),
+		iaa.Sometimes(0.5, iaa.OneOf([
+			iaa.OneOf([
+				iaa.GaussianBlur(sigma=(0.5, 1.5)),
+				iaa.AverageBlur(k=(2, 4)),
+				iaa.MedianBlur(k=(3, 3)),
+				iaa.MotionBlur(k=(3, 4), angle=(0, 360), direction=(-1.0, 1.0), order=1),
+			]),
+			iaa.Sequential([
+				iaa.OneOf([
+					iaa.AdditiveGaussianNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
+					#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
+					iaa.AdditivePoissonNoise(lam=(20, 30), per_channel=False),
+					iaa.CoarseSaltAndPepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					iaa.CoarseSalt(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					iaa.CoarsePepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					#iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.8, 0.9), per_channel=False),
+				]),
+				iaa.GaussianBlur(sigma=(0.7, 1.0)),
+			]),
+			#iaa.OneOf([
+			#	#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
+			#	#iaa.AddToHueAndSaturation(value=(-255, 255), per_channel=False),
+			#	#iaa.LinearContrast(alpha=(0.5, 1.5), per_channel=False),
+
+			#	iaa.Invert(p=1, per_channel=False),
+
+			#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
+			#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
+			#]),
+		])),
+		#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
+	])
+
+	return augmenter
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 def recognize_single_character():
@@ -60,34 +117,52 @@ def recognize_single_character():
 	charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset
 
 	#--------------------
-	class ChannelChanger(object):
+	class RandomAugment(object):
+		def __init__(self):
+			self.augmenter = create_augmenter()
+
+		def __call__(self, x):
+			return Image.fromarray(self.augmenter.augment_images(np.array(x)))
+	class RandomInvert(object):
+		def __call__(self, x):
+			return ImageOps.invert(x) if random.randrange(2) else x
+	class ConvertChannel(object):
 		def __call__(self, x):
 			return x.convert('RGB')
 			#return np.repeat(np.expand_dims(x, axis=0), 3, axis=0)
 			#return torch.repeat_interleave(x, 3, dim=0)
 			#return torch.repeat_interleave(torch.unsqueeze(x, dim=3), 3, dim=0)
+
+	crop_size = 64
+	#image_size = (72, 72)
 	image_size = (64, 64)
 	train_transform = torchvision.transforms.Compose([
-		ChannelChanger(),
+		RandomAugment(),
+		RandomInvert(),
+		ConvertChannel(),
 		torchvision.transforms.Resize(image_size),
+		#torchvision.transforms.RandomCrop(crop_size),
 		torchvision.transforms.ToTensor(),
 		torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
+	image_size = (64, 64)
 	test_transform = torchvision.transforms.Compose([
-		ChannelChanger(),
+		RandomInvert(),
+		ConvertChannel(),
 		torchvision.transforms.Resize(image_size),
+		#torchvision.transforms.CenterCrop(crop_size),
 		torchvision.transforms.ToTensor(),
 		torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
 
 	#--------------------
 	font_size_interval = (10, 100)
-	num_train_examples, num_test_examples = int(1e6), int(1e4)
+	num_train_examples_per_class, num_test_examples_per_class = 500, 50
 
 	print('Start creating datasets...')
 	start_time = time.time()
-	train_dataset = text_data.SingleCharacterDataset(charset, font_list, font_size_interval, num_train_examples, transform=train_transform)
-	test_dataset = text_data.SingleCharacterDataset(charset, font_list, font_size_interval, num_test_examples, transform=test_transform)
+	train_dataset = text_data.SingleCharacterDataset(num_train_examples_per_class, charset, font_list, font_size_interval, transform=train_transform)
+	test_dataset = text_data.SingleCharacterDataset(num_test_examples_per_class, charset, font_list, font_size_interval, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 
 	assert train_dataset.num_classes == test_dataset.num_classes
@@ -95,7 +170,7 @@ def recognize_single_character():
 
 	#--------------------
 	batch_size = 256
-	num_epochs = 10
+	num_epochs = 20
 	shuffle = True
 	num_workers = 4
 
@@ -121,10 +196,10 @@ def recognize_single_character():
 	# Show images.
 	imshow(torchvision.utils.make_grid(images))
 	# Print labels.
-	print(' '.join('%5s' % classes[labels[j]] for j in range(len(labels))))
+	print(' '.join('%s' % classes[labels[j]] for j in range(len(labels))))
 
 	#--------------------
-	# Define a Convolutional Neural Network.
+	# Define a convolutional neural network.
 
 	device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 	# Assuming that we are on a CUDA machine, this should print a CUDA device.
@@ -141,10 +216,10 @@ def recognize_single_character():
 	model = model.to(device)
 
 	#--------------------
-	# Define a Loss function and optimizer.
+	# Define a loss function and optimizer.
 
-	criterion = nn.CrossEntropyLoss()
-	optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+	criterion = torch.nn.CrossEntropyLoss()
+	optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
 	#--------------------
 	# Train the network.
@@ -166,7 +241,7 @@ def recognize_single_character():
 
 			# Print statistics.
 			running_loss += loss.item()
-			if i % 2000 == 1999:  # Print every 2000 mini-batches.
+			if i % 1000 == 999:  # Print every 2000 mini-batches.
 				print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / 2000))
 				running_loss = 0.0
 
@@ -218,6 +293,8 @@ def recognize_single_character():
 	#for i in range(num_classes):
 	#	print('Accuracy of %5s : %2d %%' % (classes[i], 100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1))
 	print('Accuracy: {}.'.format([100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1 for i in range(num_classes)]))
+	valid_accuracies = [100 * class_correct[i] / class_total[i] for i in range(num_classes) if class_total[i] > 0]
+	print('Accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
 
 def main():
 	recognize_single_character()
