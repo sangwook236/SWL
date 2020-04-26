@@ -40,62 +40,17 @@ class MyRunner(object):
 	def __init__(self, logger):
 		self._logger = logger
 
-		# Create datasets.
-		transform = torchvision.transforms.Compose([
-			torchvision.transforms.ToTensor(),
-			torchvision.transforms.Normalize((0.5,), (0.5,))
-		])
-
-		self._logger.info('Start loading dataset...')
-		start_time = time.time()
-		self._train_dataset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
-		self._test_dataset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
-		self._logger.info('End loading dataset: {} secs.'.format(time.time() - start_time))
-
-	def train(self, model_filepath, model_checkpoint_filepath, batch_size, final_epoch, initial_epoch=0, is_training_resumed=False, device='cpu'):
-		if batch_size is None or batch_size <= 0:
-			raise ValueError('Invalid batch size: {}'.format(batch_size))
-
-		if is_training_resumed:
-			# Restore a model.
-			try:
-				self._logger.info('Start restoring a model...')
-				start_time = time.time()
-				model = torch.load(model_filepath)
-				self._logger.info('End restoring a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
-			except:
-				self._logger.error('Failed to restore a model from {}.'.format(model_filepath))
-				return
-		else:
-			# Create a model.
-			model = MyModel()
-
-		#if torch.cuda.device_count() > 1:
-		#	device_ids = [0, 1]
-		#	model = torch.nn.DataParallel(model, device_ids=device_ids)
-		model = model.to(device)
-
-		# Create a trainer.
-		criterion = torch.nn.CrossEntropyLoss().to(device)
-		optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-
-		# Create data loaders.
-		train_dataloader = torch.utils.data.DataLoader(self._train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-		test_dataloader = torch.utils.data.DataLoader(self._test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
-
-		#--------------------
+	def train(self, model, criterion, optimizer, scheduler, train_dataloader, test_dataloader, model_checkpoint_filepath, initial_epoch=0, final_epoch=10, device='cpu'):
 		history = {
 			'acc': list(),
 			'loss': list(),
 			'val_acc': list(),
 			'val_loss': list()
 		}
+		log_print_freq = 500
 
 		#--------------------
-		if is_training_resumed:
-			self._logger.info('Resume training...')
-		else:
-			self._logger.info('Start training...')
+		self._logger.info('Start training...')
 		best_performance_measure = 0
 		best_model_filepath = None
 		start_total_time = time.time()
@@ -104,7 +59,7 @@ class MyRunner(object):
 
 			#--------------------
 			start_time = time.time()
-			train_loss, train_acc = self._train(train_dataloader, optimizer, model, criterion, device)
+			train_loss, train_acc = self._train(model, criterion, optimizer, train_dataloader, log_print_freq, device)
 			self._logger.info('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
 
 			history['loss'].append(train_loss)
@@ -112,45 +67,33 @@ class MyRunner(object):
 
 			#--------------------
 			start_time = time.time()
-			val_loss, val_acc = self._evaluate(test_dataloader, model, criterion, device)
+			val_loss, val_acc = self._evaluate(model, criterion, test_dataloader, device)
 			self._logger.info('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
 
 			history['val_loss'].append(val_loss)
 			history['val_acc'].append(val_acc)
 
+			if scheduler: scheduler.step()
+
 			#--------------------
 			if val_acc > best_performance_measure:
-				self._logger.info('Start saving a model...')
+				self._logger.info('Start saving a checkpoint...')
 				start_time = time.time()
 				best_model_filepath = model_checkpoint_filepath.format(epoch=epoch, val_acc=val_acc)
-				torch.save(model, best_model_filepath)  # Saves a model using either a .pt or .pth file extension.
-				self._logger.info('End saving a model to {}: {} secs.'.format(best_model_filepath, time.time() - start_time))
+				self.save_model(best_model_filepath, model)
+				self._logger.info('End saving a checkpoint to {}: {} secs.'.format(best_model_filepath, time.time() - start_time))
 				best_performance_measure = val_acc
 
 			sys.stdout.flush()
 			time.sleep(0)
 		self._logger.info('End training: {} secs.'.format(time.time() - start_total_time))
 
-		if best_model_filepath:
-			try:
-				shutil.copyfile(best_model_filepath, model_filepath)
-				self._logger.info('Copied the best model to {}.'.format(model_filepath))
-			except (FileNotFoundError, PermissionError) as ex:
-				self._logger.error('Failed to copy the best model to {}: {}.'.format(model_filepath, ex))
-		else:
-			torch.save(model, model_filepath)
-			self._logger.info('Saved the best model to {}.'.format(model_filepath))
+		return best_model_filepath, history
 
-		return history
+	def test(self, model, dataloader, device='cpu'):
+		# Switch to evaluation mode.
+		model.eval()
 
-	def test(self, model, batch_size, device='cpu'):
-		if batch_size is None or batch_size <= 0:
-			raise ValueError('Invalid batch size: {}'.format(batch_size))
-
-		# Create a data loader.
-		dataloader = torch.utils.data.DataLoader(self._test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
-
-		#--------------------
 		self._logger.info('Start testing...')
 		inferences, ground_truths = list(), list()
 		start_time = time.time()
@@ -176,15 +119,12 @@ class MyRunner(object):
 		else:
 			self._logger.warning('Invalid test results.')
 
-	def infer(self, model, batch_size, shuffle=False, device='cpu'):
-		if batch_size is None or batch_size <= 0:
-			raise ValueError('Invalid batch size: {}'.format(batch_size))
+	def infer(self, model, dataloader, shuffle=False, device='cpu'):
+		# Switch to evaluation mode.
+		model.eval()
 
-		# Create a data loader.
-		dataloader = torch.utils.data.DataLoader(self._test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=4)
 		inf_images = list(batch_data[0] for batch_data in dataloader)
 
-		#--------------------
 		self._logger.info('Start inferring...')
 		inferences = list()
 		start_time = time.time()
@@ -206,30 +146,94 @@ class MyRunner(object):
 		else:
 			self._logger.warning('Invalid inference results.')
 
-	def load_evaluation_model(self, model_filepath, device='cpu'):
-		try:
-			self._logger.info('Start loading a model...')
+	def load_model(self, model_filepath=None, device='cpu'):
+		"""
+		if model_filepath is None:
+			# Create a model.
+			self._logger.info('Start creating a model...')
 			start_time = time.time()
-			model = torch.load(model_filepath)
-			self._logger.info('End loading a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
-		except:
-			self._logger.error('Failed to load a model from {}.'.format(model_filepath))
+			model = MyModel()
+			self._logger.info('End creating a model: {} secs.'.format(time.time() - start_time))
+		elif os.path.isfile(model_filepath):
+			try:
+				# Load a model.
+				self._logger.info('Start loading a model from {}...'.format(model_filepath))
+				start_time = time.time()
+				model = torch.load(model_filepath)
+				self._logger.info('End loading a model: {} secs.'.format(time.time() - start_time))
+			except:
+				self._logger.error('Failed to load a model from {}.'.format(model_filepath))
+				return None
+		else:
+			self._logger.error('Invalid model file, {}.'.format(model_filepath))
 			return None
 
 		#if torch.cuda.device_count() > 1:
 		#	device_ids = [0, 1]
 		#	model = torch.nn.DataParallel(model, device_ids=device_ids)
 		model = model.to(device)
-		# Switch to evaluation mode.
-		model.eval()
-
 		return model
+		"""
+		# Create a model.
+		self._logger.info('Start creating a model...')
+		start_time = time.time()
+		model = MyModel()
+		self._logger.info('End creating a model: {} secs.'.format(time.time() - start_time))
 
-	def show_data_info(self, batch_size):
+		#if torch.cuda.device_count() > 1:
+		#	device_ids = [0, 1]
+		#	model = torch.nn.DataParallel(model, device_ids=device_ids)
+		model = model.to(device)
+
+		if model_filepath is None:
+			return model
+		elif os.path.isfile(model_filepath):
+			try:
+				# Load a model.
+				self._logger.info('Start loading a model from {}...'.format(model_filepath))
+				start_time = time.time()
+				checkpoint = torch.load(model_filepath)
+				model.load_state_dict(checkpoint['state_dict'])
+				self._logger.info('End loading a model: {} secs.'.format(time.time() - start_time))
+				return model
+			except Exception as ex:
+				self._logger.error('Failed to load a model from {}: {}.'.format(model_filepath, ex))
+				return None
+		else:
+			self._logger.error('Invalid model file, {}.'.format(model_filepath))
+			return None
+
+	def save_model(self, model_filepath, model):
+		try:
+			# Saves a model using either a .pt or .pth file extension.
+			#torch.save(model, model_filepath)
+			torch.save({'state_dict': model.state_dict()}, model_filepath)
+		except Exception as ex:
+			self._logger.error('Failed to save a model from {}: {}.'.format(model_filepath, ex))
+
+	def load_data(self, batch_size, num_workers=1):
+		transform = torchvision.transforms.Compose([
+			torchvision.transforms.ToTensor(),
+			torchvision.transforms.Normalize((0.5,), (0.5,))
+		])
+
+		# Create datasets.
+		self._logger.info('Start loading datasets...')
+		start_time = time.time()
+		train_dataset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
+		test_dataset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
+		self._logger.info('End loading datasets: {} secs.'.format(time.time() - start_time))
+
 		# Create data loaders.
-		train_dataloader = torch.utils.data.DataLoader(self._train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-		test_dataloader = torch.utils.data.DataLoader(self._test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
+		self._logger.info('Start loading data loaders...')
+		start_time = time.time()
+		train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+		test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+		self._logger.info('End loading data loaders: {} secs.'.format(time.time() - start_time))
 
+		return train_dataloader, test_dataloader
+
+	def show_data_info(self, train_dataloader, test_dataloader):
 		data_iter = iter(train_dataloader)
 		images, labels = data_iter.next()
 		images, labels = images.numpy(), labels.numpy()
@@ -242,7 +246,7 @@ class MyRunner(object):
 		self._logger.info('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 		self._logger.info('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(labels.shape, labels.dtype, np.min(labels), np.max(labels)))
 
-	def _train(self, dataloader, optimizer, model, criterion, device):
+	def _train(self, model, criterion, optimizer, dataloader, log_print_freq, device):
 		# Switch to train mode.
 		model.train()
 
@@ -289,14 +293,14 @@ class MyRunner(object):
 
 			# Print statistics.
 			running_loss += loss.item()
-			if (batch_step + 1) % 100 == 0:
+			if (batch_step + 1) % log_print_freq == 0:
 				self._logger.info('\tStep {}: loss = {:.6f}: {} secs.'.format(batch_step + 1, running_loss / 100, time.time() - start_time))
 				running_loss = 0.0
 		train_loss /= batch_step + 1
 		train_acc /= num_examples
 		return train_loss, train_acc
 
-	def _evaluate(self, dataloader, model, criterion, device):
+	def _evaluate(self, model, criterion, dataloader, device):
 		# Switch to evaluation mode.
 		model.eval()
 
@@ -345,12 +349,6 @@ def parse_command_line_options():
 		'--infer',
 		action='store_true',
 		help='Specify whether to infer by a trained model'
-	)
-	parser.add_argument(
-		'-r',
-		'--resume',
-		action='store_true',
-		help='Specify whether to resume training'
 	)
 	parser.add_argument(
 		'-m',
@@ -464,8 +462,8 @@ def main():
 	logger.info('Device: {}.'.format(device))
 
 	#--------------------
-	is_training_resumed = args.resume
 	initial_epoch, final_epoch, batch_size = 0, args.epoch, args.batch_size
+	is_resumed = args.model_file is not None
 
 	model_filepath, output_dir_path = os.path.normpath(args.model_file) if args.model_file else None, os.path.normpath(args.out_dir) if args.out_dir else None
 	if model_filepath:
@@ -480,24 +478,41 @@ def main():
 
 	#--------------------
 	runner = MyRunner(logger)
-	runner.show_data_info(batch_size)
+
+	# Load datasets.
+	train_dataloader, test_dataloader = runner.load_data(batch_size, num_workers=4)
+	runner.show_data_info(train_dataloader, test_dataloader)
 
 	if args.train:
 		model_checkpoint_filepath = os.path.join(output_dir_path, 'model_ckpt.{epoch:04d}-{val_acc:.5f}.pt')
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
-		# Copy the model file to the output directory.
-		new_model_filepath = os.path.join(output_dir_path, os.path.basename(model_filepath))
-		if os.path.exists(model_filepath) and not os.path.samefile(model_filepath, new_model_filepath):
-			try:
-				shutil.copyfile(model_filepath, new_model_filepath)
-			except (FileNotFoundError, PermissionError) as ex:
-				logger.error('Failed to copy a model, {}: {}.'.format(model_filepath, ex))
-				return
-		model_filepath = new_model_filepath
+		# Create or load a model.
+		model = runner.load_model(model_filepath if is_resumed else None, device=device)
+		if not model:
+			logger.error('Failed to create or load a model.')
+			return
 
-		history = runner.train(model_filepath, model_checkpoint_filepath, batch_size, final_epoch, initial_epoch, is_training_resumed, device=device)
+		# Create a trainer.
+		criterion = torch.nn.CrossEntropyLoss().to(device)
+		optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+		scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+
+		best_model_filepath, history = runner.train(model, criterion, optimizer, scheduler, train_dataloader, test_dataloader, model_checkpoint_filepath, initial_epoch, final_epoch, device=device)
+
+		# Save a model.
+		model_filepath = os.path.join(output_dir_path, 'best_model.pt')
+		try:
+			if best_model_filepath:
+				shutil.copyfile(best_model_filepath, model_filepath)
+				logger.info('Copied the best trained model to {}.'.format(model_filepath))
+			else:
+				torch.save(model, model_filepath)
+				logger.info('Saved the best model to {}.'.format(model_filepath))
+		except (FileNotFoundError, PermissionError) as ex:
+			logger.error('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+			model_filepath = None
 
 		#logger.info('Train history = {}.'.format(history))
 		swl_ml_util.display_train_history(history)
@@ -506,20 +521,21 @@ def main():
 
 	if args.test or args.infer:
 		if model_filepath and os.path.exists(model_filepath):
-			model = runner.load_evaluation_model(model_filepath, device=device)
+			# Load a model.
+			model = runner.load_model(model_filepath, device=device)
 
 			if args.test and model:
-				runner.test(model, batch_size, device=device)
+				runner.test(model, test_dataloader, device=device)
 
 			if args.infer and model:
-				runner.infer(model, batch_size, device=device)
+				runner.infer(model, test_dataloader, device=device)
 		else:
 			logger.error('Model file, {} does not exist.'.format(model_filepath))
 
 #--------------------------------------------------------------------
 
 # Usage:
-#	python run_simple_training.py --train --test --infer --epoch 20 --gpu 0
+#	python run_simple_training1.py --train --test --infer --epoch 20 --gpu 0
 
 if '__main__' == __name__:
 	main()

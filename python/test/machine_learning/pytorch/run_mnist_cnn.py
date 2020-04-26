@@ -36,7 +36,7 @@ class Net(torch.nn.Module):
 		#x = torch.nn.functional.log_softmax(x, dim=1)
 		return x
 
-def train(model, train_dataloader, criterion, optimizer, epoch, log_interval, device):
+def train(model, train_dataloader, criterion, optimizer, epoch, log_interval, device='cpu'):
 	model.train()
 	for batch_idx, (data, target) in enumerate(train_dataloader):
 		data, target = data.to(device), target.to(device)
@@ -48,7 +48,7 @@ def train(model, train_dataloader, criterion, optimizer, epoch, log_interval, de
 		if (batch_idx + 1) % log_interval == 0:
 			print('Train Epoch: {} [{}/{} ({:.2f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(data), len(train_dataloader.dataset), 100. * batch_idx / len(train_dataloader), loss.item()))
 
-def train_nll(model, train_dataloader, criterion, optimizer, epoch, log_interval, device):
+def train_nll(model, train_dataloader, criterion, optimizer, epoch, log_interval, device='cpu'):
 	model.train()
 	m = torch.nn.LogSoftmax(dim=1)
 	for batch_idx, (data, target) in enumerate(train_dataloader):
@@ -62,7 +62,7 @@ def train_nll(model, train_dataloader, criterion, optimizer, epoch, log_interval
 		if (batch_idx + 1) % log_interval == 0:
 			print('Train Epoch: {} [{}/{} ({:.2f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(data), len(train_dataloader.dataset), 100. * batch_idx / len(train_dataloader), loss.item()))
 
-def train_mixup(model, train_dataloader, criterion, optimizer, epoch, log_interval, device, mixup, mixup_hidden, mixup_alpha, cutout, cutout_size):
+def train_mixup(model, train_dataloader, criterion, optimizer, epoch, log_interval, mixup, mixup_hidden, mixup_alpha, cutout, cutout_size, device='cpu'):
 	model.train()
 	for batch_idx, (data, target) in enumerate(train_dataloader):
 		data, target = data.to(device), target.to(device)
@@ -74,7 +74,7 @@ def train_mixup(model, train_dataloader, criterion, optimizer, epoch, log_interv
 		if (batch_idx + 1) % log_interval == 0:
 			print('Train Epoch: {} [{}/{} ({:.2f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(data), len(train_dataloader.dataset), 100. * batch_idx / len(train_dataloader), loss.item()))
 
-def train_nll_mixup(model, train_dataloader, criterion, optimizer, epoch, log_interval, device, mixup, mixup_hidden, mixup_alpha, cutout, cutout_size):
+def train_nll_mixup(model, train_dataloader, criterion, optimizer, epoch, log_interval, mixup, mixup_hidden, mixup_alpha, cutout, cutout_size, device='cpu'):
 	model.train()
 	m = torch.nn.LogSoftmax(dim=1)
 	for batch_idx, (data, target) in enumerate(train_dataloader):
@@ -88,7 +88,7 @@ def train_nll_mixup(model, train_dataloader, criterion, optimizer, epoch, log_in
 		if (batch_idx + 1) % log_interval == 0:
 			print('Train Epoch: {} [{}/{} ({:.2f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(data), len(train_dataloader.dataset), 100. * batch_idx / len(train_dataloader), loss.item()))
 
-def test(model, test_dataloader, criterion, device):
+def test(model, test_dataloader, criterion, device='cpu'):
 	model.eval()
 	test_loss = 0
 	correct = 0
@@ -104,7 +104,7 @@ def test(model, test_dataloader, criterion, device):
 
 	print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)\n'.format(test_loss, correct, len(test_dataloader.dataset), 100. * correct / len(test_dataloader.dataset)))
 
-def test_nll(model, test_dataloader, criterion, device):
+def test_nll(model, test_dataloader, criterion, device='cpu'):
 	model.eval()
 	m = torch.nn.LogSoftmax(dim=1)
 	test_loss = 0
@@ -477,7 +477,7 @@ def mnist_predefined_mixup_test():
 		test_criterion = torch.nn.CrossEntropyLoss(reduction='sum')
 
 		for epoch in range(1, num_epochs + 1):
-			train_mixup(model, train_dataloader, criterion, optimizer, epoch, log_interval, device, mixup, mixup_hidden, mixup_alpha, cutout, cutout_size)
+			train_mixup(model, train_dataloader, criterion, optimizer, epoch, log_interval, mixup, mixup_hidden, mixup_alpha, cutout, cutout_size, device)
 			test(model, test_dataloader, test_criterion, device)
 			scheduler.step()
 	else:
@@ -485,7 +485,7 @@ def mnist_predefined_mixup_test():
 		test_criterion = torch.nn.NLLLoss(reduction='sum')
 
 		for epoch in range(1, num_epochs + 1):
-			train_nll_mixup(model, train_dataloader, criterion, optimizer, epoch, log_interval, device, mixup, mixup_hidden, mixup_alpha, cutout, cutout_size)
+			train_nll_mixup(model, train_dataloader, criterion, optimizer, epoch, log_interval, mixup, mixup_hidden, mixup_alpha, cutout, cutout_size, device)
 			test_nll(model, test_dataloader, test_criterion, device)
 			scheduler.step()
 
