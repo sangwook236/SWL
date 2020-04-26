@@ -4,7 +4,7 @@
 import sys
 sys.path.append('../../../src')
 
-import os, collections, pickle, argparse, logging, logging.handlers, time, datetime
+import os, shutil, collections, pickle, argparse, logging, logging.handlers, time, datetime
 import numpy as np
 import torch
 import torchvision
@@ -77,7 +77,7 @@ class MyRunner(object):
 			current_learning_rate = scheduler.get_lr() if scheduler else 0.0
 			need_hour, need_mins, need_secs = utils.convert_secs2time(epoch_time.avg * (final_epoch - epoch))
 			need_time = '[Need: {:02d}:{:02d}:{:02d}]'.format(need_hour, need_mins, need_secs)
-			self._logger.info('==>>{:s} [Epoch={:03d}/{:03d}] {:s} [learning_rate={:6.4f}]'.format(utils.time_string(), epoch, final_epoch, need_time, current_learning_rate) \
+			self._logger.info('==>>{:s} [Epoch={:03d}/{:03d}] {:s} [learning_rate={}]'.format(utils.time_string(), epoch, final_epoch, need_time, current_learning_rate) \
 				+ ' [Best : Accuracy={:.2f}, Error={:.2f}].'.format(recorder.max_accuracy(False), 100 - recorder.max_accuracy(False)))
 
 			#--------------------
@@ -106,11 +106,8 @@ class MyRunner(object):
 			dummy = recorder.update(epoch, train_loss, train_acc, val_loss, val_acc)
 
 			if val_acc > best_performance_measure:
-				self._logger.info('Start saving a checkpoint...')
-				start_time = time.time()
 				best_model_filepath = model_checkpoint_filepath.format(epoch=epoch, val_acc=val_acc)
 				self.save_model(best_model_filepath, model, optimizer, recorder, epoch)
-				self._logger.info('End saving a checkpoint to {}: {} secs.'.format(best_model_filepath, time.time() - start_time))
 				best_performance_measure = val_acc
 
 			# Measure elapsed time.
@@ -138,7 +135,7 @@ class MyRunner(object):
 		# Switch to evaluation mode.
 		model.eval()
 
-		self._logger.info('Start testing...')
+		self._logger.info('Start testing a model...')
 		inferences, ground_truths = list(), list()
 		start_time = time.time()
 		with torch.no_grad():
@@ -152,7 +149,7 @@ class MyRunner(object):
 				model_outputs = torch.argmax(model_outputs, -1)
 				inferences.extend(model_outputs.cpu().numpy())
 				ground_truths.extend(batch_outputs.numpy())
-		self._logger.info('End testing: {} secs.'.format(time.time() - start_time))
+		self._logger.info('End testing a model: {} secs.'.format(time.time() - start_time))
 
 		inferences, ground_truths = np.array(inferences), np.array(ground_truths)
 		if inferences is not None and ground_truths is not None:
@@ -187,8 +184,7 @@ class MyRunner(object):
 		else:
 			self._logger.warning('Invalid inference results.')
 
-	def load_model(self, model_filepath=None, device='cpu'):
-		# Create a model.
+	def create_model(self, device='cpu'):
 		self._logger.info('Start creating a model...')
 		start_time = time.time()
 		model = MyModel()
@@ -198,35 +194,31 @@ class MyRunner(object):
 		#	device_ids = [0, 1]
 		#	model = torch.nn.DataParallel(model, device_ids=device_ids)
 		model = model.to(device)
+		return model
 
-		if model_filepath is None:
+	def load_model(self, model_filepath, model, optimizer=None):
+		try:
+			self._logger.info('Start loading a model from {}...'.format(model_filepath))
+			start_time = time.time()
+			checkpoint = torch.load(model_filepath)
+			epoch = checkpoint['epoch']
+			#architecture = checkpoint['arch']
+			model.load_state_dict(checkpoint['state_dict'])
+			if optimizer: optimizer.load_state_dict(checkpoint['optimizer'])
+			recorder = checkpoint['recorder']
+			best_acc = recorder.max_accuracy(False)
+			self._logger.info('End loading a model, accuracy={} (epoch {}): {} secs.'.format(best_acc, epoch, time.time() - start_time))
+			return model, optimizer, recorder, epoch
+		except Exception as ex:
+			self._logger.error('Failed to load a model from {}: {}.'.format(model_filepath, ex))
+			#return None, None, None, None
 			return model, None, None, None
-		elif os.path.isfile(model_filepath):
-			try:
-				# Load a model.
-				self._logger.info('Start loading a model from {}...'.format(model_filepath))
-				start_time = time.time()
-				checkpoint = torch.load(model_filepath)
-				epoch = checkpoint['epoch']
-				#architecture = checkpoint['arch']
-				model.load_state_dict(checkpoint['state_dict'])
-				optimizer.load_state_dict(checkpoint['optimizer'])
-				recorder = checkpoint['recorder']
-				best_acc = recorder.max_accuracy(False)
-				self._logger.info('End loading a model, accuracy={} (epoch {}): {} secs.'.format(best_acc, epoch, time.time() - start_time))
-				return model, optimizer, recorder, epoch
-			except Exception as ex:
-				self._logger.error('Failed to load a model from {}: {}.'.format(model_filepath, ex))
-				return None, None, None, None
-		else:
-			self._logger.error('Invalid model file, {}.'.format(model_filepath))
-			return None, None, None, None
 
 	def save_model(self, model_filepath, model, optimizer, recorder, epoch):
 		try:
-			# Saves a model using either a .pt or .pth file extension.
 			self._logger.info('Start saving a model from {}...'.format(model_filepath))
 			start_time = time.time()
+			# Saves a model using either a .pt or .pth file extension.
 			torch.save(
 				{
 					'epoch': epoch + 1,
@@ -238,10 +230,8 @@ class MyRunner(object):
 				model_filepath
 			)
 			self._logger.info('End saving a model: {} secs.'.format(time.time() - start_time))
-			return True
 		except Exception as ex:
 			self._logger.error('Failed to save a model from {}: {}.'.format(model_filepath, ex))
-			return False
 
 	def load_data(self, batch_size, num_workers=1):
 		transform = torchvision.transforms.Compose([
@@ -578,50 +568,51 @@ def main():
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
-		# Create or load a model.
-		model, loaded_optimizer, recorder, loaded_initial_epoch = runner.load_model(model_filepath if is_resumed else None, device=device)
-		if not model:
-			logger.error('Failed to create or load a model.')
-			return
-		if loaded_initial_epoch:
-			initial_epoch = loaded_initial_epoch
+		# Create a model.
+		model = runner.create_model(device=device)
 
 		# Create a trainer.
 		criterion = torch.nn.CrossEntropyLoss().to(device)
-		initial_learning_rate = 0.001
-		if loaded_optimizer:
-			optimizer = loaded_optimizer
-		else:
-			momentum, weight_decay = 0.9, 0.0001
-			optimizer = torch.optim.SGD(model.parameters(), lr=initial_learning_rate, momentum=momentum, weight_decay=weight_decay, nesterov=True)
+		initial_learning_rate, momentum, weight_decay = 0.001, 0.9, 0.0001
+		optimizer = torch.optim.SGD(model.parameters(), lr=initial_learning_rate, momentum=momentum, weight_decay=weight_decay, nesterov=True)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = MyLRScheduler(optimizer, initial_learning_rate)
 
-		best_model_filepath, history = runner.train(model, criterion, optimizer, scheduler, train_dataloader, test_dataloader, model_checkpoint_filepath, output_dir_path, initial_epoch, final_epoch, recorder, device=device)
-
-		# Save a model.
-		model_filepath = os.path.join(output_dir_path, 'best_model.pt')
-		if best_model_filepath:
-			try:
-				import shutil
-				shutil.copyfile(best_model_filepath, model_filepath)
-				logger.info('Copied the best trained model to {}.'.format(model_filepath))
-			except (FileNotFoundError, PermissionError) as ex:
-				logger.error('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-				model_filepath = None
+		# Load a model.
+		if is_resumed:
+			model, optimizer, recorder, loaded_initial_epoch = runner.load_model(model_filepath, model, optimizer)
+			if loaded_initial_epoch:
+				initial_epoch = loaded_initial_epoch
 		else:
-			if self.save_model(model_filepath, model, optimizer, recorder, final_epoch):
-				logger.info('Saved the best model to {}.'.format(model_filepath))
+			recorder = None
 
-		#logger.info('Train history = {}.'.format(history))
-		#swl_ml_util.display_train_history(history)
-		#if os.path.exists(output_dir_path):
-		#	swl_ml_util.save_train_history(history, output_dir_path)
+		if model:
+			# Train a model.
+			best_model_filepath, history = runner.train(model, criterion, optimizer, scheduler, train_dataloader, test_dataloader, model_checkpoint_filepath, output_dir_path, initial_epoch, final_epoch, recorder, device=device)
+
+			# Save a model.
+			model_filepath = os.path.join(output_dir_path, 'best_model.pt')
+			if best_model_filepath:
+				try:
+					shutil.copyfile(best_model_filepath, model_filepath)
+					logger.info('Copied the best trained model to {}.'.format(model_filepath))
+				except (FileNotFoundError, PermissionError) as ex:
+					logger.error('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+					model_filepath = None
+			else:
+				runner.save_model(model_filepath, model, optimizer, recorder, final_epoch)
+
+			#logger.info('Train history = {}.'.format(history))
+			#swl_ml_util.display_train_history(history)
+			#if os.path.exists(output_dir_path):
+			#	swl_ml_util.save_train_history(history, output_dir_path)
 
 	if args.test or args.infer:
 		if model_filepath and os.path.exists(model_filepath):
+			# Create a model.
+			model = runner.create_model(device=device)
 			# Load a model.
-			model, _, _, _ = runner.load_model(model_filepath, device=device)
+			model, _, _, _ = runner.load_model(model_filepath, model, None)
 
 			if args.test and model:
 				runner.test(model, test_dataloader, device=device)

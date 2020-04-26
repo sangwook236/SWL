@@ -77,11 +77,8 @@ class MyRunner(object):
 
 			#--------------------
 			if val_acc > best_performance_measure:
-				self._logger.info('Start saving a checkpoint...')
-				start_time = time.time()
 				best_model_filepath = model_checkpoint_filepath.format(epoch=epoch, val_acc=val_acc)
 				self.save_model(best_model_filepath, model)
-				self._logger.info('End saving a checkpoint to {}: {} secs.'.format(best_model_filepath, time.time() - start_time))
 				best_performance_measure = val_acc
 
 			sys.stdout.flush()
@@ -94,7 +91,7 @@ class MyRunner(object):
 		# Switch to evaluation mode.
 		model.eval()
 
-		self._logger.info('Start testing...')
+		self._logger.info('Start testing a model...')
 		inferences, ground_truths = list(), list()
 		start_time = time.time()
 		with torch.no_grad():
@@ -108,7 +105,7 @@ class MyRunner(object):
 				model_outputs = torch.argmax(model_outputs, -1)
 				inferences.extend(model_outputs.cpu().numpy())
 				ground_truths.extend(batch_outputs.numpy())
-		self._logger.info('End testing: {} secs.'.format(time.time() - start_time))
+		self._logger.info('End testing a model: {} secs.'.format(time.time() - start_time))
 
 		inferences, ground_truths = np.array(inferences), np.array(ground_truths)
 		if inferences is not None and ground_truths is not None:
@@ -146,35 +143,7 @@ class MyRunner(object):
 		else:
 			self._logger.warning('Invalid inference results.')
 
-	def load_model(self, model_filepath=None, device='cpu'):
-		"""
-		if model_filepath is None:
-			# Create a model.
-			self._logger.info('Start creating a model...')
-			start_time = time.time()
-			model = MyModel()
-			self._logger.info('End creating a model: {} secs.'.format(time.time() - start_time))
-		elif os.path.isfile(model_filepath):
-			try:
-				# Load a model.
-				self._logger.info('Start loading a model from {}...'.format(model_filepath))
-				start_time = time.time()
-				model = torch.load(model_filepath)
-				self._logger.info('End loading a model: {} secs.'.format(time.time() - start_time))
-			except:
-				self._logger.error('Failed to load a model from {}.'.format(model_filepath))
-				return None
-		else:
-			self._logger.error('Invalid model file, {}.'.format(model_filepath))
-			return None
-
-		#if torch.cuda.device_count() > 1:
-		#	device_ids = [0, 1]
-		#	model = torch.nn.DataParallel(model, device_ids=device_ids)
-		model = model.to(device)
-		return model
-		"""
-		# Create a model.
+	def create_model(self, device='cpu'):
 		self._logger.info('Start creating a model...')
 		start_time = time.time()
 		model = MyModel()
@@ -184,30 +153,29 @@ class MyRunner(object):
 		#	device_ids = [0, 1]
 		#	model = torch.nn.DataParallel(model, device_ids=device_ids)
 		model = model.to(device)
+		return model
 
-		if model_filepath is None:
+	def load_model(self, model_filepath, model):
+		try:
+			self._logger.info('Start loading a model from {}...'.format(model_filepath))
+			start_time = time.time()
+			checkpoint = torch.load(model_filepath)
+			model.load_state_dict(checkpoint['state_dict'])
+			self._logger.info('End loading a model: {} secs.'.format(time.time() - start_time))
 			return model
-		elif os.path.isfile(model_filepath):
-			try:
-				# Load a model.
-				self._logger.info('Start loading a model from {}...'.format(model_filepath))
-				start_time = time.time()
-				checkpoint = torch.load(model_filepath)
-				model.load_state_dict(checkpoint['state_dict'])
-				self._logger.info('End loading a model: {} secs.'.format(time.time() - start_time))
-				return model
-			except Exception as ex:
-				self._logger.error('Failed to load a model from {}: {}.'.format(model_filepath, ex))
-				return None
-		else:
-			self._logger.error('Invalid model file, {}.'.format(model_filepath))
-			return None
+		except Exception as ex:
+			self._logger.error('Failed to load a model from {}: {}.'.format(model_filepath, ex))
+			#return None
+			return model
 
 	def save_model(self, model_filepath, model):
 		try:
+			self._logger.info('Start saving a checkpoint to {}...'.format(model_filepath))
+			start_time = time.time()
 			# Saves a model using either a .pt or .pth file extension.
 			#torch.save(model, model_filepath)
 			torch.save({'state_dict': model.state_dict()}, model_filepath)
+			self._logger.info('End saving a checkpoint: {} secs.'.format(time.time() - start_time))
 		except Exception as ex:
 			self._logger.error('Failed to save a model from {}: {}.'.format(model_filepath, ex))
 
@@ -488,41 +456,45 @@ def main():
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
-		# Create or load a model.
-		model = runner.load_model(model_filepath if is_resumed else None, device=device)
-		if not model:
-			logger.error('Failed to create or load a model.')
-			return
+		# Create a model.
+		model = runner.create_model(device=device)
 
 		# Create a trainer.
 		criterion = torch.nn.CrossEntropyLoss().to(device)
 		optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 		scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 
-		best_model_filepath, history = runner.train(model, criterion, optimizer, scheduler, train_dataloader, test_dataloader, model_checkpoint_filepath, initial_epoch, final_epoch, device=device)
+		# Load a model.
+		if is_resumed:
+			model = runner.load_model(model_filepath, model)
 
-		# Save a model.
-		model_filepath = os.path.join(output_dir_path, 'best_model.pt')
-		try:
+		if model:
+			# Train a model.
+			best_model_filepath, history = runner.train(model, criterion, optimizer, scheduler, train_dataloader, test_dataloader, model_checkpoint_filepath, initial_epoch, final_epoch, device=device)
+
+			# Save a model.
+			model_filepath = os.path.join(output_dir_path, 'best_model.pt')
 			if best_model_filepath:
-				shutil.copyfile(best_model_filepath, model_filepath)
-				logger.info('Copied the best trained model to {}.'.format(model_filepath))
+				try:
+					shutil.copyfile(best_model_filepath, model_filepath)
+					logger.info('Copied the best trained model to {}.'.format(model_filepath))
+				except (FileNotFoundError, PermissionError) as ex:
+					logger.error('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+					model_filepath = None
 			else:
-				torch.save(model, model_filepath)
-				logger.info('Saved the best model to {}.'.format(model_filepath))
-		except (FileNotFoundError, PermissionError) as ex:
-			logger.error('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-			model_filepath = None
+				runner.save_model(model_filepath, model)
 
-		#logger.info('Train history = {}.'.format(history))
-		swl_ml_util.display_train_history(history)
-		if os.path.exists(output_dir_path):
-			swl_ml_util.save_train_history(history, output_dir_path)
+			#logger.info('Train history = {}.'.format(history))
+			swl_ml_util.display_train_history(history)
+			if os.path.exists(output_dir_path):
+				swl_ml_util.save_train_history(history, output_dir_path)
 
 	if args.test or args.infer:
 		if model_filepath and os.path.exists(model_filepath):
+			# Create a model.
+			model = runner.create_model(device=device)
 			# Load a model.
-			model = runner.load_model(model_filepath, device=device)
+			model = runner.load_model(model_filepath, model)
 
 			if args.test and model:
 				runner.test(model, test_dataloader, device=device)

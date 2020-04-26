@@ -292,12 +292,16 @@ def mnist_test():
 		visualize_data(train_dataloader, test_dataloader)
 
 	#--------------------
+	# Create a model.
 	model = Net(num_classes=num_classes, input_channels=1)
 	model = model.to(device)
 
+	#--------------------
+	# Create a trainer.
 	optimizer = torch.optim.Adadelta(model.parameters(), lr=learning_rate)
 	scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=gamma)
 
+	# Train a model.
 	if False:
 		criterion = torch.nn.CrossEntropyLoss()
 		test_criterion = torch.nn.CrossEntropyLoss(reduction='sum')
@@ -363,6 +367,7 @@ def mnist_predefined_test():
 		visualize_data(train_dataloader, test_dataloader)
 
 	#--------------------
+	# Create a model.
 	if False:
 		# NOTE [info] >> Hard to train.
 		model = torchvision.models.vgg16(pretrained=False, num_classes=num_classes)
@@ -380,9 +385,12 @@ def mnist_predefined_test():
 		model.fc = torch.nn.Linear(num_features, num_classes)
 	model = model.to(device)
 
+	#--------------------
+	# Create a trainer.
 	optimizer = torch.optim.Adadelta(model.parameters(), lr=learning_rate)
 	scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=gamma)
 
+	# Train a model.
 	if True:
 		criterion = torch.nn.CrossEntropyLoss()
 		test_criterion = torch.nn.CrossEntropyLoss(reduction='sum')
@@ -451,6 +459,7 @@ def mnist_predefined_mixup_test():
 		visualize_data(train_dataloader, test_dataloader)
 
 	#--------------------
+	# Create a model.
 	if False:
 		# NOTE [info] >> Hard to train.
 		model = vgg_mixup.vgg16(pretrained=False, num_classes=num_classes)
@@ -469,9 +478,12 @@ def mnist_predefined_mixup_test():
 		model.fc = torch.nn.Linear(num_features, num_classes)
 	model = model.to(device)
 
+	#--------------------
+	# Create a trainer.
 	optimizer = torch.optim.Adadelta(model.parameters(), lr=learning_rate)
 	scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=gamma)
 
+	# Train a model.
 	if True:
 		criterion = torch.nn.CrossEntropyLoss()
 		test_criterion = torch.nn.CrossEntropyLoss(reduction='sum')
