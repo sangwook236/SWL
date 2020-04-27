@@ -230,16 +230,18 @@ class ResNet(nn.Module):
 	def forward(self, x):
 		return self._forward_impl(x)
 	"""
-	def forward(self, x, target=None, mixup=False, mixup_hidden=False, mixup_alpha=None, cutout=False, cutout_size=None, device=None):
+	def forward(self, x, target=None, mixup_input=False, mixup_hidden=False, mixup_alpha=None, cutout=False, cutout_size=None, device=None):
 		"""
 		#import pdb; pdb.set_trace()
 		if self.per_img_std:
 			x = per_image_standardization(x)
 		"""
 
-		if mixup_hidden:
+		if mixup_hidden and mixup_input:
 			layer_mix = random.randint(0, 3)
-		elif mixup:
+		elif mixup_hidden:
+			layer_mix = random.randint(1, 3)
+		elif mixup_input:
 			layer_mix = 0
 		else:
 			layer_mix = None   
@@ -252,11 +254,11 @@ class ResNet(nn.Module):
 			#lam = Variable(lam)
 		
 		if target is not None:
-			target_reweighted = mixup_util.to_one_hot(target, self.num_classes)
+			target_reweighted = mixup_util.to_one_hot(target, self.num_classes, device)
 
 		if cutout:
 			cutout = mixup_util.Cutout(1, cutout_size)
-			out = cutout.apply(out)
+			out = cutout.apply(out, device)
 
 		if layer_mix == 0:
 			out, target_reweighted = mixup_util.mixup_process(out, target_reweighted, lam=lam)

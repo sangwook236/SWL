@@ -468,7 +468,7 @@ def parse_command_line_options():
 		'-e',
 		'--epoch',
 		type=int,
-		help='Final epoch',
+		help='Number of epochs to train',
 		default=30
 	)
 	parser.add_argument(
@@ -582,7 +582,8 @@ def main():
 		if is_resumed:
 			model, optimizer, recorder, loaded_initial_epoch = runner.load_model(model_filepath, model, optimizer)
 			if loaded_initial_epoch:
-				initial_epoch = loaded_initial_epoch
+				initial_epoch += loaded_initial_epoch
+				final_epoch += loaded_initial_epoch
 		else:
 			recorder = None
 

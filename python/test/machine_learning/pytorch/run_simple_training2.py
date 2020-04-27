@@ -453,7 +453,7 @@ def parse_command_line_options():
 		'-e',
 		'--epoch',
 		type=int,
-		help='Final epoch',
+		help='Number of epochs to train',
 		default=30
 	)
 	parser.add_argument(

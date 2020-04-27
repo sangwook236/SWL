@@ -11,6 +11,18 @@ from PIL import Image, ImageOps
 import cv2
 #import vgg_mixup, resnet_mixup
 
+def save_model(model_filepath, model):
+	#torch.save(model.state_dict(), model_filepath)
+	torch.save({'state_dict': model.state_dict()}, model_filepath)
+	print('Saved a model to {}.'.format(model_filepath))
+
+def load_model(model_filepath, model):
+	loaded_data = torch.load(model_filepath)
+	#model.load_state_dict(loaded_data)
+	model.load_state_dict(loaded_data['state_dict'])
+	print('Loaded a model from {}.'.format(model_filepath))
+	return model
+
 class Net(torch.nn.Module):
 	def __init__(self, num_classes, input_channels=1):
 		super(Net, self).__init__()
@@ -62,25 +74,25 @@ def train_nll(model, train_dataloader, criterion, optimizer, epoch, log_interval
 		if (batch_idx + 1) % log_interval == 0:
 			print('Train Epoch: {} [{}/{} ({:.2f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(data), len(train_dataloader.dataset), 100. * batch_idx / len(train_dataloader), loss.item()))
 
-def train_mixup(model, train_dataloader, criterion, optimizer, epoch, log_interval, mixup, mixup_hidden, mixup_alpha, cutout, cutout_size, device='cpu'):
+def train_mixup(model, train_dataloader, criterion, optimizer, epoch, log_interval, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, device='cpu'):
 	model.train()
 	for batch_idx, (data, target) in enumerate(train_dataloader):
 		data, target = data.to(device), target.to(device)
 		optimizer.zero_grad()
-		output, target = model(data, target, mixup, mixup_hidden, mixup_alpha, cutout, cutout_size, device)
+		output, target = model(data, target, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, device)
 		loss = criterion(output, torch.argmax(target, dim=1))
 		loss.backward()
 		optimizer.step()
 		if (batch_idx + 1) % log_interval == 0:
 			print('Train Epoch: {} [{}/{} ({:.2f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(data), len(train_dataloader.dataset), 100. * batch_idx / len(train_dataloader), loss.item()))
 
-def train_nll_mixup(model, train_dataloader, criterion, optimizer, epoch, log_interval, mixup, mixup_hidden, mixup_alpha, cutout, cutout_size, device='cpu'):
+def train_nll_mixup(model, train_dataloader, criterion, optimizer, epoch, log_interval, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, device='cpu'):
 	model.train()
 	m = torch.nn.LogSoftmax(dim=1)
 	for batch_idx, (data, target) in enumerate(train_dataloader):
 		data, target = data.to(device), target.to(device)
 		optimizer.zero_grad()
-		output, target = model(data, target, mixup, mixup_hidden, mixup_alpha, cutout, cutout_size, device)
+		output, target = model(data, target, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, device)
 		#loss = torch.nn.functional.nll_loss(output, torch.argmax(target, dim=1))
 		loss = criterion(m(output), torch.argmax(target, dim=1))
 		loss.backward()
@@ -261,8 +273,13 @@ def mnist_test():
 	gamma = 0.7
 	log_interval = 100
 
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device =', device)
+
+	model_filepath = './mnist_cnn.pt'
+
 	#torch.manual_seed(1)
-	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -296,6 +313,9 @@ def mnist_test():
 	model = Net(num_classes=num_classes, input_channels=1)
 	model = model.to(device)
 
+	# Load a model.
+	#model = load_model(model_filepath, model)
+
 	#--------------------
 	# Create a trainer.
 	optimizer = torch.optim.Adadelta(model.parameters(), lr=learning_rate)
@@ -319,19 +339,8 @@ def mnist_test():
 			test_nll(model, test_dataloader, test_criterion, device)
 			scheduler.step()
 
-	#--------------------
-	model_filepath = './mnist_cnn.pt'
-
 	# Save a model.
-	#torch.save(model.state_dict(), model_filepath)
-	torch.save({'state_dict': model.state_dict()}, model_filepath)
-	print('Saved a model to {}.'.format(model_filepath))
-
-	# Load a model.
-	loaded_data = torch.load(model_filepath)
-	#model.load_state_dict(loaded_data)
-	model.load_state_dict(loaded_data['state_dict'])
-	print('Loaded a model from {}.'.format(model_filepath))
+	save_model(model_filepath, model)
 
 def mnist_predefined_test():
 	image_height, image_width = 32, 32
@@ -348,8 +357,13 @@ def mnist_predefined_test():
 	gamma = 0.7
 	log_interval = 100
 
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device =', device)
+
+	model_filepath = './mnist_cnn_predefined.pt'
+
 	#torch.manual_seed(1)
-	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -389,13 +403,18 @@ def mnist_predefined_test():
 		model = torchvision.models.vgg16_bn(pretrained=True, progress=True)
 		num_features = model.classifier[6].in_features
 		model.classifier[6] = torch.nn.Linear(num_features, num_classes)
+		model.num_classes = num_classes
 	elif False:
 		model = torchvision.models.resnet18(pretrained=False, num_classes=num_classes)
 	else:
 		model = torchvision.models.resnet18(pretrained=True, progress=True)
 		num_features = model.fc.in_features
 		model.fc = torch.nn.Linear(num_features, num_classes)
+		model.num_classes = num_classes
 	model = model.to(device)
+
+	# Load a model.
+	#model = load_model(model_filepath, model)
 
 	#--------------------
 	# Create a trainer.
@@ -420,19 +439,8 @@ def mnist_predefined_test():
 			test_nll(model, test_dataloader, test_criterion, device)
 			scheduler.step()
 
-	#--------------------
-	model_filepath = './mnist_cnn_predefined.pt'
-
 	# Save a model.
-	#torch.save(model.state_dict(), model_filepath)
-	torch.save({'state_dict': model.state_dict()}, model_filepath)
-	print('Saved a model to {}.'.format(model_filepath))
-
-	# Load a model.
-	loaded_data = torch.load(model_filepath)
-	#model.load_state_dict(loaded_data)
-	model.load_state_dict(loaded_data['state_dict'])
-	print('Loaded a model from {}.'.format(model_filepath))
+	save_model(model_filepath, model)
 
 def mnist_predefined_mixup_test():
 	image_height, image_width = 32, 32
@@ -440,7 +448,7 @@ def mnist_predefined_mixup_test():
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 	num_classes = 10
 
-	mixup, mixup_hidden, mixup_alpha = True, True, 2.0
+	mixup_input, mixup_hidden, mixup_alpha = True, True, 2.0
 	cutout, cutout_size = True, 4
 
 	num_epochs = 10
@@ -452,8 +460,13 @@ def mnist_predefined_mixup_test():
 	gamma = 0.7
 	log_interval = 100
 
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device =', device)
+
+	model_filepath = './mnist_cnn_predefined_mixup.pt'
+
 	#torch.manual_seed(1)
-	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -496,6 +509,7 @@ def mnist_predefined_mixup_test():
 		model = vgg_mixup.vgg16_bn(pretrained=True, progress=True)
 		num_features = model.classifier[6].in_features
 		model.classifier[6] = torch.nn.Linear(num_features, num_classes)
+		model.num_classes = num_classes
 	elif False:
 		import resnet_mixup
 		model = resnet_mixup.resnet18(pretrained=False, num_classes=num_classes)
@@ -504,7 +518,11 @@ def mnist_predefined_mixup_test():
 		model = resnet_mixup.resnet18(pretrained=True, progress=True)
 		num_features = model.fc.in_features
 		model.fc = torch.nn.Linear(num_features, num_classes)
+		model.num_classes = num_classes
 	model = model.to(device)
+
+	# Load a model.
+	#model = load_model(model_filepath, model)
 
 	#--------------------
 	# Create a trainer.
@@ -517,7 +535,7 @@ def mnist_predefined_mixup_test():
 		test_criterion = torch.nn.CrossEntropyLoss(reduction='sum')
 
 		for epoch in range(1, num_epochs + 1):
-			train_mixup(model, train_dataloader, criterion, optimizer, epoch, log_interval, mixup, mixup_hidden, mixup_alpha, cutout, cutout_size, device)
+			train_mixup(model, train_dataloader, criterion, optimizer, epoch, log_interval, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, device)
 			test(model, test_dataloader, test_criterion, device)
 			scheduler.step()
 	else:
@@ -525,23 +543,12 @@ def mnist_predefined_mixup_test():
 		test_criterion = torch.nn.NLLLoss(reduction='sum')
 
 		for epoch in range(1, num_epochs + 1):
-			train_nll_mixup(model, train_dataloader, criterion, optimizer, epoch, log_interval, mixup, mixup_hidden, mixup_alpha, cutout, cutout_size, device)
+			train_nll_mixup(model, train_dataloader, criterion, optimizer, epoch, log_interval, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, device)
 			test_nll(model, test_dataloader, test_criterion, device)
 			scheduler.step()
 
-	#--------------------
-	model_filepath = './mnist_cnn_predefined_mixup.pt'
-
 	# Save a model.
-	torch.save(model.state_dict(), model_filepath)
-	#torch.save({'state_dict': model.state_dict()}, model_filepath)
-	print('Saved a model to {}.'.format(model_filepath))
-
-	# Load a model.
-	loaded_data = torch.load(model_filepath)
-	model.load_state_dict(loaded_data)
-	#model.load_state_dict(loaded_data['state_dict'])
-	print('Loaded a model from {}.'.format(model_filepath))
+	save_model(model_filepath, model)
 
 def main():
 	#mnist_test()  # User-defined model.
