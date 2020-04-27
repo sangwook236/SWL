@@ -8,13 +8,13 @@ import matplotlib.pyplot as plt
 
 # REF [site] >> https://github.com/vikasverma1077/manifold_mixup/blob/master/supervised/utils.py
 
-def to_one_hot(inp,num_classes):
+def to_one_hot(inp, num_classes, device):
 	y_onehot = torch.FloatTensor(inp.size(0), num_classes)
 	y_onehot.zero_()
 
 	y_onehot.scatter_(1, inp.unsqueeze(1).data.cpu(), 1)
 
-	return Variable(y_onehot.cuda(),requires_grad=False)
+	return Variable(y_onehot.to(device), requires_grad=False)
 
 
 def mixup_process(out, target_reweighted, lam):
@@ -29,7 +29,7 @@ def mixup_process(out, target_reweighted, lam):
 	return out, target_reweighted
 
 
-def mixup_data(x, y, alpha):
+def mixup_data(x, y, alpha, device):
 
 	'''Compute the mixup data. Return mixed inputs, pairs of targets, and lambda'''
 	if alpha > 0.:
@@ -37,7 +37,7 @@ def mixup_data(x, y, alpha):
 	else:
 		lam = 1.
 	batch_size = x.size()[0]
-	index = torch.randperm(batch_size).cuda()
+	index = torch.randperm(batch_size).to(device)
 	mixed_x = lam * x + (1 - lam) * x[index,:]
 	y_a, y_b = y, y[index]
 	return mixed_x, y_a, y_b, lam
@@ -61,7 +61,7 @@ class Cutout(object):
 		self.n_holes = n_holes
 		self.length = length
 
-	def apply(self, img):
+	def apply(self, img, device):
 		"""
 		Args:
 			img (Tensor): Tensor image of size (C, H, W).
@@ -85,7 +85,7 @@ class Cutout(object):
 			mask[y1: y2, x1: x2] = 0.
 
 		mask = torch.from_numpy(mask)
-		mask = mask.expand_as(img).cuda()
+		mask = mask.expand_as(img).to(device)
 		img = img * mask
 
 		return img

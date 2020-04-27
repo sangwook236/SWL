@@ -261,8 +261,11 @@ def mnist_test():
 	gamma = 0.7
 	log_interval = 100
 
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device =', device)
+
 	#torch.manual_seed(1)
-	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -348,8 +351,11 @@ def mnist_predefined_test():
 	gamma = 0.7
 	log_interval = 100
 
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device =', device)
+
 	#torch.manual_seed(1)
-	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -389,12 +395,14 @@ def mnist_predefined_test():
 		model = torchvision.models.vgg16_bn(pretrained=True, progress=True)
 		num_features = model.classifier[6].in_features
 		model.classifier[6] = torch.nn.Linear(num_features, num_classes)
+		model.num_classes = num_classes
 	elif False:
 		model = torchvision.models.resnet18(pretrained=False, num_classes=num_classes)
 	else:
 		model = torchvision.models.resnet18(pretrained=True, progress=True)
 		num_features = model.fc.in_features
 		model.fc = torch.nn.Linear(num_features, num_classes)
+		model.num_classes = num_classes
 	model = model.to(device)
 
 	#--------------------
@@ -452,8 +460,11 @@ def mnist_predefined_mixup_test():
 	gamma = 0.7
 	log_interval = 100
 
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device =', device)
+
 	#torch.manual_seed(1)
-	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -496,6 +507,7 @@ def mnist_predefined_mixup_test():
 		model = vgg_mixup.vgg16_bn(pretrained=True, progress=True)
 		num_features = model.classifier[6].in_features
 		model.classifier[6] = torch.nn.Linear(num_features, num_classes)
+		model.num_classes = num_classes
 	elif False:
 		import resnet_mixup
 		model = resnet_mixup.resnet18(pretrained=False, num_classes=num_classes)
@@ -504,6 +516,7 @@ def mnist_predefined_mixup_test():
 		model = resnet_mixup.resnet18(pretrained=True, progress=True)
 		num_features = model.fc.in_features
 		model.fc = torch.nn.Linear(num_features, num_classes)
+		model.num_classes = num_classes
 	model = model.to(device)
 
 	#--------------------

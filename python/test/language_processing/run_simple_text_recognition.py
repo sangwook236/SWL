@@ -13,7 +13,20 @@ import cv2
 import matplotlib.pyplot as plt
 import text_data
 import text_generation_util as tg_util
-import vgg_mixup, resnet_mixup
+# REF [directory] >> ${SWL_PYTHON_HOME}/test/machine_learning/pytorch
+#import vgg_mixup, resnet_mixup
+
+def save_model(model_filepath, model):
+	#torch.save(model.state_dict(), model_filepath)
+	torch.save({'state_dict': model.state_dict()}, model_filepath)
+	print('Saved a model to {}.'.format(model_filepath))
+
+def load_model(model_filepath, model):
+	loaded_data = torch.load(model_filepath)
+	#model.load_state_dict(loaded_data)
+	model.load_state_dict(loaded_data['state_dict'])
+	print('Loaded a model from {}.'.format(model_filepath))
+	return model
 
 def create_augmenter():
 	#import imgaug as ia
@@ -79,8 +92,26 @@ def create_augmenter():
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 def recognize_single_character():
-	# Load and normalize datasets.
+	image_height, image_width = 64, 64
+	#image_height_before_crop, image_width_before_crop = 72, 72
+	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	num_train_examples_per_class, num_test_examples_per_class = 500, 50
+	font_size_interval = (10, 100)
+
+	num_epochs = 100
+	batch_size = 256
+	shuffle = True
+	num_workers = 4
+
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device =', device)
+
+	model_filepath = './simple_text_recognition.pt'
+
+	#--------------------
+	# Load and normalize datasets.
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
 		font_base_dir_path = '/home/sangwook/work/font'
@@ -116,19 +147,6 @@ def recognize_single_character():
 
 	#charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset + hangeul_jamo_charset
 	charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset
-
-	#--------------------
-	image_height, image_width = 64, 64
-	#image_height_before_crop, image_width_before_crop = 72, 72
-	image_height_before_crop, image_width_before_crop = image_height, image_width
-
-	num_train_examples_per_class, num_test_examples_per_class = 500, 50
-	font_size_interval = (10, 100)
-
-	num_epochs = 100
-	batch_size = 256
-	shuffle = True
-	num_workers = 4
 
 	#--------------------
 	class RandomAugment(object):
@@ -203,18 +221,22 @@ def recognize_single_character():
 	#--------------------
 	# Define a convolutional neural network.
 
-	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-	# Assuming that we are on a CUDA machine, this should print a CUDA device.
-	print('Device =', device)
-
-	if True:
-		model = torchvision.models.vgg19(pretrained=True, progress=True)
+	if False:
+		model = torchvision.models.vgg19(pretrained=False, num_classes=num_classes)
+		#model = torchvision.models.vgg19_bn(pretrained=False, num_classes=num_classes)
+	elif False:
+		#model = torchvision.models.vgg19(pretrained=True, progress=True)
+		model = torchvision.models.vgg19_bn(pretrained=True, progress=True)
 		num_features = model.classifier[6].in_features
-		model.classifier[6] = torch.nn.Linear(num_features, train_dataset.num_classes)
+		model.classifier[6] = torch.nn.Linear(num_features, num_classes)
+		model.num_classes = num_classes
+	elif False:
+		model = torchvision.models.resnet18(pretrained=False, num_classes=num_classes)
 	else:
 		model = torchvision.models.resnet18(pretrained=True, progress=True)
 		num_features = model.fc.in_features
-		model.fc = torch.nn.Linear(num_features, train_dataset.num_classes)
+		model.fc = torch.nn.Linear(num_features, num_classes)
+		model.num_classes = num_classes
 	model = model.to(device)
 
 	#--------------------
@@ -250,7 +272,12 @@ def recognize_single_character():
 				running_loss = 0.0
 		#scheduler.step()
 
+		save_model(model_filepath, model)
+
 	print('Finished Training')
+
+	#save_model(model_filepath, model)
+	#model = load_model(model_filepath, model)
 
 	#--------------------
 	# Test the network on the test data.
@@ -305,26 +332,31 @@ def recognize_single_character():
 	valid_accuracies = [100 * class_correct[i] / class_total[i] for i in range(num_classes) if class_total[i] > 0]
 	print('Accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
 
-	#--------------------
-	model_filepath = './simple_text_recongnition.pt'
-
-	# Save a model.
-	#torch.save(model.state_dict(), model_filepath)
-	torch.save({'state_dict': model.state_dict()}, model_filepath)
-	print('Saved a model to {}.'.format(model_filepath))
-
-	"""
-	# Load a model.
-	loaded_data = torch.load(model_filepath)
-	#model.load_state_dict(loaded_data)
-	model.load_state_dict(loaded_data['state_dict'])
-	print('Loaded a model from {}.'.format(model_filepath))
-	"""
-
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 def recognize_single_character_using_mixup():
-	# Load and normalize datasets.
+	image_height, image_width = 64, 64
+	#image_height_before_crop, image_width_before_crop = 72, 72
+	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	mixup, mixup_hidden, mixup_alpha = True, True, 2.0
+	cutout, cutout_size = True, 4
+
+	num_train_examples_per_class, num_test_examples_per_class = 500, 50
+	font_size_interval = (10, 100)
+
+	num_epochs = 100
+	batch_size = 256
+	shuffle = True
+	num_workers = 4
+
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device =', device)
+
+	model_filepath = './simple_text_recongnition_mixup.pt'
+
+	#--------------------
+	# Load and normalize datasets.
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
 		font_base_dir_path = '/home/sangwook/work/font'
@@ -360,22 +392,6 @@ def recognize_single_character_using_mixup():
 
 	#charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset + hangeul_jamo_charset
 	charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset
-
-	#--------------------
-	image_height, image_width = 64, 64
-	#image_height_before_crop, image_width_before_crop = 72, 72
-	image_height_before_crop, image_width_before_crop = image_height, image_width
-
-	mixup, mixup_hidden, mixup_alpha = True, True, 2.0
-	cutout, cutout_size = True, 4
-
-	num_train_examples_per_class, num_test_examples_per_class = 500, 50
-	font_size_interval = (10, 100)
-
-	num_epochs = 100
-	batch_size = 256
-	shuffle = True
-	num_workers = 4
 
 	#--------------------
 	class RandomAugment(object):
@@ -450,26 +466,28 @@ def recognize_single_character_using_mixup():
 	#--------------------
 	# Define a convolutional neural network.
 
-	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-	# Assuming that we are on a CUDA machine, this should print a CUDA device.
-	print('Device =', device)
-
 	if False:
+		import vgg_mixup
 		# NOTE [info] >> Hard to train.
-		model = vgg_mixup.vgg19(pretrained=False, num_classes=train_dataset.num_classes)
-		#model = vgg_mixup.vgg19_bn(pretrained=False, num_classes=train_dataset.num_classes)
+		model = vgg_mixup.vgg19(pretrained=False, num_classes=num_classes)
+		#model = vgg_mixup.vgg19_bn(pretrained=False, num_classes=num_classes)
 	elif False:
+		import vgg_mixup
 		# NOTE [error] >> Cannot load the pretrained model weights because the model is slightly changed.
 		#model = vgg_mixup.vgg19(pretrained=True, progress=True)
 		model = vgg_mixup.vgg19_bn(pretrained=True, progress=True)
 		num_features = model.classifier[6].in_features
-		model.classifier[6] = torch.nn.Linear(num_features, train_dataset.num_classes)
-	elif True:
-		model = resnet_mixup.resnet18(pretrained=False, num_classes=train_dataset.num_classes)
+		model.classifier[6] = torch.nn.Linear(num_features, num_classes)
+		model.num_classes = num_classes
+	elif False:
+		import resnet_mixup
+		model = resnet_mixup.resnet18(pretrained=False, num_classes=num_classes)
 	else:
+		import resnet_mixup
 		model = resnet_mixup.resnet18(pretrained=True, progress=True)
 		num_features = model.fc.in_features
-		model.fc = torch.nn.Linear(num_features, train_dataset.num_classes)
+		model.fc = torch.nn.Linear(num_features, num_classes)
+		model.num_classes = num_classes
 	model = model.to(device)
 
 	#--------------------
@@ -505,7 +523,12 @@ def recognize_single_character_using_mixup():
 				running_loss = 0.0
 		#scheduler.step()
 
+		save_model(model_filepath, model)
+
 	print('Finished Training')
+
+	#save_model(model_filepath, model)
+	#model = load_model(model_filepath, model)
 
 	#--------------------
 	# Test the network on the test data.
@@ -559,22 +582,6 @@ def recognize_single_character_using_mixup():
 	print('Accuracy frequency: {}.'.format(hist))
 	valid_accuracies = [100 * class_correct[i] / class_total[i] for i in range(num_classes) if class_total[i] > 0]
 	print('Accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
-
-	#--------------------
-	model_filepath = './simple_text_recongnition_mixup.pt'
-
-	# Save a model.
-	#torch.save(model.state_dict(), model_filepath)
-	torch.save({'state_dict': model.state_dict()}, model_filepath)
-	print('Saved a model to {}.'.format(model_filepath))
-
-	"""
-	# Load a model.
-	loaded_data = torch.load(model_filepath)
-	#model.load_state_dict(loaded_data)
-	model.load_state_dict(loaded_data['state_dict'])
-	print('Loaded a model from {}.'.format(model_filepath))
-	"""
 
 def main():
 	#recognize_single_character()

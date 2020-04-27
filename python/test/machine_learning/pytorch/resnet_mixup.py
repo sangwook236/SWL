@@ -252,11 +252,11 @@ class ResNet(nn.Module):
 			#lam = Variable(lam)
 		
 		if target is not None:
-			target_reweighted = mixup_util.to_one_hot(target, self.num_classes)
+			target_reweighted = mixup_util.to_one_hot(target, self.num_classes, device)
 
 		if cutout:
 			cutout = mixup_util.Cutout(1, cutout_size)
-			out = cutout.apply(out)
+			out = cutout.apply(out, device)
 
 		if layer_mix == 0:
 			out, target_reweighted = mixup_util.mixup_process(out, target_reweighted, lam=lam)
