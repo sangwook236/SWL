@@ -99,9 +99,9 @@ def recognize_single_character():
 	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
 	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
 	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#hangeul_charset = fd.read().strip('\n')  # A strings.
+		#hangeul_charset = fd.read().strip('\n')  # A string.
 		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
-		#hangeul_charset = fd.readlines()  # A list of string.
+		#hangeul_charset = fd.readlines()  # A list of strings.
 		#hangeul_charset = fd.read().splitlines()  # A list of strings.
 
 	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
@@ -222,6 +222,7 @@ def recognize_single_character():
 
 	criterion = torch.nn.CrossEntropyLoss()
 	optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 
 	#--------------------
 	# Train the network.
@@ -247,6 +248,7 @@ def recognize_single_character():
 			if i % 1000 == 999:  # Print every 2000 mini-batches.
 				print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / 2000))
 				running_loss = 0.0
+		#scheduler.step()
 
 	print('Finished Training')
 
@@ -303,6 +305,22 @@ def recognize_single_character():
 	valid_accuracies = [100 * class_correct[i] / class_total[i] for i in range(num_classes) if class_total[i] > 0]
 	print('Accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
 
+	#--------------------
+	model_filepath = './simple_text_recongnition.pt'
+
+	# Save a model.
+	#torch.save(model.state_dict(), model_filepath)
+	torch.save({'state_dict': model.state_dict()}, model_filepath)
+	print('Saved a model to {}.'.format(model_filepath))
+
+	"""
+	# Load a model.
+	loaded_data = torch.load(model_filepath)
+	#model.load_state_dict(loaded_data)
+	model.load_state_dict(loaded_data['state_dict'])
+	print('Loaded a model from {}.'.format(model_filepath))
+	"""
+
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 def recognize_single_character_using_mixup():
 	# Load and normalize datasets.
@@ -325,9 +343,9 @@ def recognize_single_character_using_mixup():
 	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
 	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
 	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#hangeul_charset = fd.read().strip('\n')  # A strings.
+		#hangeul_charset = fd.read().strip('\n')  # A string.
 		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
-		#hangeul_charset = fd.readlines()  # A list of string.
+		#hangeul_charset = fd.readlines()  # A list of strings.
 		#hangeul_charset = fd.read().splitlines()  # A list of strings.
 
 	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
@@ -459,6 +477,7 @@ def recognize_single_character_using_mixup():
 
 	criterion = torch.nn.CrossEntropyLoss()
 	optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 
 	#--------------------
 	# Train the network.
@@ -484,6 +503,7 @@ def recognize_single_character_using_mixup():
 			if i % 1000 == 999:  # Print every 2000 mini-batches.
 				print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / 2000))
 				running_loss = 0.0
+		#scheduler.step()
 
 	print('Finished Training')
 
@@ -539,6 +559,22 @@ def recognize_single_character_using_mixup():
 	print('Accuracy frequency: {}.'.format(hist))
 	valid_accuracies = [100 * class_correct[i] / class_total[i] for i in range(num_classes) if class_total[i] > 0]
 	print('Accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
+
+	#--------------------
+	model_filepath = './simple_text_recongnition_mixup.pt'
+
+	# Save a model.
+	#torch.save(model.state_dict(), model_filepath)
+	torch.save({'state_dict': model.state_dict()}, model_filepath)
+	print('Saved a model to {}.'.format(model_filepath))
+
+	"""
+	# Load a model.
+	loaded_data = torch.load(model_filepath)
+	#model.load_state_dict(loaded_data)
+	model.load_state_dict(loaded_data['state_dict'])
+	print('Loaded a model from {}.'.format(model_filepath))
+	"""
 
 def main():
 	#recognize_single_character()

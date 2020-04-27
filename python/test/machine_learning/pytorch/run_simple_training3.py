@@ -200,12 +200,12 @@ class MyRunner(object):
 		try:
 			self._logger.info('Start loading a model from {}...'.format(model_filepath))
 			start_time = time.time()
-			checkpoint = torch.load(model_filepath)
-			epoch = checkpoint['epoch']
-			#architecture = checkpoint['arch']
-			model.load_state_dict(checkpoint['state_dict'])
-			if optimizer: optimizer.load_state_dict(checkpoint['optimizer'])
-			recorder = checkpoint['recorder']
+			loaded_data = torch.load(model_filepath)
+			epoch = loaded_data['epoch']
+			#architecture = loaded_data['arch']
+			model.load_state_dict(loaded_data['state_dict'])
+			if optimizer: optimizer.load_state_dict(loaded_data['optimizer'])
+			recorder = loaded_data['recorder']
 			best_acc = recorder.max_accuracy(False)
 			self._logger.info('End loading a model, accuracy={} (epoch {}): {} secs.'.format(best_acc, epoch, time.time() - start_time))
 			return model, optimizer, recorder, epoch

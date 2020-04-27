@@ -159,8 +159,9 @@ class MyRunner(object):
 		try:
 			self._logger.info('Start loading a model from {}...'.format(model_filepath))
 			start_time = time.time()
-			checkpoint = torch.load(model_filepath)
-			model.load_state_dict(checkpoint['state_dict'])
+			loaded_data = torch.load(model_filepath)
+			#model.load_state_dict(loaded_data)
+			model.load_state_dict(loaded_data['state_dict'])
 			self._logger.info('End loading a model: {} secs.'.format(time.time() - start_time))
 			return model
 		except Exception as ex:
@@ -170,12 +171,13 @@ class MyRunner(object):
 
 	def save_model(self, model_filepath, model):
 		try:
-			self._logger.info('Start saving a checkpoint to {}...'.format(model_filepath))
+			self._logger.info('Start saving a model to {}...'.format(model_filepath))
 			start_time = time.time()
 			# Saves a model using either a .pt or .pth file extension.
 			#torch.save(model, model_filepath)
+			#torch.save(model.state_dict(), model_filepath)
 			torch.save({'state_dict': model.state_dict()}, model_filepath)
-			self._logger.info('End saving a checkpoint: {} secs.'.format(time.time() - start_time))
+			self._logger.info('End saving a model: {} secs.'.format(time.time() - start_time))
 		except Exception as ex:
 			self._logger.error('Failed to save a model from {}: {}.'.format(model_filepath, ex))
 
