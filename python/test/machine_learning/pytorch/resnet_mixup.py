@@ -6,7 +6,7 @@ try:
 	from torch.hub import load_state_dict_from_url
 except ImportError:
 	from torch.utils.model_zoo import load_url as load_state_dict_from_url
-from mixup_util import to_one_hot, mixup_process, get_lambda, Cutout
+import mixup_util
 
 # REF [site] >> https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
 
@@ -247,19 +247,19 @@ class ResNet(nn.Module):
 		out = x
 		
 		if mixup_alpha is not None:
-			lam = get_lambda(mixup_alpha)
+			lam = mixup_util.get_lambda(mixup_alpha)
 			lam = torch.from_numpy(np.array([lam]).astype('float32')).to(device)
 			#lam = Variable(lam)
 		
 		if target is not None:
-			target_reweighted = to_one_hot(target, self.num_classes)
+			target_reweighted = mixup_util.to_one_hot(target, self.num_classes)
 
 		if cutout:
-			cutout = Cutout(1, cutout_size)
+			cutout = mixup_util.Cutout(1, cutout_size)
 			out = cutout.apply(out)
 
 		if layer_mix == 0:
-			out, target_reweighted = mixup_process(out, target_reweighted, lam=lam)
+			out, target_reweighted = mixup_util.mixup_process(out, target_reweighted, lam=lam)
 
 		out = self.conv1(out)
 		out = self.bn1(out)
@@ -269,17 +269,17 @@ class ResNet(nn.Module):
 		out = self.layer1(out)
 
 		if layer_mix == 1:
-			out, target_reweighted = mixup_process(out, target_reweighted, lam=lam)
+			out, target_reweighted = mixup_util.mixup_process(out, target_reweighted, lam=lam)
 
 		out = self.layer2(out)
 
 		if layer_mix == 2:
-			out, target_reweighted = mixup_process(out, target_reweighted, lam=lam)
+			out, target_reweighted = mixup_util.mixup_process(out, target_reweighted, lam=lam)
 
 		out = self.layer3(out)
 
 		if layer_mix == 3:
-			out, target_reweighted = mixup_process(out, target_reweighted, lam=lam)
+			out, target_reweighted = mixup_util.mixup_process(out, target_reweighted, lam=lam)
 
 		out = self.layer4(out)
 
