@@ -16,8 +16,8 @@ def save_model(model_filepath, model):
 	torch.save({'state_dict': model.state_dict()}, model_filepath)
 	print('Saved a model to {}.'.format(model_filepath))
 
-def load_model(model_filepath, model):
-	loaded_data = torch.load(model_filepath)
+def load_model(model_filepath, model, device='cpu'):
+	loaded_data = torch.load(model_filepath, map_location=device)
 	#model.load_state_dict(loaded_data)
 	model.load_state_dict(loaded_data['state_dict'])
 	print('Loaded a model from {}.'.format(model_filepath))
@@ -277,7 +277,7 @@ def mnist_test():
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
 	print('Device =', device)
 
-	model_filepath = './mnist_cnn.pt'
+	model_filepath = './mnist_cnn.pth'
 
 	#torch.manual_seed(1)
 
@@ -311,10 +311,11 @@ def mnist_test():
 	#--------------------
 	# Create a model.
 	model = Net(num_classes=num_classes, input_channels=1)
-	model = model.to(device)
 
 	# Load a model.
-	#model = load_model(model_filepath, model)
+	#model = load_model(model_filepath, model, device=device)
+
+	model = model.to(device)
 
 	#--------------------
 	# Create a trainer.
@@ -361,7 +362,7 @@ def mnist_predefined_test():
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
 	print('Device =', device)
 
-	model_filepath = './mnist_cnn_predefined.pt'
+	model_filepath = './mnist_cnn_predefined.pth'
 
 	#torch.manual_seed(1)
 
@@ -411,10 +412,11 @@ def mnist_predefined_test():
 		num_features = model.fc.in_features
 		model.fc = torch.nn.Linear(num_features, num_classes)
 		model.num_classes = num_classes
-	model = model.to(device)
 
 	# Load a model.
-	#model = load_model(model_filepath, model)
+	#model = load_model(model_filepath, model, device=device)
+
+	model = model.to(device)
 
 	#--------------------
 	# Create a trainer.
@@ -464,7 +466,7 @@ def mnist_predefined_mixup_test():
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
 	print('Device =', device)
 
-	model_filepath = './mnist_cnn_predefined_mixup.pt'
+	model_filepath = './mnist_cnn_predefined_mixup.pth'
 
 	#torch.manual_seed(1)
 
@@ -519,10 +521,11 @@ def mnist_predefined_mixup_test():
 		num_features = model.fc.in_features
 		model.fc = torch.nn.Linear(num_features, num_classes)
 		model.num_classes = num_classes
-	model = model.to(device)
 
 	# Load a model.
-	#model = load_model(model_filepath, model)
+	#model = load_model(model_filepath, model, device=device)
+
+	model = model.to(device)
 
 	#--------------------
 	# Create a trainer.

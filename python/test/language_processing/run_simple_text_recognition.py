@@ -20,12 +20,50 @@ def save_model(model_filepath, model):
 	torch.save({'state_dict': model.state_dict()}, model_filepath)
 	print('Saved a model to {}.'.format(model_filepath))
 
-def load_model(model_filepath, model):
-	loaded_data = torch.load(model_filepath)
+def load_model(model_filepath, model, device='cpu'):
+	loaded_data = torch.load(model_filepath, map_location=device)
 	#model.load_state_dict(loaded_data)
 	model.load_state_dict(loaded_data['state_dict'])
 	print('Loaded a model from {}.'.format(model_filepath))
 	return model
+
+def construct_charset():
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		font_base_dir_path = '/home/sangwook/work/font'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_base_dir_path = 'D:/work/font'
+	font_dir_path = font_base_dir_path + '/kor'
+	#font_dir_path = font_base_dir_path + '/eng'
+
+	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+	#font_list = tg_util.generate_hangeul_font_list(font_filepaths)
+	font_list = tg_util.generate_font_list(font_filepaths)
+
+	#--------------------
+	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
+	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
+	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
+	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
+		#hangeul_charset = fd.read().strip('\n')  # A string.
+		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
+		#hangeul_charset = fd.readlines()  # A list of strings.
+		#hangeul_charset = fd.read().splitlines()  # A list of strings.
+
+	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+	hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
+
+	import string
+	alphabet_charset = string.ascii_uppercase + string.ascii_lowercase
+	digit_charset = string.digits
+	symbol_charset = string.punctuation
+	#symbol_charset = string.punctuation + ' '
+
+	#charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset + hangeul_jamo_charset
+	charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset
+	return charset
 
 def create_augmenter():
 	#import imgaug as ia
@@ -125,47 +163,12 @@ def recognize_single_character():
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
 	print('Device =', device)
 
-	model_filepath = './simple_text_recognition.pt'
+	model_filepath = './simple_text_recognition.pth'
 
 	#--------------------
 	# Load and normalize datasets.
-	if 'posix' == os.name:
-		system_font_dir_path = '/usr/share/fonts'
-		font_base_dir_path = '/home/sangwook/work/font'
-	else:
-		system_font_dir_path = 'C:/Windows/Fonts'
-		font_base_dir_path = 'D:/work/font'
-	font_dir_path = font_base_dir_path + '/kor'
-	#font_dir_path = font_base_dir_path + '/eng'
+	charset = construct_charset()
 
-	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
-	#font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-	font_list = tg_util.generate_font_list(font_filepaths)
-
-	#--------------------
-	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
-	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
-	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
-	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#hangeul_charset = fd.read().strip('\n')  # A string.
-		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
-		#hangeul_charset = fd.readlines()  # A list of strings.
-		#hangeul_charset = fd.read().splitlines()  # A list of strings.
-
-	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-	hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
-
-	import string
-	alphabet_charset = string.ascii_uppercase + string.ascii_lowercase
-	digit_charset = string.digits
-	symbol_charset = string.punctuation
-	#symbol_charset = string.punctuation + ' '
-
-	#charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset + hangeul_jamo_charset
-	charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset
-
-	#--------------------
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(),
 		RandomInvert(),
@@ -237,10 +240,11 @@ def recognize_single_character():
 		num_features = model.fc.in_features
 		model.fc = torch.nn.Linear(num_features, num_classes)
 		model.num_classes = num_classes
-	model = model.to(device)
 
 	# Load a model.
-	#model = load_model(model_filepath, model)
+	#model = load_model(model_filepath, model, device=device)
+
+	model = model.to(device)
 
 	#--------------------
 	# Define a loss function and optimizer.
@@ -255,9 +259,9 @@ def recognize_single_character():
 	model.train()
 	for epoch in range(num_epochs):  # Loop over the dataset multiple times.
 		running_loss = 0.0
-		for i, data in enumerate(train_dataloader, 0):
-			# Get the inputs; data is a list of [inputs, labels].
-			inputs, labels = data[0].to(device), data[1].to(device)
+		for i, (inputs, labels) in enumerate(train_dataloader, 0):
+			# Get the inputs.
+			inputs, labels = inputs.to(device), labels.to(device)
 
 			# Zero the parameter gradients.
 			optimizer.zero_grad()
@@ -304,8 +308,8 @@ def recognize_single_character():
 	correct = 0
 	total = 0
 	with torch.no_grad():
-		for data in test_dataloader:
-			images, labels = data[0].to(device), data[1].to(device)
+		for images, labels in test_dataloader:
+			images, labels = images.to(device), labels.to(device)
 			outputs = model(images)
 			_, predicted = torch.max(outputs.data, 1)
 			total += labels.size(0)
@@ -317,8 +321,8 @@ def recognize_single_character():
 	class_correct = list(0 for i in range(num_classes))
 	class_total = list(0 for i in range(num_classes))
 	with torch.no_grad():
-		for data in test_dataloader:
-			images, labels = data[0].to(device), data[1].to(device)
+		for images, labels in test_dataloader:
+			images, labels = images.to(device), labels.to(device)
 			outputs = model(images)
 			_, predicted = torch.max(outputs, 1)
 			c = (predicted == labels).squeeze()
@@ -357,47 +361,12 @@ def recognize_single_character_using_mixup():
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
 	print('Device =', device)
 
-	model_filepath = './simple_text_recongnition_mixup.pt'
+	model_filepath = './simple_text_recongnition_mixup.pth'
 
 	#--------------------
 	# Load and normalize datasets.
-	if 'posix' == os.name:
-		system_font_dir_path = '/usr/share/fonts'
-		font_base_dir_path = '/home/sangwook/work/font'
-	else:
-		system_font_dir_path = 'C:/Windows/Fonts'
-		font_base_dir_path = 'D:/work/font'
-	font_dir_path = font_base_dir_path + '/kor'
-	#font_dir_path = font_base_dir_path + '/eng'
+	charset = construct_charset()
 
-	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
-	#font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-	font_list = tg_util.generate_font_list(font_filepaths)
-
-	#--------------------
-	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
-	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
-	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
-	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#hangeul_charset = fd.read().strip('\n')  # A string.
-		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
-		#hangeul_charset = fd.readlines()  # A list of strings.
-		#hangeul_charset = fd.read().splitlines()  # A list of strings.
-
-	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-	hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
-
-	import string
-	alphabet_charset = string.ascii_uppercase + string.ascii_lowercase
-	digit_charset = string.digits
-	symbol_charset = string.punctuation
-	#symbol_charset = string.punctuation + ' '
-
-	#charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset + hangeul_jamo_charset
-	charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset
-
-	#--------------------
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(),
 		RandomInvert(),
@@ -479,10 +448,11 @@ def recognize_single_character_using_mixup():
 		num_features = model.fc.in_features
 		model.fc = torch.nn.Linear(num_features, num_classes)
 		model.num_classes = num_classes
-	model = model.to(device)
 
 	# Load a model.
-	#model = load_model(model_filepath, model)
+	#model = load_model(model_filepath, model, device=device)
+
+	model = model.to(device)
 
 	#--------------------
 	# Define a loss function and optimizer.
@@ -497,9 +467,9 @@ def recognize_single_character_using_mixup():
 	model.train()
 	for epoch in range(num_epochs):  # Loop over the dataset multiple times.
 		running_loss = 0.0
-		for i, data in enumerate(train_dataloader, 0):
-			# Get the inputs; data is a list of [inputs, labels].
-			inputs, labels = data[0].to(device), data[1].to(device)
+		for i, (inputs, labels) in enumerate(train_dataloader, 0):
+			# Get the inputs.
+			inputs, labels = inputs.to(device), labels.to(device)
 
 			# Zero the parameter gradients.
 			optimizer.zero_grad()
@@ -546,8 +516,8 @@ def recognize_single_character_using_mixup():
 	correct = 0
 	total = 0
 	with torch.no_grad():
-		for data in test_dataloader:
-			images, labels = data[0].to(device), data[1].to(device)
+		for images, labels in test_dataloader:
+			images, labels = images.to(device), labels.to(device)
 			outputs = model(images)
 			_, predicted = torch.max(outputs.data, 1)
 			total += labels.size(0)
@@ -559,8 +529,8 @@ def recognize_single_character_using_mixup():
 	class_correct = list(0 for i in range(num_classes))
 	class_total = list(0 for i in range(num_classes))
 	with torch.no_grad():
-		for data in test_dataloader:
-			images, labels = data[0].to(device), data[1].to(device)
+		for images, labels in test_dataloader:
+			images, labels = images.to(device), labels.to(device)
 			outputs = model(images)
 			_, predicted = torch.max(outputs, 1)
 			c = (predicted == labels).squeeze()

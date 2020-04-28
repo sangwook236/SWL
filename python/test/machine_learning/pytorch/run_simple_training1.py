@@ -14,7 +14,7 @@ import swl.machine_learning.util as swl_ml_util
 
 class MyModel(torch.nn.Module):
 	def __init__(self):
-		super(MyModel, self).__init__()
+		super().__init__()
 
 		#self.conv1 = torch.nn.Conv2d(1, 32, 5)
 		self.conv1 = torch.nn.Conv2d(1, 32, 5, padding=2)
@@ -48,6 +48,11 @@ class MyRunner(object):
 			'val_loss': list()
 		}
 		log_print_freq = 500
+
+		#if torch.cuda.device_count() > 1:
+		#	device_ids = [0, 1]
+		#	model = torch.nn.DataParallel(model, device_ids=device_ids)
+		model = model.to(device)
 
 		#--------------------
 		self._logger.info('Start training...')
@@ -88,6 +93,11 @@ class MyRunner(object):
 		return best_model_filepath, history
 
 	def test(self, model, dataloader, device='cpu'):
+		#if torch.cuda.device_count() > 1:
+		#	device_ids = [0, 1]
+		#	model = torch.nn.DataParallel(model, device_ids=device_ids)
+		model = model.to(device)
+
 		# Switch to evaluation mode.
 		model.eval()
 
@@ -95,8 +105,7 @@ class MyRunner(object):
 		inferences, ground_truths = list(), list()
 		start_time = time.time()
 		with torch.no_grad():
-			for batch_data in dataloader:
-				batch_inputs, batch_outputs = batch_data
+			for batch_inputs, batch_outputs in dataloader:
 				#batch_inputs, batch_outputs = batch_inputs.to(device), batch_outputs.to(device)
 				batch_inputs = batch_inputs.to(device)
 
@@ -116,50 +125,28 @@ class MyRunner(object):
 		else:
 			self._logger.warning('Invalid test results.')
 
-	def infer(self, model, dataloader, shuffle=False, device='cpu'):
-		# Switch to evaluation mode.
-		model.eval()
-
-		inf_images = list(batch_data[0] for batch_data in dataloader)
-
-		self._logger.info('Start inferring...')
-		inferences = list()
-		start_time = time.time()
-		with torch.no_grad():
-			for batch_images in inf_images:
-				batch_images = batch_images.to(device)
-				model_outputs = model(batch_images)
-
-				model_outputs = torch.argmax(model_outputs, -1)
-				inferences.extend(model_outputs.cpu().numpy())
-		self._logger.info('End inferring: {} secs.'.format(time.time() - start_time))
-
-		inferences = np.array(inferences)
-		if inferences is not None:
-			self._logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
-
-			results = {idx: inf for idx, inf in enumerate(inferences) if idx < 100}
-			self._logger.info('Inference results (index: inference): {}.'.format(results))
-		else:
-			self._logger.warning('Invalid inference results.')
-
-	def create_model(self, device='cpu'):
-		self._logger.info('Start creating a model...')
-		start_time = time.time()
-		model = MyModel()
-		self._logger.info('End creating a model: {} secs.'.format(time.time() - start_time))
-
+	def infer(self, model, inputs, device='cpu'):
 		#if torch.cuda.device_count() > 1:
 		#	device_ids = [0, 1]
 		#	model = torch.nn.DataParallel(model, device_ids=device_ids)
 		model = model.to(device)
-		return model
 
-	def load_model(self, model_filepath, model):
+		# Switch to evaluation mode.
+		model.eval()
+
+		self._logger.info('Start inferring...')
+		start_time = time.time()
+		with torch.no_grad():
+			inputs = inputs.to(device)
+			model_outputs = model(inputs)
+		self._logger.info('End inferring: {} secs.'.format(time.time() - start_time))
+		return torch.argmax(model_outputs, -1)
+
+	def load_model(self, model_filepath, model, device='cpu'):
 		try:
 			self._logger.info('Start loading a model from {}...'.format(model_filepath))
 			start_time = time.time()
-			loaded_data = torch.load(model_filepath)
+			loaded_data = torch.load(model_filepath, map_location=device)
 			#model.load_state_dict(loaded_data)
 			model.load_state_dict(loaded_data['state_dict'])
 			self._logger.info('End loading a model: {} secs.'.format(time.time() - start_time))
@@ -223,9 +210,7 @@ class MyRunner(object):
 		train_loss, train_acc, num_examples = 0.0, 0.0, 0
 		running_loss = 0.0
 		start_time = time.time()
-		for batch_step, batch_data in enumerate(dataloader):
-			batch_inputs, batch_outputs = batch_data
-
+		for batch_step, (batch_inputs, batch_outputs) in enumerate(dataloader):
 			"""
 			# One-hot encoding.
 			batch_outputs_onehot = torch.LongTensor(batch_outputs.shape[0], self._dataset.num_classes)
@@ -276,9 +261,7 @@ class MyRunner(object):
 
 		val_loss, val_acc, num_examples = 0.0, 0.0, 0
 		with torch.no_grad():
-			for batch_step, batch_data in enumerate(dataloader):
-				batch_inputs, batch_outputs = batch_data
-
+			for batch_step, (batch_inputs, batch_outputs) in enumerate(dataloader):
 				"""
 				# One-hot encoding.
 				batch_outputs_onehot = torch.LongTensor(batch_outputs.shape[0], self._dataset.num_classes)
@@ -444,7 +427,7 @@ def main():
 			output_dir_prefix = 'simple_training'
 			output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-		model_filepath = os.path.join(output_dir_path, 'model.pt')
+		model_filepath = os.path.join(output_dir_path, 'model.pth')
 
 	#--------------------
 	runner = MyRunner(logger)
@@ -454,12 +437,12 @@ def main():
 	runner.show_data_info(train_dataloader, test_dataloader)
 
 	if args.train:
-		model_checkpoint_filepath = os.path.join(output_dir_path, 'model_ckpt.{epoch:04d}-{val_acc:.5f}.pt')
+		model_checkpoint_filepath = os.path.join(output_dir_path, 'model_ckpt.{epoch:04d}-{val_acc:.5f}.pth')
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
 		# Create a model.
-		model = runner.create_model(device=device)
+		model = MyModel()
 
 		# Create a trainer.
 		criterion = torch.nn.CrossEntropyLoss().to(device)
@@ -468,14 +451,14 @@ def main():
 
 		# Load a model.
 		if is_resumed:
-			model = runner.load_model(model_filepath, model)
+			model = runner.load_model(model_filepath, model, device=device)
 
 		if model:
 			# Train a model.
 			best_model_filepath, history = runner.train(model, criterion, optimizer, scheduler, train_dataloader, test_dataloader, model_checkpoint_filepath, initial_epoch, final_epoch, device=device)
 
 			# Save a model.
-			model_filepath = os.path.join(output_dir_path, 'best_model.pt')
+			model_filepath = os.path.join(output_dir_path, 'best_model.pth')
 			if best_model_filepath:
 				try:
 					shutil.copyfile(best_model_filepath, model_filepath)
@@ -494,15 +477,28 @@ def main():
 	if args.test or args.infer:
 		if model_filepath and os.path.exists(model_filepath):
 			# Create a model.
-			model = runner.create_model(device=device)
+			model = MyModel()
 			# Load a model.
-			model = runner.load_model(model_filepath, model)
+			model = runner.load_model(model_filepath, model, device=device)
 
 			if args.test and model:
 				runner.test(model, test_dataloader, device=device)
 
 			if args.infer and model:
-				runner.infer(model, test_dataloader, device=device)
+				#inputs = torch.cat([batch_data[0] for batch_data in test_dataloader], dim=0)
+				data_iter = iter(test_dataloader)
+				inputs, _ = data_iter.next()
+
+				inferences = runner.infer(model, inputs, device=device)
+
+				inferences = inferences.cpu().numpy()
+				if inferences is not None:
+					logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+
+					results = {idx: inf for idx, inf in enumerate(inferences) if idx < 100}
+					logger.info('Inference results (index: inference): {}.'.format(results))
+				else:
+					logger.warning('Invalid inference results.')
 		else:
 			logger.error('Model file, {} does not exist.'.format(model_filepath))
 
