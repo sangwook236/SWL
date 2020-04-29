@@ -153,6 +153,7 @@ def recognize_single_character():
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
 	font_size_interval = (10, 100)
+	font_overlap_interval = (0.8, 1.25)
 
 	num_epochs = 100
 	batch_size = 256
@@ -189,8 +190,12 @@ def recognize_single_character():
 
 	print('Start creating datasets...')
 	start_time = time.time()
-	train_dataset = text_data.SingleCharacterDataset(num_train_examples_per_class, charset, font_list, font_size_interval, transform=train_transform)
-	test_dataset = text_data.SingleCharacterDataset(num_test_examples_per_class, charset, font_list, font_size_interval, transform=test_transform)
+	if False:
+		train_dataset = text_data.SingleCharacterDataset(num_train_examples_per_class, charset, font_list, font_size_interval, transform=train_transform)
+		test_dataset = text_data.SingleCharacterDataset(num_test_examples_per_class, charset, font_list, font_size_interval, transform=test_transform)
+	else:
+		train_dataset = text_data.SingleNoisyCharacterDataset(num_train_examples_per_class, charset, font_list, font_size_interval, font_overlap_interval, transform=train_transform)
+		test_dataset = text_data.SingleNoisyCharacterDataset(num_test_examples_per_class, charset, font_list, font_size_interval, font_overlap_interval, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 
 	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
@@ -356,6 +361,7 @@ def recognize_single_character_using_mixup():
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
 	font_size_interval = (10, 100)
+	font_overlap_interval = (0.8, 1.25)
 
 	num_epochs = 100
 	batch_size = 256
@@ -366,7 +372,7 @@ def recognize_single_character_using_mixup():
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
 	print('Device =', device)
 
-	model_filepath = './simple_text_recongnition_mixup.pth'
+	model_filepath = './simple_text_recognition_mixup.pth'
 
 	#--------------------
 	# Load and normalize datasets.
@@ -392,8 +398,12 @@ def recognize_single_character_using_mixup():
 
 	print('Start creating datasets...')
 	start_time = time.time()
-	train_dataset = text_data.SingleCharacterDataset(num_train_examples_per_class, charset, font_list, font_size_interval, transform=train_transform)
-	test_dataset = text_data.SingleCharacterDataset(num_test_examples_per_class, charset, font_list, font_size_interval, transform=test_transform)
+	if False:
+		train_dataset = text_data.SingleCharacterDataset(num_train_examples_per_class, charset, font_list, font_size_interval, transform=train_transform)
+		test_dataset = text_data.SingleCharacterDataset(num_test_examples_per_class, charset, font_list, font_size_interval, transform=test_transform)
+	else:
+		train_dataset = text_data.SingleNoisyCharacterDataset(num_train_examples_per_class, charset, font_list, font_size_interval, font_overlap_interval, transform=train_transform)
+		test_dataset = text_data.SingleNoisyCharacterDataset(num_test_examples_per_class, charset, font_list, font_size_interval, font_overlap_interval, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 
 	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
@@ -694,8 +704,8 @@ def recognize_text_using_craft_and_single_character_recognizer():
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
 	print('Device =', device)
 
-	#model_filepath = './craft/simple_text_recongnition.pth'
-	model_filepath = './craft/simple_text_recongnition_mixup.pth'
+	#model_filepath = './craft/simple_text_recognition.pth'
+	model_filepath = './craft/simple_text_recognition_mixup.pth'
 
 	#--------------------
 	# Construct a charset.

@@ -13,6 +13,7 @@ class SingleCharacterDataset(torch.utils.data.Dataset):
 		self.transform = transform
 		self.target_transform = target_transform
 
+		self.image_channel = 1
 		self.labels = list(self.charset * num_examples_per_class)
 		random.shuffle(self.labels)
 
@@ -24,12 +25,91 @@ class SingleCharacterDataset(torch.utils.data.Dataset):
 		target = self.charset.index(ch)
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
-		image_depth = 1
-		font_color = (random.randrange(0, 128),) * image_depth  # A dark grayscale font color.
-		bg_color = (random.randrange(128, 256),) * image_depth  # A light grayscale background color.
+		font_color = (random.randrange(0, 128),) * self.image_channel  # A dark grayscale font color.
+		bg_color = (random.randrange(128, 256),) * self.image_channel  # A light grayscale background color.
 
 		#image, mask = swl_langproc_util.generate_text_image(ch, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode='L', mask=False, mask_mode='1')
 		image = swl_langproc_util.generate_simple_text_image(ch, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode='L')
+
+		#image = image.convert('RGB')
+		#image = np.array(image, np.uint8)
+
+		if self.transform:
+			image = self.transform(image)
+		if self.target_transform:
+			target = self.target_transform(target)
+
+		return (image, target)
+
+	@property
+	def num_classes(self):
+		return len(self.charset)
+
+	@property
+	def classes(self):
+		return self.charset
+
+#--------------------------------------------------------------------
+
+class SingleNoisyCharacterDataset(torch.utils.data.Dataset):
+	def __init__(self, num_examples_per_class, charset, fonts, font_size_interval, font_overlap_interval, transform=None, target_transform=None):
+		self.charset = charset
+		self.fonts = fonts
+		self.font_size_interval = font_size_interval
+		self.font_overlap_interval = font_overlap_interval
+		self.transform = transform
+		self.target_transform = target_transform
+
+		self.image_channel = 1
+		self.labels = list(self.charset * num_examples_per_class)
+		random.shuffle(self.labels)
+
+	def __len__(self):
+		return len(self.labels)
+
+	def __getitem__(self, idx):
+		ch = self.labels[idx]
+		ch2 = random.sample(self.charset, 2)
+		ch3 = ch2[0] + ch + ch2[1]
+		target = self.charset.index(ch)
+		font_type, font_index = random.choice(self.fonts)
+		font_size = random.randint(*self.font_size_interval)
+		font_color = (random.randrange(0, 128),) * self.image_channel  # A dark grayscale font color.
+		bg_color = (random.randrange(128, 256),) * self.image_channel  # A light grayscale background color.
+
+		#image, mask = swl_langproc_util.generate_text_image(ch3, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode='L', mask=False, mask_mode='1')
+		image = swl_langproc_util.generate_simple_text_image(ch3, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode='L')
+
+		# FIXME [modify] >> It's a experimental implementation.
+		alpha = 0.75  # Min. character width ratio.
+		if True:
+			import math
+			from PIL import Image, ImageDraw, ImageFont
+
+			image_size = (math.ceil(len(ch3) * font_size * 1.1), math.ceil((ch3.count('\n') + 1) * font_size * 1.1))
+			#img = Image.new(mode='RGB', size=image_size, color=bg_color)
+			#img = Image.new(mode='RGBA', size=image_size, color=bg_color)
+			img = Image.new(mode='L', size=image_size, color=bg_color)
+			#img = Image.new(mode='1', size=image_size, color=bg_color)
+			draw = ImageDraw.Draw(img)
+			font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
+
+			ch_widths = [draw.textsize(ch, font=font)[0] for ch in ch3]
+			left_margin, right_margin = ch_widths[0] * random.uniform(*self.font_overlap_interval), ch_widths[2] * random.uniform(*self.font_overlap_interval)
+
+			if image.size[0] - (left_margin + right_margin) < alpha * ch_widths[1]:
+				beta = (image.size[0] - alpha * ch_widths[1]) / (left_margin + right_margin)
+				left_margin, right_margin = math.floor(beta * left_margin), math.floor(beta * right_margin)
+		else:
+			import math
+
+			left_margin, right_margin = font_size * random.uniform(*self.font_overlap_interval), font_size * random.uniform(*self.font_overlap_interval)
+
+			if image.size[0] - (left_margin + right_margin) < alpha * font_size:
+				beta = (image.size[0] - alpha * font_size) / (left_margin + right_margin)
+				left_margin, right_margin = math.floor(beta * left_margin), math.floor(beta * right_margin)
+		image = image.crop((left_margin, 0, image.size[0] - right_margin, image.size[1]))
+		assert image.size[0] > 0 and image.size[1] > 0
 
 		#image = image.convert('RGB')
 		#image = np.array(image, np.uint8)
@@ -64,6 +144,7 @@ class SingleWordDataset(torch.utils.data.Dataset):
 		self.target_transform = target_transform
 		self._default_value = default_value
 
+		self.image_channel = 1
 		self.max_word_len = len(max(self.words, key=len))
 
 	def __len__(self):
@@ -76,9 +157,8 @@ class SingleWordDataset(torch.utils.data.Dataset):
 		target[:len(word)] = self.encode_label(word)
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
-		image_depth = 1
-		font_color = (random.randrange(0, 128),) * image_depth  # A dark grayscale font color.
-		bg_color = (random.randrange(128, 256),) * image_depth  # A light grayscale background color.
+		font_color = (random.randrange(0, 128),) * self.image_channel  # A dark grayscale font color.
+		bg_color = (random.randrange(128, 256),) * self.image_channel  # A light grayscale background color.
 
 		#image, mask = swl_langproc_util.generate_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode='L', mask=False, mask_mode='1')
 		image = swl_langproc_util.generate_simple_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode='L')
