@@ -423,7 +423,7 @@ class MyRunner(object):
 			else:
 				self._logger.warning('Invalid test results.')
 
-	def infer(self, checkpoint_dir_path, batch_size=None, shuffle=False):
+	def infer(self, checkpoint_dir_path, inputs, batch_size=None, shuffle=False):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
@@ -450,9 +450,7 @@ class MyRunner(object):
 			self._logger.info('End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
 
 			#--------------------
-			inf_images, _ = self._dataset.test_data
-
-			num_examples = len(inf_images)
+			num_examples = len(inputs)
 			if batch_size is None:
 				batch_size = num_examples
 			if batch_size <= 0:
@@ -472,7 +470,7 @@ class MyRunner(object):
 				batch_indices = indices[start_idx:end_idx]
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
 					# FIXME [fix] >> Does not work correctly in time-major data.
-					batch_data = inf_images[batch_indices]
+					batch_data = inputs[batch_indices]
 					if batch_data.size > 0:  # If batch_data is non-empty.
 						inferences.append(sess.run(model_output, feed_dict={input_ph: batch_data}))
 
@@ -480,25 +478,10 @@ class MyRunner(object):
 					break
 				start_idx = end_idx
 			self._logger.info('End inferring: {} secs.'.format(time.time() - start_time))
-
-			inferences = np.vstack(inferences)
-			if inferences is not None:
-				self._logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
-
-				if self._dataset.num_classes > 2:
-					inferences = np.argmax(inferences, -1)
-				elif 2 == self._dataset.num_classes:
-					inferences = np.around(inferences)
-				else:
-					raise ValueError('Invalid number of classes')
-
-				results = {idx: inf for idx, inf in enumerate(inferences) if idx < 100}
-				self._logger.info('Inference results (index: inference): {}.'.format(results))
-			else:
-				self._logger.warning('Invalid inference results.')
+			return inferences
 
 	# REF [site] >> https://github.com/InFoCusp/tf_cnnvis
-	def visualize_using_tf_cnnvis(self, checkpoint_dir_path, output_dir_path):
+	def visualize_using_tf_cnnvis(self, checkpoint_dir_path, output_dir_path, images):
 		# NOTE [info] >> Cannot assign a device for operation save/SaveV2: Could not satisfy explicit device specification '/device:GPU:1' because no supported kernel for GPU devices is available.
 		#	Errors occur in tf_cnnvis library when a GPU is assigned.
 		#device_name = '/device:GPU:0'
@@ -531,8 +514,7 @@ class MyRunner(object):
 			self._logger.info('End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
 
 			#--------------------
-			inf_images, _ = self._dataset.test_data
-			feed_dict = {input_ph: inf_images}
+			feed_dict = {input_ph: images}
 			input_tensor = None
 			#input_tensor = input_ph
 
@@ -852,7 +834,25 @@ def main():
 			logger.error('Model directory, {} does not exist.'.format(checkpoint_dir_path))
 			return
 
-		runner.infer(checkpoint_dir_path)
+		inf_images, _ = runner.dataset.test_data
+
+		inferences = runner.infer(checkpoint_dir_path, inf_images)
+
+		inferences = np.vstack(inferences)
+		if inferences is not None:
+			logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+
+			if runner.dataset.num_classes > 2:
+				inferences = np.argmax(inferences, -1)
+			elif 2 == runner.dataset.num_classes:
+				inferences = np.around(inferences)
+			else:
+				raise ValueError('Invalid number of classes')
+
+			results = {idx: inf for idx, inf in enumerate(inferences) if idx < 100}
+			logger.info('Inference results (index: inference): {}.'.format(results))
+		else:
+			logger.warning('Invalid inference results.')
 
 	if args.visualize:
 		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
@@ -861,8 +861,8 @@ def main():
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
-		#runner.visualize_using_tf_cnnvis(checkpoint_dir_path, output_dir_path)
 		images, _ = runner.dataset.test_data
+		#runner.visualize_using_tf_cnnvis(checkpoint_dir_path, output_dir_path, images)
 		runner.visualize_using_saliency(checkpoint_dir_path, output_dir_path, images[0])
 
 #--------------------------------------------------------------------

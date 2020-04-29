@@ -248,6 +248,10 @@ class MyRunner(object):
 		self._dataset = MyDataset(image_height, image_width, image_channel, num_classes, self._logger)
 		self._dataset.show_data_info(self._logger)
 
+	@property
+	def dataset(self):
+		return self._dataset
+
 	def train(self, model_filepath, model_checkpoint_filepath, output_dir_path, batch_size, final_epoch, initial_epoch=0, is_training_resumed=False):
 		if is_training_resumed:
 			# Restore a model.
@@ -404,40 +408,23 @@ class MyRunner(object):
 		else:
 			self._logger.warning('Invalid test results.')
 
-	def infer(self, model, batch_size=None, shuffle=False):
-		inf_images, _ = self._dataset.test_data
-
-		#--------------------
+	def infer(self, model, inputs, batch_size=None, shuffle=False):
 		self._logger.info('Start inferring...')
 		start_time = time.time()
 		if self._use_keras_data_sequence:
 			# Use a Keras sequence.
-			test_sequence = MyDataSequence(inf_images, None, batch_size=batch_size, shuffle=shuffle)
+			test_sequence = MyDataSequence(inputs, None, batch_size=batch_size, shuffle=shuffle)
 			inferences = model.predict_generator(test_sequence, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
 		elif self._use_generator:
 			# Use a generator.
-			test_generator = MyDataset.create_batch_generator(inf_images, None, batch_size, shuffle=shuffle)
+			test_generator = MyDataset.create_batch_generator(inputs, None, batch_size, shuffle=shuffle)
 			inferences = model.predict_generator(test_generator, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
 		else:
 			if shuffle:
-				np.random.shuffle(inf_images)
-			inferences = model.predict(inf_images, batch_size=batch_size)
+				np.random.shuffle(inputs)
+			inferences = model.predict(inputs, batch_size=batch_size)
 		self._logger.info('End inferring: {} secs.'.format(time.time() - start_time))
-
-		if inferences is not None:
-			self._logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
-
-			if self._dataset.num_classes > 2:
-				inferences = np.argmax(inferences, -1)
-			elif 2 == self._dataset.num_classes:
-				inferences = np.around(inferences)
-			else:
-				raise ValueError('Invalid number of classes')
-
-			results = {idx: inf for idx, inf in enumerate(inferences) if idx < 100}
-			self._logger.info('Inference results (index: inference): {}.'.format(results))
-		else:
-			self._logger.info('Invalid inference results.')
+		return inferences
 
 	def load_evaluation_model(self, model_filepath):
 		try:
@@ -644,7 +631,24 @@ def main():
 				runner.test(model)
 
 			if args.infer and model:
-				runner.infer(model)
+				inf_images, _ = runner.dataset.test_data
+
+				inferences = runner.infer(model, inf_images)
+
+				if inferences is not None:
+					logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+
+					if runner.dataset.num_classes > 2:
+						inferences = np.argmax(inferences, -1)
+					elif 2 == runner.dataset.num_classes:
+						inferences = np.around(inferences)
+					else:
+						raise ValueError('Invalid number of classes')
+
+					results = {idx: inf for idx, inf in enumerate(inferences) if idx < 100}
+					logger.info('Inference results (index: inference): {}.'.format(results))
+				else:
+					logger.info('Invalid inference results.')
 		else:
 			logger.error('Model file, {} does not exist.'.format(model_filepath))
 

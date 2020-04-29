@@ -200,15 +200,24 @@ class MyFileBasedTextLineDataset(text_line_data.FileBasedTextLineDatasetBase):
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
 
+		self._augmenter = create_augmenter()
+
 		#--------------------
 		# Load data.
 		if data_dir_path:
 			print('[SWL] Info: Start loading dataset...')
 			start_time = time.time()
-			image_filepaths, label_filepaths = sorted(glob.glob(os.path.join(data_dir_path, '*.png'), recursive=False)), sorted(glob.glob(os.path.join(data_dir_path, '*.txt'), recursive=False))
-			if not image_filepaths or not label_filepaths:
-				raise IOError('Failed to load data from {}.'.format(data_dir_path))
-			images, labels_str, labels_int = self._load_data_from_image_and_label_files(image_filepaths, label_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
+			if False:
+				image_filepaths, label_filepaths = sorted(glob.glob(os.path.join(data_dir_path, '*.png'), recursive=False)), sorted(glob.glob(os.path.join(data_dir_path, '*.txt'), recursive=False))
+				if not image_filepaths or not label_filepaths:
+					raise IOError('Failed to load data from {}.'.format(data_dir_path))
+				images, labels_str, labels_int = self._load_data_from_image_and_label_files(image_filepaths, label_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
+			elif False:
+				image_label_info_filepath = os.path.join(data_dir_path, 'label.txt')
+				images, labels_str, labels_int = self._load_data_from_image_label_info(image_label_info_filepath, self._image_height, self._image_width, self._image_channel, max_label_len, image_label_separator=' ')
+			elif True:
+				image_label_info_filepath = os.path.join(data_dir_path, 'image_label_info.txt')
+				images, labels_str, labels_int = self._load_data_from_image_label_info(image_label_info_filepath, self._image_height, self._image_width, self._image_channel, max_label_len, image_label_separator=' ')
 			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 			images, labels_str, labels_int = np.array(images), np.array(labels_str), np.array(labels_int)
 
@@ -575,9 +584,15 @@ class MyRunner(object):
 		if False:
 			image_height, image_width, image_channel = 32, 320, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
 			model_output_time_steps = 39 #79
-		else:
+		elif False:
 			image_height, image_width, image_channel = 64, 640, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
 			model_output_time_steps = 79 #159
+		elif False:
+			image_height, image_width, image_channel = 64, 1280, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+			model_output_time_steps = 99 #319
+		else:
+			image_height, image_width, image_channel = 64, 2560, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+			model_output_time_steps = 99 #639
 		max_label_len = model_output_time_steps  # max_label_len <= model_output_time_steps.
 
 		#--------------------
@@ -595,12 +610,12 @@ class MyRunner(object):
 
 			print('[SWL] Info: Start generating random words...')
 			start_time = time.time()
-			random_words = create_random_words(min_char_len=1, max_char_len=10)
+			random_words = create_random_words(min_char_len=1, max_char_len=20)
 			print('[SWL] Info: End generating random words, {} words generated: {} secs.'.format(len(random_words), time.time() - start_time))
 
 			print('[SWL] Info: Start generating texts...')
 			#texts = generate_texts(dictionary_words + random_words, min_word_len=1, max_word_len=5)
-			texts = generate_texts(random_words, min_word_len=1, max_word_len=5)
+			texts = generate_texts(random_words, min_word_len=1, max_word_len=10)
 			print('[SWL] Info: End generating texts, {} texts generated: {} secs.'.format(len(texts), time.time() - start_time))
 
 			if max_label_len > 0:
@@ -966,7 +981,7 @@ class MyRunner(object):
 			else:
 				print('[SWL] Warning: Invalid test results.')
 
-	def infer(self, checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size=None):
+	def infer(self, checkpoint_dir_path, inf_images, batch_size=None):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
@@ -991,11 +1006,6 @@ class MyRunner(object):
 			print('[SWL] Info: End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
 
 			#--------------------
-			print('[SWL] Info: Start loading images...')
-			inf_images, image_filepaths = self._dataset.load_images_from_files(image_filepaths, is_grayscale=True)
-			print('[SWL] Info: End loading images: {} secs.'.format(time.time() - start_time))
-			print('[SWL] Info: Loaded images: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inf_images.shape, inf_images.dtype, np.min(inf_images), np.max(inf_images)))
-
 			num_examples = len(inf_images)
 			if batch_size is None:
 				batch_size = num_examples
@@ -1026,23 +1036,7 @@ class MyRunner(object):
 					break
 				start_idx = end_idx
 			print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
-
-			if inferences:
-				#print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
-
-				inferences_str = list()
-				for inf in inferences:
-					inferences_str.extend(map(lambda x: self._dataset.decode_label(x), inf))
-
-				# Output to a file.
-				csv_filepath = os.path.join(inference_dir_path, 'inference_results.csv')
-				with open(csv_filepath, 'w', newline='', encoding='UTF8') as csvfile:
-					writer = csv.writer(csvfile, delimiter=',')
-
-					for fpath, inf in zip(image_filepaths, inferences_str):
-						writer.writerow([fpath, inf])
-			else:
-				print('[SWL] Warning: Invalid inference results.')
+			return inferences
 
 #--------------------------------------------------------------------
 
@@ -1192,7 +1186,30 @@ def main():
 			print('[SWL] Error: No image file for inference.')
 			return
 		image_filepaths.sort()
-		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size)
+
+		print('[SWL] Info: Start loading images...')
+		inf_images, image_filepaths = runner.dataset.load_images_from_files(image_filepaths, is_grayscale=True)
+		print('[SWL] Info: End loading images: {} secs.'.format(time.time() - start_time))
+		print('[SWL] Info: Loaded images: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inf_images.shape, inf_images.dtype, np.min(inf_images), np.max(inf_images)))
+
+		inferences = runner.infer(checkpoint_dir_path, inf_images, batch_size)
+
+		if inferences:
+			#print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+
+			inferences_str = list()
+			for inf in inferences:
+				inferences_str.extend(map(lambda x: runner.dataset.decode_label(x), inf))
+
+			# Output to a file.
+			csv_filepath = os.path.join(inference_dir_path, 'inference_results.csv')
+			with open(csv_filepath, 'w', newline='', encoding='UTF8') as csvfile:
+				writer = csv.writer(csvfile, delimiter=',')
+
+				for fpath, inf in zip(image_filepaths, inferences_str):
+					writer.writerow([fpath, inf])
+		else:
+			print('[SWL] Warning: Invalid inference results.')
 
 #--------------------------------------------------------------------
 

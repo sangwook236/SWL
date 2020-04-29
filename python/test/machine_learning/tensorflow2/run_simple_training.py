@@ -128,6 +128,10 @@ class MyRunner(object):
 		self._test_loss = tf.keras.metrics.Mean(name='test_loss')
 		self._test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
 
+	@property
+	def dataset(self):
+		return self._dataset
+
 	def train(self, checkpoint_dir_path, output_dir_path, batch_size, final_epoch, initial_epoch=0, is_training_resumed=False):
 		if batch_size is None or batch_size <= 0:
 			raise ValueError('Invalid batch size: {}'.format(batch_size))
@@ -286,31 +290,12 @@ class MyRunner(object):
 		else:
 			self._logger.warning('Invalid test results.')
 
-	def infer(self, model, batch_size, shuffle=False):
-		if batch_size is None or batch_size <= 0:
-			raise ValueError('Invalid batch size: {}'.format(batch_size))
-
-		# Create a dataset.
-		dataset = tf.data.Dataset.from_tensor_slices(self._dataset.test_data).batch(batch_size, drop_remainder=False)
-
-		#--------------------
+	def infer(self, model, inputs):
 		self._logger.info('Start inferring...')
-		inferences = list()
 		start_time = time.time()
-		for inputs, _ in dataset:
-			inferences.append(model(inputs).numpy())
+		inferences = model(inputs)
 		self._logger.info('End inferring: {} secs.'.format(time.time() - start_time))
-
-		inferences = np.vstack(inferences)
-		if inferences is not None:
-			self._logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
-
-			inferences = np.argmax(inferences, -1)
-
-			results = {idx: inf for idx, inf in enumerate(inferences) if idx < 100}
-			self._logger.info('Inference results (index: inference): {}.'.format(results))
-		else:
-			self._logger.warning('Invalid inference results.')
+		return inferences.numpy()
 
 	def load_evaluation_model(self, checkpoint_dir_path):
 		# Create a model.
@@ -509,7 +494,22 @@ def main():
 				runner.test(model, batch_size)
 
 			if args.infer and model:
-				runner.infer(model, batch_size)
+				dataset = tf.data.Dataset.from_tensor_slices(runner.dataset.test_data).batch(batch_size, drop_remainder=False)
+
+				inferences = list()
+				for inputs, _ in dataset:
+					inferences.append(runner.infer(model, inputs))
+
+				inferences = np.vstack(inferences)
+				if inferences is not None:
+					logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+
+					inferences = np.argmax(inferences, -1)
+
+					results = {idx: inf for idx, inf in enumerate(inferences) if idx < 100}
+					logger.info('Inference results (index: inference): {}.'.format(results))
+				else:
+					logger.warning('Invalid inference results.')
 		else:
 			logger.error('Model directory, {} does not exist.'.format(checkpoint_dir_path))
 

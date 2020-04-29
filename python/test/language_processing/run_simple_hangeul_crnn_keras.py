@@ -685,7 +685,7 @@ class MyRunner(object):
 		else:
 			print('[SWL] Warning: Invalid test results.')
 
-	def infer(self, model_filepath, image_filepaths, inference_dir_path, batch_size=None, shuffle=False):
+	def infer(self, model_filepath, inputs, batch_size=None, shuffle=False):
 		# Load a model.
 		try:
 			print('[SWL] Info: Start loading a model...')
@@ -705,12 +705,7 @@ class MyRunner(object):
 			return
 
 		#--------------------
-		print('[SWL] Info: Start loading images...')
-		inf_images, image_filepaths = self._dataset.load_images_from_files(image_filepaths, is_grayscale=True)
-		print('[SWL] Info: End loading images: {} secs.'.format(time.time() - start_time))
-		print('[SWL] Info: Loaded images: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inf_images.shape, inf_images.dtype, np.min(inf_images), np.max(inf_images)))
-
-		num_examples = len(inf_images)
+		num_examples = len(inputs)
 		if batch_size is None:
 			batch_size = num_examples
 		if batch_size <= 0:
@@ -719,24 +714,10 @@ class MyRunner(object):
 		#--------------------
 		print('[SWL] Info: Start inferring...')
 		start_time = time.time()
-		inferences = model.predict(inf_images, batch_size=batch_size)
+		inferences = model.predict(inputs, batch_size=batch_size)
 		inferences = MyModel.decode_label(inferences, self._dataset.num_classes - 1)
 		print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
-
-		if inferences is not None:
-			#print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
-
-			inferences = list(map(lambda x: self._dataset.decode_label(x), inferences))
-
-			# Output to a file.
-			csv_filepath = os.path.join(inference_dir_path, 'inference_results.csv')
-			with open(csv_filepath, 'w', newline='', encoding='UTF8') as csvfile:
-				writer = csv.writer(csvfile, delimiter=',')
-
-				for fpath, inf in zip(image_filepaths, inferences):
-					writer.writerow([fpath, inf])
-		else:
-			print('[SWL] Warning: Invalid inference results.')
+		return inferences
 
 #--------------------------------------------------------------------
 
@@ -829,7 +810,28 @@ def main():
 			print('[SWL] Error: No image file for inference.')
 			return
 		image_filepaths.sort()
-		runner.infer(model_filepath, image_filepaths, inference_dir_path)
+
+		print('[SWL] Info: Start loading images...')
+		inf_images, image_filepaths = runner.dataset.load_images_from_files(image_filepaths, is_grayscale=True)
+		print('[SWL] Info: End loading images: {} secs.'.format(time.time() - start_time))
+		print('[SWL] Info: Loaded images: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inf_images.shape, inf_images.dtype, np.min(inf_images), np.max(inf_images)))
+
+		inferences = runner.infer(model_filepath, inf_images)
+
+		if inferences is not None:
+			#print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+
+			inferences = list(map(lambda x: runner.dataset.decode_label(x), inferences))
+
+			# Output to a file.
+			csv_filepath = os.path.join(inference_dir_path, 'inference_results.csv')
+			with open(csv_filepath, 'w', newline='', encoding='UTF8') as csvfile:
+				writer = csv.writer(csvfile, delimiter=',')
+
+				for fpath, inf in zip(image_filepaths, inferences):
+					writer.writerow([fpath, inf])
+		else:
+			print('[SWL] Warning: Invalid inference results.')
 
 #--------------------------------------------------------------------
 

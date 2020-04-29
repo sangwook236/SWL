@@ -841,7 +841,7 @@ class MyRunner(object):
 			else:
 				print('[SWL] Warning: Invalid test results.')
 
-	def infer(self, checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size=None):
+	def infer(self, checkpoint_dir_path, inputs, batch_size=None):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
@@ -866,12 +866,7 @@ class MyRunner(object):
 			print('[SWL] Info: End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
 
 			#--------------------
-			print('[SWL] Info: Start loading images...')
-			inf_images, image_filepaths = self._dataset.load_images_from_files(image_filepaths, is_grayscale=True)
-			print('[SWL] Info: End loading images: {} secs.'.format(time.time() - start_time))
-			print('[SWL] Info: Loaded images: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inf_images.shape, inf_images.dtype, np.min(inf_images), np.max(inf_images)))
-
-			num_examples = len(inf_images)
+			num_examples = len(inputs)
 			if batch_size is None:
 				batch_size = num_examples
 			if batch_size <= 0:
@@ -889,7 +884,7 @@ class MyRunner(object):
 				batch_indices = indices[start_idx:end_idx]
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
 					# FIXME [fix] >> Does not work correctly in time-major data.
-					batch_images = inf_images[batch_indices]
+					batch_images = inputs[batch_indices]
 					if batch_images.size > 0:  # If batch_images is non-empty.
 						batch_labels_int = sess.run(
 							model_output['decoded_label'],
@@ -901,23 +896,7 @@ class MyRunner(object):
 					break
 				start_idx = end_idx
 			print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
-
-			if inferences:
-				#print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
-
-				inferences_str = list()
-				for inf in inferences:
-					inferences_str.extend(map(lambda x: self._dataset.decode_label(x), inf))
-
-				# Output to a file.
-				csv_filepath = os.path.join(inference_dir_path, 'inference_results.csv')
-				with open(csv_filepath, 'w', newline='', encoding='UTF8') as csvfile:
-					writer = csv.writer(csvfile, delimiter=',')
-
-					for fpath, inf in zip(image_filepaths, inferences_str):
-						writer.writerow([fpath, inf])
-			else:
-				print('[SWL] Warning: Invalid inference results.')
+			return inferences
 
 #--------------------------------------------------------------------
 
@@ -1063,7 +1042,30 @@ def main():
 			print('[SWL] Error: No image file for inference.')
 			return
 		image_filepaths.sort()
-		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size)
+
+		print('[SWL] Info: Start loading images...')
+		inf_images, image_filepaths = runner.dataset.load_images_from_files(image_filepaths, is_grayscale=True)
+		print('[SWL] Info: End loading images: {} secs.'.format(time.time() - start_time))
+		print('[SWL] Info: Loaded images: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inf_images.shape, inf_images.dtype, np.min(inf_images), np.max(inf_images)))
+
+		inferences = runner.infer(checkpoint_dir_path, inf_images, batch_size)
+
+		if inferences:
+			#print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+
+			inferences_str = list()
+			for inf in inferences:
+				inferences_str.extend(map(lambda x: runner.dataset.decode_label(x), inf))
+
+			# Output to a file.
+			csv_filepath = os.path.join(inference_dir_path, 'inference_results.csv')
+			with open(csv_filepath, 'w', newline='', encoding='UTF8') as csvfile:
+				writer = csv.writer(csvfile, delimiter=',')
+
+				for fpath, inf in zip(image_filepaths, inferences_str):
+					writer.writerow([fpath, inf])
+		else:
+			print('[SWL] Warning: Invalid inference results.')
 
 #--------------------------------------------------------------------
 

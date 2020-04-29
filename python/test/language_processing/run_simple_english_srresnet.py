@@ -569,7 +569,7 @@ class MyRunner(object):
 			else:
 				print('[SWL] Warning: Invalid test results.')
 
-	def infer(self, checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size=None):
+	def infer(self, checkpoint_dir_path, inputs, batch_size=None):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
@@ -594,12 +594,7 @@ class MyRunner(object):
 			print('[SWL] Info: End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
 
 			#--------------------
-			print('[SWL] Info: Start loading images...')
-			inf_images, image_filepaths = self._dataset.load_images_from_files(image_filepaths, is_grayscale=True)
-			print('[SWL] Info: End loading images: {} secs.'.format(time.time() - start_time))
-			print('[SWL] Info: Loaded images: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inf_images.shape, inf_images.dtype, np.min(inf_images), np.max(inf_images)))
-
-			num_examples = len(inf_images)
+			num_examples = len(inputs)
 			if batch_size is None:
 				batch_size = num_examples
 			if batch_size <= 0:
@@ -610,39 +605,27 @@ class MyRunner(object):
 			#--------------------
 			print('[SWL] Info: Start inferring...')
 			start_time = time.time()
-			inferences, inputs = list(), list()
+			inferences, images = list(), list()
 			start_idx = 0
 			while True:
 				end_idx = start_idx + batch_size
 				batch_indices = indices[start_idx:end_idx]
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
 					# FIXME [fix] >> Does not work correctly in time-major data.
-					batch_images = inf_images[batch_indices]
+					batch_images = inputs[batch_indices]
 					if batch_images.size > 0:  # If batch_images is non-empty.
 						batch_clean_images = sess.run(
 							model_output,
 							feed_dict=model.get_feed_dict((batch_images,), len(batch_images))
 						)
 						inferences.extend(batch_clean_images)
-						inputs.extend(batch_images)
+						images.extend(batch_images)
 
 				if end_idx >= num_examples:
 					break
 				start_idx = end_idx
 			print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
-
-			if inferences and inputs:
-				inferences, inputs = np.array(inferences), np.array(inputs)
-
-				print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
-
-				# Output to image files.
-				for idx, (inf, inp) in enumerate(zip(inferences, inputs)):
-					inf_filepath, inp_filepath = os.path.join(inference_dir_path, 'inf_{:06}.png'.format(idx)), os.path.join(inference_dir_path, 'input_{:06}.png'.format(idx))
-					cv2.imwrite(inf_filepath, np.round(inf * 255).astype(np.uint8))
-					cv2.imwrite(inp_filepath, np.round(inp * 255).astype(np.uint8))
-			else:
-				print('[SWL] Warning: Invalid inference results.')
+			return inferences, images
 
 #--------------------------------------------------------------------
 
@@ -765,7 +748,26 @@ def main():
 			print('[SWL] Error: No image file for inference.')
 			return
 		image_filepaths.sort()
-		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size)
+
+		print('[SWL] Info: Start loading images...')
+		inf_images, image_filepaths = runner.dataset.load_images_from_files(image_filepaths, is_grayscale=True)
+		print('[SWL] Info: End loading images: {} secs.'.format(time.time() - start_time))
+		print('[SWL] Info: Loaded images: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inf_images.shape, inf_images.dtype, np.min(inf_images), np.max(inf_images)))
+
+		inferences, images = runner.infer(checkpoint_dir_path, inf_images, batch_size)
+
+		if inferences and images:
+			inferences, images = np.array(inferences), np.array(images)
+
+			print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+
+			# Output to image files.
+			for idx, (inf, inp) in enumerate(zip(inferences, images)):
+				inf_filepath, inp_filepath = os.path.join(inference_dir_path, 'inf_{:06}.png'.format(idx)), os.path.join(inference_dir_path, 'input_{:06}.png'.format(idx))
+				cv2.imwrite(inf_filepath, np.round(inf * 255).astype(np.uint8))
+				cv2.imwrite(inp_filepath, np.round(inp * 255).astype(np.uint8))
+		else:
+			print('[SWL] Warning: Invalid inference results.')
 
 #--------------------------------------------------------------------
 
