@@ -63,7 +63,7 @@ def construct_charset():
 
 	#charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset + hangeul_jamo_charset
 	charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset
-	return charset
+	return charset, font_list
 
 def create_augmenter():
 	#import imgaug as ia
@@ -167,7 +167,7 @@ def recognize_single_character():
 
 	#--------------------
 	# Load and normalize datasets.
-	charset = construct_charset()
+	charset, font_list = construct_charset()
 
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(),
@@ -256,36 +256,37 @@ def recognize_single_character():
 	#--------------------
 	# Train the network.
 
-	model.train()
-	for epoch in range(num_epochs):  # Loop over the dataset multiple times.
-		running_loss = 0.0
-		for i, (inputs, labels) in enumerate(train_dataloader, 0):
-			# Get the inputs.
-			inputs, labels = inputs.to(device), labels.to(device)
+	if True:
+		model.train()
+		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
+			running_loss = 0.0
+			for i, (inputs, labels) in enumerate(train_dataloader, 0):
+				# Get the inputs.
+				inputs, labels = inputs.to(device), labels.to(device)
 
-			# Zero the parameter gradients.
-			optimizer.zero_grad()
+				# Zero the parameter gradients.
+				optimizer.zero_grad()
 
-			# Forward + backward + optimize.
-			outputs = model(inputs)
-			loss = criterion(outputs, labels)
-			loss.backward()
-			optimizer.step()
+				# Forward + backward + optimize.
+				outputs = model(inputs)
+				loss = criterion(outputs, labels)
+				loss.backward()
+				optimizer.step()
 
-			# Print statistics.
-			running_loss += loss.item()
-			if i % 1000 == 999:  # Print every 2000 mini-batches.
-				print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / 2000))
-				running_loss = 0.0
-		#scheduler.step()
+				# Print statistics.
+				running_loss += loss.item()
+				if i % 1000 == 999:  # Print every 2000 mini-batches.
+					print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / 2000))
+					running_loss = 0.0
+			#scheduler.step()
 
-		# Save a checkpoint.
+			# Save a checkpoint.
+			save_model(model_filepath, model)
+
+		print('Finished training.')
+
+		# Save a model.
 		save_model(model_filepath, model)
-
-	print('Finished training.')
-
-	# Save a model.
-	save_model(model_filepath, model)
 
 	#--------------------
 	# Test the network on the test data.
@@ -339,6 +340,10 @@ def recognize_single_character():
 	print('Accuracy frequency: {}.'.format(hist))
 	valid_accuracies = [100 * class_correct[i] / class_total[i] for i in range(num_classes) if class_total[i] > 0]
 	print('Accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
+	accuracy_threshold = 98
+	for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]):
+		if acc < accuracy_threshold:
+			print('\tChar = {}: accuracy = {}.'.format(classes[idx], acc))
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 def recognize_single_character_using_mixup():
@@ -365,7 +370,7 @@ def recognize_single_character_using_mixup():
 
 	#--------------------
 	# Load and normalize datasets.
-	charset = construct_charset()
+	charset, font_list = construct_charset()
 
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(),
@@ -464,36 +469,37 @@ def recognize_single_character_using_mixup():
 	#--------------------
 	# Train the network.
 
-	model.train()
-	for epoch in range(num_epochs):  # Loop over the dataset multiple times.
-		running_loss = 0.0
-		for i, (inputs, labels) in enumerate(train_dataloader, 0):
-			# Get the inputs.
-			inputs, labels = inputs.to(device), labels.to(device)
+	if True:
+		model.train()
+		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
+			running_loss = 0.0
+			for i, (inputs, labels) in enumerate(train_dataloader, 0):
+				# Get the inputs.
+				inputs, labels = inputs.to(device), labels.to(device)
 
-			# Zero the parameter gradients.
-			optimizer.zero_grad()
+				# Zero the parameter gradients.
+				optimizer.zero_grad()
 
-			# Forward + backward + optimize.
-			outputs, labels = model(inputs, labels, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, device)
-			loss = criterion(outputs, torch.argmax(labels, dim=1))
-			loss.backward()
-			optimizer.step()
+				# Forward + backward + optimize.
+				outputs, labels = model(inputs, labels, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, device)
+				loss = criterion(outputs, torch.argmax(labels, dim=1))
+				loss.backward()
+				optimizer.step()
 
-			# Print statistics.
-			running_loss += loss.item()
-			if i % 1000 == 999:  # Print every 2000 mini-batches.
-				print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / 2000))
-				running_loss = 0.0
-		#scheduler.step()
+				# Print statistics.
+				running_loss += loss.item()
+				if i % 1000 == 999:  # Print every 2000 mini-batches.
+					print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / 2000))
+					running_loss = 0.0
+			#scheduler.step()
 
-		# Save a checkpoint.
+			# Save a checkpoint.
+			save_model(model_filepath, model)
+
+		print('Finished training.')
+
+		# Save a model.
 		save_model(model_filepath, model)
-
-	print('Finished training.')
-
-	# Save a model.
-	save_model(model_filepath, model)
 
 	#--------------------
 	# Test the network on the test data.
@@ -547,10 +553,263 @@ def recognize_single_character_using_mixup():
 	print('Accuracy frequency: {}.'.format(hist))
 	valid_accuracies = [100 * class_correct[i] / class_total[i] for i in range(num_classes) if class_total[i] > 0]
 	print('Accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
+	accuracy_threshold = 98
+	for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]):
+		if acc < accuracy_threshold:
+			print('\tChar = {}: accuracy = {}.'.format(classes[idx], acc))
+
+# REF [function] >> test_net() in https://github.com/clovaai/CRAFT-pytorch/blob/master/test.py
+def test_net_sangwook(net, image, text_threshold, link_threshold, low_text, cuda, poly, canvas_size, mag_ratio, refine_net=None, show_time=False):
+	from torch.autograd import Variable
+	import craft.craft_utils as craft_utils
+	import craft.imgproc as imgproc
+
+	t0 = time.time()
+
+	# Resize.
+	img_resized, target_ratio, size_heatmap = imgproc.resize_aspect_ratio(image, canvas_size, interpolation=cv2.INTER_LINEAR, mag_ratio=mag_ratio)
+	ratio_h = ratio_w = 1 / target_ratio
+
+	# Preprocessing.
+	x = imgproc.normalizeMeanVariance(img_resized)
+	x = torch.from_numpy(x).permute(2, 0, 1)    # [h, w, c] to [c, h, w]
+	x = Variable(x.unsqueeze(0))                # [c, h, w] to [b, c, h, w]
+	if cuda:
+		x = x.cuda()
+
+	# Forward pass.
+	with torch.no_grad():
+		y, feature = net(x)
+
+	# Make score and link map.
+	score_text = y[0,:,:,0].cpu().data.numpy()
+	score_link = y[0,:,:,1].cpu().data.numpy()
+
+	# Refine link.
+	if refine_net is not None:
+		with torch.no_grad():
+			y_refiner = refine_net(y, feature)
+		score_link = y_refiner[0,:,:,0].cpu().data.numpy()
+
+	t0 = time.time() - t0
+	t1 = time.time()
+
+	# Post-processing.
+	boxes, labels, ch_bboxes_lst, mapper = craft_utils.getDetBoxes_core_sangwook(score_text, score_link, text_threshold, link_threshold, low_text, img_resized)
+
+	# Coordinate adjustment.
+	boxes = craft_utils.adjustResultCoordinates(boxes, ratio_w, ratio_h)
+	ch_bboxes_lst = [craft_utils.adjustResultCoordinates(ch_bboxes, ratio_w, ratio_h) for ch_bboxes in ch_bboxes_lst]
+
+	t1 = time.time() - t1
+
+	# Render results (optional).
+	render_img = score_text.copy()
+	render_img = np.hstack((render_img, score_link))
+	ret_score_text = imgproc.cvt2HeatmapImg(render_img)
+
+	if show_time : print('\ninfer/postproc time : {:.3f}/{:.3f}'.format(t0, t1))
+
+	return boxes, ch_bboxes_lst, ret_score_text
+
+# REF [site] >> https://github.com/clovaai/CRAFT-pytorch/blob/master/test.py
+def run_craft(image):
+	import torch.backends.cudnn as cudnn
+	import craft.craft as craft
+
+	def copyStateDict(state_dict):
+		import collections
+
+		if list(state_dict.keys())[0].startswith('module'):
+			start_idx = 1
+		else:
+			start_idx = 0
+		new_state_dict = collections.OrderedDict()
+		for k, v in state_dict.items():
+			name = '.'.join(k.split('.')[start_idx:])
+			new_state_dict[name] = v
+		return new_state_dict
+
+	trained_model = './craft/craft_mlt_25k.pth'
+	text_threshold = 0.7  # Text confidence threshold.
+	low_text = 0.4  # Text low-bound score.
+	link_threshold = 0.4  # Link confidence threshold.
+	cuda = True  # Use cuda for inference.
+	canvas_size = 1280  # Image size for inference.
+	mag_ratio = 1.5  # Image magnification ratio.
+	poly = False  # Enable polygon type.
+	show_time = False  # Show processing time.
+	test_folder = './data'  # Folder path to input images.
+	refine = False  # Enable link refiner.
+	refiner_model = './craft/craft_refiner_CTW1500.pth'  # Pretrained refiner model.
+
+	# Load a net.
+	net = craft.CRAFT()  # Initialize.
+
+	print('Loading weights from checkpoint (' + trained_model + ')')
+	if cuda:
+		net.load_state_dict(copyStateDict(torch.load(trained_model)))
+	else:
+		net.load_state_dict(copyStateDict(torch.load(trained_model, map_location='cpu')))
+
+	if cuda:
+		net = net.cuda()
+		net = torch.nn.DataParallel(net)
+		cudnn.benchmark = False
+
+	net.eval()
+
+	# LinkRefiner.
+	refine_net = None
+	if refine:
+		from craft.refinenet import RefineNet
+		refine_net = RefineNet()
+		print('Loading weights of refiner from checkpoint (' + refiner_model + ')')
+		if cuda:
+			refine_net.load_state_dict(copyStateDict(torch.load(refiner_model)))
+			refine_net = refine_net.cuda()
+			refine_net = torch.nn.DataParallel(refine_net)
+		else:
+			refine_net.load_state_dict(copyStateDict(torch.load(refiner_model, map_location='cpu')))
+
+		refine_net.eval()
+		poly = True
+
+	t = time.time()
+
+	#--------------------
+	bboxes, ch_bboxes_lst, score_text = test_net_sangwook(net, image, text_threshold, link_threshold, low_text, cuda, poly, canvas_size, mag_ratio, refine_net, show_time)
+	assert len(bboxes) == len(ch_bboxes_lst)
+
+	print('Elapsed time : {}s'.format(time.time() - t))
+	return bboxes, ch_bboxes_lst, score_text
+
+def recognize_text_using_craft_and_single_character_recognizer():
+	import craft.imgproc as imgproc
+	#import craft.file_utils as file_utils
+
+	image_height, image_width = 64, 64
+
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device =', device)
+
+	#model_filepath = './craft/simple_text_recongnition.pth'
+	model_filepath = './craft/simple_text_recongnition_mixup.pth'
+
+	#--------------------
+	# Construct a charset.
+	charset, _ = construct_charset()
+
+	classes = charset
+	num_classes = len(classes)
+
+	#--------------------
+	# Define a convolutional neural network.
+
+	if False:
+		# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/pytorch/vgg_mixup.py
+		import vgg_mixup
+		# NOTE [info] >> Hard to train.
+		model = vgg_mixup.vgg19(pretrained=False, num_classes=num_classes)
+		#model = vgg_mixup.vgg19_bn(pretrained=False, num_classes=num_classes)
+	elif False:
+		# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/pytorch/vgg_mixup.py
+		import vgg_mixup
+		# NOTE [error] >> Cannot load the pretrained model weights because the model is slightly changed.
+		#model = vgg_mixup.vgg19(pretrained=True, progress=True)
+		model = vgg_mixup.vgg19_bn(pretrained=True, progress=True)
+		num_features = model.classifier[6].in_features
+		model.classifier[6] = torch.nn.Linear(num_features, num_classes)
+		model.num_classes = num_classes
+	elif False:
+		# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/pytorch/resnet_mixup.py
+		import resnet_mixup
+		model = resnet_mixup.resnet18(pretrained=False, num_classes=num_classes)
+	else:
+		# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/pytorch/resnet_mixup.py
+		import resnet_mixup
+		model = resnet_mixup.resnet18(pretrained=True, progress=True)
+		num_features = model.fc.in_features
+		model.fc = torch.nn.Linear(num_features, num_classes)
+		model.num_classes = num_classes
+
+	# Load a model.
+	model = load_model(model_filepath, model, device=device)
+
+	model = model.to(device)
+
+	#--------------------
+	#image_filepath = './craft/images/I3.jpg'
+	image_filepath = './craft/images/book_1.png'
+	#image_filepath = './craft/images/book_2.png'
+	image = imgproc.loadImage(image_filepath)
+
+	print('Start running CRAFT...')
+	start_time = time.time()
+	bboxes, ch_bboxes_lst, score_text = run_craft(image)
+	print('End running CRAFT: {} secs.'.format(time.time() - start_time))
+
+	if len(bboxes) > 0:
+		print('\tbboxes:', bboxes.shape, bboxes.dtype)
+		print('\tch_bboxes_lst:', len(ch_bboxes_lst), ch_bboxes_lst[0].shape, ch_bboxes_lst[0].dtype)
+		print('\tscore_text:', score_text.shape, score_text.dtype)
+
+		"""
+		import random
+		cv2.imshow('Input', image)
+		rgb1, rgb2 = image.copy(), image.copy()
+		for bbox, ch_bboxes in zip(bboxes, ch_bboxes_lst):
+			color = (random.randint(128, 255), random.randint(128, 255), random.randint(128, 255))
+			cv2.drawContours(rgb1, [np.round(np.expand_dims(bbox, axis=1)).astype(np.int32)], 0, color, 1, cv2.LINE_AA)
+			for bbox in ch_bboxes:
+				cv2.drawContours(rgb2, [np.round(np.expand_dims(bbox, axis=1)).astype(np.int32)], 0, color, 1, cv2.LINE_AA)
+		cv2.imshow('Word BBox', rgb1)
+		cv2.imshow('Char BBox', rgb2)
+		cv2.waitKey(0)
+		"""
+
+		os.makedirs('./char_recog_results', exist_ok=True)
+
+		print('Start inferring...')
+		start_time = time.time()
+		ch_images = []
+		rgb = image.copy()
+		for i, ch_bboxes in enumerate(ch_bboxes_lst):
+			imgs = []
+			color = (random.randint(128, 255), random.randint(128, 255), random.randint(128, 255))
+			for j, bbox in enumerate(ch_bboxes):
+				(x1, y1), (x2, y2) = np.min(bbox, axis=0), np.max(bbox, axis=0)
+				x1, y1, x2, y2 = round(float(x1)), round(float(y1)), round(float(x2)), round(float(y2))
+				img = image[y1:y2+1,x1:x2+1]
+				img = cv2.resize(img, (image_width, image_height), interpolation=cv2.INTER_LINEAR)
+				img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+				img = np.repeat(np.expand_dims(img, axis=0), 3, axis=0)
+				imgs.append(img)
+				cv2.rectangle(rgb, (x1, y1), (x2, y2), color, 1, cv2.LINE_4)
+				cv2.imwrite('./char_recog_results/ch_{}_{}.png'.format(i, j), np.transpose(img, (1, 2, 0)))
+			ch_images.append(np.array(imgs))
+		cv2.imwrite('./char_recog_results/char_bbox.png', rgb)
+
+		#--------------------
+		with torch.no_grad():
+			for i, imgs in enumerate(ch_images):
+				imgs = imgs.astype(np.float32) * 2 / 255 - 1  # [-1, 1].
+				imgs = torch.from_numpy(imgs).to(device)
+				outputs = model(imgs)
+				_, predicted = torch.max(outputs, 1)
+				predicted = predicted.cpu().numpy()
+				print('Prediction {}: {} (int), {} (str).'.format(i, predicted, ''.join([classes[id] for id in predicted])))
+		print('End inferring: {} secs.'.format(time.time() - start_time))
+	else:
+		print('No text detected.')
 
 def main():
 	#recognize_single_character()
-	recognize_single_character_using_mixup()
+	#recognize_single_character_using_mixup()
+
+	# Recognize text using CRAFT (scene text detector) + single character recognizer.
+	recognize_text_using_craft_and_single_character_recognizer()
 
 #--------------------------------------------------------------------
 
