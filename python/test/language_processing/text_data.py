@@ -5,8 +5,26 @@ import swl.language_processing.util as swl_langproc_util
 
 #--------------------------------------------------------------------
 
+def generate_font_colors(image_depth):
+	#font_color = [255,] * image_depth  # White font color.
+	font_color = [random.randrange(256) for _ in range(image_depth)]  # An RGB font color.
+	#font_color = [random.randrange(256),] * image_depth  # A grayscale font color.
+	#gray_val = random.randrange(255)
+	#font_color = [gray_val,] * image_depth  # A lighter grayscale font color.
+	#font_color = [random.randrange(gray_val, 256),] * image_depth  # A darker grayscale font color.
+	#font_color = [random.randrange(128, 256),] * image_depth  # A light grayscale font color.
+	#font_color = [random.randrange(0, 128),] * image_depth  # A dark grayscale font color.
+	#bg_color = [0,] * image_depth  # Black background color.
+	bg_color = [random.randrange(256) for _ in range(image_depth)]  # An RGB background color.
+	#bg_color = [random.randrange(256),] * image_depth  # A grayscale background color.
+	#bg_color = [random.randrange(gray_val, 256),] * image_depth  # A lighter grayscale background color.
+	#bg_color = [gray_val,] * image_depth  # A darker grayscale background color.
+	#bg_color = [random.randrange(0, 128),] * image_depth  # A dark grayscale background color.
+	#bg_color = [random.randrange(128, 256),] * image_depth  # A light grayscale background color.
+	return font_color, bg_color
+
 class SingleCharacterDataset(torch.utils.data.Dataset):
-	def __init__(self, num_examples_per_class, charset, fonts, font_size_interval, transform=None, target_transform=None):
+	def __init__(self, num_examples_per_class, charset, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None):
 		self.charset = charset
 		self.fonts = fonts
 		self.font_size_interval = font_size_interval
@@ -14,6 +32,17 @@ class SingleCharacterDataset(torch.utils.data.Dataset):
 		self.target_transform = target_transform
 
 		self.image_channel = 1
+		if self.image_channel == 1:
+			self.mode = 'L'
+			#self.mode = '1'
+		elif self.image_channel == 3:
+			self.mode = 'RGB'
+		elif self.image_channel == 4:
+			self.mode = 'RGBA'
+		else:
+			raise ValueError('Invalid image channel, {}'.format(self.image_channel))
+
+		self.color_functor = color_functor if color_functor else functools.partial(generate_font_colors, image_depth=self.image_channel)
 		self.labels = list(self.charset * num_examples_per_class)
 		random.shuffle(self.labels)
 
@@ -25,11 +54,10 @@ class SingleCharacterDataset(torch.utils.data.Dataset):
 		target = self.charset.index(ch)
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
-		font_color = (random.randrange(0, 128),) * self.image_channel  # A dark grayscale font color.
-		bg_color = (random.randrange(128, 256),) * self.image_channel  # A light grayscale background color.
+		font_color, bg_color = self.color_functor()
 
-		#image, mask = swl_langproc_util.generate_text_image(ch, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode='L', mask=False, mask_mode='1')
-		image = swl_langproc_util.generate_simple_text_image(ch, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode='L')
+		#image, mask = swl_langproc_util.generate_text_image(ch, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode=self.mode, mask=False, mask_mode='1')
+		image = swl_langproc_util.generate_simple_text_image(ch, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode=self.mode)
 
 		#image = image.convert('RGB')
 		#image = np.array(image, np.uint8)
@@ -52,15 +80,26 @@ class SingleCharacterDataset(torch.utils.data.Dataset):
 #--------------------------------------------------------------------
 
 class SingleNoisyCharacterDataset(torch.utils.data.Dataset):
-	def __init__(self, num_examples_per_class, charset, fonts, font_size_interval, font_overlap_interval, transform=None, target_transform=None):
+	def __init__(self, num_examples_per_class, charset, fonts, font_size_interval, char_clipping_ratio_interval, color_functor=None, transform=None, target_transform=None):
 		self.charset = charset
 		self.fonts = fonts
 		self.font_size_interval = font_size_interval
-		self.font_overlap_interval = font_overlap_interval
+		self.char_clipping_ratio_interval = char_clipping_ratio_interval
 		self.transform = transform
 		self.target_transform = target_transform
 
 		self.image_channel = 1
+		if self.image_channel == 1:
+			self.mode = 'L'
+			#self.mode = '1'
+		elif self.image_channel == 3:
+			self.mode = 'RGB'
+		elif self.image_channel == 4:
+			self.mode = 'RGBA'
+		else:
+			raise ValueError('Invalid image channel, {}'.format(self.image_channel))
+
+		self.color_functor = color_functor if color_functor else functools.partial(generate_font_colors, image_depth=self.image_channel)
 		self.labels = list(self.charset * num_examples_per_class)
 		random.shuffle(self.labels)
 
@@ -74,40 +113,38 @@ class SingleNoisyCharacterDataset(torch.utils.data.Dataset):
 		target = self.charset.index(ch)
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
-		font_color = (random.randrange(0, 128),) * self.image_channel  # A dark grayscale font color.
-		bg_color = (random.randrange(128, 256),) * self.image_channel  # A light grayscale background color.
+		font_color, bg_color = self.color_functor()
 
-		#image, mask = swl_langproc_util.generate_text_image(ch3, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode='L', mask=False, mask_mode='1')
-		image = swl_langproc_util.generate_simple_text_image(ch3, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode='L')
+		#image, mask = swl_langproc_util.generate_text_image(ch3, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode=self.mode, mask=False, mask_mode='1')
+		image = swl_langproc_util.generate_simple_text_image(ch3, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode=self.mode)
 
-		# FIXME [modify] >> It's a experimental implementation.
-		alpha = 0.75  # Min. character width ratio.
+		# FIXME [modify] >> It's an experimental implementation.
+		alpha, beta = 0.75, 0.5  # Min. character width ratio and min. font width ratio.
 		if True:
 			import math
 			from PIL import Image, ImageDraw, ImageFont
 
 			image_size = (math.ceil(len(ch3) * font_size * 1.1), math.ceil((ch3.count('\n') + 1) * font_size * 1.1))
-			#img = Image.new(mode='RGB', size=image_size, color=bg_color)
-			#img = Image.new(mode='RGBA', size=image_size, color=bg_color)
-			img = Image.new(mode='L', size=image_size, color=bg_color)
-			#img = Image.new(mode='1', size=image_size, color=bg_color)
-			draw = ImageDraw.Draw(img)
+			draw_img = Image.new(mode=self.mode, size=image_size, color=bg_color)
+			draw = ImageDraw.Draw(draw_img)
 			font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
 
 			ch_widths = [draw.textsize(ch, font=font)[0] for ch in ch3]
-			left_margin, right_margin = ch_widths[0] * random.uniform(*self.font_overlap_interval), ch_widths[2] * random.uniform(*self.font_overlap_interval)
+			ch_width = max(alpha * ch_widths[1], beta * font_size)
+			left_margin, right_margin = ch_widths[0] * random.uniform(*self.char_clipping_ratio_interval), ch_widths[2] * random.uniform(*self.char_clipping_ratio_interval)
 
-			if image.size[0] - (left_margin + right_margin) < alpha * ch_widths[1]:
-				beta = (image.size[0] - alpha * ch_widths[1]) / (left_margin + right_margin)
-				left_margin, right_margin = math.floor(beta * left_margin), math.floor(beta * right_margin)
+			if image.size[0] - (left_margin + right_margin) < ch_width:
+				ratio = (image.size[0] - ch_width) / (left_margin + right_margin)
+				left_margin, right_margin = math.floor(ratio * left_margin), math.floor(ratio * right_margin)
 		else:
 			import math
 
-			left_margin, right_margin = font_size * random.uniform(*self.font_overlap_interval), font_size * random.uniform(*self.font_overlap_interval)
+			ch_width = alpha * font_size #max(alpha, beta) * font_size
+			left_margin, right_margin = font_size * random.uniform(*self.char_clipping_ratio_interval), font_size * random.uniform(*self.char_clipping_ratio_interval)
 
-			if image.size[0] - (left_margin + right_margin) < alpha * font_size:
-				beta = (image.size[0] - alpha * font_size) / (left_margin + right_margin)
-				left_margin, right_margin = math.floor(beta * left_margin), math.floor(beta * right_margin)
+			if image.size[0] - (left_margin + right_margin) < ch_width:
+				ratio = (image.size[0] - ch_width) / (left_margin + right_margin)
+				left_margin, right_margin = math.floor(ratio * left_margin), math.floor(ratio * right_margin)
 		image = image.crop((left_margin, 0, image.size[0] - right_margin, image.size[1]))
 		assert image.size[0] > 0 and image.size[1] > 0
 
@@ -134,7 +171,7 @@ class SingleNoisyCharacterDataset(torch.utils.data.Dataset):
 class SingleWordDataset(torch.utils.data.Dataset):
 	UNKNOWN = '<UNK>'  # Unknown label token.
 
-	def __init__(self, num_examples, words, charset, fonts, font_size_interval, transform=None, target_transform=None, default_value=-1):
+	def __init__(self, num_examples, words, charset, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None, default_value=-1):
 		self.num_examples = num_examples
 		self.words = words
 		self.charset = list(charset) + [SingleWordDataset.UNKNOWN]
@@ -145,6 +182,17 @@ class SingleWordDataset(torch.utils.data.Dataset):
 		self._default_value = default_value
 
 		self.image_channel = 1
+		if self.image_channel == 1:
+			self.mode = 'L'
+			#self.mode = '1'
+		elif self.image_channel == 3:
+			self.mode = 'RGB'
+		elif self.image_channel == 4:
+			self.mode = 'RGBA'
+		else:
+			raise ValueError('Invalid image channel, {}'.format(self.image_channel))
+
+		self.color_functor = color_functor if color_functor else functools.partial(generate_font_colors, image_depth=self.image_channel)
 		self.max_word_len = len(max(self.words, key=len))
 
 	def __len__(self):
@@ -157,11 +205,10 @@ class SingleWordDataset(torch.utils.data.Dataset):
 		target[:len(word)] = self.encode_label(word)
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
-		font_color = (random.randrange(0, 128),) * self.image_channel  # A dark grayscale font color.
-		bg_color = (random.randrange(128, 256),) * self.image_channel  # A light grayscale background color.
+		font_color, bg_color = self.color_functor()
 
-		#image, mask = swl_langproc_util.generate_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode='L', mask=False, mask_mode='1')
-		image = swl_langproc_util.generate_simple_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode='L')
+		#image, mask = swl_langproc_util.generate_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode=self.mode, mask=False, mask_mode='1')
+		image = swl_langproc_util.generate_simple_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode=self.mode)
 
 		#image = image.convert('RGB')
 		#image = np.array(image, np.uint8)
@@ -224,17 +271,21 @@ class SingleTextLineDataset(torch.utils.data.Dataset):
 		self.space_count_interval = space_count_interval
 		self.font_size_interval = font_size_interval
 		self.char_space_ratio_interval = char_space_ratio_interval
-		self.color_functor = color_functor
 		self.transform = transform
 		self.target_transform = target_transform
 		self._default_value = default_value
 
-		if 1 == image_channel:
+		if self.image_channel == 1:
 			self.mode = 'L'
-		elif 3 == image_channel:
+			#self.mode = '1'
+		elif self.image_channel == 3:
 			self.mode = 'RGB'
+		elif self.image_channel == 4:
+			self.mode = 'RGBA'
 		else:
-			raise ValueError('Invalid image channel, {}'.format(image_channel))
+			raise ValueError('Invalid image channel, {}'.format(self.image_channel))
+
+		self.color_functor = color_functor if color_functor else functools.partial(generate_font_colors, image_depth=self.image_channel)
 
 	def __len__(self):
 		return self.num_examples
@@ -247,8 +298,6 @@ class SingleTextLineDataset(torch.utils.data.Dataset):
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
 		char_space_ratio = None if self.char_space_ratio_interval is None else random.uniform(*self.char_space_ratio_interval)
-		#font_color = (random.randrange(0, 128),) * self.image_channel  # A dark grayscale font color.
-		#bg_color = (random.randrange(128, 256),) * self.image_channel  # A light grayscale background color.
 		font_color, bg_color = self.color_functor()
 
 		#image, mask = swl_langproc_util.generate_text_image(textline, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio, mode=self.mode, mask=True, mask_mode='1')

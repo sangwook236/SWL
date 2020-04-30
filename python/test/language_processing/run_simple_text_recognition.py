@@ -153,7 +153,7 @@ def recognize_single_character():
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
 	font_size_interval = (10, 100)
-	font_overlap_interval = (0.8, 1.25)
+	char_clipping_ratio_interval = (0.8, 1.25)
 
 	num_epochs = 100
 	batch_size = 256
@@ -194,8 +194,8 @@ def recognize_single_character():
 		train_dataset = text_data.SingleCharacterDataset(num_train_examples_per_class, charset, font_list, font_size_interval, transform=train_transform)
 		test_dataset = text_data.SingleCharacterDataset(num_test_examples_per_class, charset, font_list, font_size_interval, transform=test_transform)
 	else:
-		train_dataset = text_data.SingleNoisyCharacterDataset(num_train_examples_per_class, charset, font_list, font_size_interval, font_overlap_interval, transform=train_transform)
-		test_dataset = text_data.SingleNoisyCharacterDataset(num_test_examples_per_class, charset, font_list, font_size_interval, font_overlap_interval, transform=test_transform)
+		train_dataset = text_data.SingleNoisyCharacterDataset(num_train_examples_per_class, charset, font_list, font_size_interval, char_clipping_ratio_interval, transform=train_transform)
+		test_dataset = text_data.SingleNoisyCharacterDataset(num_test_examples_per_class, charset, font_list, font_size_interval, char_clipping_ratio_interval, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 
 	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
@@ -361,7 +361,7 @@ def recognize_single_character_using_mixup():
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
 	font_size_interval = (10, 100)
-	font_overlap_interval = (0.8, 1.25)
+	char_clipping_ratio_interval = (0.8, 1.25)
 
 	num_epochs = 100
 	batch_size = 256
@@ -402,8 +402,8 @@ def recognize_single_character_using_mixup():
 		train_dataset = text_data.SingleCharacterDataset(num_train_examples_per_class, charset, font_list, font_size_interval, transform=train_transform)
 		test_dataset = text_data.SingleCharacterDataset(num_test_examples_per_class, charset, font_list, font_size_interval, transform=test_transform)
 	else:
-		train_dataset = text_data.SingleNoisyCharacterDataset(num_train_examples_per_class, charset, font_list, font_size_interval, font_overlap_interval, transform=train_transform)
-		test_dataset = text_data.SingleNoisyCharacterDataset(num_test_examples_per_class, charset, font_list, font_size_interval, font_overlap_interval, transform=test_transform)
+		train_dataset = text_data.SingleNoisyCharacterDataset(num_train_examples_per_class, charset, font_list, font_size_interval, char_clipping_ratio_interval, transform=train_transform)
+		test_dataset = text_data.SingleNoisyCharacterDataset(num_test_examples_per_class, charset, font_list, font_size_interval, char_clipping_ratio_interval, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 
 	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
@@ -792,7 +792,7 @@ def recognize_text_using_craft_and_single_character_recognizer():
 				(x1, y1), (x2, y2) = np.min(bbox, axis=0), np.max(bbox, axis=0)
 				x1, y1, x2, y2 = round(float(x1)), round(float(y1)), round(float(x2)), round(float(y2))
 				img = image[y1:y2+1,x1:x2+1]
-				img = cv2.resize(img, (image_width, image_height), interpolation=cv2.INTER_LINEAR)
+				img = cv2.resize(img, (image_width, image_height), interpolation=cv2.INTER_CUBIC)
 				img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 				img = np.repeat(np.expand_dims(img, axis=0), 3, axis=0)
 				imgs.append(img)
@@ -809,7 +809,7 @@ def recognize_text_using_craft_and_single_character_recognizer():
 				outputs = model(imgs)
 				_, predicted = torch.max(outputs, 1)
 				predicted = predicted.cpu().numpy()
-				print('Prediction {}: {} (int), {} (str).'.format(i, predicted, ''.join([classes[id] for id in predicted])))
+				print('\t{}: {} (int), {} (str).'.format(i, predicted, ''.join([classes[id] for id in predicted])))
 		print('End inferring: {} secs.'.format(time.time() - start_time))
 	else:
 		print('No text detected.')
