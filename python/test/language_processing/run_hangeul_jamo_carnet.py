@@ -131,21 +131,21 @@ def create_augmenter():
 
 def generate_font_colors(image_depth):
 	import random
-	#font_color = [255,] * image_depth  # White font color.
-	font_color = [random.randrange(256) for _ in range(image_depth)]  # An RGB font color.
-	#font_color = [random.randrange(256),] * image_depth  # A grayscale font color.
+	#font_color = (255,) * image_depth  # White font color.
+	font_color = tuple(random.randrange(256) for _ in range(image_depth))  # An RGB font color.
+	#font_color = (random.randrange(256),) * image_depth  # A grayscale font color.
 	#gray_val = random.randrange(255)
-	#font_color = [gray_val,] * image_depth  # A lighter grayscale font color.
-	#font_color = [random.randrange(gray_val, 256),] * image_depth  # A darker grayscale font color.
-	#font_color = [random.randrange(128, 256),] * image_depth  # A light grayscale font color.
-	#font_color = [random.randrange(0, 128),] * image_depth  # A dark grayscale font color.
-	#bg_color = [0,] * image_depth  # Black background color.
-	bg_color = [random.randrange(256) for _ in range(image_depth)]  # An RGB background color.
-	#bg_color = [random.randrange(256),] * image_depth  # A grayscale background color.
-	#bg_color = [random.randrange(gray_val, 256),] * image_depth  # A lighter grayscale background color.
-	#bg_color = [gray_val,] * image_depth  # A darker grayscale background color.
-	#bg_color = [random.randrange(0, 128),] * image_depth  # A dark grayscale background color.
-	#bg_color = [random.randrange(128, 256),] * image_depth  # A light grayscale background color.
+	#font_color = (gray_val,) * image_depth  # A lighter grayscale font color.
+	#font_color = (random.randrange(gray_val, 256),) * image_depth  # A darker grayscale font color.
+	#font_color = (random.randrange(128, 256),) * image_depth  # A light grayscale font color.
+	#font_color = (random.randrange(0, 128),) * image_depth  # A dark grayscale font color.
+	#bg_color = (0,) * image_depth  # Black background color.
+	bg_color = tuple(random.randrange(256) for _ in range(image_depth))  # An RGB background color.
+	#bg_color = (random.randrange(256),) * image_depth  # A grayscale background color.
+	#bg_color = (random.randrange(gray_val, 256),) * image_depth  # A lighter grayscale background color.
+	#bg_color = (gray_val,) * image_depth  # A darker grayscale background color.
+	#bg_color = (random.randrange(0, 128),) * image_depth  # A dark grayscale background color.
+	#bg_color = (random.randrange(128, 256),) * image_depth  # A light grayscale background color.
 	return font_color, bg_color
 
 class MyRunTimeHangeulJamoAlphaMatteTextLineDataset(text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset):
