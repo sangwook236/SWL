@@ -8,14 +8,14 @@ import os, time, functools, glob
 import text_line_data
 import text_generation_util as tg_util
 
-def create_charsets():
+def construct_charsets():
 	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
 	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
 	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
 	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#hangeul_charset = fd.read().strip('\n')  # A strings.
+		#hangeul_charset = fd.read().strip('\n')  # A string.
 		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
-		#hangeul_charset = fd.readlines()  # A list of string.
+		#hangeul_charset = fd.readlines()  # A list of strings.
 		#hangeul_charset = fd.read().splitlines()  # A list of strings.
 
 	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
@@ -38,22 +38,7 @@ def create_charsets():
 
 	return hangeul_charset, alphabet_charset, digit_charset, symbol_charset, hangeul_jamo_charset
 
-def generate_font_colors(image_depth):
-	import random
-	#font_color = (255,) * image_depth  # White font color.
-	#font_color = tuple(random.randrange(256) for _ in range(image_depth))  # An RGB font color.
-	#font_color = (random.randrange(256),) * image_depth  # A grayscale font color.
-	#gray_val = random.randrange(255)
-	#font_color = (gray_val,) * image_depth  # A lighter grayscale font color.
-	font_color = (random.randrange(128, 256),) * image_depth  # A light grayscale font color.
-	#bg_color = (0,) * image_depth  # Black background color.
-	#bg_color = tuple(random.randrange(256) for _ in range(image_depth))  # An RGB background color.
-	#bg_color = (random.randrange(256),) * image_depth  # A grayscale background color.
-	#bg_color = (random.randrange(gray_val + 1, 256),) * image_depth  # A darker grayscale background color.
-	bg_color = (random.randrange(0, 128),) * image_depth  # A dark grayscale background color.
-	return font_color, bg_color
-
-def BasicRunTimeTextLineDataset_test():
+def construct_word_sets():
 	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
 	#english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
 	english_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
@@ -75,11 +60,26 @@ def BasicRunTimeTextLineDataset_test():
 		english_words = fd.read().splitlines()
 	print('End loading an English dictionary: {} secs.'.format(time.time() - start_time))
 
-	korean_word_set = set(korean_words)
-	english_word_set = set(english_words)
-	all_word_set = set(korean_words + english_words)
+	return set(korean_words), set(english_words), set(korean_words + english_words)
 
-	#--------------------
+def generate_font_colors(image_depth):
+	import random
+	#font_color = (255,) * image_depth  # White font color.
+	#font_color = tuple(random.randrange(256) for _ in range(image_depth))  # An RGB font color.
+	#font_color = (random.randrange(256),) * image_depth  # A grayscale font color.
+	#gray_val = random.randrange(255)
+	#font_color = (gray_val,) * image_depth  # A lighter grayscale font color.
+	font_color = (random.randrange(128, 256),) * image_depth  # A light grayscale font color.
+	#bg_color = (0,) * image_depth  # Black background color.
+	#bg_color = tuple(random.randrange(256) for _ in range(image_depth))  # An RGB background color.
+	#bg_color = (random.randrange(256),) * image_depth  # A grayscale background color.
+	#bg_color = (random.randrange(gray_val + 1, 256),) * image_depth  # A darker grayscale background color.
+	bg_color = (random.randrange(0, 128),) * image_depth  # A dark grayscale background color.
+	return font_color, bg_color
+
+def BasicRunTimeTextLineDataset_test():
+	korean_word_set, english_word_set, all_word_set = construct_word_sets()
+
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
 		font_base_dir_path = '/home/sangwook/work/font'
@@ -183,32 +183,8 @@ def BasicRunTimeTextLineDataset_test():
 		dataset.visualize(test_generator, num_examples=10)
 
 def RunTimeAlphaMatteTextLineDataset_test():
-	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
-	#english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
-	english_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
-	#english_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
+	korean_word_set, english_word_set, all_word_set = construct_word_sets()
 
-	print('Start loading a Korean dictionary...')
-	start_time = time.time()
-	with open(korean_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-		#korean_words = fd.readlines()
-		#korean_words = fd.read().strip('\n')
-		korean_words = fd.read().splitlines()
-	print('End loading a Korean dictionary: {} secs.'.format(time.time() - start_time))
-
-	print('Start loading an English dictionary...')
-	start_time = time.time()
-	with open(english_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-		#english_words = fd.readlines()
-		#english_words = fd.read().strip('\n')
-		english_words = fd.read().splitlines()
-	print('End loading an English dictionary: {} secs.'.format(time.time() - start_time))
-
-	korean_word_set = set(korean_words)
-	english_word_set = set(english_words)
-	all_word_set = set(korean_words + english_words)
-
-	#--------------------
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
 		font_base_dir_path = '/home/sangwook/work/font'
@@ -315,31 +291,8 @@ def RunTimeAlphaMatteTextLineDataset_test():
 		dataset.visualize(test_generator, num_examples=10)
 
 def RunTimeHangeulJamoAlphaMatteTextLineDataset_test():
-	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
-	#english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
-	english_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
-	#english_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
+	korean_word_set, _, all_word_set = construct_word_sets()
 
-	print('Start loading a Korean dictionary...')
-	start_time = time.time()
-	with open(korean_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-		#korean_words = fd.readlines()
-		#korean_words = fd.read().strip('\n')
-		korean_words = fd.read().splitlines()
-	print('End loading a Korean dictionary: {} secs.'.format(time.time() - start_time))
-
-	print('Start loading an English dictionary...')
-	start_time = time.time()
-	with open(english_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-		#english_words = fd.readlines()
-		#english_words = fd.read().strip('\n')
-		english_words = fd.read().splitlines()
-	print('End loading an English dictionary: {} secs.'.format(time.time() - start_time))
-
-	korean_word_set = set(korean_words)
-	all_word_set = set(korean_words + english_words)
-
-	#--------------------
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
 		font_base_dir_path = '/home/sangwook/work/font'
@@ -561,32 +514,8 @@ class MyRunTimeCorruptedTextLinePairDataset(text_line_data.RunTimeCorruptedTextL
 			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
 def RunTimeCorruptedTextLinePairDataset_test():
-	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
-	#english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
-	english_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
-	#english_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
+	korean_word_set, english_word_set, all_word_set = construct_word_sets()
 
-	print('Start loading a Korean dictionary...')
-	start_time = time.time()
-	with open(korean_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-		#korean_words = fd.readlines()
-		#korean_words = fd.read().strip('\n')
-		korean_words = fd.read().splitlines()
-	print('End loading a Korean dictionary: {} secs.'.format(time.time() - start_time))
-
-	print('Start loading an English dictionary...')
-	start_time = time.time()
-	with open(english_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-		#english_words = fd.readlines()
-		#english_words = fd.read().strip('\n')
-		english_words = fd.read().splitlines()
-	print('End loading an English dictionary: {} secs.'.format(time.time() - start_time))
-
-	korean_word_set = set(korean_words)
-	english_word_set = set(english_words)
-	all_word_set = set(korean_words + english_words)
-
-	#--------------------
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
 		font_base_dir_path = '/home/sangwook/work/font'
@@ -719,32 +648,8 @@ class MyRunTimeSuperResolvedTextLinePairDataset(text_line_data.RunTimeSuperResol
 			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
 def RunTimeSuperResolvedTextLinePairDataset_test():
-	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
-	#english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
-	english_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
-	#english_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
+	korean_word_set, english_word_set, all_word_set = construct_word_sets()
 
-	print('Start loading a Korean dictionary...')
-	start_time = time.time()
-	with open(korean_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-		#korean_words = fd.readlines()
-		#korean_words = fd.read().strip('\n')
-		korean_words = fd.read().splitlines()
-	print('End loading a Korean dictionary: {} secs.'.format(time.time() - start_time))
-
-	print('Start loading an English dictionary...')
-	start_time = time.time()
-	with open(english_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-		#english_words = fd.readlines()
-		#english_words = fd.read().strip('\n')
-		english_words = fd.read().splitlines()
-	print('End loading an English dictionary: {} secs.'.format(time.time() - start_time))
-
-	korean_word_set = set(korean_words)
-	english_word_set = set(english_words)
-	all_word_set = set(korean_words + english_words)
-
-	#--------------------
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
 		font_base_dir_path = '/home/sangwook/work/font'
@@ -863,7 +768,7 @@ def RunTimeSuperResolvedTextLinePairDataset_test():
 		dataset.visualize(test_generator, num_examples=10)
 
 def main():
-	#hangeul_charset, alphabet_charset, digit_charset, symbol_charset, hangeul_jamo_charset = create_charsets()
+	#hangeul_charset, alphabet_charset, digit_charset, symbol_charset, hangeul_jamo_charset = construct_charsets()
 
 	#--------------------
 	#BasicRunTimeTextLineDataset_test()

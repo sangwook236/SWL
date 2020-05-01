@@ -401,23 +401,6 @@ class MyModel(object):
 
 #--------------------------------------------------------------------
 
-def generate_texts(words, min_word_len=1, max_word_len=5):
-	import random
-
-	num_words = len(words)
-	random.shuffle(words)
-
-	texts = list()
-	start_idx = 0
-	while True:
-		end_idx = start_idx + random.randint(min_word_len, max_word_len)
-		texts.append(' '.join(words[start_idx:end_idx]))
-		if end_idx >= num_words:
-			break
-		start_idx = end_idx
-
-	return texts
-
 class MyRunner(object):
 	def __init__(self, is_dataset_generated_at_runtime, data_dir_path=None, train_test_ratio=0.8):
 		# Set parameters.
@@ -447,6 +430,8 @@ class MyRunner(object):
 		# Create a dataset.
 
 		if is_dataset_generated_at_runtime:
+			import text_generation_util as tg_util
+
 			word_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
 
 			print('[SWL] Info: Start loading a Korean dictionary...')
@@ -457,9 +442,9 @@ class MyRunner(object):
 				dictionary_words = fd.read().splitlines()
 			print('[SWL] Info: End loading a Korean dictionary, {} words loaded: {} secs.'.format(len(dictionary_words), time.time() - start_time))
 
-			print('[SWL] Info: Start generating texts...')
-			texts = generate_texts(dictionary_words, min_word_len=1, max_word_len=5)
-			print('[SWL] Info: End generating texts, {} texts generated: {} secs.'.format(len(texts), time.time() - start_time))
+			print('[SWL] Info: Start generating text lines...')
+			texts = tg_util.generate_random_text_lines(dictionary_words, min_word_len=1, max_word_len=5)
+			print('[SWL] Info: End generating text lines, {} text lines generated: {} secs.'.format(len(texts), time.time() - start_time))
 
 			if max_label_len > 0:
 				texts = set(filter(lambda txt: len(txt) <= max_label_len, texts))
@@ -487,7 +472,6 @@ class MyRunner(object):
 				font_base_dir_path = 'D:/work/font'
 			font_dir_path = font_base_dir_path + '/kor'
 
-			import text_generation_util as tg_util
 			font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 			font_list = tg_util.generate_hangeul_font_list(font_filepaths)
 			#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)
@@ -505,9 +489,9 @@ class MyRunner(object):
 			#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
 			#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
 			with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
-				#hangeul_charset = fd.read().strip('\n')  # A strings.
+				#hangeul_charset = fd.read().strip('\n')  # A string.
 				hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
-				#hangeul_charset = fd.readlines()  # A list of string.
+				#hangeul_charset = fd.readlines()  # A list of strings.
 				#hangeul_charset = fd.read().splitlines()  # A list of strings.
 			#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 			#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'

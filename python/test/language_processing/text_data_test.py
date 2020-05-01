@@ -12,6 +12,115 @@ import cv2
 import text_data
 import text_generation_util as tg_util
 
+def construct_charset():
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		font_base_dir_path = '/home/sangwook/work/font'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_base_dir_path = 'D:/work/font'
+	font_dir_path = font_base_dir_path + '/kor'
+	#font_dir_path = font_base_dir_path + '/eng'
+
+	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+	#font_list = tg_util.generate_hangeul_font_list(font_filepaths)
+	font_list = tg_util.generate_font_list(font_filepaths)
+
+	#--------------------
+	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
+	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
+	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
+	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
+		#hangeul_charset = fd.read().strip('\n')  # A string.
+		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
+		#hangeul_charset = fd.readlines()  # A list of strings.
+		#hangeul_charset = fd.read().splitlines()  # A list of strings.
+
+	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+	hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
+
+	import string
+	alphabet_charset = string.ascii_uppercase + string.ascii_lowercase
+	digit_charset = string.digits
+	symbol_charset = string.punctuation
+	#symbol_charset = string.punctuation + ' '
+
+	#charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset + hangeul_jamo_charset
+	charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset
+	return charset, font_list
+
+def construct_word_set():
+	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
+	#english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
+	english_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
+	#english_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
+
+	print('Start loading a Korean dictionary...')
+	start_time = time.time()
+	with open(korean_dictionary_filepath, 'r', encoding='UTF-8') as fd:
+		#korean_words = fd.readlines()
+		#korean_words = fd.read().strip('\n')
+		korean_words = fd.read().splitlines()
+	print('End loading a Korean dictionary: {} secs.'.format(time.time() - start_time))
+
+	print('Start loading an English dictionary...')
+	start_time = time.time()
+	with open(english_dictionary_filepath, 'r', encoding='UTF-8') as fd:
+		#english_words = fd.readlines()
+		#english_words = fd.read().strip('\n')
+		english_words = fd.read().splitlines()
+	print('End loading an English dictionary: {} secs.'.format(time.time() - start_time))
+
+	#return set(korean_words)
+	#return set(english_words)
+	return set(korean_words + english_words)
+
+def construct_chars():
+	import string
+
+	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
+	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
+	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
+	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
+		#hangeul_charset = fd.read().strip('\n')  # A string.
+		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
+		#hangeul_charset = fd.readlines()  # A list of strings.
+		#hangeul_charset = fd.read().splitlines()  # A list of strings.
+	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+	hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
+
+	"""
+	chars = \
+		hangeul_charset * 1 + \
+		hangeul_jamo_charset * 10 + \
+		string.ascii_lowercase * 100 + \
+		string.ascii_uppercase * 30 + \
+		string.digits * 50 + \
+		string.punctuation * 20
+	chars *= 500
+	"""
+	chars = \
+		hangeul_charset * 1 + \
+		hangeul_jamo_charset * 0 + \
+		string.ascii_lowercase * 100 + \
+		string.ascii_uppercase * 50 + \
+		string.digits * 100 + \
+		string.punctuation * 50
+	chars *= 500
+	"""
+	chars = \
+		hangeul_charset * 0 + \
+		hangeul_jamo_charset * 0 + \
+		string.ascii_lowercase * 100 + \
+		string.ascii_uppercase * 30 + \
+		string.digits * 50 + \
+		string.punctuation * 20
+	chars *= 500
+	"""
+	return chars
+
 def create_augmenter():
 	#import imgaug as ia
 	from imgaug import augmenters as iaa
@@ -74,44 +183,50 @@ def create_augmenter():
 
 	return augmenter
 
+def generate_font_colors(image_depth):
+	import random
+	#font_color = (255,) * image_depth  # White font color.
+	#font_color = tuple(random.randrange(256) for _ in range(image_depth))  # An RGB font color.
+	#font_color = (random.randrange(256),) * image_depth  # A grayscale font color.
+	#gray_val = random.randrange(255)
+	#font_color = (gray_val,) * image_depth  # A lighter grayscale font color.
+	#font_color = (random.randrange(gray_val, 256),) * image_depth  # A darker grayscale font color.
+	#font_color = (random.randrange(128, 256),) * image_depth  # A light grayscale font color.
+	font_color = (random.randrange(0, 128),) * image_depth  # A dark grayscale font color.
+	#bg_color = (0,) * image_depth  # Black background color.
+	#bg_color = tuple(random.randrange(256) for _ in range(image_depth))  # An RGB background color.
+	#bg_color = (random.randrange(256),) * image_depth  # A grayscale background color.
+	#bg_color = (random.randrange(gray_val, 256),) * image_depth  # A lighter grayscale background color.
+	#bg_color = (gray_val,) * image_depth  # A darker grayscale background color.
+	#bg_color = (random.randrange(0, 128),) * image_depth  # A dark grayscale background color.
+	bg_color = (random.randrange(128, 256),) * image_depth  # A light grayscale background color.
+	return font_color, bg_color
+
+class RandomAugment(object):
+	def __init__(self):
+		self.augmenter = create_augmenter()
+
+	def __call__(self, x):
+		return Image.fromarray(self.augmenter.augment_images(np.array(x)))
+
+class RandomInvert(object):
+	def __call__(self, x):
+		return ImageOps.invert(x) if random.randrange(2) else x
+
+class ConvertChannel(object):
+	def __call__(self, x):
+		return x.convert('RGB')
+		#return np.repeat(np.expand_dims(x, axis=0), 3, axis=0)
+		#return torch.repeat_interleave(x, 3, dim=0)
+		#return torch.repeat_interleave(torch.unsqueeze(x, dim=3), 3, dim=0)
+
+class ToIntTensor(object):
+	def __call__(self, lst):
+		return torch.IntTensor(lst)
+
 def SingleCharacterDataset_test():
-	if 'posix' == os.name:
-		system_font_dir_path = '/usr/share/fonts'
-		font_base_dir_path = '/home/sangwook/work/font'
-	else:
-		system_font_dir_path = 'C:/Windows/Fonts'
-		font_base_dir_path = 'D:/work/font'
-	font_dir_path = font_base_dir_path + '/kor'
-	#font_dir_path = font_base_dir_path + '/eng'
+	charset, font_list = construct_charset()
 
-	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
-	#font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-	font_list = tg_util.generate_font_list(font_filepaths)
-
-	#--------------------
-	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
-	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
-	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
-	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#hangeul_charset = fd.read().strip('\n')  # A strings.
-		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
-		#hangeul_charset = fd.readlines()  # A list of string.
-		#hangeul_charset = fd.read().splitlines()  # A list of strings.
-
-	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-	hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
-
-	import string
-	alphabet_charset = string.ascii_uppercase + string.ascii_lowercase
-	digit_charset = string.digits
-	symbol_charset = string.punctuation
-	#symbol_charset = string.punctuation + ' '
-
-	#charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset + hangeul_jamo_charset
-	charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset
-
-	#--------------------
 	image_height, image_width = 32, 32
 	#image_height_before_crop, image_width_before_crop = 36, 36
 	image_height_before_crop, image_width_before_crop = image_height, image_width
@@ -124,22 +239,6 @@ def SingleCharacterDataset_test():
 	num_workers = 4
 
 	#--------------------
-	class RandomAugment(object):
-		def __init__(self):
-			self.augmenter = create_augmenter()
-
-		def __call__(self, x):
-			return Image.fromarray(self.augmenter.augment_images(np.array(x)))
-	class RandomInvert(object):
-		def __call__(self, x):
-			return ImageOps.invert(x) if random.randrange(2) else x
-	class ConvertChannel(object):
-		def __call__(self, x):
-			return x.convert('RGB')
-			#return np.repeat(np.expand_dims(x, axis=0), 3, axis=0)
-			#return torch.repeat_interleave(x, 3, dim=0)
-			#return torch.repeat_interleave(torch.unsqueeze(x, dim=3), 3, dim=0)
-
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(),
 		RandomInvert(),
@@ -206,69 +305,8 @@ def SingleCharacterDataset_test():
 	cv2.destroyAllWindows()
 
 def SingleWordDataset_test():
-	if 'posix' == os.name:
-		system_font_dir_path = '/usr/share/fonts'
-		font_base_dir_path = '/home/sangwook/work/font'
-	else:
-		system_font_dir_path = 'C:/Windows/Fonts'
-		font_base_dir_path = 'D:/work/font'
-	font_dir_path = font_base_dir_path + '/kor'
-	#font_dir_path = font_base_dir_path + '/eng'
-
-	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
-	#font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-	font_list = tg_util.generate_font_list(font_filepaths)
-
-	#--------------------
-	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
-	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
-	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
-	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#hangeul_charset = fd.read().strip('\n')  # A strings.
-		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
-		#hangeul_charset = fd.readlines()  # A list of string.
-		#hangeul_charset = fd.read().splitlines()  # A list of strings.
-
-	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-	hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
-
-	import string
-	alphabet_charset = string.ascii_uppercase + string.ascii_lowercase
-	digit_charset = string.digits
-	symbol_charset = string.punctuation
-	#symbol_charset = string.punctuation + ' '
-
-	#charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset + hangeul_jamo_charset
-	charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset
-
-	#--------------------
-	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
-	#english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
-	english_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
-	#english_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
-
-	print('Start loading a Korean dictionary...')
-	start_time = time.time()
-	with open(korean_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-		#korean_words = fd.readlines()
-		#korean_words = fd.read().strip('\n')
-		korean_words = fd.read().splitlines()
-	print('End loading a Korean dictionary: {} secs.'.format(time.time() - start_time))
-
-	print('Start loading an English dictionary...')
-	start_time = time.time()
-	with open(english_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-		#english_words = fd.readlines()
-		#english_words = fd.read().strip('\n')
-		english_words = fd.read().splitlines()
-	print('End loading an English dictionary: {} secs.'.format(time.time() - start_time))
-
-	korean_word_set = set(korean_words)
-	english_word_set = set(english_words)
-	all_word_set = set(korean_words + english_words)
-
-	word_set = all_word_set
+	charset, font_list = construct_charset()
+	wordset = construct_word_set()
 
 	#--------------------
 	image_height, image_width = 32, 320
@@ -283,25 +321,6 @@ def SingleWordDataset_test():
 	num_workers = 4
 
 	#--------------------
-	class RandomAugment(object):
-		def __init__(self):
-			self.augmenter = create_augmenter()
-
-		def __call__(self, x):
-			return Image.fromarray(self.augmenter.augment_images(np.array(x)))
-	class RandomInvert(object):
-		def __call__(self, x):
-			return ImageOps.invert(x) if random.randrange(2) else x
-	class ConvertChannel(object):
-		def __call__(self, x):
-			return x.convert('RGB')
-			#return np.repeat(np.expand_dims(x, axis=0), 3, axis=0)
-			#return torch.repeat_interleave(x, 3, dim=0)
-			#return torch.repeat_interleave(torch.unsqueeze(x, dim=3), 3, dim=0)
-	class ToIntTensor(object):
-		def __call__(self, lst):
-			return torch.IntTensor(lst)
-
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(),
 		RandomInvert(),
@@ -325,8 +344,8 @@ def SingleWordDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	train_dataset = text_data.SingleWordDataset(num_train_examples, word_set, charset, font_list, font_size_interval, transform=train_transform, target_transform=train_target_transform, default_value=-1)
-	test_dataset = text_data.SingleWordDataset(num_test_examples, word_set, charset, font_list, font_size_interval, transform=test_transform, target_transform=test_target_transform, default_value=-1)
+	train_dataset = text_data.SingleWordDataset(num_train_examples, wordset, charset, font_list, font_size_interval, transform=train_transform, target_transform=train_target_transform, default_value=-1)
+	test_dataset = text_data.SingleWordDataset(num_test_examples, wordset, charset, font_list, font_size_interval, transform=test_transform, target_transform=test_target_transform, default_value=-1)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 
 	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
@@ -369,123 +388,23 @@ def SingleWordDataset_test():
 			if idx >= 9: break
 	cv2.destroyAllWindows()
 
-def generate_font_colors(image_depth):
-	import random
-	#font_color = (255,) * image_depth  # White font color.
-	#font_color = tuple(random.randrange(256) for _ in range(image_depth))  # An RGB font color.
-	#font_color = (random.randrange(256),) * image_depth  # A grayscale font color.
-	#gray_val = random.randrange(255)
-	#font_color = (gray_val,) * image_depth  # A lighter grayscale font color.
-	font_color = (random.randrange(128, 256),) * image_depth  # A light grayscale font color.
-	#bg_color = (0,) * image_depth  # Black background color.
-	#bg_color = tuple(random.randrange(256) for _ in range(image_depth))  # An RGB background color.
-	#bg_color = (random.randrange(256),) * image_depth  # A grayscale background color.
-	#bg_color = (random.randrange(gray_val + 1, 256),) * image_depth  # A darker grayscale background color.
-	bg_color = (random.randrange(0, 128),) * image_depth  # A dark grayscale background color.
-	return font_color, bg_color
-
-def SingleTextLineDataset_test():
-	if 'posix' == os.name:
-		system_font_dir_path = '/usr/share/fonts'
-		font_base_dir_path = '/home/sangwook/work/font'
-	else:
-		system_font_dir_path = 'C:/Windows/Fonts'
-		font_base_dir_path = 'D:/work/font'
-	font_dir_path = font_base_dir_path + '/kor'
-	#font_dir_path = font_base_dir_path + '/eng'
-
-	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
-	#font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-	font_list = tg_util.generate_font_list(font_filepaths)
+def SingleRandomWordDataset_test():
+	charset, font_list = construct_charset()
+	wordset = construct_wordset()
 
 	#--------------------
-	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
-	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
-	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
-	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#hangeul_charset = fd.read().strip('\n')  # A strings.
-		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
-		#hangeul_charset = fd.readlines()  # A list of string.
-		#hangeul_charset = fd.read().splitlines()  # A list of strings.
-
-	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-	hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
-
-	import string
-	alphabet_charset = string.ascii_uppercase + string.ascii_lowercase
-	digit_charset = string.digits
-	symbol_charset = string.punctuation
-	#symbol_charset = string.punctuation + ' '
-
-	#charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset + hangeul_jamo_charset
-	charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset
-
-	#--------------------
-	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
-	#english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
-	english_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
-	#english_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
-
-	print('Start loading a Korean dictionary...')
-	start_time = time.time()
-	with open(korean_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-		#korean_words = fd.readlines()
-		#korean_words = fd.read().strip('\n')
-		korean_words = fd.read().splitlines()
-	print('End loading a Korean dictionary: {} secs.'.format(time.time() - start_time))
-
-	print('Start loading an English dictionary...')
-	start_time = time.time()
-	with open(english_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-		#english_words = fd.readlines()
-		#english_words = fd.read().strip('\n')
-		english_words = fd.read().splitlines()
-	print('End loading an English dictionary: {} secs.'.format(time.time() - start_time))
-
-	korean_word_set = set(korean_words)
-	english_word_set = set(english_words)
-	all_word_set = set(korean_words + english_words)
-
-	word_set = all_word_set
-
-	#--------------------
-	image_height, image_width, image_channel = 64, 640, 1
-	#image_height_before_crop, image_width_before_crop = 68, 644
+	image_height, image_width = 32, 320
+	#image_height_before_crop, image_width_before_crop = 36, 324
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
-	max_word_len = 80
-	word_count_interval = (1, 5)
-	space_count_interval = (1, 3)
 	font_size_interval = (10, 100)
-	char_space_ratio_interval = (0.8, 1.25)
-	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 	batch_size = 64
 	shuffle = True
 	num_workers = 4
 
 	#--------------------
-	class RandomAugment(object):
-		def __init__(self):
-			self.augmenter = create_augmenter()
-
-		def __call__(self, x):
-			return Image.fromarray(self.augmenter.augment_images(np.array(x)))
-	class RandomInvert(object):
-		def __call__(self, x):
-			return ImageOps.invert(x) if random.randrange(2) else x
-	class ConvertChannel(object):
-		def __call__(self, x):
-			return x.convert('RGB')
-			#return np.repeat(np.expand_dims(x, axis=0), 3, axis=0)
-			#return torch.repeat_interleave(x, 3, dim=0)
-			#return torch.repeat_interleave(torch.unsqueeze(x, dim=3), 3, dim=0)
-	class ToIntTensor(object):
-		def __call__(self, lst):
-			return torch.IntTensor(lst)
-
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(),
 		RandomInvert(),
@@ -509,8 +428,97 @@ def SingleTextLineDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	train_dataset = text_data.SingleTextLineDataset(num_train_examples, image_height, image_width, image_channel, word_set, charset, font_list, max_word_len, word_count_interval, space_count_interval, font_size_interval, char_space_ratio_interval, color_functor, transform=train_transform, target_transform=train_target_transform, default_value=-1)
-	test_dataset = text_data.SingleTextLineDataset(num_test_examples, image_height, image_width, image_channel, word_set, charset, font_list, max_word_len, word_count_interval, space_count_interval, font_size_interval, char_space_ratio_interval, color_functor, transform=test_transform, target_transform=test_target_transform, default_value=-1)
+	train_dataset = text_data.SingleRandomWordDataset(num_train_examples, wordset, charset, font_list, font_size_interval, transform=train_transform, target_transform=train_target_transform, default_value=-1)
+	test_dataset = text_data.SingleRandomWordDataset(num_test_examples, wordset, charset, font_list, font_size_interval, transform=test_transform, target_transform=test_target_transform, default_value=-1)
+	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+
+	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
+	#assert train_dataset.num_classes == test_dataset.num_classes, 'Unmatched number of classes, {} != {}'.format(train_dataset.num_classes, test_dataset.num_classes)
+	print('#classes = {}.'.format(train_dataset.num_classes))
+
+	#--------------------
+	print('Start creating data loaders...')
+	start_time = time.time()
+	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
+
+	#--------------------
+	# Show data info.
+	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
+	data_iter = iter(train_dataloader)
+	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels = images.numpy(), labels.numpy()
+	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
+	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+
+	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
+	data_iter = iter(test_dataloader)
+	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels = images.numpy(), labels.numpy()
+	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
+	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+
+	#--------------------
+	# Visualize.
+	for dataloader in [train_dataloader, test_dataloader]:
+		data_iter = iter(dataloader)
+		images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
+		images, labels = images.numpy(), labels.numpy()
+		for idx, (img, lbl) in enumerate(zip(images, labels)):
+			print('Label: (int) = {}, (str) = {}.'.format([ll for ll in lbl if ll != dataloader.dataset.default_value], train_dataset.decode_label(lbl)))
+			cv2.imshow('Image', img[0])
+			cv2.waitKey(0)
+			if idx >= 9: break
+	cv2.destroyAllWindows()
+
+def SingleTextLineDataset_test():
+	charset, font_list = construct_charset()
+	wordset = construct_wordset()
+
+	#--------------------
+	image_height, image_width, image_channel = 64, 640, 1
+	#image_height_before_crop, image_width_before_crop = 68, 644
+	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	num_train_examples, num_test_examples = int(1e6), int(1e4)
+	max_word_len = 80
+	word_count_interval = (1, 5)
+	space_count_interval = (1, 3)
+	font_size_interval = (10, 100)
+	char_space_ratio_interval = (0.8, 1.25)
+	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
+
+	batch_size = 64
+	shuffle = True
+	num_workers = 4
+
+	#--------------------
+	train_transform = torchvision.transforms.Compose([
+		RandomAugment(),
+		RandomInvert(),
+		#ConvertChannel(),
+		torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
+		#torchvision.transforms.RandomCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	])
+	train_target_transform = ToIntTensor()
+	test_transform = torchvision.transforms.Compose([
+		RandomInvert(),
+		#ConvertChannel(),
+		torchvision.transforms.Resize((image_height, image_width)),
+		#torchvision.transforms.CenterCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	])
+	test_target_transform = ToIntTensor()
+
+	#--------------------
+	print('Start creating datasets...')
+	start_time = time.time()
+	train_dataset = text_data.SingleTextLineDataset(num_train_examples, image_height, image_width, image_channel, wordset, charset, font_list, max_word_len, word_count_interval, space_count_interval, font_size_interval, char_space_ratio_interval, color_functor, transform=train_transform, target_transform=train_target_transform, default_value=-1)
+	test_dataset = text_data.SingleTextLineDataset(num_test_examples, image_height, image_width, image_channel, wordset, charset, font_list, max_word_len, word_count_interval, space_count_interval, font_size_interval, char_space_ratio_interval, color_functor, transform=test_transform, target_transform=test_target_transform, default_value=-1)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 
 	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
@@ -556,7 +564,8 @@ def SingleTextLineDataset_test():
 def main():
 	#SingleCharacterDataset_test()
 	#SingleWordDataset_test()
-	SingleTextLineDataset_test()
+	SingleRandomWordDataset_test()
+	#SingleTextLineDataset_test()
 
 #--------------------------------------------------------------------
 

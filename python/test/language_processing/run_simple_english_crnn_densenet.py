@@ -452,7 +452,7 @@ class MyModel(object):
 
 #--------------------------------------------------------------------
 
-def create_random_words(min_char_len=1, max_char_len=10):
+def construct_chars():
 	import string, random
 	chars = \
 		string.ascii_lowercase * 5 + \
@@ -468,38 +468,7 @@ def create_random_words(min_char_len=1, max_char_len=10):
 		string.punctuation * 2
 	chars *= 10000
 	"""
-	chars = list(chars)
-	random.shuffle(chars)
-	chars = ''.join(chars)
-	num_chars = len(chars)
-
-	random_words = list()
-	start_idx = 0
-	while True:
-		end_idx = start_idx + random.randint(min_char_len, max_char_len)
-		random_words.append(chars[start_idx:end_idx])
-		if end_idx >= num_chars:
-			break
-		start_idx = end_idx
-
-	return random_words
-
-def generate_texts(words, min_word_len=1, max_word_len=5):
-	import random
-
-	num_words = len(words)
-	random.shuffle(words)
-
-	texts = list()
-	start_idx = 0
-	while True:
-		end_idx = start_idx + random.randint(min_word_len, max_word_len)
-		texts.append(' '.join(words[start_idx:end_idx]))
-		if end_idx >= num_words:
-			break
-		start_idx = end_idx
-
-	return texts
+	return chars
 
 class MyRunner(object):
 	def __init__(self, is_dataset_generated_at_runtime, data_dir_path=None, train_test_ratio=0.8, is_fine_tuned=False):
@@ -515,6 +484,8 @@ class MyRunner(object):
 		#--------------------
 		# Create a dataset.
 		if is_dataset_generated_at_runtime:
+			import text_generation_util as tg_util
+
 			#word_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
 			word_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
 			#word_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
@@ -529,13 +500,14 @@ class MyRunner(object):
 
 			print('[SWL] Info: Start generating random words...')
 			start_time = time.time()
-			random_words = create_random_words(min_char_len=1, max_char_len=10)
+			chars = construct_chars()
+			random_words = tg_util.generate_random_words(chars, min_char_len=1, max_char_len=10)
 			print('[SWL] Info: End generating random words, {} words generated: {} secs.'.format(len(random_words), time.time() - start_time))
 
-			print('[SWL] Info: Start generating texts...')
-			#texts = generate_texts(dictionary_words + random_words, min_word_len=1, max_word_len=5)
-			texts = generate_texts(random_words, min_word_len=1, max_word_len=5)
-			print('[SWL] Info: End generating texts, {} texts generated: {} secs.'.format(len(texts), time.time() - start_time))
+			print('[SWL] Info: Start generating text lines...')
+			#texts = tg_util.generate_random_text_lines(dictionary_words + random_words, min_word_len=1, max_word_len=5)
+			texts = tg_util.generate_random_text_lines(random_words, min_word_len=1, max_word_len=5)
+			print('[SWL] Info: End generating text lines, {} text lines generated: {} secs.'.format(len(texts), time.time() - start_time))
 
 			if max_label_len > 0:
 				texts = set(filter(lambda txt: len(txt) <= max_label_len, texts))
@@ -564,7 +536,6 @@ class MyRunner(object):
 			#font_dir_path = font_base_dir_path + '/eng'
 			font_dir_path = font_base_dir_path + '/receipt_eng'
 
-			import text_generation_util as tg_util
 			font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 			font_list = tg_util.generate_font_list(font_filepaths)
 			#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)

@@ -825,7 +825,7 @@ class JsonBasedTextLineDataset(JsonBasedTextLineDatasetBase):
 
 		"""
 		self._labels = set(train_charset + test_charset)
-		self._labels.add(JsonBasedHangeulJamoTextLineDataset.UNKNOWN)
+		self._labels.add(JsonBasedTextLineDataset.UNKNOWN)
 		self._labels = sorted(self._labels)
 		#self._labels = ''.join(sorted(self._labels))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))

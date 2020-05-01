@@ -668,39 +668,25 @@ def create_formatted_numbers(num_examples=100000):
 
 	return valid_examples
 
-def create_random_numbers(min_char_len=1, max_char_len=10):
-	import string, random
+def construct_numbers(min_char_len=1, max_char_len=10):
+	import string
 
 	chars = \
 		string.digits * 10 + \
 		string.punctuation * 1
 	chars *= 10000
-	chars = list(chars)
-	random.shuffle(chars)
-	chars = ''.join(chars)
-	num_chars = len(chars)
+	return chars
 
-	random_words = list()
-	start_idx = 0
-	while True:
-		end_idx = start_idx + random.randint(min_char_len, max_char_len)
-		random_words.append(chars[start_idx:end_idx])
-		if end_idx >= num_chars:
-			break
-		start_idx = end_idx
-
-	return random_words
-
-def create_random_words(min_char_len=1, max_char_len=10):
+def construct_chars():
 	import string, random
 
 	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
 	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
 	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
 	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#hangeul_charset = fd.read().strip('\n')  # A strings.
+		#hangeul_charset = fd.read().strip('\n')  # A string.
 		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
-		#hangeul_charset = fd.readlines()  # A list of string.
+		#hangeul_charset = fd.readlines()  # A list of strings.
 		#hangeul_charset = fd.read().splitlines()  # A list of strings.
 	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
@@ -714,41 +700,12 @@ def create_random_words(min_char_len=1, max_char_len=10):
 		string.digits * 10 + \
 		string.punctuation * 10
 	chars *= 100
-	chars = list(chars)
-	random.shuffle(chars)
-	chars = ''.join(chars)
-	num_chars = len(chars)
-
-	random_words = list()
-	start_idx = 0
-	while True:
-		end_idx = start_idx + random.randint(min_char_len, max_char_len)
-		random_words.append(chars[start_idx:end_idx])
-		if end_idx >= num_chars:
-			break
-		start_idx = end_idx
-
-	return random_words
-
-def generate_texts(numbers, min_word_len=1, max_word_len=3):
-	import random
-
-	num_numbers = len(numbers)
-	random.shuffle(numbers)
-
-	texts = list()
-	start_idx = 0
-	while True:
-		end_idx = start_idx + random.randint(min_word_len, max_word_len)
-		texts.append(' '.join(numbers[start_idx:end_idx]))
-		if end_idx >= num_numbers:
-			break
-		start_idx = end_idx
-
-	return texts
+	return chars
 
 class MyRunner(object):
 	def __init__(self, data_dir_path, train_test_ratio, is_fine_tuned):
+		import text_generation_util as tg_util
+
 		# Set parameters.
 		# TODO [modify] >> Depends on a model.
 		#	model_output_time_steps = image_width / width_downsample_factor or image_width / width_downsample_factor - 1.
@@ -767,14 +724,15 @@ class MyRunner(object):
 
 		print('[SWL] Info: Start generating random numbers...')
 		start_time = time.time()
-		random_numbers = create_random_numbers(min_char_len=1, max_char_len=10)
-		random_numbers = generate_texts(random_numbers, min_word_len=1, max_word_len=3)
+		random_numbers = construct_numbers(min_char_len=1, max_char_len=10)
+		random_numbers = tg_util.generate_random_text_lines(random_numbers, min_word_len=1, max_word_len=3)
 		print('[SWL] Info: End generating random numbers, {} numbers generated: {} secs.'.format(len(random_numbers), time.time() - start_time))
 
 		print('[SWL] Info: Start generating random words...')
 		start_time = time.time()
-		random_words = create_random_words(min_char_len=1, max_char_len=10)
-		random_texts = generate_texts(random_words, min_word_len=1, max_word_len=3)
+		chars = construct_chars()
+		random_words = tg_util.generate_random_words(chars, min_char_len=1, max_char_len=10)
+		random_texts = tg_util.generate_random_text_lines(random_words, min_word_len=1, max_word_len=3)
 		print('[SWL] Info: End generating random words, {} numbers generated: {} secs.'.format(len(random_words), time.time() - start_time))
 
 		#numbers = formatted_numbers
@@ -819,7 +777,6 @@ class MyRunner(object):
 				font_base_dir_path = 'D:/work/font'
 			font_dir_path = font_base_dir_path + '/eng'
 
-			import text_generation_util as tg_util
 			font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 			font_list = tg_util.generate_font_list(font_filepaths)
 			#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)

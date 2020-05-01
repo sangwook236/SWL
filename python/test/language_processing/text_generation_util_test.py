@@ -15,9 +15,9 @@ def generate_random_word_set_test():
 	#hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
 	#hangeul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
 	with open(hangeul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#hangeul_charset = fd.read().strip('\n')  # A strings.
+		#hangeul_charset = fd.read().strip('\n')  # A string.
 		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
-		#hangeul_charset = fd.readlines()  # A list of string.
+		#hangeul_charset = fd.readlines()  # A list of strings.
 		#hangeul_charset = fd.read().splitlines()  # A list of strings.
 	alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 	digit_charset = '0123456789'
@@ -58,9 +58,9 @@ def generate_repetitive_word_set_test():
 	#hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
 	#hangeul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
 	with open(hangeul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#hangeul_charset = fd.read().strip('\n')  # A strings.
+		#hangeul_charset = fd.read().strip('\n')  # A string.
 		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
-		#hangeul_charset = fd.readlines()  # A list of string.
+		#hangeul_charset = fd.readlines()  # A list of strings.
 		#hangeul_charset = fd.read().splitlines()  # A list of strings.
 	alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 	digit_charset = '0123456789'
@@ -719,9 +719,9 @@ def generate_scene_text_dataset(dir_path, json_filename, sceneTextGenerator, sce
 	#hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
 	#hangeul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
 	with open(hangeul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#hangeul_charset = fd.read().strip('\n')  # A strings.
+		#hangeul_charset = fd.read().strip('\n')  # A string.
 		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
-		#hangeul_charset = fd.readlines()  # A list of string.
+		#hangeul_charset = fd.readlines()  # A list of strings.
 		#hangeul_charset = fd.read().splitlines()  # A list of strings.
 	alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 	digit_charset = '0123456789'
@@ -906,9 +906,9 @@ def generate_single_letter_dataset():
 	#hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
 	#hangeul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
 	with open(hangeul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#hangeul_charset = fd.read().strip('\n')  # A strings.
+		#hangeul_charset = fd.read().strip('\n')  # A string.
 		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
-		#hangeul_charset = fd.readlines()  # A list of string.
+		#hangeul_charset = fd.readlines()  # A list of strings.
 		#hangeul_charset = fd.read().splitlines()  # A list of strings.
 	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 	hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'

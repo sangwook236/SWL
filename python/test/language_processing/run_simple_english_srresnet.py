@@ -219,23 +219,6 @@ class MyModel(object):
 
 #--------------------------------------------------------------------
 
-def generate_texts(words, min_word_len=1, max_word_len=5):
-	import random
-
-	num_words = len(words)
-	random.shuffle(words)
-
-	texts = list()
-	start_idx = 0
-	while True:
-		end_idx = start_idx + random.randint(min_word_len, max_word_len)
-		texts.append(' '.join(words[start_idx:end_idx]))
-		if end_idx >= num_words:
-			break
-		start_idx = end_idx
-
-	return texts
-
 def generate_font_colors(image_depth):
 	import random
 	#font_color = (255,) * image_depth  # White font color.
@@ -257,6 +240,8 @@ def generate_font_colors(image_depth):
 
 class MyRunner(object):
 	def __init__(self):
+		import text_generation_util as tg_util
+
 		# Set parameters.
 		sr_ratio = 4
 		lr_image_height, lr_image_width, image_channel = 16, 160, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
@@ -283,9 +268,9 @@ class MyRunner(object):
 			dictionary_words = fd.read().splitlines()
 		print('[SWL] Info: End loading an English dictionary, {} words loaded: {} secs.'.format(len(dictionary_words), time.time() - start_time))
 
-		print('[SWL] Info: Start generating texts...')
-		texts = generate_texts(dictionary_words, min_word_len=1, max_word_len=5)
-		print('[SWL] Info: End generating texts, {} texts generated: {} secs.'.format(len(texts), time.time() - start_time))
+		print('[SWL] Info: Start generating text lines...')
+		texts = tg_util.generate_random_text_lines(dictionary_words, min_word_len=1, max_word_len=5)
+		print('[SWL] Info: End generating text lines, {} text lines generated: {} secs.'.format(len(texts), time.time() - start_time))
 
 		if max_label_len > 0:
 			texts = set(filter(lambda txt: len(txt) <= max_label_len, texts))
@@ -314,7 +299,6 @@ class MyRunner(object):
 		#font_dir_path = font_base_dir_path + '/eng'
 		font_dir_path = font_base_dir_path + '/receipt_eng'
 
-		import text_generation_util as tg_util
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		font_list = tg_util.generate_font_list(font_filepaths)
 		#char_images_dict = tg_util.generate_phd08_dict(from_npy=True)

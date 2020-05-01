@@ -27,9 +27,9 @@ def font_display_test(font_dir_path):
 	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
 	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
 	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#hangeul_letters = fd.read().strip('\n')  # A strings.
+		#hangeul_letters = fd.read().strip('\n')  # A string.
 		hangeul_letters = fd.read().replace(' ', '')  # A string.
-		#hangeul_letters = fd.readlines()  # A list of string.
+		#hangeul_letters = fd.readlines()  # A list of strings.
 		#hangeul_letters = fd.read().splitlines()  # A list of strings.
 
 	hangeul_consonants = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ'

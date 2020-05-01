@@ -5,6 +5,38 @@ import cv2
 import swl.language_processing.util as swl_langproc_util
 from swl.language_processing.text_generator import Transformer, HangeulJamoGenerator, HangeulLetterGenerator, TextGenerator, SceneProvider, SceneTextGenerator
 
+def generate_random_words(chars, min_char_len=1, max_char_len=10):
+	chars = list(chars)
+	random.shuffle(chars)
+	chars = ''.join(chars)
+	num_chars = len(chars)
+
+	words = list()
+	start_idx = 0
+	while True:
+		end_idx = start_idx + random.randint(min_char_len, max_char_len)
+		words.append(chars[start_idx:end_idx])
+		if end_idx >= num_chars:
+			break
+		start_idx = end_idx
+
+	return words
+
+def generate_random_text_lines(words, min_word_len=1, max_word_len=5):
+	random.shuffle(words)
+	num_words = len(words)
+
+	texts = list()
+	start_idx = 0
+	while True:
+		end_idx = start_idx + random.randint(min_word_len, max_word_len)
+		texts.append(' '.join(words[start_idx:end_idx]))
+		if end_idx >= num_words:
+			break
+		start_idx = end_idx
+
+	return texts
+
 def generate_random_word_set(num_words, charset, min_char_count, max_char_count):
 	charset_len = len(charset)
 	word_set = set()
