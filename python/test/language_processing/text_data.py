@@ -6,12 +6,13 @@ import swl.language_processing.util as swl_langproc_util
 #--------------------------------------------------------------------
 
 class SingleCharacterDataset(torch.utils.data.Dataset):
-	def __init__(self, num_examples_per_class, charset, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None):
-		self.charset = charset
+	def __init__(self, chars, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None):
+		self.chars = chars
 		self.fonts = fonts
 		self.font_size_interval = font_size_interval
 		self.transform = transform
 		self.target_transform = target_transform
+		self._classes = np.unique(chars).tolist()
 
 		self.image_channel = 1
 		if self.image_channel == 1:
@@ -25,15 +26,13 @@ class SingleCharacterDataset(torch.utils.data.Dataset):
 			raise ValueError('Invalid image channel, {}'.format(self.image_channel))
 
 		self.color_functor = color_functor if color_functor else lambda: ((255,) * self.image_channel, (0,) * self.image_channel)
-		self.labels = list(self.charset * num_examples_per_class)
-		random.shuffle(self.labels)
 
 	def __len__(self):
-		return len(self.labels)
+		return len(self.chars)
 
 	def __getitem__(self, idx):
-		ch = self.labels[idx]
-		target = self.charset.index(ch)
+		ch = self.chars[idx]
+		target = self._classes.index(ch)
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
 		font_color, bg_color = self.color_functor()
@@ -53,22 +52,23 @@ class SingleCharacterDataset(torch.utils.data.Dataset):
 
 	@property
 	def num_classes(self):
-		return len(self.charset)
+		return len(self._classes)
 
 	@property
 	def classes(self):
-		return self.charset
+		return self._classes
 
 #--------------------------------------------------------------------
 
 class SingleNoisyCharacterDataset(torch.utils.data.Dataset):
-	def __init__(self, num_examples_per_class, charset, fonts, font_size_interval, char_clipping_ratio_interval, color_functor=None, transform=None, target_transform=None):
-		self.charset = charset
+	def __init__(self, chars, fonts, font_size_interval, char_clipping_ratio_interval, color_functor=None, transform=None, target_transform=None):
+		self.chars = chars
 		self.fonts = fonts
 		self.font_size_interval = font_size_interval
 		self.char_clipping_ratio_interval = char_clipping_ratio_interval
 		self.transform = transform
 		self.target_transform = target_transform
+		self._classes = np.unique(chars).tolist()
 
 		self.image_channel = 1
 		if self.image_channel == 1:
@@ -82,17 +82,16 @@ class SingleNoisyCharacterDataset(torch.utils.data.Dataset):
 			raise ValueError('Invalid image channel, {}'.format(self.image_channel))
 
 		self.color_functor = color_functor if color_functor else lambda: ((255,) * self.image_channel, (0,) * self.image_channel)
-		self.labels = list(self.charset * num_examples_per_class)
-		random.shuffle(self.labels)
 
 	def __len__(self):
-		return len(self.labels)
+		return len(self.chars)
 
 	def __getitem__(self, idx):
-		ch = self.labels[idx]
-		ch2 = random.sample(self.charset, 2)
+		ch = self.chars[idx]
+		ch2 = random.sample(self._classes, 2)
+		#ch2 = [random.choice(self._classes) for _ in range(2)]
 		ch3 = ch2[0] + ch + ch2[1]
-		target = self.charset.index(ch)
+		target = self._classes.index(ch)
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
 		font_color, bg_color = self.color_functor()
@@ -142,11 +141,11 @@ class SingleNoisyCharacterDataset(torch.utils.data.Dataset):
 
 	@property
 	def num_classes(self):
-		return len(self.charset)
+		return len(self._classes)
 
 	@property
 	def classes(self):
-		return self.charset
+		return self._classes
 
 #--------------------------------------------------------------------
 
@@ -156,12 +155,12 @@ class SingleWordDataset(torch.utils.data.Dataset):
 	def __init__(self, num_examples, words, charset, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None, default_value=-1):
 		self.num_examples = num_examples
 		self.words = words
-		self.charset = list(charset) + [SingleWordDataset.UNKNOWN]
 		self.fonts = fonts
 		self.font_size_interval = font_size_interval
 		self.transform = transform
 		self.target_transform = target_transform
 		self._default_value = default_value
+		self._classes = list(charset) + [SingleWordDataset.UNKNOWN]
 
 		self.image_channel = 1
 		if self.image_channel == 1:
@@ -204,11 +203,11 @@ class SingleWordDataset(torch.utils.data.Dataset):
 
 	@property
 	def num_classes(self):
-		return len(self.charset)
+		return len(self._classes)
 
 	@property
 	def classes(self):
-		return self.charset
+		return self._classes
 
 	@property
 	def default_value(self):
@@ -219,10 +218,10 @@ class SingleWordDataset(torch.utils.data.Dataset):
 	def encode_label(self, label_str, *args, **kwargs):
 		def label2index(ch):
 			try:
-				return self.charset.index(ch)
+				return self._classes.index(ch)
 			except ValueError:
 				print('[SWL] Error: Failed to encode a character, {} in {}.'.format(ch, label_str))
-				return self.charset.index(SingleWordDataset.UNKNOWN)
+				return self._classes.index(SingleWordDataset.UNKNOWN)
 		return list(label2index(ch) for ch in label_str)
 
 	# Integer label -> string label.
@@ -230,7 +229,7 @@ class SingleWordDataset(torch.utils.data.Dataset):
 	def decode_label(self, label_int, *args, **kwargs):
 		def index2label(id):
 			try:
-				return self.charset[id]
+				return self._classes[id]
 			except IndexError:
 				print('[SWL] Error: Failed to decode an identifier, {} in {}.'.format(id, label_int))
 				return SingleWordDataset.UNKNOWN  # TODO [check] >> Is it correct?
@@ -241,17 +240,16 @@ class SingleWordDataset(torch.utils.data.Dataset):
 class SingleRandomWordDataset(torch.utils.data.Dataset):
 	UNKNOWN = '<UNK>'  # Unknown label token.
 
-	def __init__(self, num_examples_per_class, charset, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None, default_value=-1):
-	def __init__(self, num_examples_per_class, charset, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None):
-		self.charset = charset
+	def __init__(self, num_examples, chars, char_len_interval, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None, default_value=-1):
 		self.num_examples = num_examples
-		self.words = words
-		self.charset = list(charset) + [SingleWordDataset.UNKNOWN]
+		self.chars = chars
+		self.char_len_interval = char_len_interval
 		self.fonts = fonts
 		self.font_size_interval = font_size_interval
 		self.transform = transform
 		self.target_transform = target_transform
 		self._default_value = default_value
+		self._classes = np.unique(list(chars)).tolist() + [SingleWordDataset.UNKNOWN]
 
 		self.image_channel = 1
 		if self.image_channel == 1:
@@ -265,14 +263,15 @@ class SingleRandomWordDataset(torch.utils.data.Dataset):
 			raise ValueError('Invalid image channel, {}'.format(self.image_channel))
 
 		self.color_functor = color_functor if color_functor else lambda: ((255,) * self.image_channel, (0,) * self.image_channel)
-		self.max_word_len = len(max(self.words, key=len))
+		self.max_word_len = char_len_interval[1]
 
 	def __len__(self):
 		return self.num_examples
 
 	def __getitem__(self, idx):
-		#word = random.choice(self.words)
-		word = random.sample(self.words, 1)[0]
+		char_len = random.randint(*self.char_len_interval)
+		#word = ''.join(random.sample(self.chars, char_len))
+		word = ''.join([random.choice(self.chars) for _ in range(char_len)])
 		target = [self.default_value,] * self.max_word_len
 		target[:len(word)] = self.encode_label(word)
 		font_type, font_index = random.choice(self.fonts)
@@ -294,11 +293,11 @@ class SingleRandomWordDataset(torch.utils.data.Dataset):
 
 	@property
 	def num_classes(self):
-		return len(self.charset)
+		return len(self._classes)
 
 	@property
 	def classes(self):
-		return self.charset
+		return self._classes
 
 	@property
 	def default_value(self):
@@ -309,10 +308,10 @@ class SingleRandomWordDataset(torch.utils.data.Dataset):
 	def encode_label(self, label_str, *args, **kwargs):
 		def label2index(ch):
 			try:
-				return self.charset.index(ch)
+				return self._classes.index(ch)
 			except ValueError:
 				print('[SWL] Error: Failed to encode a character, {} in {}.'.format(ch, label_str))
-				return self.charset.index(SingleWordDataset.UNKNOWN)
+				return self._classes.index(SingleWordDataset.UNKNOWN)
 		return list(label2index(ch) for ch in label_str)
 
 	# Integer label -> string label.
@@ -320,7 +319,7 @@ class SingleRandomWordDataset(torch.utils.data.Dataset):
 	def decode_label(self, label_int, *args, **kwargs):
 		def index2label(id):
 			try:
-				return self.charset[id]
+				return self._classes[id]
 			except IndexError:
 				print('[SWL] Error: Failed to decode an identifier, {} in {}.'.format(id, label_int))
 				return SingleWordDataset.UNKNOWN  # TODO [check] >> Is it correct?
@@ -336,7 +335,6 @@ class SingleTextLineDataset(torch.utils.data.Dataset):
 		self.num_examples = num_examples
 		self.image_height, self.image_width, self.image_channel = image_height, image_width, image_channel
 		self.words = words
-		self.charset = list(charset) + [SingleTextLineDataset.SPACE, SingleTextLineDataset.UNKNOWN]
 		self.fonts = fonts
 		self.max_word_len = max_word_len
 		self.word_count_interval = word_count_interval
@@ -346,6 +344,7 @@ class SingleTextLineDataset(torch.utils.data.Dataset):
 		self.transform = transform
 		self.target_transform = target_transform
 		self._default_value = default_value
+		self._classes = list(charset) + [SingleTextLineDataset.SPACE, SingleTextLineDataset.UNKNOWN]
 
 		if self.image_channel == 1:
 			self.mode = 'L'
@@ -390,11 +389,11 @@ class SingleTextLineDataset(torch.utils.data.Dataset):
 
 	@property
 	def num_classes(self):
-		return len(self.charset)
+		return len(self._classes)
 
 	@property
 	def classes(self):
-		return self.charset
+		return self._classes
 
 	@property
 	def default_value(self):
@@ -405,10 +404,10 @@ class SingleTextLineDataset(torch.utils.data.Dataset):
 	def encode_label(self, label_str, *args, **kwargs):
 		def label2index(ch):
 			try:
-				return self.charset.index(ch)
+				return self._classes.index(ch)
 			except ValueError:
 				print('[SWL] Error: Failed to encode a character, {} in {}.'.format(ch, label_str))
-				return self.charset.index(SingleTextLineDataset.UNKNOWN)
+				return self._classes.index(SingleTextLineDataset.UNKNOWN)
 		return list(label2index(ch) for ch in label_str)
 
 	# Integer label -> string label.
@@ -416,7 +415,7 @@ class SingleTextLineDataset(torch.utils.data.Dataset):
 	def decode_label(self, label_int, *args, **kwargs):
 		def index2label(id):
 			try:
-				return self.charset[id]
+				return self._classes[id]
 			except IndexError:
 				print('[SWL] Error: Failed to decode an identifier, {} in {}.'.format(id, label_int))
 				return SingleTextLineDataset.UNKNOWN  # TODO [check] >> Is it correct?

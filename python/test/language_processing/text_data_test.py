@@ -233,6 +233,7 @@ def SingleCharacterDataset_test():
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
 	font_size_interval = (10, 100)
+	color_functor = functools.partial(generate_font_colors, image_depth=1)
 
 	batch_size = 64
 	shuffle = True
@@ -260,8 +261,98 @@ def SingleCharacterDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	train_dataset = text_data.SingleCharacterDataset(num_train_examples_per_class, charset, font_list, font_size_interval, transform=train_transform)
-	test_dataset = text_data.SingleCharacterDataset(num_test_examples_per_class, charset, font_list, font_size_interval, transform=test_transform)
+	chars = list(charset * num_train_examples_per_class)
+	random.shuffle(chars)
+	train_dataset = text_data.SingleCharacterDataset(chars, font_list, font_size_interval, color_functor=color_functor, transform=train_transform)
+	chars = list(charset * num_test_examples_per_class)
+	random.shuffle(chars)
+	test_dataset = text_data.SingleCharacterDataset(chars, font_list, font_size_interval, color_functor=color_functor, transform=test_transform)
+	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+
+	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
+	#assert train_dataset.num_classes == test_dataset.num_classes, 'Unmatched number of classes, {} != {}'.format(train_dataset.num_classes, test_dataset.num_classes)
+	print('#classes = {}.'.format(train_dataset.num_classes))
+
+	#--------------------
+	print('Start creating data loaders...')
+	start_time = time.time()
+	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
+
+	#--------------------
+	# Show data info.
+	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
+	data_iter = iter(train_dataloader)
+	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels = images.numpy(), labels.numpy()
+	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
+	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+
+	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
+	data_iter = iter(test_dataloader)
+	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels = images.numpy(), labels.numpy()
+	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
+	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+
+	#--------------------
+	# Visualize.
+	for dataloader in [train_dataloader, test_dataloader]:
+		data_iter = iter(dataloader)
+		images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
+		images, labels = images.numpy(), labels.numpy()
+		for idx, (img, lbl) in enumerate(zip(images, labels)):
+			print('Label: (int) = {}, (str) = {}.'.format(lbl, charset[lbl]))
+			cv2.imshow('Image', img[0])
+			cv2.waitKey(0)
+			if idx >= 9: break
+	cv2.destroyAllWindows()
+
+def SingleNoisyCharacterDataset_test():
+	charset, font_list = construct_charset()
+
+	image_height, image_width = 32, 32
+	#image_height_before_crop, image_width_before_crop = 36, 36
+	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	num_train_examples_per_class, num_test_examples_per_class = 500, 50
+	font_size_interval = (10, 100)
+	char_clipping_ratio_interval = (0.8, 1.25)
+	color_functor = functools.partial(generate_font_colors, image_depth=1)
+
+	batch_size = 64
+	shuffle = True
+	num_workers = 4
+
+	#--------------------
+	train_transform = torchvision.transforms.Compose([
+		RandomAugment(),
+		RandomInvert(),
+		#ConvertChannel(),
+		torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
+		#torchvision.transforms.RandomCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	])
+	test_transform = torchvision.transforms.Compose([
+		RandomInvert(),
+		#ConvertChannel(),
+		torchvision.transforms.Resize((image_height, image_width)),
+		#torchvision.transforms.CenterCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	])
+
+	#--------------------
+	print('Start creating datasets...')
+	start_time = time.time()
+	chars = list(charset * num_train_examples_per_class)
+	random.shuffle(chars)
+	train_dataset = text_data.SingleNoisyCharacterDataset(chars, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor, transform=train_transform)
+	chars = list(charset * num_test_examples_per_class)
+	random.shuffle(chars)
+	test_dataset = text_data.SingleNoisyCharacterDataset(chars, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 
 	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
@@ -315,6 +406,7 @@ def SingleWordDataset_test():
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	font_size_interval = (10, 100)
+	color_functor = functools.partial(generate_font_colors, image_depth=1)
 
 	batch_size = 64
 	shuffle = True
@@ -344,8 +436,8 @@ def SingleWordDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	train_dataset = text_data.SingleWordDataset(num_train_examples, wordset, charset, font_list, font_size_interval, transform=train_transform, target_transform=train_target_transform, default_value=-1)
-	test_dataset = text_data.SingleWordDataset(num_test_examples, wordset, charset, font_list, font_size_interval, transform=test_transform, target_transform=test_target_transform, default_value=-1)
+	train_dataset = text_data.SingleWordDataset(num_train_examples, wordset, charset, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform, default_value=-1)
+	test_dataset = text_data.SingleWordDataset(num_test_examples, wordset, charset, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform, default_value=-1)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 
 	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
@@ -390,7 +482,6 @@ def SingleWordDataset_test():
 
 def SingleRandomWordDataset_test():
 	charset, font_list = construct_charset()
-	wordset = construct_wordset()
 
 	#--------------------
 	image_height, image_width = 32, 320
@@ -398,7 +489,9 @@ def SingleRandomWordDataset_test():
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
+	char_len_interval = (1, 20)
 	font_size_interval = (10, 100)
+	color_functor = functools.partial(generate_font_colors, image_depth=1)
 
 	batch_size = 64
 	shuffle = True
@@ -428,8 +521,10 @@ def SingleRandomWordDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	train_dataset = text_data.SingleRandomWordDataset(num_train_examples, wordset, charset, font_list, font_size_interval, transform=train_transform, target_transform=train_target_transform, default_value=-1)
-	test_dataset = text_data.SingleRandomWordDataset(num_test_examples, wordset, charset, font_list, font_size_interval, transform=test_transform, target_transform=test_target_transform, default_value=-1)
+	chars = charset  # Can make the number of each character different.
+	train_dataset = text_data.SingleRandomWordDataset(num_train_examples, chars, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform, default_value=-1)
+	chars = charset  # Can make the number of each character different.
+	test_dataset = text_data.SingleRandomWordDataset(num_test_examples, chars, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform, default_value=-1)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 
 	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
@@ -474,7 +569,7 @@ def SingleRandomWordDataset_test():
 
 def SingleTextLineDataset_test():
 	charset, font_list = construct_charset()
-	wordset = construct_wordset()
+	wordset = construct_word_set()
 
 	#--------------------
 	image_height, image_width, image_channel = 64, 640, 1
@@ -563,6 +658,7 @@ def SingleTextLineDataset_test():
 
 def main():
 	#SingleCharacterDataset_test()
+	#SingleNoisyCharacterDataset_test()
 	#SingleWordDataset_test()
 	SingleRandomWordDataset_test()
 	#SingleTextLineDataset_test()
