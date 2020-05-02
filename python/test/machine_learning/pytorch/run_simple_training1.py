@@ -417,6 +417,7 @@ def main():
 	#--------------------
 	initial_epoch, final_epoch, batch_size = 0, args.epoch, args.batch_size
 	is_resumed = args.model_file is not None
+	num_workers = 4
 
 	model_filepath, output_dir_path = os.path.normpath(args.model_file) if args.model_file else None, os.path.normpath(args.out_dir) if args.out_dir else None
 	if model_filepath:
@@ -433,7 +434,7 @@ def main():
 	runner = MyRunner(logger)
 
 	# Load datasets.
-	train_dataloader, test_dataloader = runner.load_data(batch_size, num_workers=4)
+	train_dataloader, test_dataloader = runner.load_data(batch_size, num_workers=num_workers)
 	runner.show_data_info(train_dataloader, test_dataloader)
 
 	if args.train:

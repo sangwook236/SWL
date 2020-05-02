@@ -196,7 +196,7 @@ def create_augmenter():
 
 	return augmenter
 
-def create_data(batch_size, shuffle, train_transform, test_transform):
+def create_data(batch_size, shuffle, num_workers, train_transform, test_transform):
 	print('Start creating datasets...')
 	start_time = time.time()
 	train_dataset = torchvision.datasets.MNIST('./data', train=True, download=True, transform=train_transform)
@@ -206,7 +206,7 @@ def create_data(batch_size, shuffle, train_transform, test_transform):
 	#--------------------
 	print('Start creating data loaders...')
 	start_time = time.time()
-	kwargs = {'num_workers': 1, 'pin_memory': True} if torch.cuda.is_available() else {}
+	kwargs = {'num_workers': num_workers, 'pin_memory': True} if torch.cuda.is_available() else {}
 	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, **kwargs)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, **kwargs)
 	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
@@ -301,7 +301,7 @@ def mnist_test():
 	])
 
 	# Create datasets.
-	train_dataloader, test_dataloader = create_data(batch_size, shuffle, train_transform, test_transform)
+	train_dataloader, test_dataloader = create_data(batch_size, shuffle, num_workers, train_transform, test_transform)
 	# Show data info.
 	show_data_info(train_dataloader, test_dataloader)
 	if False:
@@ -386,7 +386,7 @@ def mnist_predefined_test():
 	])
 
 	# Create datasets.
-	train_dataloader, test_dataloader = create_data(batch_size, shuffle, train_transform, test_transform)
+	train_dataloader, test_dataloader = create_data(batch_size, shuffle, num_workers, train_transform, test_transform)
 	# Show data info.
 	show_data_info(train_dataloader, test_dataloader)
 	if False:
@@ -490,7 +490,7 @@ def mnist_predefined_mixup_test():
 	])
 
 	# Create datasets.
-	train_dataloader, test_dataloader = create_data(batch_size, shuffle, train_transform, test_transform)
+	train_dataloader, test_dataloader = create_data(batch_size, shuffle, num_workers, train_transform, test_transform)
 	# Show data info.
 	show_data_info(train_dataloader, test_dataloader)
 	if False:

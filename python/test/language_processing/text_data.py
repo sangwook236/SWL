@@ -5,14 +5,61 @@ import swl.language_processing.util as swl_langproc_util
 
 #--------------------------------------------------------------------
 
-class SingleCharacterDataset(torch.utils.data.Dataset):
+class TextDatasetBase(torch.utils.data.Dataset):
+	UNKNOWN = '<UNK>'  # Unknown label token.
+	SPACE = ' '  # Space token.
+
+	def __init__(self, classes, default_value=-1):
+		super().__init__()
+
+		self._classes = classes
+		self._default_value = default_value
+
+	@property
+	def num_classes(self):
+		return len(self._classes)
+
+	@property
+	def classes(self):
+		return self._classes
+
+	@property
+	def default_value(self):
+		return self._default_value
+
+	# String label -> integer label.
+	# REF [function] >> TextLineDatasetBase.encode_label() in text_line_data.py.
+	def encode_label(self, label_str, *args, **kwargs):
+		def label2index(ch):
+			try:
+				return self._classes.index(ch)
+			except ValueError:
+				print('[SWL] Error: Failed to encode a character, {} in {}.'.format(ch, label_str))
+				return self._classes.index(TextDatasetBase.UNKNOWN)
+		return list(label2index(ch) for ch in label_str)
+
+	# Integer label -> string label.
+	# REF [function] >> TextLineDatasetBase.decode_label() in text_line_data.py.
+	def decode_label(self, label_int, *args, **kwargs):
+		def index2label(id):
+			try:
+				return self._classes[id]
+			except IndexError:
+				print('[SWL] Error: Failed to decode an identifier, {} in {}.'.format(id, label_int))
+				return TextDatasetBase.UNKNOWN  # TODO [check] >> Is it correct?
+		return ''.join(list(index2label(id) for id in label_int if id != self._default_value))
+
+#--------------------------------------------------------------------
+
+class SingleCharacterDataset(TextDatasetBase):
 	def __init__(self, chars, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None):
+		super().__init__(np.unique(chars).tolist())
+
 		self.chars = chars
 		self.fonts = fonts
 		self.font_size_interval = font_size_interval
 		self.transform = transform
 		self.target_transform = target_transform
-		self._classes = np.unique(chars).tolist()
 
 		self.image_channel = 1
 		if self.image_channel == 1:
@@ -50,25 +97,18 @@ class SingleCharacterDataset(torch.utils.data.Dataset):
 
 		return (image, target)
 
-	@property
-	def num_classes(self):
-		return len(self._classes)
-
-	@property
-	def classes(self):
-		return self._classes
-
 #--------------------------------------------------------------------
 
-class SingleNoisyCharacterDataset(torch.utils.data.Dataset):
+class SingleNoisyCharacterDataset(TextDatasetBase):
 	def __init__(self, chars, fonts, font_size_interval, char_clipping_ratio_interval, color_functor=None, transform=None, target_transform=None):
+		super().__init__(np.unique(chars).tolist())
+
 		self.chars = chars
 		self.fonts = fonts
 		self.font_size_interval = font_size_interval
 		self.char_clipping_ratio_interval = char_clipping_ratio_interval
 		self.transform = transform
 		self.target_transform = target_transform
-		self._classes = np.unique(chars).tolist()
 
 		self.image_channel = 1
 		if self.image_channel == 1:
@@ -139,28 +179,18 @@ class SingleNoisyCharacterDataset(torch.utils.data.Dataset):
 
 		return (image, target)
 
-	@property
-	def num_classes(self):
-		return len(self._classes)
-
-	@property
-	def classes(self):
-		return self._classes
-
 #--------------------------------------------------------------------
 
-class SingleWordDataset(torch.utils.data.Dataset):
-	UNKNOWN = '<UNK>'  # Unknown label token.
-
+class SingleWordDataset(TextDatasetBase):
 	def __init__(self, num_examples, words, charset, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None, default_value=-1):
+		super().__init__(list(charset) + [SingleWordDataset.UNKNOWN], default_value)
+
 		self.num_examples = num_examples
 		self.words = words
 		self.fonts = fonts
 		self.font_size_interval = font_size_interval
 		self.transform = transform
 		self.target_transform = target_transform
-		self._default_value = default_value
-		self._classes = list(charset) + [SingleWordDataset.UNKNOWN]
 
 		self.image_channel = 1
 		if self.image_channel == 1:
@@ -201,46 +231,12 @@ class SingleWordDataset(torch.utils.data.Dataset):
 
 		return (image, target)
 
-	@property
-	def num_classes(self):
-		return len(self._classes)
-
-	@property
-	def classes(self):
-		return self._classes
-
-	@property
-	def default_value(self):
-		return self._default_value
-
-	# String label -> integer label.
-	# REF [function] >> TextLineDatasetBase.encode_label() in text_line_data.py.
-	def encode_label(self, label_str, *args, **kwargs):
-		def label2index(ch):
-			try:
-				return self._classes.index(ch)
-			except ValueError:
-				print('[SWL] Error: Failed to encode a character, {} in {}.'.format(ch, label_str))
-				return self._classes.index(SingleWordDataset.UNKNOWN)
-		return list(label2index(ch) for ch in label_str)
-
-	# Integer label -> string label.
-	# REF [function] >> TextLineDatasetBase.decode_label() in text_line_data.py.
-	def decode_label(self, label_int, *args, **kwargs):
-		def index2label(id):
-			try:
-				return self._classes[id]
-			except IndexError:
-				print('[SWL] Error: Failed to decode an identifier, {} in {}.'.format(id, label_int))
-				return SingleWordDataset.UNKNOWN  # TODO [check] >> Is it correct?
-		return ''.join(list(index2label(id) for id in label_int if id != self._default_value))
-
 #--------------------------------------------------------------------
 
-class SingleRandomWordDataset(torch.utils.data.Dataset):
-	UNKNOWN = '<UNK>'  # Unknown label token.
-
+class SingleRandomWordDataset(TextDatasetBase):
 	def __init__(self, num_examples, chars, char_len_interval, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None, default_value=-1):
+		super().__init__(np.unique(list(chars)).tolist() + [SingleRandomWordDataset.UNKNOWN], default_value)
+
 		self.num_examples = num_examples
 		self.chars = chars
 		self.char_len_interval = char_len_interval
@@ -248,8 +244,6 @@ class SingleRandomWordDataset(torch.utils.data.Dataset):
 		self.font_size_interval = font_size_interval
 		self.transform = transform
 		self.target_transform = target_transform
-		self._default_value = default_value
-		self._classes = np.unique(list(chars)).tolist() + [SingleWordDataset.UNKNOWN]
 
 		self.image_channel = 1
 		if self.image_channel == 1:
@@ -291,47 +285,12 @@ class SingleRandomWordDataset(torch.utils.data.Dataset):
 
 		return (image, target)
 
-	@property
-	def num_classes(self):
-		return len(self._classes)
-
-	@property
-	def classes(self):
-		return self._classes
-
-	@property
-	def default_value(self):
-		return self._default_value
-
-	# String label -> integer label.
-	# REF [function] >> TextLineDatasetBase.encode_label() in text_line_data.py.
-	def encode_label(self, label_str, *args, **kwargs):
-		def label2index(ch):
-			try:
-				return self._classes.index(ch)
-			except ValueError:
-				print('[SWL] Error: Failed to encode a character, {} in {}.'.format(ch, label_str))
-				return self._classes.index(SingleWordDataset.UNKNOWN)
-		return list(label2index(ch) for ch in label_str)
-
-	# Integer label -> string label.
-	# REF [function] >> TextLineDatasetBase.decode_label() in text_line_data.py.
-	def decode_label(self, label_int, *args, **kwargs):
-		def index2label(id):
-			try:
-				return self._classes[id]
-			except IndexError:
-				print('[SWL] Error: Failed to decode an identifier, {} in {}.'.format(id, label_int))
-				return SingleWordDataset.UNKNOWN  # TODO [check] >> Is it correct?
-		return ''.join(list(index2label(id) for id in label_int if id != self._default_value))
-
 #--------------------------------------------------------------------
 
-class SingleTextLineDataset(torch.utils.data.Dataset):
-	UNKNOWN = '<UNK>'  # Unknown label token.
-	SPACE = ' '  # Space token.
-
+class SingleTextLineDataset(TextDatasetBase):
 	def __init__(self, num_examples, image_height, image_width, image_channel, words, charset, fonts, max_word_len, word_count_interval, space_count_interval, font_size_interval, char_space_ratio_interval, color_functor=None, transform=None, target_transform=None, default_value=-1):
+		super().__init__(list(charset) + [SingleTextLineDataset.SPACE, SingleTextLineDataset.UNKNOWN], default_value)
+
 		self.num_examples = num_examples
 		self.image_height, self.image_width, self.image_channel = image_height, image_width, image_channel
 		self.words = words
@@ -343,8 +302,6 @@ class SingleTextLineDataset(torch.utils.data.Dataset):
 		self.char_space_ratio_interval = char_space_ratio_interval
 		self.transform = transform
 		self.target_transform = target_transform
-		self._default_value = default_value
-		self._classes = list(charset) + [SingleTextLineDataset.SPACE, SingleTextLineDataset.UNKNOWN]
 
 		if self.image_channel == 1:
 			self.mode = 'L'
@@ -386,37 +343,3 @@ class SingleTextLineDataset(torch.utils.data.Dataset):
 	@property
 	def shape(self):
 		return self.image_height, self.image_width, self.image_channel
-
-	@property
-	def num_classes(self):
-		return len(self._classes)
-
-	@property
-	def classes(self):
-		return self._classes
-
-	@property
-	def default_value(self):
-		return self._default_value
-
-	# String label -> integer label.
-	# REF [function] >> TextLineDatasetBase.encode_label() in text_line_data.py.
-	def encode_label(self, label_str, *args, **kwargs):
-		def label2index(ch):
-			try:
-				return self._classes.index(ch)
-			except ValueError:
-				print('[SWL] Error: Failed to encode a character, {} in {}.'.format(ch, label_str))
-				return self._classes.index(SingleTextLineDataset.UNKNOWN)
-		return list(label2index(ch) for ch in label_str)
-
-	# Integer label -> string label.
-	# REF [function] >> TextLineDatasetBase.decode_label() in text_line_data.py.
-	def decode_label(self, label_int, *args, **kwargs):
-		def index2label(id):
-			try:
-				return self._classes[id]
-			except IndexError:
-				print('[SWL] Error: Failed to decode an identifier, {} in {}.'.format(id, label_int))
-				return SingleTextLineDataset.UNKNOWN  # TODO [check] >> Is it correct?
-		return ''.join(list(index2label(id) for id in label_int if id != self._default_value))
