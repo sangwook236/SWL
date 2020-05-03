@@ -6,7 +6,7 @@ try:
 	from torch.hub import load_state_dict_from_url
 except ImportError:
 	from torch.utils.model_zoo import load_url as load_state_dict_from_url
-import mixup_util
+import mixup.mixup_util
 
 # REF [site] >> https://github.com/pytorch/vision/blob/master/torchvision/models/vgg.py
 
@@ -83,39 +83,39 @@ class VGG(nn.Module):
 		out = x
 
 		if mixup_alpha is not None:
-			lam = mixup_util.get_lambda(mixup_alpha)
+			lam = mixup.mixup_util.get_lambda(mixup_alpha)
 			lam = torch.from_numpy(np.array([lam]).astype('float32')).to(device)
 			#lam = Variable(lam)
 		
 		if target is not None:
-			target_reweighted = mixup_util.to_one_hot(target, self.num_classes, device)
+			target_reweighted = mixup.mixup_util.to_one_hot(target, self.num_classes, device)
 
 		if cutout:
-			cutout = mixup_util.Cutout(1, cutout_size)
+			cutout = mixup.mixup_util.Cutout(1, cutout_size)
 			out = cutout.apply(out, device)
 
 		if layer_mix == 0:
-			out, target_reweighted = mixup_util.mixup_process(out, target_reweighted, lam=lam)
+			out, target_reweighted = mixup.mixup_util.mixup_process(out, target_reweighted, lam=lam)
 
 		out = self.layer1(out)
 
 		if layer_mix == 1:
-			out, target_reweighted = mixup_util.mixup_process(out, target_reweighted, lam=lam)
+			out, target_reweighted = mixup.mixup_util.mixup_process(out, target_reweighted, lam=lam)
 
 		out = self.layer2(out)
 
 		if layer_mix == 2:
-			out, target_reweighted = mixup_util.mixup_process(out, target_reweighted, lam=lam)
+			out, target_reweighted = mixup.mixup_util.mixup_process(out, target_reweighted, lam=lam)
 
 		out = self.layer3(out)
 
 		if layer_mix == 3:
-			out, target_reweighted = mixup_util.mixup_process(out, target_reweighted, lam=lam)
+			out, target_reweighted = mixup.mixup_util.mixup_process(out, target_reweighted, lam=lam)
 
 		out = self.layer4(out)
 
 		if layer_mix == 4:
-			out, target_reweighted = mixup_util.mixup_process(out, target_reweighted, lam=lam)
+			out, target_reweighted = mixup.mixup_util.mixup_process(out, target_reweighted, lam=lam)
 
 		out = self.layer5(out)
 

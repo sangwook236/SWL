@@ -9,7 +9,7 @@ import numpy as np
 import torch, torchvision
 from PIL import Image, ImageOps
 import cv2
-#import vgg_mixup, resnet_mixup
+#import mixup.vgg, mixup.resnet
 
 def save_model(model_filepath, model):
 	#torch.save(model.state_dict(), model_filepath)
@@ -500,24 +500,24 @@ def mnist_predefined_mixup_test():
 	#--------------------
 	# Create a model.
 	if False:
-		import vgg_mixup
+		import mixup.vgg
 		# NOTE [info] >> Hard to train.
-		model = vgg_mixup.vgg16(pretrained=False, num_classes=num_classes)
-		#model = vgg_mixup.vgg16_bn(pretrained=False, num_classes=num_classes)
+		model = mixup.vgg.vgg16(pretrained=False, num_classes=num_classes)
+		#model = mixup.vgg.vgg16_bn(pretrained=False, num_classes=num_classes)
 	elif False:
-		import vgg_mixup
+		import mixup.vgg
 		# NOTE [error] >> Cannot load the pretrained model weights because the model is slightly changed.
-		#model = vgg_mixup.vgg16(pretrained=True, progress=True)
-		model = vgg_mixup.vgg16_bn(pretrained=True, progress=True)
+		#model = mixup.vgg.vgg16(pretrained=True, progress=True)
+		model = mixup.vgg.vgg16_bn(pretrained=True, progress=True)
 		num_features = model.classifier[6].in_features
 		model.classifier[6] = torch.nn.Linear(num_features, num_classes)
 		model.num_classes = num_classes
 	elif False:
-		import resnet_mixup
-		model = resnet_mixup.resnet18(pretrained=False, num_classes=num_classes)
+		import mixup.resnet
+		model = mixup.resnet.resnet18(pretrained=False, num_classes=num_classes)
 	else:
-		import resnet_mixup
-		model = resnet_mixup.resnet18(pretrained=True, progress=True)
+		import mixup.resnet
+		model = mixup.resnet.resnet18(pretrained=True, progress=True)
 		num_features = model.fc.in_features
 		model.fc = torch.nn.Linear(num_features, num_classes)
 		model.num_classes = num_classes
