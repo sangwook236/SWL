@@ -42,7 +42,7 @@ class GTUtility(BaseGTUtility):
 		polygon: Return oriented boxes defined by their four corner points.
 			Required by SegLink...
 	"""
-	def __init__(self, use_my_scene_text_dataset, use_rrc_mlt_2019_dataset, use_e2e_mlt_dataset, max_slope=None, polygon=False):
+	def __init__(self, use_my_scene_text_data, use_rrc_mlt_2019_data, use_e2e_mlt_data, max_slope=None, polygon=False):
 		# Data directory structure:
 		#	scene_text_dataset
 		#		e2e_mlt
@@ -68,18 +68,18 @@ class GTUtility(BaseGTUtility):
 		self.image_path = image_path = data_dir_path
 
 		img_filepaths, gt_texts, gt_boxes = list(), list(), list()
-		if use_my_scene_text_dataset:
-			img_filepaths0, mask_filepaths0, gt_texts0, gt_boxes0 = self.load_my_scene_text_dataset(data_dir_path)
+		if use_my_scene_text_data:
+			img_filepaths0, mask_filepaths0, gt_texts0, gt_boxes0 = self.load_my_scene_text_data(data_dir_path)
 			img_filepaths.extend(img_filepaths0)
 			gt_texts.extend(gt_texts0)
 			gt_boxes.extend(gt_boxes0)
-		if use_rrc_mlt_2019_dataset:
-			img_filepaths0, mask_filepaths0, gt_texts0, gt_boxes0 = self.load_rrc_mlt_2019_dataset(data_dir_path)
+		if use_rrc_mlt_2019_data:
+			img_filepaths0, mask_filepaths0, gt_texts0, gt_boxes0 = self.load_rrc_mlt_2019_data(data_dir_path)
 			img_filepaths.extend(img_filepaths0)
 			gt_texts.extend(gt_texts0)
 			gt_boxes.extend(gt_boxes0)
-		if use_e2e_mlt_dataset:
-			img_filepaths0, mask_filepaths0, gt_texts0, gt_boxes0 = self.load_e2e_mlt_dataset(data_dir_path)
+		if use_e2e_mlt_data:
+			img_filepaths0, mask_filepaths0, gt_texts0, gt_boxes0 = self.load_e2e_mlt_data(data_dir_path)
 			img_filepaths.extend(img_filepaths0)
 			gt_texts.extend(gt_texts0)
 			gt_boxes.extend(gt_boxes0)
@@ -161,7 +161,7 @@ class GTUtility(BaseGTUtility):
 
 		self.init()
 
-	def load_my_scene_text_dataset(self, data_dir_path):
+	def load_my_scene_text_data(self, data_dir_path):
 		print('Loading data (My scene text dataset)...')
 		start_time = time.time()
 		json_filename = 'scene_text_dataset.json'
@@ -170,8 +170,8 @@ class GTUtility(BaseGTUtility):
 
 		return img_filepaths, mask_filepaths, gt_texts, gt_boxes
 
-	# REF [function] >> rrc_mlt_2019_bounding_box_test() in rrc_dataset.py
-	def load_rrc_mlt_2019_dataset(self, data_dir_path):
+	# REF [function] >> rrc_mlt_2019_bounding_box_test() in rrc_data_test.py
+	def load_rrc_mlt_2019_data(self, data_dir_path):
 		print('Loading file list (RRC MLT 2019 dataset)...')
 		start_time = time.time()
 		img_filepaths = glob.glob(os.path.join(data_dir_path, 'rrc_icdar/mlt_2019/ImagesPart?/tr_img_*.*'), recursive=False)
@@ -240,8 +240,8 @@ class GTUtility(BaseGTUtility):
 
 		return img_filepaths, None, gt_texts, gt_boxes
 
-	# REF [function] >> bounding_box_test() in e2e_mlt_dataset.py
-	def load_e2e_mlt_dataset(self, data_dir_path):
+	# REF [function] >> bounding_box_test() in e2e_mlt_data_test.py
+	def load_e2e_mlt_data(self, data_dir_path):
 		print('Loading file list (E2E-MLT dataset)...')
 		start_time = time.time()
 		img_filepaths = glob.glob(os.path.join(data_dir_path, 'e2e_mlt/Korean/*.jpg'), recursive=False)
@@ -306,19 +306,25 @@ class GTUtility(BaseGTUtility):
 		return img_filepaths, None, gt_texts, gt_boxes
 
 def convert_scene_text_dataset_to_ssd_detectors():
-	use_my_scene_text_dataset, use_rrc_mlt_2019_dataset, use_e2e_mlt_dataset = True, True, True
+	use_my_scene_text_data, use_rrc_mlt_2019_data, use_e2e_mlt_data = True, True, True
 	polygon = True
-	gt_util = GTUtility(use_my_scene_text_dataset, use_rrc_mlt_2019_dataset, use_e2e_mlt_dataset, polygon=polygon)
+	gt_util = GTUtility(use_my_scene_text_data, use_rrc_mlt_2019_data, use_e2e_mlt_data, polygon=polygon)
 
 	file_name = 'gt_util_scene_text_seglink.pkl' if polygon else 'gt_util_scene_text.pkl'
 	print('Save to {}...'.format(file_name))
-	pickle.dump(gt_util, open(file_name, 'wb'))
+	try:
+		with open(file_name, 'wb') as fd:
+			pickle.dump(gt_util, fd)
+	except FileNotFoundError as ex:
+		print('File not found: {}.'.format(pkl_filepath))
+	except UnicodeDecodeError as ex:
+		print('Unicode decode error: {}.'.format(pkl_filepath))
 	print('Done.')
 
 def main():
 	convert_scene_text_dataset_to_ssd_detectors()
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 if '__main__' == __name__:
 	main()
