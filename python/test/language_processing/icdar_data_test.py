@@ -460,6 +460,10 @@ def generate_single_chars_from_rrc_mlt_2019_data():
 	pkl_filepath = os.path.join(rrc_mlt_2019_dir_path, 'icdar_mlt_2019_kr.pkl')
 	#pkl_filepath = os.path.join(rrc_mlt_2019_dir_path, 'icdar_mlt_2019_en.pkl')
 
+	ch_image_label_filpath = rrc_mlt_2019_dir_path + '/ch_images.txt'
+	ch_image_dir_path = rrc_mlt_2019_dir_path + '/ch_images'
+	os.makedirs(ch_image_dir_path, exist_ok=False)
+
 	print('Start loading data from {}...'.format(pkl_filepath))
 	start_time = time.time()
 	imagefile_box_text_triples = None
@@ -482,7 +486,8 @@ def generate_single_chars_from_rrc_mlt_2019_data():
 	net, refine_net = test_utils.load_craft(trained_model, refiner_model, refine, cuda)
 	print('End loading CRAFT: {} secs.'.format(time.time() - start_time))
 
-	for idx, (imgfile, boxes, texts) in enumerate(imagefile_box_text_triples):
+	ch_bbox_id = 0
+	for idx, (imgfile, bboxes_gt, texts_gt) in enumerate(imagefile_box_text_triples):
 		fpath = os.path.join(rrc_mlt_2019_dir_path, imgfile)
 		img = cv2.imread(fpath, cv2.IMREAD_UNCHANGED)
 		if img is None:
@@ -492,32 +497,54 @@ def generate_single_chars_from_rrc_mlt_2019_data():
 		print('Start running CRAFT...')
 		start_time = time.time()
 		rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # RGB order.
-		bboxes, ch_bboxes_lst, score_text = test_utils.run_craft(rgb, net, refine_net, cuda)
+		bboxes_craft, ch_bboxes_lst_craft, score_text_craft = test_utils.run_craft(rgb, net, refine_net, cuda)
 		print('End running CRAFT: {} secs.'.format(time.time() - start_time))
 
 		#print('Texts =', texts)
-		match_count = 0
-		selected_bboxes = []
-		for bbox_gt, txt in zip(boxes, texts):
+		matched_bbox_count = 0
+		selected_bboxes, selected_ch_bboxes, selected_ch_bbox_text_pairs = [], [], []
+		for bbox_gt, txt_gt in zip(bboxes_gt, texts_gt):
 			poly_gt = Polygon(bbox_gt)
-			for bbox_craft, ch_bboxes_craft in zip(bboxes, ch_bboxes_lst):
+			for bbox_craft, ch_bboxes_craft in zip(bboxes_craft, ch_bboxes_lst_craft):
 				poly_craft = Polygon(bbox_craft)
 
-				matched = True
-				if len(txt[1]) == len(ch_bboxes_craft) and poly_gt.intersects(poly_craft):
-					area_int = poly_gt.intersection(poly_craft).area
-					if area_int / poly_gt.area >= 0.75 and area_int / poly_craft.area >= 0.75:
+				#if poly_gt.intersects(poly_craft):
+				if len(txt_gt[1]) == len(ch_bboxes_craft) and poly_gt.intersects(poly_craft):
+					#area_int = poly_gt.intersection(poly_craft).area
+					#if area_int / poly_gt.area >= 0.75 and area_int / poly_craft.area >= 0.75:
+					iou = poly_gt.intersection(poly_craft).area / poly_gt.union(poly_craft).area
+					if iou >= 0.75:
+						matched = True
 						for ch_bbox in ch_bboxes_craft:
 							if not poly_gt.contains(Polygon(ch_bbox).centroid):
 								matched = False
 								break
 						if matched:
-							match_count += 1
+							matched_bbox_count += 1
 							#selected_bboxes.append(bbox_craft)
-							selected_bboxes.extend(ch_bboxes_craft)
-		print('***', match_count, len(boxes))
-		draw_bboxes(selected_bboxes, img.copy())
-		cv2.waitKey(0)
+							#selected_ch_bboxes.extend(ch_bboxes_craft)
+							selected_ch_bbox_text_pairs.append([ch_bboxes_craft, txt_gt[1]])
+
+		if False:
+			print('#matched bboxes =', matched_bbox_count, len(bboxes_gt))
+			#draw_bboxes(selected_bboxes, img.copy())
+			draw_bboxes(selected_ch_bboxes, img.copy())
+			cv2.waitKey(0)
+
+		try:
+			with open(ch_image_label_filpath, 'w' if idx == 0 else 'a', encoding='UTF8') as fd:
+				for (ch_bboxes, txt) in selected_ch_bbox_text_pairs:
+					for (ch_bbox, ch) in zip(ch_bboxes, txt):
+						(x1, y1), (x2, y2) = np.floor(np.min(ch_bbox, axis=0)).astype(np.int32), np.ceil(np.max(ch_bbox, axis=0)).astype(np.int32)
+						fpath = os.path.join(ch_image_dir_path, 'image_{}.png'.format(ch_bbox_id))
+						#fpath = os.path.join(ch_image_dir_path, '{}_{}.png'.format(ch_bbox_id, ch))
+						cv2.imwrite(fpath, img[y1:y2+1,x1:x2+1])
+						fd.write('{},{}\n'.format(os.path.relpath(fpath, rrc_mlt_2019_dir_path), ch))
+						ch_bbox_id += 1
+		except FileNotFoundError as ex:
+			print('File not found: {}.'.format(ch_image_label_filpath))
+		except UnicodeDecodeError as ex:
+			print('Unicode decode error: {}.'.format(ch_image_label_filpath))
 
 # REF [site] >> https://rrc.cvc.uab.es/?ch=13
 def generate_icdar2019_sroie_task1_train_text_line_data():
