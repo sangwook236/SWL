@@ -32,7 +32,61 @@ def visualize_data_using_image(images, labels, num_images_to_show=10):
 
 	cv2.destroyAllWindows()
 
-def save_and_load_data(image_label_pairs, pkl_filepath):
+def prepare_and_save_and_load_data_using_image_file(data_dir_path, data_info, pkl_filepath):
+	print('Start preparing data...')
+	start_time = time.time()
+	imagefile_label_pairs = []
+	for img_fpath, lbl in zip(data_info[0], data_info[2]):
+		img_fpath = '{}.png'.format(img_fpath)
+		fpath = os.path.join(data_dir_path, img_fpath)
+		img = cv2.imread(fpath, cv2.IMREAD_UNCHANGED)
+		if img is None:
+			print('Failed to load an image, {}.'.format(fpath))
+			continue
+		imagefile_label_pairs.append([img_fpath, int(lbl[0])])
+	print('End preparing data: {} secs.'.format(time.time() - start_time))
+
+	print('Start saving data to {}...'.format(pkl_filepath))
+	start_time = time.time()
+	try:
+		with open(pkl_filepath, 'wb') as fd:
+			pickle.dump(imagefile_label_pairs, fd)
+	except FileNotFoundError as ex:
+		print('File not found: {}.'.format(pkl_filepath))
+	except UnicodeDecodeError as ex:
+		print('Unicode decode error: {}.'.format(pkl_filepath))
+	print('End saving data: {} secs.'.format(time.time() - start_time))
+	#del imagefile_label_pairs
+
+	print('Start loading data from {}...'.format(pkl_filepath))
+	start_time = time.time()
+	try:
+		with open(pkl_filepath, 'rb') as fd:
+			loaded_imagefile_label_pairs = pickle.load(fd)
+			print('#loaded pairs of image file and label =', len(loaded_imagefile_label_pairs))
+			del loaded_imagefile_label_pairs
+	except FileNotFoundError as ex:
+		print('File not found: {}.'.format(pkl_filepath))
+	except UnicodeDecodeError as ex:
+		print('Unicode decode error: {}.'.format(pkl_filepath))
+	print('End loading data: {} secs.'.format(time.time() - start_time))
+
+	return imagefile_label_pairs
+
+def prepare_and_save_and_load_data_using_image(data_dir_path, data_info, pkl_filepath):
+	print('Start preparing data...')
+	start_time = time.time()
+	image_label_pairs = []
+	for img_fpath, lbl in zip(data_info[0], data_info[2]):
+		img_fpath = '{}.png'.format(img_fpath)
+		fpath = os.path.join(data_dir_path, img_fpath)
+		img = cv2.imread(fpath, cv2.IMREAD_UNCHANGED)
+		if img is None:
+			print('Failed to load an image, {}.'.format(fpath))
+			continue
+		image_label_pairs.append([img, int(lbl[0])])
+	print('End preparing data: {} secs.'.format(time.time() - start_time))
+
 	print('Start saving data to {}...'.format(pkl_filepath))
 	start_time = time.time()
 	try:
@@ -51,13 +105,14 @@ def save_and_load_data(image_label_pairs, pkl_filepath):
 		with open(pkl_filepath, 'rb') as fd:
 			loaded_image_label_pairs = pickle.load(fd)
 			print('#loaded pairs of image and label =', len(loaded_image_label_pairs))
+			del loaded_image_label_pairs
 	except FileNotFoundError as ex:
 		print('File not found: {}.'.format(pkl_filepath))
-		loaded_image_label_pairs = None
 	except UnicodeDecodeError as ex:
 		print('Unicode decode error: {}.'.format(pkl_filepath))
-		loaded_image_label_pairs = None
 	print('End loading data: {} secs.'.format(time.time() - start_time))
+
+	return image_label_pairs
 
 # REF [site] >> http://www.ee.surrey.ac.uk/CVSSP/demos/chars74k/
 def chars74k_test():
@@ -89,28 +144,68 @@ def chars74k_test():
 	#print('*****', data_info[7])  # ???
 	#print('*****', data_info[8])  # ???
 	#print('*****', data_info[9])  # ???
-
-	image_label_pairs = []
-	for img_fpath, lbl in zip(data_info[0], data_info[2]):
-		img_fpath = os.path.join(data_dir_path, '{}.png'.format(img_fpath))
-		img = cv2.imread(img_fpath, cv2.IMREAD_UNCHANGED)
-		if img is None:
-			print('Failed to load an image, {}.'.format(img_fpath))
-			continue
-		image_label_pairs.append([img, int(lbl[0])])
 	print('End loading chars74k data: {} secs.'.format(time.time() - start_time))
 
 	#visualize_data_using_image_file(data_dir_path, data_info[0], data_info[2], num_images_to_show=10)
 
 	#--------------------
-	# Pairs of (image, label).
+	# Pairs of (image filepath, label).
 	if True:
-		save_and_load_data(image_label_pairs, pkl_filepath)
+		imagefile_label_pairs = prepare_and_save_and_load_data_using_image_file(data_dir_path, data_info, pkl_filepath)
+
+		#visualize_data_using_image_file(data_dir_path, *list(zip(*imagefile_label_pairs)), num_images_to_show=10)
+
+	# Pairs of (image, label).
+	if False:
+		image_label_pairs = prepare_and_save_and_load_data_using_image(data_dir_path, data_info, pkl_filepath)
 
 		#visualize_data_using_image(*list(zip(*image_label_pairs)), num_images_to_show=10)
 
+def generate_chars_from_chars74k_data():
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+	data_dir_path = data_base_dir_path + '/text/chars74k/English/Img'
+
+	pkl_filepath = data_dir_path + '/chars74k.pkl'
+	char_image_label_filpath = data_dir_path + '/char_images.txt'
+
+	print('Start loading data from {}...'.format(pkl_filepath))
+	start_time = time.time()
+	imagefile_label_pairs = None
+	try:
+		with open(pkl_filepath, 'rb') as fd:
+			imagefile_label_pairs = pickle.load(fd)
+			print('#loaded pairs of image file and label =', len(imagefile_label_pairs))
+	except FileNotFoundError as ex:
+		print('File not found: {}.'.format(pkl_filepath))
+	except UnicodeDecodeError as ex:
+		print('Unicode decode error: {}.'.format(pkl_filepath))
+	print('End loading data: {} secs.'.format(time.time() - start_time))
+
+	print('Start generating chars...')
+	start_time = time.time()
+	try:
+		with open(char_image_label_filpath, 'w', encoding='UTF8') as fd:
+			for idx, (imgfile, lbl) in enumerate(imagefile_label_pairs):
+				fpath = os.path.join(data_dir_path, imgfile)
+				img = cv2.imread(fpath, cv2.IMREAD_UNCHANGED)
+				if img is None:
+					print('Failed to load an image, {}.'.format(fpath))
+					continue
+
+				fd.write('{},{}\n'.format(imgfile, lbl))
+	except FileNotFoundError as ex:
+		print('File not found: {}.'.format(char_image_label_filpath))
+	except UnicodeDecodeError as ex:
+		print('Unicode decode error: {}.'.format(char_image_label_filpath))
+	print('End generating chars: {} secs.'.format(time.time() - start_time))
+
 def main():
-	chars74k_test()
+	#chars74k_test()
+
+	generate_chars_from_chars74k_data()
 
 #--------------------------------------------------------------------
 

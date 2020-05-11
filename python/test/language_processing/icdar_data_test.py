@@ -72,15 +72,15 @@ def prepare_and_save_and_load_data_using_image_file(data_dir_path, img_filepaths
 	except UnicodeDecodeError as ex:
 		print('Unicode decode error: {}.'.format(pkl_filepath))
 	print('End saving data: {} secs.'.format(time.time() - start_time))
-	del imagefile_box_text_triples
+	#del imagefile_box_text_triples
 
 	print('Start loading data from {}...'.format(pkl_filepath))
 	start_time = time.time()
-	imagefile_box_text_triples = None
 	try:
 		with open(pkl_filepath, 'rb') as fd:
-			imagefile_box_text_triples = pickle.load(fd)
-			print('#loaded triples of image, boxes, and texts =', len(imagefile_box_text_triples))
+			loaded_imagefile_box_text_triples = pickle.load(fd)
+			print('#loaded triples of image file, boxes, and texts =', len(loaded_imagefile_box_text_triples))
+			del loaded_imagefile_box_text_triples
 	except FileNotFoundError as ex:
 		print('File not found: {}.'.format(pkl_filepath))
 	except UnicodeDecodeError as ex:
@@ -112,15 +112,15 @@ def prepare_and_save_and_load_data_using_image(data_dir_path, img_filepaths, gt_
 	except UnicodeDecodeError as ex:
 		print('Unicode decode error: {}.'.format(pkl_filepath))
 	print('End saving data: {} secs.'.format(time.time() - start_time))
-	del image_box_text_triples
+	#del image_box_text_triples
 
 	print('Start loading data from {}...'.format(pkl_filepath))
 	start_time = time.time()
-	image_box_text_triples = None
 	try:
 		with open(pkl_filepath, 'rb') as fd:
-			image_box_text_triples = pickle.load(fd)
-			print('#loaded triples of image, boxes, and texts =', len(image_box_text_triples))
+			loaded_image_box_text_triples = pickle.load(fd)
+			print('#loaded triples of image, boxes, and texts =', len(loaded_image_box_text_triples))
+			del loaded_image_box_text_triples
 	except FileNotFoundError as ex:
 		print('File not found: {}.'.format(pkl_filepath))
 	except UnicodeDecodeError as ex:
@@ -480,7 +480,7 @@ def generate_chars_from_rrc_mlt_2019_data():
 	try:
 		with open(pkl_filepath, 'rb') as fd:
 			imagefile_box_text_triples = pickle.load(fd)
-			print('#loaded triples of image, boxes, and texts =', len(imagefile_box_text_triples))
+			print('#loaded triples of image file, boxes, and texts =', len(imagefile_box_text_triples))
 	except FileNotFoundError as ex:
 		print('File not found: {}.'.format(pkl_filepath))
 	except UnicodeDecodeError as ex:
@@ -496,6 +496,8 @@ def generate_chars_from_rrc_mlt_2019_data():
 	net, refine_net = test_utils.load_craft(trained_model, refiner_model, refine, cuda)
 	print('End loading CRAFT: {} secs.'.format(time.time() - start_time))
 
+	print('Start generating chars...')
+	start_time = time.time()
 	ch_bbox_id = 0
 	for idx, (imgfile, bboxes_gt, texts_gt) in enumerate(imagefile_box_text_triples):
 		fpath = os.path.join(rrc_mlt_2019_dir_path, imgfile)
@@ -559,6 +561,7 @@ def generate_chars_from_rrc_mlt_2019_data():
 			print('File not found: {}.'.format(char_image_label_filpath))
 		except UnicodeDecodeError as ex:
 			print('Unicode decode error: {}.'.format(char_image_label_filpath))
+	print('End generating chars: {} secs.'.format(time.time() - start_time))
 
 def generate_words_from_rrc_mlt_2019_data():
 	if 'posix' == os.name:
@@ -585,13 +588,15 @@ def generate_words_from_rrc_mlt_2019_data():
 	try:
 		with open(pkl_filepath, 'rb') as fd:
 			imagefile_box_text_triples = pickle.load(fd)
-			print('#loaded triples of image, boxes, and texts =', len(imagefile_box_text_triples))
+			print('#loaded triples of image file, boxes, and texts =', len(imagefile_box_text_triples))
 	except FileNotFoundError as ex:
 		print('File not found: {}.'.format(pkl_filepath))
 	except UnicodeDecodeError as ex:
 		print('Unicode decode error: {}.'.format(pkl_filepath))
 	print('End loading data: {} secs.'.format(time.time() - start_time))
 
+	print('Start generating words...')
+	start_time = time.time()
 	word_bbox_id = 0
 	for idx, (imgfile, bboxes_gt, texts_gt) in enumerate(imagefile_box_text_triples):
 		fpath = os.path.join(rrc_mlt_2019_dir_path, imgfile)
@@ -622,6 +627,7 @@ def generate_words_from_rrc_mlt_2019_data():
 			print('File not found: {}.'.format(word_image_label_filpath))
 		except UnicodeDecodeError as ex:
 			print('Unicode decode error: {}.'.format(word_image_label_filpath))
+	print('End generating words: {} secs.'.format(time.time() - start_time))
 
 # REF [site] >> https://rrc.cvc.uab.es/?ch=13
 def generate_icdar2019_sroie_task1_train_text_line_data():
