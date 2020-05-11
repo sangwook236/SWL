@@ -136,10 +136,11 @@ def e2e_mlt_test():
 
 	if True:
 		e2e_mlt_lang = 'Korean'
-		pkl_filepath = os.path.join(e2e_mlt_dir_path, 'e2e_mlt_kr.pkl')
+		lang_tag = 'kr'
 	else:
 		e2e_mlt_lang = 'Latin'
-		pkl_filepath = os.path.join(e2e_mlt_dir_path, 'e2e_mlt_en.pkl')
+		lang_tag = 'en'
+	pkl_filepath = e2e_mlt_dir_path + '/e2e_mlt_{}.pkl'.format(lang_tag)
 
 	print('Start loading file list...')
 	start_time = time.time()
@@ -225,7 +226,7 @@ def e2e_mlt_test():
 
 		#visualize_data_using_image(*list(zip(*image_box_text_triples)), num_images_to_show=10)
 
-def generate_single_chars_from_e2e_mlt_data():
+def generate_chars_from_e2e_mlt_data():
 	import craft.test_utils as test_utils
 	from shapely.geometry import Point
 	from shapely.geometry.polygon import Polygon
@@ -236,12 +237,15 @@ def generate_single_chars_from_e2e_mlt_data():
 		data_base_dir_path = 'D:/work/dataset'
 	e2e_mlt_dir_path = data_base_dir_path + '/text/e2e_mlt'
 
-	pkl_filepath = os.path.join(e2e_mlt_dir_path, 'e2e_mlt_kr.pkl')
-	#pkl_filepath = os.path.join(e2e_mlt_dir_path, 'e2e_mlt_en.pkl')
+	if True:
+		lang_tag = 'kr'
+	else:
+		lang_tag = 'en'
+	pkl_filepath = e2e_mlt_dir_path + '/e2e_mlt_{}.pkl'.format(lang_tag)
+	char_image_label_filpath = e2e_mlt_dir_path + '/char_images_{}.txt'.format(lang_tag)
+	char_image_dir_path = e2e_mlt_dir_path + '/char_images_{}'.format(lang_tag)
 
-	ch_image_label_filpath = e2e_mlt_dir_path + '/ch_images.txt'
-	ch_image_dir_path = e2e_mlt_dir_path + '/ch_images'
-	os.makedirs(ch_image_dir_path, exist_ok=False)
+	os.makedirs(char_image_dir_path, exist_ok=False)
 
 	print('Start loading data from {}...'.format(pkl_filepath))
 	start_time = time.time()
@@ -311,24 +315,87 @@ def generate_single_chars_from_e2e_mlt_data():
 			cv2.waitKey(0)
 
 		try:
-			with open(ch_image_label_filpath, 'w' if idx == 0 else 'a', encoding='UTF8') as fd:
+			with open(char_image_label_filpath, 'w' if idx == 0 else 'a', encoding='UTF8') as fd:
 				for (ch_bboxes, txt) in selected_ch_bbox_text_pairs:
 					for (ch_bbox, ch) in zip(ch_bboxes, txt):
 						(x1, y1), (x2, y2) = np.floor(np.min(ch_bbox, axis=0)).astype(np.int32), np.ceil(np.max(ch_bbox, axis=0)).astype(np.int32)
-						fpath = os.path.join(ch_image_dir_path, 'image_{}.png'.format(ch_bbox_id))
-						#fpath = os.path.join(ch_image_dir_path, '{}_{}.png'.format(ch_bbox_id, ch))
-						cv2.imwrite(fpath, img[y1:y2+1,x1:x2+1])
+						patch = img[y1:y2+1,x1:x2+1]
+						if patch is None or patch.size == 0: continue
+
+						fpath = os.path.join(char_image_dir_path, 'image_{}.png'.format(ch_bbox_id))
+						#fpath = os.path.join(char_image_dir_path, '{}_{}.png'.format(ch_bbox_id, ch))
+						cv2.imwrite(fpath, patch)
 						fd.write('{},{}\n'.format(os.path.relpath(fpath, e2e_mlt_dir_path), ch))
 						ch_bbox_id += 1
 		except FileNotFoundError as ex:
-			print('File not found: {}.'.format(ch_image_label_filpath))
+			print('File not found: {}.'.format(char_image_label_filpath))
 		except UnicodeDecodeError as ex:
-			print('Unicode decode error: {}.'.format(ch_image_label_filpath))
+			print('Unicode decode error: {}.'.format(char_image_label_filpath))
+
+def generate_words_from_e2e_mlt_data():
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+	e2e_mlt_dir_path = data_base_dir_path + '/text/e2e_mlt'
+
+	if True:
+		lang_tag = 'kr'
+	else:
+		lang_tag = 'en'
+	pkl_filepath = e2e_mlt_dir_path + '/e2e_mlt_{}.pkl'.format(lang_tag)
+	word_image_label_filpath = e2e_mlt_dir_path + '/word_images_{}.txt'.format(lang_tag)
+	word_image_dir_path = e2e_mlt_dir_path + '/word_images_{}'.format(lang_tag)
+
+	os.makedirs(word_image_dir_path, exist_ok=False)
+
+	print('Start loading data from {}...'.format(pkl_filepath))
+	start_time = time.time()
+	imagefile_box_text_triples = None
+	try:
+		with open(pkl_filepath, 'rb') as fd:
+			imagefile_box_text_triples = pickle.load(fd)
+			print('#loaded triples of image, boxes, and texts =', len(imagefile_box_text_triples))
+	except FileNotFoundError as ex:
+		print('File not found: {}.'.format(pkl_filepath))
+	except UnicodeDecodeError as ex:
+		print('Unicode decode error: {}.'.format(pkl_filepath))
+	print('End loading data: {} secs.'.format(time.time() - start_time))
+
+	word_bbox_id = 0
+	for idx, (imgfile, bboxes_gt, texts_gt) in enumerate(imagefile_box_text_triples):
+		fpath = os.path.join(e2e_mlt_dir_path, imgfile)
+		img = cv2.imread(fpath, cv2.IMREAD_UNCHANGED)
+		if img is None:
+			print('Failed to load an image, {}.'.format(fpath))
+			continue
+
+		if False:
+			draw_bboxes(bboxes_gt, img.copy())
+			cv2.waitKey(0)
+
+		try:
+			with open(word_image_label_filpath, 'w' if idx == 0 else 'a', encoding='UTF8') as fd:
+				for (bbox, txt) in zip(bboxes_gt, texts_gt):
+					(x1, y1), (x2, y2) = np.floor(np.min(bbox, axis=0)).astype(np.int32), np.ceil(np.max(bbox, axis=0)).astype(np.int32)
+					patch = img[y1:y2+1,x1:x2+1]
+					if patch is None or patch.size == 0: continue
+
+					fpath = os.path.join(word_image_dir_path, 'image_{}.png'.format(word_bbox_id))
+					#fpath = os.path.join(word_image_dir_path, '{}_{}.png'.format(word_bbox_id, ch))
+					cv2.imwrite(fpath, patch)
+					fd.write('{},{}\n'.format(os.path.relpath(fpath, e2e_mlt_dir_path), txt))
+					word_bbox_id += 1
+		except FileNotFoundError as ex:
+			print('File not found: {}.'.format(word_image_label_filpath))
+		except UnicodeDecodeError as ex:
+			print('Unicode decode error: {}.'.format(word_image_label_filpath))
 
 def main():
 	#e2e_mlt_test()
 
-	generate_single_chars_from_e2e_mlt_data()
+	#generate_chars_from_e2e_mlt_data()
+	generate_words_from_e2e_mlt_data()
 
 #--------------------------------------------------------------------
 

@@ -140,26 +140,27 @@ def rrc_mlt_2017_test():
 	if False:
 		# Arabic.
 		start_data_index, end_data_index = 0, 0
-		pkl_filepath = os.path.join(rrc_mlt_2017_dir_path, 'icdar_mlt_2017_ar.pkl')
+		lang_tag = 'ar'
 	elif False:
 		# Latin.
 		start_data_index, end_data_index = 0, 0
-		pkl_filepath = os.path.join(rrc_mlt_2017_dir_path, 'icdar_mlt_2017_en.pkl')
+		lang_tag = 'en'
 	elif False:
 		# Chinese.
 		start_data_index, end_data_index = 0, 0
-		pkl_filepath = os.path.join(rrc_mlt_2017_dir_path, 'icdar_mlt_2017_ch.pkl')
+		lang_tag = 'ch'
 	elif False:
 		# Japanese.
 		start_data_index, end_data_index = 0, 0
-		pkl_filepath = os.path.join(rrc_mlt_2017_dir_path, 'icdar_mlt_2017_jp.pkl')
+		lang_tag = 'jp'
 	elif True:
 		# Korean: 4001 ~ 4800. (?)
 		start_data_index, end_data_index = 4001, 4800
-		pkl_filepath = os.path.join(rrc_mlt_2017_dir_path, 'icdar_mlt_2017_kr.pkl')
+		lang_tag = 'kr'
 	else:
 		start_data_index, end_data_index = 1, 4800
-		pkl_filepath = os.path.join(rrc_mlt_2017_dir_path, 'icdar_mlt_2017_all.pkl')
+		lang_tag = 'all'
+	pkl_filepath = rrc_mlt_2017_dir_path + '/icdar_mlt_2017_{}.pkl'.format(lang_tag)
 
 	print('Start loading file list...')
 	start_time = time.time()
@@ -253,38 +254,39 @@ def rrc_mlt_2019_test():
 	if False:
 		# Arabic: 00001 ~ 01000.
 		start_data_index, end_data_index = 1, 1000
-		pkl_filepath = os.path.join(rrc_mlt_2019_dir_path, 'icdar_mlt_2019_ar.pkl')
+		lang_tag = 'ar'
 	elif False:
 		# English: 01001 ~ 02000.
 		start_data_index, end_data_index = 1001, 2000
-		pkl_filepath = os.path.join(rrc_mlt_2019_dir_path, 'icdar_mlt_2019_en.pkl')
+		lang_tag = 'en'
 	elif False:
 		# French: 02001 ~ 03000.
 		start_data_index, end_data_index = 2001, 3000
-		pkl_filepath = os.path.join(rrc_mlt_2019_dir_path, 'icdar_mlt_2019_fr.pkl')
+		lang_tag = 'fr'
 	elif False:
 		# Chinese: 03001 ~ 04000.
 		start_data_index, end_data_index = 3001, 4000
-		pkl_filepath = os.path.join(rrc_mlt_2019_dir_path, 'icdar_mlt_2019_ch.pkl')
+		lang_tag = 'ch'
 	elif False:
 		# German: 04001 ~ 05000.
 		start_data_index, end_data_index = 4001, 5000
-		pkl_filepath = os.path.join(rrc_mlt_2019_dir_path, 'icdar_mlt_2019_de.pkl')
+		lang_tag = 'de'
 	elif True:
 		# Korean: 05001 ~ 06000.
 		start_data_index, end_data_index = 5001, 6000
-		pkl_filepath = os.path.join(rrc_mlt_2019_dir_path, 'icdar_mlt_2019_kr.pkl')
+		lang_tag = 'kr'
 	elif False:
 		# Japanese: 06001 ~ 07000.
 		start_data_index, end_data_index = 6001, 7000
-		pkl_filepath = os.path.join(rrc_mlt_2019_dir_path, 'icdar_mlt_2019_jp.pkl')
+		lang_tag = 'jp'
 	elif False:
 		# Italian: 07001 ~ 08000.
 		start_data_index, end_data_index = 7001, 8000
-		pkl_filepath = os.path.join(rrc_mlt_2019_dir_path, 'icdar_mlt_2019_it.pkl')
+		lang_tag = 'it'
 	else:
 		start_data_index, end_data_index = 1, 8000
-		pkl_filepath = os.path.join(rrc_mlt_2019_dir_path, 'icdar_mlt_2019_all.pkl')
+		lang_tag = 'all'
+	pkl_filepath = rrc_mlt_2019_dir_path + '/icdar_mlt_2019_{}.pkl'.format(lang_tag)
 
 	print('Start loading file list...')
 	start_time = time.time()
@@ -374,7 +376,7 @@ def rrc_sroie_test():
 	else:
 		data_base_dir_path = 'D:/work/dataset'
 	rrc_sroie_dir_path = data_base_dir_path + '/text/receipt/icdar2019_sroie'
-	pkl_filepath = os.path.join(rrc_sroie_dir_path, 'icdar2019_sroie.pkl')
+	pkl_filepath = rrc_sroie_dir_path + '/icdar2019_sroie.pkl'
 
 	print('Start loading file list...')
 	start_time = time.time()
@@ -443,10 +445,13 @@ def rrc_sroie_test():
 
 		#visualize_data_using_image(*list(zip(*image_box_text_triples)), num_images_to_show=10)
 
-def generate_single_chars_from_rrc_mlt_2017_data():
+def generate_chars_from_rrc_mlt_2017_data():
 	raise NotImplementedError
 
-def generate_single_chars_from_rrc_mlt_2019_data():
+def generate_words_from_rrc_mlt_2017_data():
+	raise NotImplementedError
+
+def generate_chars_from_rrc_mlt_2019_data():
 	import craft.test_utils as test_utils
 	from shapely.geometry import Point
 	from shapely.geometry.polygon import Polygon
@@ -457,12 +462,17 @@ def generate_single_chars_from_rrc_mlt_2019_data():
 		data_base_dir_path = 'D:/work/dataset'
 	rrc_mlt_2019_dir_path = data_base_dir_path + '/text/icdar_mlt_2019'
 
-	pkl_filepath = os.path.join(rrc_mlt_2019_dir_path, 'icdar_mlt_2019_kr.pkl')
-	#pkl_filepath = os.path.join(rrc_mlt_2019_dir_path, 'icdar_mlt_2019_en.pkl')
+	#acceptable_types = ['Korean', 'Latin', 'Chinese', 'Japanese', 'Symbols', 'Mixed', 'None']
+	acceptable_types = ['Korean', 'Latin', 'Symbols', 'Mixed', 'None']
+	if True:
+		lang_tag = 'kr'
+	else:
+		lang_tag = 'en'
+	pkl_filepath = rrc_mlt_2019_dir_path + '/icdar_mlt_2019_{}.pkl'.format(lang_tag)
+	char_image_label_filpath = rrc_mlt_2019_dir_path + '/char_images_{}.txt'.format(lang_tag)
+	char_image_dir_path = rrc_mlt_2019_dir_path + '/char_images_{}'.format(lang_tag)
 
-	ch_image_label_filpath = rrc_mlt_2019_dir_path + '/ch_images.txt'
-	ch_image_dir_path = rrc_mlt_2019_dir_path + '/ch_images'
-	os.makedirs(ch_image_dir_path, exist_ok=False)
+	os.makedirs(char_image_dir_path, exist_ok=False)
 
 	print('Start loading data from {}...'.format(pkl_filepath))
 	start_time = time.time()
@@ -500,10 +510,11 @@ def generate_single_chars_from_rrc_mlt_2019_data():
 		bboxes_craft, ch_bboxes_lst_craft, score_text_craft = test_utils.run_craft(rgb, net, refine_net, cuda)
 		print('End running CRAFT: {} secs.'.format(time.time() - start_time))
 
-		#print('Texts =', texts)
 		matched_bbox_count = 0
 		selected_bboxes, selected_ch_bboxes, selected_ch_bbox_text_pairs = [], [], []
 		for bbox_gt, txt_gt in zip(bboxes_gt, texts_gt):
+			if (txt_gt[0] not in acceptable_types) or (txt_gt[1] == '###'): continue
+
 			poly_gt = Polygon(bbox_gt)
 			for bbox_craft, ch_bboxes_craft in zip(bboxes_craft, ch_bboxes_lst_craft):
 				poly_craft = Polygon(bbox_craft)
@@ -532,19 +543,85 @@ def generate_single_chars_from_rrc_mlt_2019_data():
 			cv2.waitKey(0)
 
 		try:
-			with open(ch_image_label_filpath, 'w' if idx == 0 else 'a', encoding='UTF8') as fd:
+			with open(char_image_label_filpath, 'w' if idx == 0 else 'a', encoding='UTF8') as fd:
 				for (ch_bboxes, txt) in selected_ch_bbox_text_pairs:
 					for (ch_bbox, ch) in zip(ch_bboxes, txt):
 						(x1, y1), (x2, y2) = np.floor(np.min(ch_bbox, axis=0)).astype(np.int32), np.ceil(np.max(ch_bbox, axis=0)).astype(np.int32)
-						fpath = os.path.join(ch_image_dir_path, 'image_{}.png'.format(ch_bbox_id))
-						#fpath = os.path.join(ch_image_dir_path, '{}_{}.png'.format(ch_bbox_id, ch))
-						cv2.imwrite(fpath, img[y1:y2+1,x1:x2+1])
+						patch = img[y1:y2+1,x1:x2+1]
+						if patch is None or patch.size == 0: continue
+
+						fpath = os.path.join(char_image_dir_path, 'image_{}.png'.format(ch_bbox_id))
+						#fpath = os.path.join(char_image_dir_path, '{}_{}.png'.format(ch_bbox_id, ch))
+						cv2.imwrite(fpath, patch)
 						fd.write('{},{}\n'.format(os.path.relpath(fpath, rrc_mlt_2019_dir_path), ch))
 						ch_bbox_id += 1
 		except FileNotFoundError as ex:
-			print('File not found: {}.'.format(ch_image_label_filpath))
+			print('File not found: {}.'.format(char_image_label_filpath))
 		except UnicodeDecodeError as ex:
-			print('Unicode decode error: {}.'.format(ch_image_label_filpath))
+			print('Unicode decode error: {}.'.format(char_image_label_filpath))
+
+def generate_words_from_rrc_mlt_2019_data():
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+	rrc_mlt_2019_dir_path = data_base_dir_path + '/text/icdar_mlt_2019'
+
+	#acceptable_types = ['Korean', 'Latin', 'Chinese', 'Japanese', 'Symbols', 'Mixed', 'None']
+	acceptable_types = ['Korean', 'Latin', 'Symbols', 'Mixed', 'None']
+	if True:
+		lang_tag = 'kr'
+	else:
+		lang_tag = 'en'
+	pkl_filepath = rrc_mlt_2019_dir_path + '/icdar_mlt_2019_{}.pkl'.format(lang_tag)
+	word_image_label_filpath = rrc_mlt_2019_dir_path + '/word_images_{}.txt'.format(lang_tag)
+	word_image_dir_path = rrc_mlt_2019_dir_path + '/word_images_{}'.format(lang_tag)
+
+	os.makedirs(word_image_dir_path, exist_ok=False)
+
+	print('Start loading data from {}...'.format(pkl_filepath))
+	start_time = time.time()
+	imagefile_box_text_triples = None
+	try:
+		with open(pkl_filepath, 'rb') as fd:
+			imagefile_box_text_triples = pickle.load(fd)
+			print('#loaded triples of image, boxes, and texts =', len(imagefile_box_text_triples))
+	except FileNotFoundError as ex:
+		print('File not found: {}.'.format(pkl_filepath))
+	except UnicodeDecodeError as ex:
+		print('Unicode decode error: {}.'.format(pkl_filepath))
+	print('End loading data: {} secs.'.format(time.time() - start_time))
+
+	word_bbox_id = 0
+	for idx, (imgfile, bboxes_gt, texts_gt) in enumerate(imagefile_box_text_triples):
+		fpath = os.path.join(rrc_mlt_2019_dir_path, imgfile)
+		img = cv2.imread(fpath, cv2.IMREAD_UNCHANGED)
+		if img is None:
+			print('Failed to load an image, {}.'.format(fpath))
+			continue
+
+		if False:
+			draw_bboxes(bboxes_gt, img.copy())
+			cv2.waitKey(0)
+
+		try:
+			with open(word_image_label_filpath, 'w' if idx == 0 else 'a', encoding='UTF8') as fd:
+				for (bbox, txt) in zip(bboxes_gt, texts_gt):
+					if (txt[0] not in acceptable_types) or (txt[1] == '###'): continue
+
+					(x1, y1), (x2, y2) = np.floor(np.min(bbox, axis=0)).astype(np.int32), np.ceil(np.max(bbox, axis=0)).astype(np.int32)
+					patch = img[y1:y2+1,x1:x2+1]
+					if patch is None or patch.size == 0: continue
+
+					fpath = os.path.join(word_image_dir_path, 'image_{}.png'.format(word_bbox_id))
+					#fpath = os.path.join(word_image_dir_path, '{}_{}.png'.format(word_bbox_id, txt[1]))
+					cv2.imwrite(fpath, patch)
+					fd.write('{},{}\n'.format(os.path.relpath(fpath, rrc_mlt_2019_dir_path), txt[1]))
+					word_bbox_id += 1
+		except FileNotFoundError as ex:
+			print('File not found: {}.'.format(word_image_label_filpath))
+		except UnicodeDecodeError as ex:
+			print('Unicode decode error: {}.'.format(word_image_label_filpath))
 
 # REF [site] >> https://rrc.cvc.uab.es/?ch=13
 def generate_icdar2019_sroie_task1_train_text_line_data():
@@ -702,8 +779,10 @@ def main():
 	#--------------------
 	# Single character data.
 
-	#generate_single_chars_from_rrc_mlt_2017_data()  # Not yet implemented.
-	generate_single_chars_from_rrc_mlt_2019_data()
+	#generate_chars_from_rrc_mlt_2017_data()  # Not yet implemented.
+	#generate_words_from_rrc_mlt_2017_data()  # Not yet implemented.
+	#generate_chars_from_rrc_mlt_2019_data()
+	generate_words_from_rrc_mlt_2019_data()
 
 	#--------------------
 	# Text line data.
