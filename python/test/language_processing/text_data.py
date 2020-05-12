@@ -1,6 +1,7 @@
-import random, functools
+import os, random, functools
 import numpy as np
 import torch
+import cv2
 import swl.language_processing.util as swl_langproc_util
 
 #--------------------------------------------------------------------
@@ -51,17 +52,143 @@ class TextDatasetBase(torch.utils.data.Dataset):
 
 #--------------------------------------------------------------------
 
-class SingleCharacterDataset(TextDatasetBase):
-	def __init__(self, chars, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None):
+class FileBasedTextDatasetBase(TextDatasetBase):
+	def __init__(self, classes, default_value=-1):
+		super().__init__(classes, default_value)
+
+	# REF [function] >> FileBasedTextLineDatasetBase._load_data_from_image_label_info() in text_line_data.py
+	def _load_data_from_image_label_info(self, image_label_info_filepath, image_height, image_width, image_channel, max_label_len, image_label_separator=' ', is_image_used=True):
+		# In a image-label info file:
+		#	Each line consists of 'image-filepath + image-label-separator + label'.
+
+		try:
+			with open(image_label_info_filepath, 'r', encoding='UTF8') as fd:
+				#lines = fd.readlines()  # A list of strings.
+				lines = fd.read().splitlines()  # A list of strings.
+		except FileNotFoundError as ex:
+			print('[SWL] Error: File not found: {}.'.format(image_label_info_filepath))
+			raise
+		except UnicodeDecodeError as ex:
+			print('[SWL] Error: Unicode decode error: {}.'.format(image_label_info_filepath))
+			raise
+
+		if 1 == image_channel:
+			flag = cv2.IMREAD_GRAYSCALE
+		elif 3 == image_channel:
+			flag = cv2.IMREAD_COLOR
+		elif 4 == image_channel:
+			flag = cv2.IMREAD_ANYCOLOR  # ?
+		else:
+			flag = cv2.IMREAD_UNCHANGED
+
+		dir_path = os.path.dirname(image_label_info_filepath)
+		images, labels_str, labels_int = list(), list(), list()
+		for line in lines:
+			img_fpath, label_str = line.split(image_label_separator, 1)
+
+			if len(label_str) > max_label_len:
+				print('[SWL] Warning: Too long label: {} > {}.'.format(len(label_str), max_label_len))
+				continue
+			fpath = os.path.join(dir_path, img_fpath)
+			img = cv2.imread(fpath, flag)
+			if img is None:
+				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
+				continue
+
+			#img = self.resize(img, None, image_height, image_width)
+			try:
+				label_int = self.encode_label(label_str)
+			except Exception:
+				#print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
+				continue
+			if label_str != self.decode_label(label_int):
+				print('[SWL] Error: Mismatched encoded and decoded labels: {} != {}.'.format(label_str, self.decode_label(label_int)))
+				continue
+
+			images.append(img if is_image_used else img_fpath)
+			labels_str.append(label_str)
+			labels_int.append(label_int)
+
+		##images = list(map(lambda image: self.resize(image), images))
+		#images = self._transform_images(np.array(images), use_NWHC=self._use_NWHC)
+		#images, _ = self.preprocess(images, None)
+
+		return images, labels_str, labels_int
+
+	# REF [function] >> FileBasedTextLineDatasetBase._load_data_from_image_and_label_files() in text_line_data.py
+	def _load_data_from_image_and_label_files(self, image_filepaths, label_filepaths, image_height, image_width, image_channel, max_label_len, is_image_used=True):
+		if len(image_filepaths) != len(label_filepaths):
+			print('[SWL] Error: Different lengths of image and label files, {} != {}.'.format(len(image_filepaths), len(label_filepaths)))
+			return
+		for img_fpath, lbl_fpath in zip(image_filepaths, label_filepaths):
+			img_fname, lbl_fname = os.path.splitext(os.path.basename(img_fpath))[0], os.path.splitext(os.path.basename(lbl_fpath))[0]
+			if img_fname != lbl_fname:
+				print('[SWL] Warning: Different file names of image and label pair, {} != {}.'.format(img_fname, lbl_fname))
+				continue
+
+		if 1 == image_channel:
+			flag = cv2.IMREAD_GRAYSCALE
+		elif 3 == image_channel:
+			flag = cv2.IMREAD_COLOR
+		elif 4 == image_channel:
+			flag = cv2.IMREAD_ANYCOLOR  # ?
+		else:
+			flag = cv2.IMREAD_UNCHANGED
+
+		images, labels_str, labels_int = list(), list(), list()
+		for img_fpath, lbl_fpath in zip(image_filepaths, label_filepaths):
+			try:
+				with open(lbl_fpath, 'r', encoding='UTF8') as fd:
+					#label_str = fd.read()
+					#label_str = fd.read().rstrip()
+					label_str = fd.read().rstrip('\n')
+			except FileNotFoundError as ex:
+				print('[SWL] Error: File not found: {}.'.format(lbl_fpath))
+				continue
+			except UnicodeDecodeError as ex:
+				print('[SWL] Error: Unicode decode error: {}.'.format(lbl_fpath))
+				continue
+			if len(label_str) > max_label_len:
+				print('[SWL] Warning: Too long label: {} > {}.'.format(len(label_str), max_label_len))
+				continue
+			img = cv2.imread(img_fpath, flag)
+			if img is None:
+				print('[SWL] Error: Failed to load an image: {}.'.format(img_fpath))
+				continue
+
+			#img = self.resize(img, None, image_height, image_width)
+			try:
+				label_int = self.encode_label(label_str)
+			except Exception:
+				#print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
+				continue
+			if label_str != self.decode_label(label_int):
+				print('[SWL] Error: Mismatched encoded and decoded labels: {} != {}.'.format(label_str, self.decode_label(label_int)))
+				continue
+
+			images.append(img if is_image_used else img_fpath)
+			labels_str.append(label_str)
+			labels_int.append(label_int)
+
+		##images = list(map(lambda image: self.resize(image), images))
+		#images = self._transform_images(np.array(images), use_NWHC=self._use_NWHC)
+		#images, _ = self.preprocess(images, None)
+
+		return images, labels_str, labels_int
+
+#--------------------------------------------------------------------
+
+class SimpleCharacterDataset(TextDatasetBase):
+	def __init__(self, chars, image_channel, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None):
 		super().__init__(np.unique(chars).tolist())
 
+		self.image_channel = image_channel
 		self.chars = chars
 		self.fonts = fonts
 		self.font_size_interval = font_size_interval
 		self.transform = transform
 		self.target_transform = target_transform
 
-		self.image_channel = 1
 		if self.image_channel == 1:
 			self.mode = 'L'
 			#self.mode = '1'
@@ -87,7 +214,8 @@ class SingleCharacterDataset(TextDatasetBase):
 		#image, mask = swl_langproc_util.generate_text_image(ch, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode=self.mode, mask=False, mask_mode='1')
 		image = swl_langproc_util.generate_simple_text_image(ch, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode=self.mode)
 
-		#image = image.convert('RGB')
+		#if image and image.mode != self.mode:
+		#	image = image.convert(self.mode)
 		#image = np.array(image, np.uint8)
 
 		if self.transform:
@@ -95,14 +223,15 @@ class SingleCharacterDataset(TextDatasetBase):
 		if self.target_transform:
 			target = self.target_transform(target)
 
-		return (image, target)
+		return image, target
 
 #--------------------------------------------------------------------
 
-class SingleNoisyCharacterDataset(TextDatasetBase):
-	def __init__(self, chars, fonts, font_size_interval, char_clipping_ratio_interval, color_functor=None, transform=None, target_transform=None):
+class NoisyCharacterDataset(TextDatasetBase):
+	def __init__(self, chars, image_channel, fonts, font_size_interval, char_clipping_ratio_interval, color_functor=None, transform=None, target_transform=None):
 		super().__init__(np.unique(chars).tolist())
 
+		self.image_channel = image_channel
 		self.chars = chars
 		self.fonts = fonts
 		self.font_size_interval = font_size_interval
@@ -110,7 +239,6 @@ class SingleNoisyCharacterDataset(TextDatasetBase):
 		self.transform = transform
 		self.target_transform = target_transform
 
-		self.image_channel = 1
 		if self.image_channel == 1:
 			self.mode = 'L'
 			#self.mode = '1'
@@ -169,7 +297,8 @@ class SingleNoisyCharacterDataset(TextDatasetBase):
 		image = image.crop((left_margin, 0, image.size[0] - right_margin, image.size[1]))
 		assert image.size[0] > 0 and image.size[1] > 0
 
-		#image = image.convert('RGB')
+		#if image and image.mode != self.mode:
+		#	image = image.convert(self.mode)
 		#image = np.array(image, np.uint8)
 
 		if self.transform:
@@ -177,22 +306,78 @@ class SingleNoisyCharacterDataset(TextDatasetBase):
 		if self.target_transform:
 			target = self.target_transform(target)
 
-		return (image, target)
+		return image, target
 
 #--------------------------------------------------------------------
 
-class SingleWordDataset(TextDatasetBase):
-	def __init__(self, num_examples, words, charset, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None, default_value=-1):
-		super().__init__(list(charset) + [SingleWordDataset.UNKNOWN], default_value)
+class FileBasedCharacterDataset(FileBasedTextDatasetBase):
+	def __init__(self, image_label_info_filepath, charset, image_channel, is_image_used=True, transform=None, target_transform=None):
+	#def __init__(self, image_filepaths, label_filepaths, charset, image_channel, is_image_used=True, transform=None, target_transform=None):
+		super().__init__(list(charset) + [FileBasedCharacterDataset.UNKNOWN])
 
-		self.num_examples = num_examples
+		self.image_channel = image_channel
+		self.is_image_used = is_image_used
+		self.transform = transform
+		self.target_transform = target_transform
+
+		if self.image_channel == 1:
+			self.mode = 'L'
+			#self.mode = '1'
+		elif self.image_channel == 3:
+			self.mode = 'RGB'
+		elif self.image_channel == 4:
+			self.mode = 'RGBA'
+		else:
+			raise ValueError('Invalid image channel, {}'.format(self.image_channel))
+
+		image_label_separator = ','
+		self.data_dir_path = os.path.dirname(image_label_info_filepath)
+		self.images, self.labels_str, self.labels_int = self._load_data_from_image_label_info(image_label_info_filepath, None, None, self.image_channel, max_label_len=1, image_label_separator=image_label_separator, is_image_used=self.is_image_used)
+		#self.images, self.labels_str, self.labels_int = self._load_data_from_image_and_label_files(image_filepaths, label_filepaths, None, None, self.image_channel, max_label_len=1, is_image_used=self.is_image_used)
+		assert len(self.images) == len(self.labels_str) == len(self.labels_int)
+
+	def __len__(self):
+		return len(self.images)
+
+	def __getitem__(self, idx):
+		from PIL import Image
+
+		if self.is_image_used:
+			image = Image.fromarray(self.images[idx])
+		else:
+			fpath = os.path.join(self.data_dir_path, self.images[idx])
+			try:
+				image = Image.open(fpath)
+			except IOError as ex:
+				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
+				image = None
+		target = self.labels_int[idx][0]
+
+		if image and image.mode != self.mode:
+			image = image.convert(self.mode)
+		#image = np.array(image, np.uint8)
+
+		if self.transform:
+			image = self.transform(image)
+		if self.target_transform:
+			target = self.target_transform(target)
+
+		return image, target
+
+#--------------------------------------------------------------------
+
+class SimpleWordDataset(TextDatasetBase):
+	def __init__(self, words, charset, num_examples, image_channel, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None, default_value=-1):
+		super().__init__(list(charset) + [SimpleWordDataset.UNKNOWN], default_value)
+
 		self.words = words
+		self.num_examples = num_examples
+		self.image_channel = image_channel
 		self.fonts = fonts
 		self.font_size_interval = font_size_interval
 		self.transform = transform
 		self.target_transform = target_transform
 
-		self.image_channel = 1
 		if self.image_channel == 1:
 			self.mode = 'L'
 			#self.mode = '1'
@@ -221,7 +406,8 @@ class SingleWordDataset(TextDatasetBase):
 		#image, mask = swl_langproc_util.generate_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode=self.mode, mask=False, mask_mode='1')
 		image = swl_langproc_util.generate_simple_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode=self.mode)
 
-		#image = image.convert('RGB')
+		#if image and image.mode != self.mode:
+		#	image = image.convert(self.mode)
 		#image = np.array(image, np.uint8)
 
 		if self.transform:
@@ -229,23 +415,23 @@ class SingleWordDataset(TextDatasetBase):
 		if self.target_transform:
 			target = self.target_transform(target)
 
-		return (image, target)
+		return image, target
 
 #--------------------------------------------------------------------
 
-class SingleRandomWordDataset(TextDatasetBase):
-	def __init__(self, num_examples, chars, char_len_interval, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None, default_value=-1):
-		super().__init__(np.unique(list(chars)).tolist() + [SingleRandomWordDataset.UNKNOWN], default_value)
+class RandomWordDataset(TextDatasetBase):
+	def __init__(self, chars, num_examples, image_channel, char_len_interval, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None, default_value=-1):
+		super().__init__(np.unique(list(chars)).tolist() + [RandomWordDataset.UNKNOWN], default_value)
 
-		self.num_examples = num_examples
 		self.chars = chars
+		self.num_examples = num_examples
+		self.image_channel = image_channel
 		self.char_len_interval = char_len_interval
 		self.fonts = fonts
 		self.font_size_interval = font_size_interval
 		self.transform = transform
 		self.target_transform = target_transform
 
-		self.image_channel = 1
 		if self.image_channel == 1:
 			self.mode = 'L'
 			#self.mode = '1'
@@ -275,7 +461,8 @@ class SingleRandomWordDataset(TextDatasetBase):
 		#image, mask = swl_langproc_util.generate_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode=self.mode, mask=False, mask_mode='1')
 		image = swl_langproc_util.generate_simple_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode=self.mode)
 
-		#image = image.convert('RGB')
+		#if image and image.mode != self.mode:
+		#	image = image.convert(self.mode)
 		#image = np.array(image, np.uint8)
 
 		if self.transform:
@@ -283,13 +470,72 @@ class SingleRandomWordDataset(TextDatasetBase):
 		if self.target_transform:
 			target = self.target_transform(target)
 
-		return (image, target)
+		return image, target
 
 #--------------------------------------------------------------------
 
-class SingleTextLineDataset(TextDatasetBase):
-	def __init__(self, num_examples, image_height, image_width, image_channel, words, charset, fonts, max_word_len, word_count_interval, space_count_interval, font_size_interval, char_space_ratio_interval, color_functor=None, transform=None, target_transform=None, default_value=-1):
-		super().__init__(list(charset) + [SingleTextLineDataset.SPACE, SingleTextLineDataset.UNKNOWN], default_value)
+class FileBasedWordDataset(FileBasedTextDatasetBase):
+	def __init__(self, image_label_info_filepath, charset, image_channel, max_word_len, is_image_used=True, transform=None, target_transform=None, default_value=-1):
+	#def __init__(self, image_filepaths, label_filepaths, charset, image_channel, max_word_len, is_image_used=True, transform=None, target_transform=None, default_value=-1):
+		super().__init__(list(charset) + [FileBasedWordDataset.UNKNOWN], default_value)
+
+		self.image_channel = image_channel
+		self.max_word_len = max_word_len
+		self.is_image_used = is_image_used
+		self.transform = transform
+		self.target_transform = target_transform
+
+		if self.image_channel == 1:
+			self.mode = 'L'
+			#self.mode = '1'
+		elif self.image_channel == 3:
+			self.mode = 'RGB'
+		elif self.image_channel == 4:
+			self.mode = 'RGBA'
+		else:
+			raise ValueError('Invalid image channel, {}'.format(self.image_channel))
+
+		image_label_separator = ','
+		self.data_dir_path = os.path.dirname(image_label_info_filepath)
+		self.images, self.labels_str, self.labels_int = self._load_data_from_image_label_info(image_label_info_filepath, None, None, self.image_channel, max_label_len=self.max_word_len, image_label_separator=image_label_separator, is_image_used=self.is_image_used)
+		#self.images, self.labels_str, self.labels_int = self._load_data_from_image_and_label_files(image_filepaths, label_filepaths, None, None, self.image_channel, max_label_len=self.max_word_len, is_image_used=self.is_image_used)
+		assert len(self.images) == len(self.labels_str) == len(self.labels_int)
+
+	def __len__(self):
+		return len(self.images)
+
+	def __getitem__(self, idx):
+		from PIL import Image
+
+		if self.is_image_used:
+			image = Image.fromarray(self.images[idx])
+		else:
+			fpath = os.path.join(self.data_dir_path, self.images[idx])
+			try:
+				image = Image.open(fpath)
+			except IOError as ex:
+				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
+				image = None
+		label = self.labels_int[idx]
+		target = [self.default_value,] * self.max_word_len
+		target[:len(label)] = label
+
+		if image and image.mode != self.mode:
+			image = image.convert(self.mode)
+		#image = np.array(image, np.uint8)
+
+		if self.transform:
+			image = self.transform(image)
+		if self.target_transform:
+			target = self.target_transform(target)
+
+		return image, target
+
+#--------------------------------------------------------------------
+
+class SimpleTextLineDataset(TextDatasetBase):
+	def __init__(self, words, charset, num_examples, image_height, image_width, image_channel, fonts, max_word_len, word_count_interval, space_count_interval, font_size_interval, char_space_ratio_interval, color_functor=None, transform=None, target_transform=None, default_value=-1):
+		super().__init__(list(charset) + [SimpleTextLineDataset.SPACE, SimpleTextLineDataset.UNKNOWN], default_value)
 
 		self.num_examples = num_examples
 		self.image_height, self.image_width, self.image_channel = image_height, image_width, image_channel
@@ -331,6 +577,8 @@ class SingleTextLineDataset(TextDatasetBase):
 		#image, mask = swl_langproc_util.generate_text_image(textline, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio, mode=self.mode, mask=True, mask_mode='1')
 		image = swl_langproc_util.generate_text_image(textline, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio, mode=self.mode)
 
+		#if image and image.mode != self.mode:
+		#	image = image.convert(self.mode)
 		#image = np.array(image, np.uint8)
 
 		if self.transform:
@@ -338,7 +586,7 @@ class SingleTextLineDataset(TextDatasetBase):
 		if self.target_transform:
 			target = self.target_transform(target)
 
-		return (image, target)
+		return image, target
 
 	@property
 	def shape(self):

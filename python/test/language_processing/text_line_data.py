@@ -607,7 +607,7 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 				break
 			start_idx = end_idx
 
-	def _load_data_from_image_and_label_files(self, image_filepaths, label_filepaths, image_height, image_width, image_channel, max_label_len):
+	def _load_data_from_image_and_label_files(self, image_filepaths, label_filepaths, image_height, image_width, image_channel, max_label_len, is_image_used=True):
 		if len(image_filepaths) != len(label_filepaths):
 			print('[SWL] Error: Different lengths of image and label files, {} != {}.'.format(len(image_filepaths), len(label_filepaths)))
 			return
@@ -616,6 +616,15 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 			if img_fname != lbl_fname:
 				print('[SWL] Warning: Different file names of image and label pair, {} != {}.'.format(img_fname, lbl_fname))
 				continue
+
+		if 1 == image_channel:
+			flag = cv2.IMREAD_GRAYSCALE
+		elif 3 == image_channel:
+			flag = cv2.IMREAD_COLOR
+		elif 4 == image_channel:
+			flag = cv2.IMREAD_ANYCOLOR  # ?
+		else:
+			flag = cv2.IMREAD_UNCHANGED
 
 		images, labels_str, labels_int = list(), list(), list()
 		for img_fpath, lbl_fpath in zip(image_filepaths, label_filepaths):
@@ -633,7 +642,7 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 			if len(label_str) > max_label_len:
 				print('[SWL] Warning: Too long label: {} > {}.'.format(len(label_str), max_label_len))
 				continue
-			img = cv2.imread(img_fpath, cv2.IMREAD_GRAYSCALE if 1 == image_channel else cv2.IMREAD_COLOR)
+			img = cv2.imread(img_fpath, flag)
 			if img is None:
 				print('[SWL] Error: Failed to load an image: {}.'.format(img_fpath))
 				continue
@@ -648,7 +657,7 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 				print('[SWL] Error: Mismatched encoded and decoded labels: {} != {}.'.format(label_str, self.decode_label(label_int)))
 				continue
 
-			images.append(img)
+			images.append(img if is_image_used else img_fpath)
 			labels_str.append(label_str)
 			labels_int.append(label_int)
 
@@ -658,7 +667,7 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 
 		return images, labels_str, labels_int
 
-	def _load_data_from_image_label_info(self, image_label_info_filepath, image_height, image_width, image_channel, max_label_len, image_label_separator=' '):
+	def _load_data_from_image_label_info(self, image_label_info_filepath, image_height, image_width, image_channel, max_label_len, image_label_separator=' ', is_image_used=True):
 		# In a image-label info file:
 		#	Each line consists of 'image-filepath + image-label-separator + label'.
 
@@ -673,6 +682,15 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 			print('[SWL] Error: Unicode decode error: {}.'.format(image_label_info_filepath))
 			raise
 
+		if 1 == image_channel:
+			flag = cv2.IMREAD_GRAYSCALE
+		elif 3 == image_channel:
+			flag = cv2.IMREAD_COLOR
+		elif 4 == image_channel:
+			flag = cv2.IMREAD_ANYCOLOR  # ?
+		else:
+			flag = cv2.IMREAD_UNCHANGED
+
 		dir_path = os.path.dirname(image_label_info_filepath)
 		images, labels_str, labels_int = list(), list(), list()
 		for line in lines:
@@ -681,10 +699,10 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 			if len(label_str) > max_label_len:
 				print('[SWL] Warning: Too long label: {} > {}.'.format(len(label_str), max_label_len))
 				continue
-			img_fpath = os.path.join(dir_path, img_fpath)
-			img = cv2.imread(img_fpath, cv2.IMREAD_GRAYSCALE if 1 == image_channel else cv2.IMREAD_COLOR)
+			fpath = os.path.join(dir_path, img_fpath)
+			img = cv2.imread(fpath, flag)
 			if img is None:
-				print('[SWL] Error: Failed to load an image: {}.'.format(img_fpath))
+				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
 				continue
 
 			#img = self.resize(img, None, image_height, image_width)
@@ -697,7 +715,7 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 				print('[SWL] Error: Mismatched encoded and decoded labels: {} != {}.'.format(label_str, self.decode_label(label_int)))
 				continue
 
-			images.append(img)
+			images.append(img if is_image_used else img_fpath)
 			labels_str.append(label_str)
 			labels_int.append(label_int)
 

@@ -126,6 +126,7 @@ def create_augmenter():
 	from imgaug import augmenters as iaa
 
 	augmenter = iaa.Sequential([
+		iaa.Grayscale(alpha=(0.0, 1.0)),
 		#iaa.Sometimes(0.5, iaa.OneOf([
 		#	iaa.Crop(px=(0, 100)),  # Crop images from each side by 0 to 16px (randomly chosen).
 		#	iaa.Crop(percent=(0, 0.1)),  # Crop images by 0-10% of their height/width.
@@ -207,7 +208,8 @@ class RandomAugment(object):
 		self.augmenter = create_augmenter()
 
 	def __call__(self, x):
-		return Image.fromarray(self.augmenter.augment_images(np.array(x)))
+		return Image.fromarray(self.augmenter.augment_image(np.array(x)))
+		#return Image.fromarray(self.augmenter.augment_images(np.array(x)))
 
 class RandomInvert(object):
 	def __call__(self, x):
@@ -224,10 +226,10 @@ class ToIntTensor(object):
 	def __call__(self, lst):
 		return torch.IntTensor(lst)
 
-def SingleCharacterDataset_test():
+def SimpleCharacterDataset_test():
 	charset, font_list = construct_charset()
 
-	image_height, image_width, image_channel = 32, 32, 1
+	image_height, image_width, image_channel = 32, 32, 3
 	#image_height_before_crop, image_width_before_crop = 36, 36
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
@@ -263,10 +265,10 @@ def SingleCharacterDataset_test():
 	start_time = time.time()
 	chars = list(charset * num_train_examples_per_class)
 	random.shuffle(chars)
-	train_dataset = text_data.SingleCharacterDataset(chars, font_list, font_size_interval, color_functor=color_functor, transform=train_transform)
+	train_dataset = text_data.SimpleCharacterDataset(chars, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=train_transform)
 	chars = list(charset * num_test_examples_per_class)
 	random.shuffle(chars)
-	test_dataset = text_data.SingleCharacterDataset(chars, font_list, font_size_interval, color_functor=color_functor, transform=test_transform)
+	test_dataset = text_data.SimpleCharacterDataset(chars, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 
 	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
@@ -302,17 +304,18 @@ def SingleCharacterDataset_test():
 		data_iter = iter(dataloader)
 		images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
 		images, labels = images.numpy(), labels.numpy()
+		images = images.transpose(0, 2, 3, 1)
 		for idx, (img, lbl) in enumerate(zip(images, labels)):
 			print('Label: (int) = {}, (str) = {}.'.format(lbl, charset[lbl]))
-			cv2.imshow('Image', img[0])
+			cv2.imshow('Image', img)
 			cv2.waitKey(0)
 			if idx >= 9: break
 	cv2.destroyAllWindows()
 
-def SingleNoisyCharacterDataset_test():
+def NoisyCharacterDataset_test():
 	charset, font_list = construct_charset()
 
-	image_height, image_width, image_channel = 32, 32, 1
+	image_height, image_width, image_channel = 32, 32, 3
 	#image_height_before_crop, image_width_before_crop = 36, 36
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
@@ -349,10 +352,10 @@ def SingleNoisyCharacterDataset_test():
 	start_time = time.time()
 	chars = list(charset * num_train_examples_per_class)
 	random.shuffle(chars)
-	train_dataset = text_data.SingleNoisyCharacterDataset(chars, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor, transform=train_transform)
+	train_dataset = text_data.NoisyCharacterDataset(chars, image_channel, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor, transform=train_transform)
 	chars = list(charset * num_test_examples_per_class)
 	random.shuffle(chars)
-	test_dataset = text_data.SingleNoisyCharacterDataset(chars, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor, transform=test_transform)
+	test_dataset = text_data.NoisyCharacterDataset(chars, image_channel, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 
 	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
@@ -388,19 +391,118 @@ def SingleNoisyCharacterDataset_test():
 		data_iter = iter(dataloader)
 		images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
 		images, labels = images.numpy(), labels.numpy()
+		images = images.transpose(0, 2, 3, 1)
 		for idx, (img, lbl) in enumerate(zip(images, labels)):
 			print('Label: (int) = {}, (str) = {}.'.format(lbl, charset[lbl]))
-			cv2.imshow('Image', img[0])
+			cv2.imshow('Image', img)
 			cv2.waitKey(0)
 			if idx >= 9: break
 	cv2.destroyAllWindows()
 
-def SingleWordDataset_test():
+def FileBasedCharacterDataset_test():
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+
+	if True:
+		image_label_info_filepath = data_base_dir_path + '/text/chars74k/English/Img/char_images.txt'
+		is_image_used = True
+	elif False:
+		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_kr.txt'
+		is_image_used = True
+	elif False:
+		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_en.txt'
+		is_image_used = True
+	elif False:
+		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_kr.txt'
+		is_image_used = True
+	elif False:
+		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_en.txt'
+		is_image_used = True
+
+	charset, _ = construct_charset()
+
+	image_height, image_width, image_channel = 32, 32, 3
+	#image_height_before_crop, image_width_before_crop = 36, 36
+	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	batch_size = 64
+	shuffle = True
+	num_workers = 4
+
+	#--------------------
+	train_transform = torchvision.transforms.Compose([
+		#RandomAugment(),
+		RandomInvert(),
+		#ConvertChannel(),
+		torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
+		#torchvision.transforms.RandomCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	])
+	test_transform = torchvision.transforms.Compose([
+		RandomInvert(),
+		#ConvertChannel(),
+		torchvision.transforms.Resize((image_height, image_width)),
+		#torchvision.transforms.CenterCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	])
+
+	#--------------------
+	print('Start creating datasets...')
+	start_time = time.time()
+	train_dataset = text_data.FileBasedCharacterDataset(image_label_info_filepath, charset, image_channel, is_image_used=is_image_used, transform=train_transform)
+	test_dataset = text_data.FileBasedCharacterDataset(image_label_info_filepath, charset, image_channel, is_image_used=is_image_used, transform=test_transform)
+	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+
+	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
+	#assert train_dataset.num_classes == test_dataset.num_classes, 'Unmatched number of classes, {} != {}'.format(train_dataset.num_classes, test_dataset.num_classes)
+	print('#classes = {}.'.format(train_dataset.num_classes))
+
+	#--------------------
+	print('Start creating data loaders...')
+	start_time = time.time()
+	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
+
+	#--------------------
+	# Show data info.
+	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
+	data_iter = iter(train_dataloader)
+	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels = images.numpy(), labels.numpy()
+	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
+	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+
+	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
+	data_iter = iter(test_dataloader)
+	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels = images.numpy(), labels.numpy()
+	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
+	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+
+	#--------------------
+	# Visualize.
+	for dataloader in [train_dataloader, test_dataloader]:
+		data_iter = iter(dataloader)
+		images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
+		images, labels = images.numpy(), labels.numpy()
+		images = images.transpose(0, 2, 3, 1)
+		for idx, (img, lbl) in enumerate(zip(images, labels)):
+			print('Label: (int) = {}, (str) = {}.'.format(lbl, charset[lbl]))
+			cv2.imshow('Image', img)
+			cv2.waitKey(0)
+			if idx >= 9: break
+	cv2.destroyAllWindows()
+
+def SimpleWordDataset_test():
 	charset, font_list = construct_charset()
 	wordset = construct_word_set()
 
-	#--------------------
-	image_height, image_width, image_channel = 32, 320, 1
+	image_height, image_width, image_channel = 32, 320, 3
 	#image_height_before_crop, image_width_before_crop = 36, 324
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
@@ -436,8 +538,8 @@ def SingleWordDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	train_dataset = text_data.SingleWordDataset(num_train_examples, wordset, charset, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform, default_value=-1)
-	test_dataset = text_data.SingleWordDataset(num_test_examples, wordset, charset, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform, default_value=-1)
+	train_dataset = text_data.SimpleWordDataset(wordset, charset, num_train_examples, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform, default_value=-1)
+	test_dataset = text_data.SimpleWordDataset(wordset, charset, num_test_examples, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform, default_value=-1)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 
 	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
@@ -473,18 +575,18 @@ def SingleWordDataset_test():
 		data_iter = iter(dataloader)
 		images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
 		images, labels = images.numpy(), labels.numpy()
+		images = images.transpose(0, 2, 3, 1)
 		for idx, (img, lbl) in enumerate(zip(images, labels)):
 			print('Label: (int) = {}, (str) = {}.'.format([ll for ll in lbl if ll != dataloader.dataset.default_value], train_dataset.decode_label(lbl)))
-			cv2.imshow('Image', img[0])
+			cv2.imshow('Image', img)
 			cv2.waitKey(0)
 			if idx >= 9: break
 	cv2.destroyAllWindows()
 
-def SingleRandomWordDataset_test():
+def RandomWordDataset_test():
 	charset, font_list = construct_charset()
 
-	#--------------------
-	image_height, image_width, image_channel = 32, 320, 1
+	image_height, image_width, image_channel = 32, 320, 3
 	#image_height_before_crop, image_width_before_crop = 36, 324
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
@@ -522,8 +624,8 @@ def SingleRandomWordDataset_test():
 	print('Start creating datasets...')
 	start_time = time.time()
 	chars = charset  # Can make the number of each character different.
-	train_dataset = text_data.SingleRandomWordDataset(num_train_examples, chars, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform, default_value=-1)
-	test_dataset = text_data.SingleRandomWordDataset(num_test_examples, chars, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform, default_value=-1)
+	train_dataset = text_data.RandomWordDataset(chars, num_train_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform, default_value=-1)
+	test_dataset = text_data.RandomWordDataset(chars, num_test_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform, default_value=-1)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 
 	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
@@ -559,19 +661,118 @@ def SingleRandomWordDataset_test():
 		data_iter = iter(dataloader)
 		images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
 		images, labels = images.numpy(), labels.numpy()
+		images = images.transpose(0, 2, 3, 1)
 		for idx, (img, lbl) in enumerate(zip(images, labels)):
 			print('Label: (int) = {}, (str) = {}.'.format([ll for ll in lbl if ll != dataloader.dataset.default_value], train_dataset.decode_label(lbl)))
-			cv2.imshow('Image', img[0])
+			cv2.imshow('Image', img)
 			cv2.waitKey(0)
 			if idx >= 9: break
 	cv2.destroyAllWindows()
 
-def SingleTextLineDataset_test():
+def FileBasedWordDataset_test():
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+
+	if True:
+		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
+		is_image_used = False
+	elif False:
+		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_en.txt'
+		is_image_used = False
+	elif False:
+		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
+		is_image_used = True
+	elif False:
+		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_en.txt'
+		is_image_used = True
+
+	charset, _ = construct_charset()
+	max_word_len = 30
+
+	image_height, image_width, image_channel = 32, 320, 3
+	#image_height_before_crop, image_width_before_crop = 36, 324
+	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	batch_size = 64
+	shuffle = True
+	num_workers = 4
+
+	#--------------------
+	train_transform = torchvision.transforms.Compose([
+		#RandomAugment(),
+		RandomInvert(),
+		#ConvertChannel(),
+		torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
+		#torchvision.transforms.RandomCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	])
+	train_target_transform = ToIntTensor()
+	test_transform = torchvision.transforms.Compose([
+		RandomInvert(),
+		#ConvertChannel(),
+		torchvision.transforms.Resize((image_height, image_width)),
+		#torchvision.transforms.CenterCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	])
+	test_target_transform = ToIntTensor()
+
+	#--------------------
+	print('Start creating datasets...')
+	start_time = time.time()
+	train_dataset = text_data.FileBasedWordDataset(image_label_info_filepath, charset, image_channel, max_word_len, is_image_used=is_image_used, transform=train_transform, target_transform=train_target_transform, default_value=-1)
+	test_dataset = text_data.FileBasedWordDataset(image_label_info_filepath, charset, image_channel, max_word_len, is_image_used=is_image_used, transform=test_transform, target_transform=test_target_transform, default_value=-1)
+	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+
+	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
+	#assert train_dataset.num_classes == test_dataset.num_classes, 'Unmatched number of classes, {} != {}'.format(train_dataset.num_classes, test_dataset.num_classes)
+	print('#classes = {}.'.format(train_dataset.num_classes))
+
+	#--------------------
+	print('Start creating data loaders...')
+	start_time = time.time()
+	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
+
+	#--------------------
+	# Show data info.
+	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
+	data_iter = iter(train_dataloader)
+	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels = images.numpy(), labels.numpy()
+	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
+	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+
+	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
+	data_iter = iter(test_dataloader)
+	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels = images.numpy(), labels.numpy()
+	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
+	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+
+	#--------------------
+	# Visualize.
+	for dataloader in [train_dataloader, test_dataloader]:
+		data_iter = iter(dataloader)
+		images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
+		images, labels = images.numpy(), labels.numpy()
+		images = images.transpose(0, 2, 3, 1)
+		for idx, (img, lbl) in enumerate(zip(images, labels)):
+			print('Label: (int) = {}, (str) = {}.'.format([ll for ll in lbl if ll != dataloader.dataset.default_value], train_dataset.decode_label(lbl)))
+			cv2.imshow('Image', img)
+			cv2.waitKey(0)
+			if idx >= 9: break
+	cv2.destroyAllWindows()
+
+def SimpleTextLineDataset_test():
 	charset, font_list = construct_charset()
 	wordset = construct_word_set()
 
-	#--------------------
-	image_height, image_width, image_channel = 64, 640, 1
+	image_height, image_width, image_channel = 64, 640, 3
 	#image_height_before_crop, image_width_before_crop = 68, 644
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
@@ -611,8 +812,8 @@ def SingleTextLineDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	train_dataset = text_data.SingleTextLineDataset(num_train_examples, image_height, image_width, image_channel, wordset, charset, font_list, max_word_len, word_count_interval, space_count_interval, font_size_interval, char_space_ratio_interval, color_functor, transform=train_transform, target_transform=train_target_transform, default_value=-1)
-	test_dataset = text_data.SingleTextLineDataset(num_test_examples, image_height, image_width, image_channel, wordset, charset, font_list, max_word_len, word_count_interval, space_count_interval, font_size_interval, char_space_ratio_interval, color_functor, transform=test_transform, target_transform=test_target_transform, default_value=-1)
+	train_dataset = text_data.SimpleTextLineDataset(wordset, charset, num_train_examples, image_height, image_width, image_channel, font_list, max_word_len, word_count_interval, space_count_interval, font_size_interval, char_space_ratio_interval, color_functor, transform=train_transform, target_transform=train_target_transform, default_value=-1)
+	test_dataset = text_data.SimpleTextLineDataset(wordset, charset, num_test_examples, image_height, image_width, image_channel, font_list, max_word_len, word_count_interval, space_count_interval, font_size_interval, char_space_ratio_interval, color_functor, transform=test_transform, target_transform=test_target_transform, default_value=-1)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 
 	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
@@ -648,19 +849,24 @@ def SingleTextLineDataset_test():
 		data_iter = iter(dataloader)
 		images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
 		images, labels = images.numpy(), labels.numpy()
+		images = images.transpose(0, 2, 3, 1)
 		for idx, (img, lbl) in enumerate(zip(images, labels)):
 			print('Label: (int) = {}, (str) = {}.'.format([ll for ll in lbl if ll != dataloader.dataset.default_value], train_dataset.decode_label(lbl)))
-			cv2.imshow('Image', img[0])
+			cv2.imshow('Image', img)
 			cv2.waitKey(0)
 			if idx >= 9: break
 	cv2.destroyAllWindows()
 
 def main():
-	#SingleCharacterDataset_test()
-	#SingleNoisyCharacterDataset_test()
-	#SingleWordDataset_test()
-	SingleRandomWordDataset_test()
-	#SingleTextLineDataset_test()
+	#SimpleCharacterDataset_test()
+	#NoisyCharacterDataset_test()
+	FileBasedCharacterDataset_test()
+
+	#SimpleWordDataset_test()
+	#RandomWordDataset_test()
+	#FileBasedWordDataset_test()
+
+	#SimpleTextLineDataset_test()
 
 #--------------------------------------------------------------------
 

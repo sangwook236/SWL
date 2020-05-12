@@ -32,18 +32,18 @@ def visualize_data_using_image(images, labels, num_images_to_show=10):
 
 	cv2.destroyAllWindows()
 
-def prepare_and_save_and_load_data_using_image_file(data_dir_path, data_info, pkl_filepath):
+def prepare_and_save_and_load_data_using_image_file(data_dir_path, image_filepaths, labels, pkl_filepath):
 	print('Start preparing data...')
 	start_time = time.time()
 	imagefile_label_pairs = []
-	for img_fpath, lbl in zip(data_info[0], data_info[2]):
+	for img_fpath, lbl in zip(image_filepaths, labels):
 		img_fpath = '{}.png'.format(img_fpath)
 		fpath = os.path.join(data_dir_path, img_fpath)
 		img = cv2.imread(fpath, cv2.IMREAD_UNCHANGED)
 		if img is None:
 			print('Failed to load an image, {}.'.format(fpath))
 			continue
-		imagefile_label_pairs.append([img_fpath, int(lbl[0])])
+		imagefile_label_pairs.append([img_fpath, lbl])
 	print('End preparing data: {} secs.'.format(time.time() - start_time))
 
 	print('Start saving data to {}...'.format(pkl_filepath))
@@ -73,18 +73,18 @@ def prepare_and_save_and_load_data_using_image_file(data_dir_path, data_info, pk
 
 	return imagefile_label_pairs
 
-def prepare_and_save_and_load_data_using_image(data_dir_path, data_info, pkl_filepath):
+def prepare_and_save_and_load_data_using_image(data_dir_path, image_filepaths, labels, pkl_filepath):
 	print('Start preparing data...')
 	start_time = time.time()
 	image_label_pairs = []
-	for img_fpath, lbl in zip(data_info[0], data_info[2]):
+	for img_fpath, lbl in zip(image_filepaths, labels):
 		img_fpath = '{}.png'.format(img_fpath)
 		fpath = os.path.join(data_dir_path, img_fpath)
 		img = cv2.imread(fpath, cv2.IMREAD_UNCHANGED)
 		if img is None:
 			print('Failed to load an image, {}.'.format(fpath))
 			continue
-		image_label_pairs.append([img, int(lbl[0])])
+		image_label_pairs.append([img, lbl])
 	print('End preparing data: {} secs.'.format(time.time() - start_time))
 
 	print('Start saving data to {}...'.format(pkl_filepath))
@@ -146,18 +146,25 @@ def chars74k_test():
 	#print('*****', data_info[9])  # ???
 	print('End loading chars74k data: {} secs.'.format(time.time() - start_time))
 
-	#visualize_data_using_image_file(data_dir_path, data_info[0], data_info[2], num_images_to_show=10)
+	image_filepaths = data_info[0]
+	import string
+	charset = string.digits + string.ascii_uppercase + string.ascii_lowercase
+	labels = []
+	for lbl in data_info[2]:
+		labels.append(charset[int(lbl[0]) - 1])
+
+	#visualize_data_using_image_file(data_dir_path, image_filepaths, labels, num_images_to_show=10)
 
 	#--------------------
 	# Pairs of (image filepath, label).
 	if True:
-		imagefile_label_pairs = prepare_and_save_and_load_data_using_image_file(data_dir_path, data_info, pkl_filepath)
+		imagefile_label_pairs = prepare_and_save_and_load_data_using_image_file(data_dir_path, image_filepaths, labels, pkl_filepath)
 
 		#visualize_data_using_image_file(data_dir_path, *list(zip(*imagefile_label_pairs)), num_images_to_show=10)
 
 	# Pairs of (image, label).
 	if False:
-		image_label_pairs = prepare_and_save_and_load_data_using_image(data_dir_path, data_info, pkl_filepath)
+		image_label_pairs = prepare_and_save_and_load_data_using_image(data_dir_path, image_filepaths, labels, pkl_filepath)
 
 		#visualize_data_using_image(*list(zip(*image_label_pairs)), num_images_to_show=10)
 
