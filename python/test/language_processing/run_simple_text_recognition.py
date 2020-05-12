@@ -629,7 +629,7 @@ def recognize_single_character():
 	model_filepath = './single_char_recognition.pth'
 
 	#--------------------
-	#train_dataloader, test_dataloader, classes, num_classes = create_char_data_loaders(charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_clipping_ratio_interval, color_functor)
+	#train_dataloader, test_dataloader, classes, num_classes = create_char_data_loaders(charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_clipping_ratio_interval, color_functor, batch_size, shuffle, num_workers)
 	train_dataloader, test_dataloader, classes, num_classes = create_mixed_char_data_loaders(charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_clipping_ratio_interval, color_functor, batch_size, shuffle, num_workers)
 
 	def imshow(img):
@@ -662,7 +662,7 @@ def recognize_single_character():
 	elif False:
 		model = torchvision.models.resnet18(pretrained=False, num_classes=num_classes)
 	else:
-		model = torchvision.models.resnet1(pretrained=True)
+		model = torchvision.models.resnet18(pretrained=True)
 		num_features = model.fc.in_features
 		model.fc = torch.nn.Linear(num_features, num_classes)
 		model.num_classes = num_classes
@@ -801,7 +801,7 @@ def recognize_single_character_using_mixup():
 	model_filepath = './single_char_recognition_mixup.pth'
 
 	#--------------------
-	#train_dataloader, test_dataloader, classes, num_classes = create_char_data_loaders(charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_clipping_ratio_interval, color_functor)
+	#train_dataloader, test_dataloader, classes, num_classes = create_char_data_loaders(charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_clipping_ratio_interval, color_functor, batch_size, shuffle, num_workers)
 	train_dataloader, test_dataloader, classes, num_classes = create_mixed_char_data_loaders(charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_clipping_ratio_interval, color_functor, batch_size, shuffle, num_workers)
 
 	def imshow(img):
