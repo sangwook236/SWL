@@ -1275,6 +1275,7 @@ def main():
 		image_filepaths.sort()
 
 		print('[SWL] Info: Start loading images...')
+		start_time = time.time()
 		inf_images, image_filepaths = runner.dataset.load_images_from_files(image_filepaths, is_grayscale=True)
 		print('[SWL] Info: End loading images: {} secs.'.format(time.time() - start_time))
 		print('[SWL] Info: Loaded images: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inf_images.shape, inf_images.dtype, np.min(inf_images), np.max(inf_images)))
