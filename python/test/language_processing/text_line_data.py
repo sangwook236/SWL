@@ -224,14 +224,25 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 		if width is None:
 			width = self._image_width
 
+		return self._resize_by_opencv(input, height, width)
+		#return self._resize_by_pil(input, height, width)
+
+	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
+		return self._create_batch_generator(self._textGenerator, self._color_functor, self._text_set, batch_size, steps_per_epoch, shuffle, is_training=True)
+
+	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
+		return self._create_batch_generator(self._textGenerator, self._color_functor, self._text_set, batch_size, steps_per_epoch, shuffle, is_training=False)
+
+	def _resize_by_opencv(self, input, height, width):
+		interpolation = cv2.INTER_AREA
 		"""
 		hi, wi = input.shape[:2]
 		if wi >= width:
-			return cv2.resize(input, (width, height), interpolation=cv2.INTER_AREA)
+			return cv2.resize(input, (width, height), interpolation=interpolation)
 		else:
 			aspect_ratio = height / hi
 			min_width = min(width, int(wi * aspect_ratio))
-			input = cv2.resize(input, (min_width, height), interpolation=cv2.INTER_AREA)
+			input = cv2.resize(input, (min_width, height), interpolation=interpolation)
 			if min_width < width:
 				image_zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
 				image_zeropadded[:,:min_width] = input[:,:min_width]
@@ -243,17 +254,25 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 		aspect_ratio = height / hi
 		min_width = min(width, int(wi * aspect_ratio))
 		zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
-		zeropadded[:,:min_width] = cv2.resize(input, (min_width, height), interpolation=cv2.INTER_AREA)
+		zeropadded[:,:min_width] = cv2.resize(input, (min_width, height), interpolation=interpolation)
 		return zeropadded
 		"""
-		return cv2.resize(input, (width, height), interpolation=cv2.INTER_AREA)
+		return cv2.resize(input, (width, height), interpolation=interpolation)
 		"""
 
-	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
-		return self._create_batch_generator(self._textGenerator, self._color_functor, self._text_set, batch_size, steps_per_epoch, shuffle, is_training=True)
+	def _resize_by_pil(self, input, height, width):
+		import PIL.Image
 
-	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
-		return self._create_batch_generator(self._textGenerator, self._color_functor, self._text_set, batch_size, steps_per_epoch, shuffle, is_training=False)
+		interpolation = PIL.Image.BICUBIC
+		wi, hi = input.size
+		aspect_ratio = height / hi
+		min_width = min(width, int(wi * aspect_ratio))
+		zeropadded = PIL.Image.new(input.mode, (width, height), color=0)
+		zeropadded.paste(input.resize((min_width, height), resample=interpolation), (0, 0, min_width, height))
+		return zeropadded
+		"""
+		return input.resize((width, height), resample=interpolation)
+		"""
 
 	def _create_batch_generator(self, textGenerator, color_functor, text_set, batch_size, steps_per_epoch, shuffle, is_training=False):
 		if steps_per_epoch:

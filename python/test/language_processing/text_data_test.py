@@ -216,21 +216,110 @@ class RandomInvert(object):
 		return ImageOps.invert(x) if random.randrange(2) else x
 
 class ConvertChannel(object):
+	def __init__(self, mode='RGB'):
+		self.mode = mode
+
 	def __call__(self, x):
-		return x.convert('RGB')
+		return x.convert(self.mode)
 		#return np.repeat(np.expand_dims(x, axis=0), 3, axis=0)
 		#return torch.repeat_interleave(x, 3, dim=0)
 		#return torch.repeat_interleave(torch.unsqueeze(x, dim=3), 3, dim=0)
+
+class ResizeImage(object):
+	def __init__(self, height, width):
+		self.height, self.width = height, width
+
+	def __call__(self, x):
+		#return self._resize_by_opencv(x, self.height, self.width)
+		return self._resize_by_pil(x, self.height, self.width)
+
+	# REF [function] >> RunTimeTextLineDatasetBase._resize_by_opencv() in text_line_data.py.
+	def _resize_by_opencv(self, input, height, width, *args, **kwargs):
+		interpolation = cv2.INTER_AREA
+		"""
+		hi, wi = input.shape[:2]
+		if wi >= width:
+			return cv2.resize(input, (width, height), interpolation=interpolation)
+		else:
+			aspect_ratio = height / hi
+			min_width = min(width, int(wi * aspect_ratio))
+			input = cv2.resize(input, (min_width, height), interpolation=interpolation)
+			if min_width < width:
+				image_zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
+				image_zeropadded[:,:min_width] = input[:,:min_width]
+				return image_zeropadded
+			else:
+				return input
+		"""
+		hi, wi = input.shape[:2]
+		aspect_ratio = height / hi
+		min_width = min(width, int(wi * aspect_ratio))
+		zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
+		zeropadded[:,:min_width] = cv2.resize(input, (min_width, height), interpolation=interpolation)
+		return zeropadded
+		"""
+		return cv2.resize(input, (width, height), interpolation=interpolation)
+		"""
+
+	# REF [function] >> RunTimeTextLineDatasetBase._resize_by_pil() in text_line_data.py.
+	def _resize_by_pil(self, input, height, width, *args, **kwargs):
+		import PIL.Image
+
+		interpolation = PIL.Image.BICUBIC
+		wi, hi = input.size
+		aspect_ratio = height / hi
+		min_width = min(width, int(wi * aspect_ratio))
+		zeropadded = PIL.Image.new(input.mode, (width, height), color=0)
+		zeropadded.paste(input.resize((min_width, height), resample=interpolation), (0, 0, min_width, height))
+		return zeropadded
+		"""
+		return input.resize((width, height), resample=interpolation)
+		"""
 
 class ToIntTensor(object):
 	def __call__(self, lst):
 		return torch.IntTensor(lst)
 
+class MySubsetDataset(torch.utils.data.Dataset):
+	def __init__(self, subset, transform=None, target_transform=None):
+		self.subset = subset
+		self.transform = transform
+		self.target_transform = target_transform
+		
+	def __getitem__(self, idx):
+		x, y = self.subset[idx]
+		if self.transform:
+			x = self.transform(x)
+		if self.target_transform:
+			y = self.target_transform(y)
+		return x, y
+		
+	def __len__(self):
+		return len(self.subset)
+
+	@property
+	def num_classes(self):
+		return self.subset.dataset.num_classes
+
+	@property
+	def classes(self):
+		return self.subset.dataset.classes
+
+	@property
+	def default_value(self):
+		return self.subset.dataset.default_value
+
+	def encode_label(self, label_str, *args, **kwargs):
+		return self.subset.dataset.encode_label(label_str, *args, **kwargs)
+
+	def decode_label(self, label_int, *args, **kwargs):
+		return self.subset.dataset.decode_label(label_int, *args, **kwargs)
+
 def SimpleCharacterDataset_test():
 	charset, font_list = construct_charset()
 
 	image_height, image_width, image_channel = 32, 32, 3
-	#image_height_before_crop, image_width_before_crop = 36, 36
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
@@ -245,16 +334,18 @@ def SimpleCharacterDataset_test():
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(),
 		RandomInvert(),
-		#ConvertChannel(),
-		torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
+		#ConvertChannel(mode='RGB'),
+		ResizeImage(image_height_before_crop, image_width_before_crop),
+		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
-		#ConvertChannel(),
-		torchvision.transforms.Resize((image_height, image_width)),
+		#ConvertChannel(mode='RGB'),
+		ResizeImage(image_height, image_width),
+		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -316,7 +407,7 @@ def NoisyCharacterDataset_test():
 	charset, font_list = construct_charset()
 
 	image_height, image_width, image_channel = 32, 32, 3
-	#image_height_before_crop, image_width_before_crop = 36, 36
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
@@ -332,16 +423,18 @@ def NoisyCharacterDataset_test():
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(),
 		RandomInvert(),
-		#ConvertChannel(),
-		torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
+		#ConvertChannel(mode='RGB'),
+		ResizeImage(image_height_before_crop, image_width_before_crop),
+		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
-		#ConvertChannel(),
-		torchvision.transforms.Resize((image_height, image_width)),
+		#ConvertChannel(mode='RGB'),
+		ResizeImage(image_height, image_width),
+		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -424,9 +517,10 @@ def FileBasedCharacterDataset_test():
 	charset, _ = construct_charset()
 
 	image_height, image_width, image_channel = 32, 32, 3
-	#image_height_before_crop, image_width_before_crop = 36, 36
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	train_test_ratio = 0.8
 	batch_size = 64
 	shuffle = True
 	num_workers = 4
@@ -435,16 +529,18 @@ def FileBasedCharacterDataset_test():
 	train_transform = torchvision.transforms.Compose([
 		#RandomAugment(),
 		RandomInvert(),
-		#ConvertChannel(),
-		torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
+		#ConvertChannel(mode='RGB'),
+		ResizeImage(image_height_before_crop, image_width_before_crop),
+		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
-		#ConvertChannel(),
-		torchvision.transforms.Resize((image_height, image_width)),
+		#ConvertChannel(mode='RGB'),
+		ResizeImage(image_height, image_width),
+		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -453,8 +549,13 @@ def FileBasedCharacterDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	train_dataset = text_data.FileBasedCharacterDataset(image_label_info_filepath, charset, image_channel, is_image_used=is_image_used, transform=train_transform)
-	test_dataset = text_data.FileBasedCharacterDataset(image_label_info_filepath, charset, image_channel, is_image_used=is_image_used, transform=test_transform)
+	dataset = text_data.FileBasedCharacterDataset(image_label_info_filepath, charset, image_channel, is_image_used=is_image_used)
+	num_examples = len(dataset)
+	num_train_examples = int(num_examples * train_test_ratio)
+
+	train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+	train_dataset = MySubsetDataset(train_subset, transform=train_transform)
+	test_dataset = MySubsetDataset(test_subset, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 
 	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
@@ -503,7 +604,7 @@ def SimpleWordDataset_test():
 	wordset = construct_word_set()
 
 	image_height, image_width, image_channel = 32, 320, 3
-	#image_height_before_crop, image_width_before_crop = 36, 324
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
@@ -518,8 +619,9 @@ def SimpleWordDataset_test():
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(),
 		RandomInvert(),
-		#ConvertChannel(),
-		torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
+		#ConvertChannel(mode='RGB'),
+		ResizeImage(image_height_before_crop, image_width_before_crop),
+		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -527,8 +629,9 @@ def SimpleWordDataset_test():
 	train_target_transform = ToIntTensor()
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
-		#ConvertChannel(),
-		torchvision.transforms.Resize((image_height, image_width)),
+		#ConvertChannel(mode='RGB'),
+		ResizeImage(image_height, image_width),
+		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -587,7 +690,7 @@ def RandomWordDataset_test():
 	charset, font_list = construct_charset()
 
 	image_height, image_width, image_channel = 32, 320, 3
-	#image_height_before_crop, image_width_before_crop = 36, 324
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
@@ -603,8 +706,9 @@ def RandomWordDataset_test():
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(),
 		RandomInvert(),
-		#ConvertChannel(),
-		torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
+		#ConvertChannel(mode='RGB'),
+		ResizeImage(image_height_before_crop, image_width_before_crop),
+		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -612,8 +716,9 @@ def RandomWordDataset_test():
 	train_target_transform = ToIntTensor()
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
-		#ConvertChannel(),
-		torchvision.transforms.Resize((image_height, image_width)),
+		#ConvertChannel(mode='RGB'),
+		ResizeImage(image_height, image_width),
+		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -692,9 +797,10 @@ def FileBasedWordDataset_test():
 	max_word_len = 30
 
 	image_height, image_width, image_channel = 32, 320, 3
-	#image_height_before_crop, image_width_before_crop = 36, 324
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	train_test_ratio = 0.8
 	batch_size = 64
 	shuffle = True
 	num_workers = 4
@@ -703,8 +809,9 @@ def FileBasedWordDataset_test():
 	train_transform = torchvision.transforms.Compose([
 		#RandomAugment(),
 		RandomInvert(),
-		#ConvertChannel(),
-		torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
+		#ConvertChannel(mode='RGB'),
+		ResizeImage(image_height_before_crop, image_width_before_crop),
+		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -712,8 +819,9 @@ def FileBasedWordDataset_test():
 	train_target_transform = ToIntTensor()
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
-		#ConvertChannel(),
-		torchvision.transforms.Resize((image_height, image_width)),
+		#ConvertChannel(mode='RGB'),
+		ResizeImage(image_height, image_width),
+		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -723,8 +831,13 @@ def FileBasedWordDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	train_dataset = text_data.FileBasedWordDataset(image_label_info_filepath, charset, image_channel, max_word_len, is_image_used=is_image_used, transform=train_transform, target_transform=train_target_transform, default_value=-1)
-	test_dataset = text_data.FileBasedWordDataset(image_label_info_filepath, charset, image_channel, max_word_len, is_image_used=is_image_used, transform=test_transform, target_transform=test_target_transform, default_value=-1)
+	dataset = text_data.FileBasedWordDataset(image_label_info_filepath, charset, image_channel, max_word_len, is_image_used=is_image_used, default_value=-1)
+	num_examples = len(dataset)
+	num_train_examples = int(num_examples * train_test_ratio)
+
+	train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+	train_dataset = MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform)
+	test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 
 	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
@@ -773,7 +886,7 @@ def SimpleTextLineDataset_test():
 	wordset = construct_word_set()
 
 	image_height, image_width, image_channel = 64, 640, 3
-	#image_height_before_crop, image_width_before_crop = 68, 644
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
@@ -792,8 +905,9 @@ def SimpleTextLineDataset_test():
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(),
 		RandomInvert(),
-		#ConvertChannel(),
-		torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
+		#ConvertChannel(mode='RGB'),
+		ResizeImage(image_height_before_crop, image_width_before_crop),
+		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -801,8 +915,9 @@ def SimpleTextLineDataset_test():
 	train_target_transform = ToIntTensor()
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
-		#ConvertChannel(),
-		torchvision.transforms.Resize((image_height, image_width)),
+		#ConvertChannel(mode='RGB'),
+		ResizeImage(image_height, image_width),
+		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -862,10 +977,12 @@ def main():
 	#NoisyCharacterDataset_test()
 	FileBasedCharacterDataset_test()
 
+	#--------------------
 	#SimpleWordDataset_test()
 	#RandomWordDataset_test()
 	#FileBasedWordDataset_test()
 
+	#--------------------
 	#SimpleTextLineDataset_test()
 
 #--------------------------------------------------------------------
