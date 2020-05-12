@@ -180,7 +180,8 @@ class FileBasedTextDatasetBase(TextDatasetBase):
 
 class SimpleCharacterDataset(TextDatasetBase):
 	def __init__(self, chars, image_channel, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None):
-		super().__init__(np.unique(chars).tolist())
+		#super().__init__(np.unique(chars).tolist())
+		super().__init__(np.unique(chars).tolist() + [FileBasedCharacterDataset.UNKNOWN])
 
 		self.image_channel = image_channel
 		self.chars = chars
@@ -229,7 +230,8 @@ class SimpleCharacterDataset(TextDatasetBase):
 
 class NoisyCharacterDataset(TextDatasetBase):
 	def __init__(self, chars, image_channel, fonts, font_size_interval, char_clipping_ratio_interval, color_functor=None, transform=None, target_transform=None):
-		super().__init__(np.unique(chars).tolist())
+		#super().__init__(np.unique(chars).tolist())
+		super().__init__(np.unique(chars).tolist() + [FileBasedCharacterDataset.UNKNOWN])
 
 		self.image_channel = image_channel
 		self.chars = chars
@@ -534,18 +536,18 @@ class FileBasedWordDataset(FileBasedTextDatasetBase):
 #--------------------------------------------------------------------
 
 class SimpleTextLineDataset(TextDatasetBase):
-	def __init__(self, words, charset, num_examples, image_height, image_width, image_channel, fonts, max_word_len, word_count_interval, space_count_interval, font_size_interval, char_space_ratio_interval, color_functor=None, transform=None, target_transform=None, default_value=-1):
+	def __init__(self, words, charset, num_examples, image_height, image_width, image_channel, max_text_len, fonts, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor=None, transform=None, target_transform=None, default_value=-1):
 		super().__init__(list(charset) + [SimpleTextLineDataset.SPACE, SimpleTextLineDataset.UNKNOWN], default_value)
 
+		self.words = words
 		self.num_examples = num_examples
 		self.image_height, self.image_width, self.image_channel = image_height, image_width, image_channel
-		self.words = words
+		self.max_text_len = max_text_len
 		self.fonts = fonts
-		self.max_word_len = max_word_len
-		self.word_count_interval = word_count_interval
-		self.space_count_interval = space_count_interval
 		self.font_size_interval = font_size_interval
 		self.char_space_ratio_interval = char_space_ratio_interval
+		self.word_count_interval = word_count_interval
+		self.space_count_interval = space_count_interval
 		self.transform = transform
 		self.target_transform = target_transform
 
@@ -566,8 +568,8 @@ class SimpleTextLineDataset(TextDatasetBase):
 
 	def __getitem__(self, idx):
 		words = random.sample(self.words, random.randint(*self.word_count_interval))	
-		textline = functools.reduce(lambda t, w: t + ' ' * random.randint(*self.space_count_interval) + w, words[1:], words[0])[:self.max_word_len]
-		target = [self.default_value,] * self.max_word_len
+		textline = functools.reduce(lambda t, w: t + ' ' * random.randint(*self.space_count_interval) + w, words[1:], words[0])[:self.max_text_len]
+		target = [self.default_value,] * self.max_text_len
 		target[:len(textline)] = self.encode_label(textline)
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)

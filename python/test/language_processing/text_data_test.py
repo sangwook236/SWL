@@ -316,11 +316,11 @@ class MySubsetDataset(torch.utils.data.Dataset):
 		return self.subset.dataset.decode_label(label_int, *args, **kwargs)
 
 def SimpleCharacterDataset_test():
-	charset, font_list = construct_charset()
-
 	image_height, image_width, image_channel = 32, 32, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	charset, font_list = construct_charset()
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
 	font_size_interval = (10, 100)
@@ -404,11 +404,11 @@ def SimpleCharacterDataset_test():
 	cv2.destroyAllWindows()
 
 def NoisyCharacterDataset_test():
-	charset, font_list = construct_charset()
-
 	image_height, image_width, image_channel = 32, 32, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	charset, font_list = construct_charset()
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
 	font_size_interval = (10, 100)
@@ -493,6 +493,17 @@ def NoisyCharacterDataset_test():
 	cv2.destroyAllWindows()
 
 def FileBasedCharacterDataset_test():
+	image_height, image_width, image_channel = 32, 32, 3
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
+	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	charset, _ = construct_charset()
+
+	train_test_ratio = 0.8
+	batch_size = 64
+	shuffle = True
+	num_workers = 4
+
 	if 'posix' == os.name:
 		data_base_dir_path = '/home/sangwook/work/dataset'
 	else:
@@ -513,17 +524,6 @@ def FileBasedCharacterDataset_test():
 	elif False:
 		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_en.txt'
 		is_image_used = True
-
-	charset, _ = construct_charset()
-
-	image_height, image_width, image_channel = 32, 32, 3
-	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
-	image_height_before_crop, image_width_before_crop = image_height, image_width
-
-	train_test_ratio = 0.8
-	batch_size = 64
-	shuffle = True
-	num_workers = 4
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -600,12 +600,12 @@ def FileBasedCharacterDataset_test():
 	cv2.destroyAllWindows()
 
 def SimpleWordDataset_test():
-	charset, font_list = construct_charset()
-	wordset = construct_word_set()
-
 	image_height, image_width, image_channel = 32, 320, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	charset, font_list = construct_charset()
+	wordset = construct_word_set()
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	font_size_interval = (10, 100)
@@ -687,11 +687,11 @@ def SimpleWordDataset_test():
 	cv2.destroyAllWindows()
 
 def RandomWordDataset_test():
-	charset, font_list = construct_charset()
-
 	image_height, image_width, image_channel = 32, 320, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	charset, font_list = construct_charset()
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	char_len_interval = (1, 20)
@@ -775,6 +775,18 @@ def RandomWordDataset_test():
 	cv2.destroyAllWindows()
 
 def FileBasedWordDataset_test():
+	image_height, image_width, image_channel = 32, 320, 3
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
+	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	charset, _ = construct_charset()
+	max_word_len = 30
+
+	train_test_ratio = 0.8
+	batch_size = 64
+	shuffle = True
+	num_workers = 4
+
 	if 'posix' == os.name:
 		data_base_dir_path = '/home/sangwook/work/dataset'
 	else:
@@ -792,18 +804,6 @@ def FileBasedWordDataset_test():
 	elif False:
 		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_en.txt'
 		is_image_used = True
-
-	charset, _ = construct_charset()
-	max_word_len = 30
-
-	image_height, image_width, image_channel = 32, 320, 3
-	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
-	image_height_before_crop, image_width_before_crop = image_height, image_width
-
-	train_test_ratio = 0.8
-	batch_size = 64
-	shuffle = True
-	num_workers = 4
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -882,19 +882,19 @@ def FileBasedWordDataset_test():
 	cv2.destroyAllWindows()
 
 def SimpleTextLineDataset_test():
-	charset, font_list = construct_charset()
-	wordset = construct_word_set()
-
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	charset, font_list = construct_charset()
+	wordset = construct_word_set()
+
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
-	max_word_len = 80
-	word_count_interval = (1, 5)
-	space_count_interval = (1, 3)
+	max_text_len = 80
 	font_size_interval = (10, 100)
 	char_space_ratio_interval = (0.8, 1.25)
+	word_count_interval = (1, 5)
+	space_count_interval = (1, 3)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 	batch_size = 64
@@ -927,8 +927,8 @@ def SimpleTextLineDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	train_dataset = text_data.SimpleTextLineDataset(wordset, charset, num_train_examples, image_height, image_width, image_channel, font_list, max_word_len, word_count_interval, space_count_interval, font_size_interval, char_space_ratio_interval, color_functor, transform=train_transform, target_transform=train_target_transform, default_value=-1)
-	test_dataset = text_data.SimpleTextLineDataset(wordset, charset, num_test_examples, image_height, image_width, image_channel, font_list, max_word_len, word_count_interval, space_count_interval, font_size_interval, char_space_ratio_interval, color_functor, transform=test_transform, target_transform=test_target_transform, default_value=-1)
+	train_dataset = text_data.SimpleTextLineDataset(wordset, charset, num_train_examples, image_height, image_width, image_channel, max_text_len, font_list, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor, transform=train_transform, target_transform=train_target_transform, default_value=-1)
+	test_dataset = text_data.SimpleTextLineDataset(wordset, charset, num_test_examples, image_height, image_width, image_channel, max_text_len, font_list, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor, transform=test_transform, target_transform=test_target_transform, default_value=-1)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 
 	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
