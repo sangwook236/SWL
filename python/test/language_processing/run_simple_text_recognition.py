@@ -742,7 +742,7 @@ def recognize_single_character():
 			total += labels.size(0)
 			correct += (predicted == labels).sum().item()
 
-	print('Accuracy of the network on the %i test images: %d %%.' % (len(test_dataset), 100 * correct / total))
+	print('Accuracy of the network on the test images: {} %%.'.format(100 * correct / total))
 
 	# What are the classes that performed well, and the classes that did not perform well.
 	class_correct = list(0 for i in range(num_classes))
@@ -924,7 +924,7 @@ def recognize_single_character_using_mixup():
 			total += labels.size(0)
 			correct += (predicted == labels).sum().item()
 
-	print('Accuracy of the network on the %i test images: %d %%.' % (len(test_dataset), 100 * correct / total))
+	print('Accuracy of the network on the test images: {} %%.'.format(100 * correct / total))
 
 	# What are the classes that performed well, and the classes that did not perform well.
 	class_correct = list(0 for i in range(num_classes))
@@ -1083,7 +1083,7 @@ def recognize_single_word():
 			total += labels.size(0)
 			correct += (predicted == labels).sum().item()
 
-	print('Accuracy of the network on the %i test images: %d %%.' % (len(test_dataset), 100 * correct / total))
+	print('Accuracy of the network on the test images: {} %%.'.format(100 * correct / total))
 
 	# What are the classes that performed well, and the classes that did not perform well.
 	class_correct = list(0 for i in range(num_classes))
@@ -1245,7 +1245,7 @@ def recognize_single_word_using_mixup():
 			total += labels.size(0)
 			correct += (predicted == labels).sum().item()
 
-	print('Accuracy of the network on the %i test images: %d %%.' % (len(test_dataset), 100 * correct / total))
+	print('Accuracy of the network on the test images: {} %%.'.format(100 * correct / total))
 
 	# What are the classes that performed well, and the classes that did not perform well.
 	class_correct = list(0 for i in range(num_classes))
@@ -1290,8 +1290,8 @@ def recognize_text_using_craft_and_single_character_recognizer():
 	#model_filepath = './craft/single_char_recognition.pth'
 	model_filepath = './craft/single_char_recognition_mixup.pth'
 
-	#--------------------
-	classes = charset
+	#classes = charset
+	classes = list(charset) + [text_data.TextDatasetBase.UNKNOWN]
 	num_classes = len(classes)
 
 	#--------------------
@@ -1410,8 +1410,8 @@ def main():
 	#recognize_text_using_craft_and_single_character_recognizer()
 
 	#--------------------
-	#recognize_single_word()  # Use SASA.
-	#recognize_single_word_using_mixup()  # Use SASA.
+	#recognize_single_word()  # Use RARE.
+	#recognize_single_word_using_mixup()  # Use RARE.
 
 #--------------------------------------------------------------------
 
