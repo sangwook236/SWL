@@ -3,6 +3,69 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import cv2
 
+#--------------------------------------------------------------------
+
+class LabelConverter(object):
+	SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
+	EOS = '<EOS>'  # All strings will end with the End-Of-String token.
+	#SOJC = '<SOJC>'  # All Hangeul jamo strings will start with the Start-Of-Jamo-Character token.
+	#EOJC = '<EOJC>'  # All Hangeul jamo strings will end with the End-Of-Jamo-Character token.
+	UNKNOWN = '<UNK>'  # Unknown label token.
+	SPACE = ' '  # Space token.
+
+	def __init__(self, classes, label_prefix=None, label_suffix=None, default_value=-1):
+		"""
+		Inputs:
+			classes (list of string tokens): Tokens which consist of a text. They include special tokens such as '<UNK>'.
+			label_prefix (list of string tokens): Special tokens to be used as label prefix such as '<SOS>'.
+			label_suffix (list of string tokens): Special tokens to be used as label suffix such as '<EOS>'.
+			default_value (int): A default value which means its position is not part of a text. This value must be < 0 and >= len(classes + label_prefix + label_suffix).
+		"""
+
+		if label_prefix is None: label_prefix = []
+		if label_suffix is None: label_suffix = []
+
+		self._classes = classes + label_prefix + label_suffix
+		self._default_value = default_value
+
+		label_prefix, label_suffix = [self._classes.index(tok) for tok in label_prefix], [self._classes.index(tok) for tok in label_suffix]
+		self.decoration_tokens = [self._default_value] + label_prefix + label_suffix
+		self.decoration_functor = lambda x: label_prefix + x + label_suffix
+
+	@property
+	def num_classes(self):
+		return len(self._classes)
+
+	@property
+	def classes(self):
+		return self._classes
+
+	@property
+	def default_value(self):
+		return self._default_value
+
+	# String label -> integer label.
+	def encode(self, label_str, *args, **kwargs):
+		def label2index(ch):
+			try:
+				return self._classes.index(ch)
+			except ValueError:
+				print('[SWL] Error: Failed to encode a character, {} in {}.'.format(ch, label_str))
+				return self._classes.index(self.UNKNOWN)
+		return self.decoration_functor([label2index(ch) for ch in label_str])
+
+	# Integer label -> string label.
+	def decode(self, label_int, *args, **kwargs):
+		def index2label(id):
+			try:
+				return self._classes[id]
+			except IndexError:
+				print('[SWL] Error: Failed to decode an identifier, {} in {}.'.format(id, label_int))
+				return self.UNKNOWN  # TODO [check] >> Is it correct?
+		return ''.join([index2label(id) for id in label_int if id not in self.decoration_tokens])
+
+#--------------------------------------------------------------------
+
 def compute_simple_text_recognition_accuracy(text_pairs, case_sensitive=True):
 	total_text_count = len(text_pairs)
 	correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0

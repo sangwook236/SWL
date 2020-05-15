@@ -31,23 +31,25 @@ class TextLineDatasetBase(abc.ABC):
 		return self._default_value
 
 	# String label -> integer label.
+	# REF [function] >> LabelConverter.encode() in swl/language_processing/util.py.
 	def encode_label(self, label_str, *args, **kwargs):
 		def label2index(ch):
 			try:
 				return self._labels.index(ch)
 			except ValueError:
 				print('[SWL] Error: Failed to encode a label, {} in {}.'.format(ch, label_str))
-				return self._labels.index(TextLineDatasetBase.UNKNOWN)
+				return self._labels.index(self.UNKNOWN)
 		return list(label2index(ch) for ch in label_str)
 
 	# Integer label -> string label.
+	# REF [function] >> LabelConverter.decode() in swl/language_processing/util.py.
 	def decode_label(self, label_int, *args, **kwargs):
 		def index2label(id):
 			try:
 				return self._labels[id]
 			except IndexError:
 				print('[SWL] Error: Failed to decode a label, {} in {}.'.format(id, label_int))
-				return TextLineDatasetBase.UNKNOWN  # TODO [check] >> Is it correct?
+				return self.UNKNOWN  # TODO [check] >> Is it correct?
 		return ''.join(list(index2label(id) for id in label_int if id != self._default_value))
 
 	# String labels -> Integer labels.
@@ -443,7 +445,7 @@ class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatas
 	# String label -> integer label.
 	def encode_label(self, label_str, *args, **kwargs):
 		try:
-			label_str = RunTimeHangeulJamoAlphaMatteTextLineDataset.hangeul2jamo(label_str)
+			label_str = self.hangeul2jamo(label_str)
 			return list(self._labels.index(ch) for ch in label_str)
 		except Exception as ex:
 			print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
@@ -453,14 +455,14 @@ class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatas
 	def decode_label(self, label_int, *args, **kwargs):
 		try:
 			label_str = ''.join(list(self._labels[id] for id in label_int if id != self._default_value))
-			return RunTimeHangeulJamoAlphaMatteTextLineDataset.jamo2hangeul(label_str)
+			return self.jamo2hangeul(label_str)
 		except Exception as ex:
 			print('[SWL] Error: Failed to decode a label: {}.'.format(label_int))
 			raise
 
 	# String labels -> Integer labels.
 	def encode_labels(self, labels_str, dtype=np.int16, *args, **kwargs):
-		labels_str = list(map(lambda label: RunTimeHangeulJamoAlphaMatteTextLineDataset.hangeul2jamo(label), labels_str))
+		labels_str = list(map(lambda label: self.hangeul2jamo(label), labels_str))
 
 		max_label_len = functools.reduce(lambda x, y: max(x, len(y)), labels_str, 0)
 		labels_int = np.full((len(labels_str), max_label_len), self._default_value, dtype=dtype)
@@ -476,7 +478,7 @@ class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatas
 		def int2str(label):
 			try:
 				label = ''.join(list(self._labels[id] for id in label if id != self._default_value))
-				return RunTimeHangeulJamoAlphaMatteTextLineDataset.jamo2hangeul(label)
+				return self.jamo2hangeul(label)
 			except ValueError:
 				return None
 		return list(map(int2str, labels_int))
@@ -889,7 +891,7 @@ class JsonBasedTextLineDataset(JsonBasedTextLineDatasetBase):
 # This class is independent of language.
 class JsonBasedHangeulJamoTextLineDataset(JsonBasedTextLineDatasetBase):
 	def __init__(self, train_json_filepath, test_json_filepath, image_height, image_width, image_channel, labels, num_classes, use_NWHC=True, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, labels=labels, num_classes=num_classess, use_NWHC=use_NWHC, default_value=default_value)
+		super().__init__(image_height, image_width, image_channel, labels=labels, num_classes=num_classes, use_NWHC=use_NWHC, default_value=default_value)
 
 		#--------------------
 		print('[SWL] Info: Start loading dataset...')
@@ -899,8 +901,8 @@ class JsonBasedHangeulJamoTextLineDataset(JsonBasedTextLineDatasetBase):
 		print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 
 		"""
-		self._labels = set(JsonBasedHangeulJamoTextLineDataset.hangeul2jamo(list(set(train_charset + test_charset))))
-		self._labels.add(JsonBasedHangeulJamoTextLineDataset.UNKNOWN)
+		self._labels = set(self.hangeul2jamo(list(set(train_charset + test_charset))))
+		self._labels.add(self.UNKNOWN)
 		self._labels = sorted(self._labels)
 		#self._labels = ''.join(sorted(self._labels))  # Error.
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
@@ -924,7 +926,7 @@ class JsonBasedHangeulJamoTextLineDataset(JsonBasedTextLineDatasetBase):
 	# String label -> integer label.
 	def encode_label(self, label_str, *args, **kwargs):
 		try:
-			label_str = JsonBasedHangeulJamoTextLineDataset.hangeul2jamo(label_str)
+			label_str = self.hangeul2jamo(label_str)
 			return list(self._labels.index(ch) for ch in label_str)
 		except Exception as ex:
 			print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
@@ -934,14 +936,14 @@ class JsonBasedHangeulJamoTextLineDataset(JsonBasedTextLineDatasetBase):
 	def decode_label(self, label_int, *args, **kwargs):
 		try:
 			label_str = ''.join(list(self._labels[id] for id in label_int if id != self._default_value))
-			return JsonBasedHangeulJamoTextLineDataset.jamo2hangeul(label_str)
+			return self.jamo2hangeul(label_str)
 		except Exception as ex:
 			print('[SWL] Error: Failed to decode a label: {}.'.format(label_int))
 			raise
 
 	# String labels -> Integer labels.
 	def encode_labels(self, labels_str, dtype=np.int16, *args, **kwargs):
-		labels_str = list(map(lambda label: JsonBasedHangeulJamoTextLineDataset.hangeul2jamo(label), labels_str))
+		labels_str = list(map(lambda label: self.hangeul2jamo(label), labels_str))
 
 		max_label_len = functools.reduce(lambda x, y: max(x, len(y)), labels_str, 0)
 		labels_int = np.full((len(labels_str), max_label_len), self._default_value, dtype=dtype)
@@ -957,7 +959,7 @@ class JsonBasedHangeulJamoTextLineDataset(JsonBasedTextLineDatasetBase):
 		def int2str(label):
 			try:
 				label = ''.join(list(self._labels[id] for id in label if id != self._default_value))
-				return JsonBasedHangeulJamoTextLineDataset.jamo2hangeul(label)
+				return self.jamo2hangeul(label)
 			except ValueError:
 				return None
 		return list(map(int2str, labels_int))

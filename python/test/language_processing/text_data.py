@@ -7,73 +7,16 @@ import swl.language_processing.util as swl_langproc_util
 #--------------------------------------------------------------------
 
 class TextDatasetBase(torch.utils.data.Dataset):
-	SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
-	EOS = '<EOS>'  # All strings will end with the End-Of-String token.
-	#SOJC = '<SOJC>'  # All Hangeul jamo strings will start with the Start-Of-Jamo-Character token.
-	#EOJC = '<EOJC>'  # All Hangeul jamo strings will end with the End-Of-Jamo-Character token.
-	UNKNOWN = '<UNK>'  # Unknown label token.
-	SPACE = ' '  # Space token.
-
-	def __init__(self, classes, label_prefix=None, label_suffix=None, default_value=-1):
-		"""
-		Inputs:
-			classes (list of string tokens): Tokens which consist of a text. They include special tokens such as '<UNK>'.
-			label_prefix (list of string tokens): Special tokens to be used as label prefix such as '<SOS>'.
-			label_suffix (list of string tokens): Special tokens to be used as label suffix such as '<EOS>'.
-			default_value (int): A default value which means its position is not part of a text. This value must be < 0 and >= len(classes + label_prefix + label_suffix).
-		"""
-
+	def __init__(self, label_converter):
 		super().__init__()
 
-		if label_prefix is None: label_prefix = []
-		if label_suffix is None: label_suffix = []
-
-		self._classes = classes + label_prefix + label_suffix
-		self._default_value = default_value
-
-		label_prefix, label_suffix = [self._classes.index(tok) for tok in label_prefix], [self._classes.index(tok) for tok in label_suffix]
-		self.decoration_tokens = [self._default_value] + label_prefix + label_suffix
-		self.decoration_functor = lambda x: label_prefix + x + label_suffix
-
-	@property
-	def num_classes(self):
-		return len(self._classes)
-
-	@property
-	def classes(self):
-		return self._classes
-
-	@property
-	def default_value(self):
-		return self._default_value
-
-	# String label -> integer label.
-	# REF [function] >> TextLineDatasetBase.encode_label() in text_line_data.py.
-	def encode_label(self, label_str, *args, **kwargs):
-		def label2index(ch):
-			try:
-				return self._classes.index(ch)
-			except ValueError:
-				print('[SWL] Error: Failed to encode a character, {} in {}.'.format(ch, label_str))
-				return self._classes.index(TextDatasetBase.UNKNOWN)
-		return self.decoration_functor([label2index(ch) for ch in label_str])
-
-	# Integer label -> string label.
-	# REF [function] >> TextLineDatasetBase.decode_label() in text_line_data.py.
-	def decode_label(self, label_int, *args, **kwargs):
-		def index2label(id):
-			try:
-				return self._classes[id]
-			except IndexError:
-				print('[SWL] Error: Failed to decode an identifier, {} in {}.'.format(id, label_int))
-				return TextDatasetBase.UNKNOWN  # TODO [check] >> Is it correct?
-		return ''.join([index2label(id) for id in label_int if id not in self.decoration_tokens])
+		self.label_converter = label_converter
 
 #--------------------------------------------------------------------
 
 class FileBasedTextDatasetBase(TextDatasetBase):
-	def __init__(self, classes, label_prefix=None, label_suffix=None, default_value=-1):
-		super().__init__(classes, label_prefix, label_suffix, default_value)
+	def __init__(self, label_converter):
+		super().__init__(label_converter)
 
 	# REF [function] >> FileBasedTextLineDatasetBase._load_data_from_image_label_info() in text_line_data.py
 	def _load_data_from_image_label_info(self, image_label_info_filepath, image_height, image_width, image_channel, max_label_len, image_label_separator=' ', is_image_used=True):
@@ -116,12 +59,12 @@ class FileBasedTextDatasetBase(TextDatasetBase):
 
 			#img = self.resize(img, None, image_height, image_width)
 			try:
-				label_int = self.encode_label(label_str)
+				label_int = self.label_converter.encode(label_str)
 			except Exception:
 				#print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
 				continue
-			if label_str != self.decode_label(label_int):
-				print('[SWL] Error: Mismatched encoded and decoded labels: {} != {}.'.format(label_str, self.decode_label(label_int)))
+			if label_str != self.label_converter.decode(label_int):
+				print('[SWL] Error: Mismatched encoded and decoded labels: {} != {}.'.format(label_str, self.label_converter.decode(label_int)))
 				continue
 
 			images.append(img if is_image_used else img_fpath)
@@ -177,12 +120,12 @@ class FileBasedTextDatasetBase(TextDatasetBase):
 
 			#img = self.resize(img, None, image_height, image_width)
 			try:
-				label_int = self.encode_label(label_str)
+				label_int = self.label_converter.encode(label_str)
 			except Exception:
 				#print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
 				continue
-			if label_str != self.decode_label(label_int):
-				print('[SWL] Error: Mismatched encoded and decoded labels: {} != {}.'.format(label_str, self.decode_label(label_int)))
+			if label_str != self.label_converter.decode(label_int):
+				print('[SWL] Error: Mismatched encoded and decoded labels: {} != {}.'.format(label_str, self.label_converter.decode(label_int)))
 				continue
 
 			images.append(img if is_image_used else img_fpath)
@@ -198,9 +141,8 @@ class FileBasedTextDatasetBase(TextDatasetBase):
 #--------------------------------------------------------------------
 
 class SimpleCharacterDataset(TextDatasetBase):
-	def __init__(self, chars, charset, image_channel, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None):
-		#super().__init__(list(charset))
-		super().__init__(list(charset) + [SimpleCharacterDataset.UNKNOWN])
+	def __init__(self, label_converter, chars, image_channel, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None):
+		super().__init__(label_converter)
 
 		self.image_channel = image_channel
 		self.chars = chars
@@ -226,7 +168,7 @@ class SimpleCharacterDataset(TextDatasetBase):
 
 	def __getitem__(self, idx):
 		ch = self.chars[idx]
-		target = self._classes.index(ch)
+		target = self.label_converter.encode([ch])[0]
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
 		font_color, bg_color = self.color_functor()
@@ -248,9 +190,8 @@ class SimpleCharacterDataset(TextDatasetBase):
 #--------------------------------------------------------------------
 
 class NoisyCharacterDataset(TextDatasetBase):
-	def __init__(self, chars, charset, image_channel, fonts, font_size_interval, char_clipping_ratio_interval, color_functor=None, transform=None, target_transform=None):
-		#super().__init__(list(charset))
-		super().__init__(list(charset) + [NoisyCharacterDataset.UNKNOWN])
+	def __init__(self, label_converter, chars, image_channel, fonts, font_size_interval, char_clipping_ratio_interval, color_functor=None, transform=None, target_transform=None):
+		super().__init__(label_converter)
 
 		self.image_channel = image_channel
 		self.chars = chars
@@ -277,10 +218,10 @@ class NoisyCharacterDataset(TextDatasetBase):
 
 	def __getitem__(self, idx):
 		ch = self.chars[idx]
-		ch2 = random.sample(self._classes, 2)
-		#ch2 = [random.choice(self._classes) for _ in range(2)]
+		ch2 = random.sample(self.label_converter.classes, 2)
+		#ch2 = [random.choice(self.label_converter.classes) for _ in range(2)]
 		ch3 = ch2[0] + ch + ch2[1]
-		target = self._classes.index(ch)
+		target = self.label_converter.encode([ch])[0]
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
 		font_color, bg_color = self.color_functor()
@@ -332,9 +273,9 @@ class NoisyCharacterDataset(TextDatasetBase):
 #--------------------------------------------------------------------
 
 class FileBasedCharacterDataset(FileBasedTextDatasetBase):
-	def __init__(self, image_label_info_filepath, charset, image_channel, is_image_used=True, transform=None, target_transform=None):
-	#def __init__(self, image_filepaths, label_filepaths, charset, image_channel, is_image_used=True, transform=None, target_transform=None):
-		super().__init__(list(charset) + [FileBasedCharacterDataset.UNKNOWN])
+	def __init__(self, label_converter, image_label_info_filepath, image_channel, is_image_used=True, transform=None, target_transform=None):
+	#def __init__(self, label_converter, image_filepaths, label_filepaths, image_channel, is_image_used=True, transform=None, target_transform=None):
+		super().__init__(label_converter)
 
 		self.image_channel = image_channel
 		self.is_image_used = is_image_used
@@ -388,8 +329,8 @@ class FileBasedCharacterDataset(FileBasedTextDatasetBase):
 #--------------------------------------------------------------------
 
 class SimpleWordDataset(TextDatasetBase):
-	def __init__(self, words, charset, num_examples, image_channel, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None, label_prefix=None, label_suffix=None, default_value=-1):
-		super().__init__(list(charset) + [SimpleWordDataset.UNKNOWN], label_prefix, label_suffix, default_value)
+	def __init__(self, label_converter, words, num_examples, image_channel, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None):
+		super().__init__(label_converter)
 
 		self.words = words
 		self.num_examples = num_examples
@@ -418,8 +359,8 @@ class SimpleWordDataset(TextDatasetBase):
 	def __getitem__(self, idx):
 		#word = random.choice(self.words)
 		word = random.sample(self.words, 1)[0]
-		target = [self.default_value,] * self.max_word_len
-		target[:len(word)] = self.encode_label(word)
+		target = [self.label_converter.default_value] * self.max_word_len
+		target[:len(word)] = self.label_converter.encode(word)
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
 		font_color, bg_color = self.color_functor()
@@ -441,8 +382,8 @@ class SimpleWordDataset(TextDatasetBase):
 #--------------------------------------------------------------------
 
 class RandomWordDataset(TextDatasetBase):
-	def __init__(self, chars, num_examples, image_channel, char_len_interval, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None, label_prefix=None, label_suffix=None, default_value=-1):
-		super().__init__(np.unique(list(chars)).tolist() + [RandomWordDataset.UNKNOWN], label_prefix, label_suffix, default_value)
+	def __init__(self, label_converter, chars, num_examples, image_channel, char_len_interval, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None):
+		super().__init__(label_converter)
 
 		self.chars = chars
 		self.num_examples = num_examples
@@ -473,8 +414,8 @@ class RandomWordDataset(TextDatasetBase):
 		char_len = random.randint(*self.char_len_interval)
 		#word = ''.join(random.sample(self.chars, char_len))
 		word = ''.join([random.choice(self.chars) for _ in range(char_len)])
-		target = [self.default_value,] * self.max_word_len
-		target[:len(word)] = self.encode_label(word)
+		target = [self.label_converter.default_value] * self.max_word_len
+		target[:len(word)] = self.label_converter.encode(word)
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
 		font_color, bg_color = self.color_functor()
@@ -496,9 +437,9 @@ class RandomWordDataset(TextDatasetBase):
 #--------------------------------------------------------------------
 
 class FileBasedWordDataset(FileBasedTextDatasetBase):
-	def __init__(self, image_label_info_filepath, charset, image_channel, max_word_len, is_image_used=True, transform=None, target_transform=None, label_prefix=None, label_suffix=None, default_value=-1):
-	#def __init__(self, image_filepaths, label_filepaths, charset, image_channel, max_word_len, is_image_used=True, transform=None, target_transform=None, label_prefix=None, label_suffix=None, default_value=-1):
-		super().__init__(list(charset) + [FileBasedWordDataset.UNKNOWN], label_prefix, label_suffix, default_value)
+	def __init__(self, label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=True, transform=None, target_transform=None):
+	#def __init__(self, label_converter, image_filepaths, label_filepaths, image_channel, max_word_len, is_image_used=True, transform=None, target_transform=None):
+		super().__init__(label_converter)
 
 		self.image_channel = image_channel
 		self.max_word_len = max_word_len
@@ -538,7 +479,7 @@ class FileBasedWordDataset(FileBasedTextDatasetBase):
 				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
 				image = None
 		label = self.labels_int[idx]
-		target = [self.default_value,] * self.max_word_len
+		target = [self.label_converter.default_value] * self.max_word_len
 		target[:len(label)] = label
 
 		if image and image.mode != self.mode:
@@ -555,8 +496,8 @@ class FileBasedWordDataset(FileBasedTextDatasetBase):
 #--------------------------------------------------------------------
 
 class SimpleTextLineDataset(TextDatasetBase):
-	def __init__(self, words, charset, num_examples, image_height, image_width, image_channel, max_text_len, fonts, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor=None, transform=None, target_transform=None, label_prefix=None, label_suffix=None, default_value=-1):
-		super().__init__(list(charset) + [SimpleTextLineDataset.SPACE, SimpleTextLineDataset.UNKNOWN], label_prefix, label_suffix, default_value)
+	def __init__(self, label_converter, words, num_examples, image_height, image_width, image_channel, max_text_len, fonts, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor=None, transform=None, target_transform=None):
+		super().__init__(label_converter)
 
 		self.words = words
 		self.num_examples = num_examples
@@ -588,8 +529,8 @@ class SimpleTextLineDataset(TextDatasetBase):
 	def __getitem__(self, idx):
 		words = random.sample(self.words, random.randint(*self.word_count_interval))	
 		textline = functools.reduce(lambda t, w: t + ' ' * random.randint(*self.space_count_interval) + w, words[1:], words[0])[:self.max_text_len]
-		target = [self.default_value,] * self.max_text_len
-		target[:len(textline)] = self.encode_label(textline)
+		target = [self.label_converter.default_value] * self.max_text_len
+		target[:len(textline)] = self.label_converter.encode(textline)
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
 		char_space_ratio = None if self.char_space_ratio_interval is None else random.uniform(*self.char_space_ratio_interval)

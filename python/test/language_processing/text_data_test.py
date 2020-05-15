@@ -9,6 +9,7 @@ import numpy as np
 import torch, torchvision
 from PIL import Image, ImageOps
 import cv2
+import swl.language_processing.util as swl_langproc_util
 import text_data
 import text_generation_util as tg_util
 
@@ -413,24 +414,6 @@ class MySubsetDataset(torch.utils.data.Dataset):
 	def __len__(self):
 		return len(self.subset)
 
-	@property
-	def num_classes(self):
-		return self.subset.dataset.num_classes
-
-	@property
-	def classes(self):
-		return self.subset.dataset.classes
-
-	@property
-	def default_value(self):
-		return self.subset.dataset.default_value
-
-	def encode_label(self, label_str, *args, **kwargs):
-		return self.subset.dataset.encode_label(label_str, *args, **kwargs)
-
-	def decode_label(self, label_int, *args, **kwargs):
-		return self.subset.dataset.decode_label(label_int, *args, **kwargs)
-
 def SimpleCharacterDataset_test():
 	image_height, image_width, image_channel = 64, 64, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
@@ -470,18 +453,16 @@ def SimpleCharacterDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
+	label_converter = swl_langproc_util.LabelConverter(list(charset) + [swl_langproc_util.LabelConverter.UNKNOWN])
 	chars = list(charset * num_train_examples_per_class)
 	random.shuffle(chars)
-	train_dataset = text_data.SimpleCharacterDataset(chars, charset, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=train_transform)
+	train_dataset = text_data.SimpleCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=train_transform)
 	chars = list(charset * num_test_examples_per_class)
 	random.shuffle(chars)
-	test_dataset = text_data.SimpleCharacterDataset(chars, charset, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=test_transform)
+	test_dataset = text_data.SimpleCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-
-	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
-	#assert train_dataset.num_classes == test_dataset.num_classes, 'Unmatched number of classes, {} != {}'.format(train_dataset.num_classes, test_dataset.num_classes)
-	print('#classes = {}.'.format(train_dataset.num_classes))
+	print('#classes = {}.'.format(label_converter.num_classes))
 
 	#--------------------
 	print('Start creating data loaders...')
@@ -514,7 +495,7 @@ def SimpleCharacterDataset_test():
 		images, labels = images.numpy(), labels.numpy()
 		images = images.transpose(0, 2, 3, 1)
 		for idx, (img, lbl) in enumerate(zip(images, labels)):
-			print('Label: {} (int), {} (str).'.format(lbl, dataloader.dataset.decode_label([lbl])[0]))
+			print('Label: {} (int), {} (str).'.format(lbl, label_converter.decode([lbl])[0]))
 			cv2.imshow('Image', img)
 			cv2.waitKey(0)
 			if idx >= 9: break
@@ -560,18 +541,16 @@ def NoisyCharacterDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
+	label_converter = swl_langproc_util.LabelConverter(list(charset) + [swl_langproc_util.LabelConverter.UNKNOWN])
 	chars = list(charset * num_train_examples_per_class)
 	random.shuffle(chars)
-	train_dataset = text_data.NoisyCharacterDataset(chars, charset, image_channel, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor, transform=train_transform)
+	train_dataset = text_data.NoisyCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor, transform=train_transform)
 	chars = list(charset * num_test_examples_per_class)
 	random.shuffle(chars)
-	test_dataset = text_data.NoisyCharacterDataset(chars, charset, image_channel, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor, transform=test_transform)
+	test_dataset = text_data.NoisyCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-
-	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
-	#assert train_dataset.num_classes == test_dataset.num_classes, 'Unmatched number of classes, {} != {}'.format(train_dataset.num_classes, test_dataset.num_classes)
-	print('#classes = {}.'.format(train_dataset.num_classes))
+	print('#classes = {}.'.format(label_converter.num_classes))
 
 	#--------------------
 	print('Start creating data loaders...')
@@ -604,7 +583,7 @@ def NoisyCharacterDataset_test():
 		images, labels = images.numpy(), labels.numpy()
 		images = images.transpose(0, 2, 3, 1)
 		for idx, (img, lbl) in enumerate(zip(images, labels)):
-			print('Label: {} (int), {} (str).'.format(lbl, dataloader.dataset.decode_label([lbl])[0]))
+			print('Label: {} (int), {} (str).'.format(lbl, label_converter.decode([lbl])[0]))
 			cv2.imshow('Image', img)
 			cv2.waitKey(0)
 			if idx >= 9: break
@@ -672,7 +651,8 @@ def FileBasedCharacterDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	dataset = text_data.FileBasedCharacterDataset(image_label_info_filepath, charset, image_channel, is_image_used=is_image_used)
+	label_converter = swl_langproc_util.LabelConverter(list(charset) + [swl_langproc_util.LabelConverter.UNKNOWN])
+	dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used)
 	num_examples = len(dataset)
 	num_train_examples = int(num_examples * train_test_ratio)
 
@@ -681,10 +661,7 @@ def FileBasedCharacterDataset_test():
 	test_dataset = MySubsetDataset(test_subset, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-
-	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
-	#assert train_dataset.num_classes == test_dataset.num_classes, 'Unmatched number of classes, {} != {}'.format(train_dataset.num_classes, test_dataset.num_classes)
-	print('#classes = {}.'.format(train_dataset.num_classes))
+	print('#classes = {}.'.format(label_converter.num_classes))
 
 	#--------------------
 	print('Start creating data loaders...')
@@ -717,7 +694,7 @@ def FileBasedCharacterDataset_test():
 		images, labels = images.numpy(), labels.numpy()
 		images = images.transpose(0, 2, 3, 1)
 		for idx, (img, lbl) in enumerate(zip(images, labels)):
-			print('Label: {} (int), {} (str).'.format(lbl, dataloader.dataset.decode_label([lbl])[0]))
+			print('Label: {} (int), {} (str).'.format(lbl, label_converter.decode([lbl])[0]))
 			cv2.imshow('Image', img)
 			cv2.waitKey(0)
 			if idx >= 9: break
@@ -765,16 +742,13 @@ def SimpleWordDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	train_dataset = text_data.SimpleWordDataset(wordset, charset, num_train_examples, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform, default_value=-1)
-	#train_dataset = text_data.SimpleWordDataset(wordset, charset, num_train_examples, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform, label_prefix=[text_data.SimpleWordDataset.SOS], label_suffix=[text_data.SimpleWordDataset.EOS], default_value=-1)
-	test_dataset = text_data.SimpleWordDataset(wordset, charset, num_test_examples, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform, default_value=-1)
-	#test_dataset = text_data.SimpleWordDataset(wordset, charset, num_test_examples, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform, label_prefix=[text_data.SimpleWordDataset.SOS], label_suffix=[text_data.SimpleWordDataset.EOS], default_value=-1)
+	label_converter = swl_langproc_util.LabelConverter(list(charset) + [swl_langproc_util.LabelConverter.UNKNOWN], default_value=-1)
+	#label_converter = swl_langproc_util.LabelConverter(list(charset) + [swl_langproc_util.LabelConverter.UNKNOWN], label_prefix=[text_data.SimpleWordDataset.SOS], label_suffix=[text_data.SimpleWordDataset.EOS], default_value=-1)
+	train_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_train_examples, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
+	test_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_test_examples, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-
-	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
-	#assert train_dataset.num_classes == test_dataset.num_classes, 'Unmatched number of classes, {} != {}'.format(train_dataset.num_classes, test_dataset.num_classes)
-	print('#classes = {}.'.format(train_dataset.num_classes))
+	print('#classes = {}.'.format(label_converter.num_classes))
 
 	#--------------------
 	print('Start creating data loaders...')
@@ -807,7 +781,7 @@ def SimpleWordDataset_test():
 		images, labels = images.numpy(), labels.numpy()
 		images = images.transpose(0, 2, 3, 1)
 		for idx, (img, lbl) in enumerate(zip(images, labels)):
-			print('Label: {} (int), {} (str).'.format([ll for ll in lbl if ll != dataloader.dataset.default_value], dataloader.dataset.decode_label(lbl)))
+			print('Label: {} (int), {} (str).'.format([ll for ll in lbl if ll != label_converter.default_value], label_converter.decode(lbl)))
 			cv2.imshow('Image', img)
 			cv2.waitKey(0)
 			if idx >= 9: break
@@ -855,17 +829,14 @@ def RandomWordDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
+	label_converter = swl_langproc_util.LabelConverter(list(charset) + [swl_langproc_util.LabelConverter.UNKNOWN], default_value=-1)
+	#label_converter = swl_langproc_util.LabelConverter(list(charset) + [swl_langproc_util.LabelConverter.UNKNOWN], label_prefix=[text_data.SimpleWordDataset.SOS], label_suffix=[text_data.SimpleWordDataset.EOS], default_value=-1)
 	chars = charset  # Can make the number of each character different.
-	train_dataset = text_data.RandomWordDataset(chars, num_train_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform, default_value=-1)
-	#train_dataset = text_data.RandomWordDataset(chars, num_train_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform, label_prefix=[text_data.RandomWordDataset.SOS], label_suffix=[text_data.RandomWordDataset.EOS], default_value=-1)
-	test_dataset = text_data.RandomWordDataset(chars, num_test_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform, default_value=-1)
-	#test_dataset = text_data.RandomWordDataset(chars, num_test_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform, label_prefix=[text_data.RandomWordDataset.SOS], label_suffix=[text_data.RandomWordDataset.EOS], default_value=-1)
+	train_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
+	test_dataset = text_data.RandomWordDataset(label_converter, chars, num_test_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-
-	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
-	#assert train_dataset.num_classes == test_dataset.num_classes, 'Unmatched number of classes, {} != {}'.format(train_dataset.num_classes, test_dataset.num_classes)
-	print('#classes = {}.'.format(train_dataset.num_classes))
+	print('#classes = {}.'.format(label_converter.num_classes))
 
 	#--------------------
 	print('Start creating data loaders...')
@@ -898,7 +869,7 @@ def RandomWordDataset_test():
 		images, labels = images.numpy(), labels.numpy()
 		images = images.transpose(0, 2, 3, 1)
 		for idx, (img, lbl) in enumerate(zip(images, labels)):
-			print('Label: {} (int), {} (str).'.format([ll for ll in lbl if ll != dataloader.dataset.default_value], dataloader.dataset.decode_label(lbl)))
+			print('Label: {} (int), {} (str).'.format([ll for ll in lbl if ll != label_converter.default_value], label_converter.decode(lbl)))
 			cv2.imshow('Image', img)
 			cv2.waitKey(0)
 			if idx >= 9: break
@@ -965,8 +936,9 @@ def FileBasedWordDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	dataset = text_data.FileBasedWordDataset(image_label_info_filepath, charset, image_channel, max_word_len, is_image_used=is_image_used, default_value=-1)
-	#dataset = text_data.FileBasedWordDataset(image_label_info_filepath, charset, image_channel, max_word_len, is_image_used=is_image_used, label_prefix=[text_data.FileBasedWordDataset.SOS], label_suffix=[text_data.FileBasedWordDataset.EOS], default_value=-1)
+	label_converter = swl_langproc_util.LabelConverter(list(charset) + [swl_langproc_util.LabelConverter.UNKNOWN], default_value=-1)
+	#label_converter = swl_langproc_util.LabelConverter(list(charset) + [swl_langproc_util.LabelConverter.UNKNOWN], label_prefix=[text_data.SimpleWordDataset.SOS], label_suffix=[text_data.SimpleWordDataset.EOS], default_value=-1)
+	dataset = text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used)
 	num_examples = len(dataset)
 	num_train_examples = int(num_examples * train_test_ratio)
 
@@ -975,10 +947,7 @@ def FileBasedWordDataset_test():
 	test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-
-	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
-	#assert train_dataset.num_classes == test_dataset.num_classes, 'Unmatched number of classes, {} != {}'.format(train_dataset.num_classes, test_dataset.num_classes)
-	print('#classes = {}.'.format(train_dataset.num_classes))
+	print('#classes = {}.'.format(label_converter.num_classes))
 
 	#--------------------
 	print('Start creating data loaders...')
@@ -1011,7 +980,7 @@ def FileBasedWordDataset_test():
 		images, labels = images.numpy(), labels.numpy()
 		images = images.transpose(0, 2, 3, 1)
 		for idx, (img, lbl) in enumerate(zip(images, labels)):
-			print('Label: {} (int), {} (str).'.format([ll for ll in lbl if ll != dataloader.dataset.default_value], dataloader.dataset.decode_label(lbl)))
+			print('Label: {} (int), {} (str).'.format([ll for ll in lbl if ll != label_converter.default_value], label_converter.decode(lbl)))
 			cv2.imshow('Image', img)
 			cv2.waitKey(0)
 			if idx >= 9: break
@@ -1063,16 +1032,13 @@ def SimpleTextLineDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	train_dataset = text_data.SimpleTextLineDataset(wordset, charset, num_train_examples, image_height, image_width, image_channel, max_text_len, font_list, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor, transform=train_transform, target_transform=train_target_transform, default_value=-1)
-	#train_dataset = text_data.SimpleTextLineDataset(wordset, charset, num_train_examples, image_height, image_width, image_channel, max_text_len, font_list, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor, transform=train_transform, target_transform=train_target_transform, label_prefix=[text_data.SimpleTextLineDataset.SOS], label_suffix=[text_data.SimpleTextLineDataset.EOS], default_value=-1)
-	test_dataset = text_data.SimpleTextLineDataset(wordset, charset, num_test_examples, image_height, image_width, image_channel, max_text_len, font_list, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor, transform=test_transform, target_transform=test_target_transform, default_value=-1)
-	#test_dataset = text_data.SimpleTextLineDataset(wordset, charset, num_test_examples, image_height, image_width, image_channel, max_text_len, font_list, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor, transform=test_transform, target_transform=test_target_transform, label_prefix=[text_data.SimpleTextLineDataset.SOS], label_suffix=[text_data.SimpleTextLineDataset.EOS], default_value=-1)
+	label_converter = swl_langproc_util.LabelConverter(list(charset) + [swl_langproc_util.LabelConverter.SPACE, swl_langproc_util.LabelConverter.UNKNOWN], default_value=-1)
+	#label_converter = swl_langproc_util.LabelConverter(list(charset) + [swl_langproc_util.LabelConverter.SPACE, swl_langproc_util.LabelConverter.UNKNOWN], label_prefix=[text_data.SimpleWordDataset.SOS], label_suffix=[text_data.SimpleWordDataset.EOS], default_value=-1)
+	train_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_train_examples, image_height, image_width, image_channel, max_text_len, font_list, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor, transform=train_transform, target_transform=train_target_transform)
+	test_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_test_examples, image_height, image_width, image_channel, max_text_len, font_list, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-
-	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
-	#assert train_dataset.num_classes == test_dataset.num_classes, 'Unmatched number of classes, {} != {}'.format(train_dataset.num_classes, test_dataset.num_classes)
-	print('#classes = {}.'.format(train_dataset.num_classes))
+	print('#classes = {}.'.format(label_converter.num_classes))
 
 	#--------------------
 	print('Start creating data loaders...')
@@ -1105,16 +1071,16 @@ def SimpleTextLineDataset_test():
 		images, labels = images.numpy(), labels.numpy()
 		images = images.transpose(0, 2, 3, 1)
 		for idx, (img, lbl) in enumerate(zip(images, labels)):
-			print('Label: {} (int), {} (str).'.format([ll for ll in lbl if ll != dataloader.dataset.default_value], dataloader.dataset.decode_label(lbl)))
+			print('Label: {} (int), {} (str).'.format([ll for ll in lbl if ll != label_converter.default_value], label_converter.decode(lbl)))
 			cv2.imshow('Image', img)
 			cv2.waitKey(0)
 			if idx >= 9: break
 	cv2.destroyAllWindows()
 
 def main():
-	#SimpleCharacterDataset_test()
+	SimpleCharacterDataset_test()
 	#NoisyCharacterDataset_test()
-	FileBasedCharacterDataset_test()
+	#FileBasedCharacterDataset_test()
 
 	#--------------------
 	#SimpleWordDataset_test()

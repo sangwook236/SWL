@@ -11,6 +11,7 @@ import torchvision
 from PIL import Image, ImageOps
 import cv2
 import matplotlib.pyplot as plt
+import swl.language_processing.util as swl_langproc_util
 import text_data
 import text_generation_util as tg_util
 #import mixup.vgg, mixup.resnet
@@ -392,22 +393,6 @@ class MySubsetDataset(torch.utils.data.Dataset):
 	def default_value(self):
 		return self.subset.dataset.default_value
 
-class MyConcatDataset(torch.utils.data.ConcatDataset):
-	def __init__(self, datasets):
-		super().__init__(datasets)
-
-		self._classes = datasets[0].classes
-		for dataset in datasets[1:]:
-			assert set(self._classes) == set(dataset.classes), '{}, {}'.format(set(self._classes).difference(dataset.classes), set(dataset.classes).difference(self._classes))
-
-	@property
-	def num_classes(self):
-		return len(self._classes)
-
-	@property
-	def classes(self):
-		return self._classes
-
 def create_char_data_loaders(charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_clipping_ratio_interval, color_functor, batch_size, shuffle, num_workers):
 	if 'posix' == os.name:
 		data_base_dir_path = '/home/sangwook/work/dataset'
@@ -459,22 +444,23 @@ def create_char_data_loaders(charset, num_train_examples_per_class, num_test_exa
 
 	print('Start creating datasets...')
 	start_time = time.time()
+	label_converter = swl_langproc_util.LabelConverter(list(charset) + [swl_langproc_util.LabelConverter.UNKNOWN])
 	if False:
 		chars = list(charset * num_train_examples_per_class)
 		random.shuffle(chars)
-		train_dataset = text_data.SimpleCharacterDataset(chars, charset, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=train_transform)
+		train_dataset = text_data.SimpleCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=train_transform)
 		chars = list(charset * num_test_examples_per_class)
 		random.shuffle(chars)
-		test_dataset = text_data.SimpleCharacterDataset(chars, charset, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=test_transform)
+		test_dataset = text_data.SimpleCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=test_transform)
 	elif False:
 		chars = list(charset * num_train_examples_per_class)
 		random.shuffle(chars)
-		train_dataset = text_data.NoisyCharacterDataset(chars, charset, image_channel, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor, transform=train_transform)
+		train_dataset = text_data.NoisyCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor, transform=train_transform)
 		chars = list(charset * num_test_examples_per_class)
 		random.shuffle(chars)
-		test_dataset = text_data.NoisyCharacterDataset(chars, charset, image_channel, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor, transform=test_transform)
+		test_dataset = text_data.NoisyCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor, transform=test_transform)
 	else:
-		dataset = text_data.FileBasedCharacterDataset(image_label_info_filepath, charset, image_channel, is_image_used=is_image_used)
+		dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used)
 		num_examples = len(dataset)
 		num_train_examples = int(num_examples * train_test_ratio)
 
@@ -483,10 +469,7 @@ def create_char_data_loaders(charset, num_train_examples_per_class, num_test_exa
 		test_dataset = MySubsetDataset(test_subset, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-
-	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
-	#assert train_dataset.num_classes == test_dataset.num_classes, 'Unmatched number of classes, {} != {}'.format(train_dataset.num_classes, test_dataset.num_classes)
-	print('#classes = {}.'.format(train_dataset.num_classes))
+	print('#classes = {}.'.format(label_converter.num_classes))
 
 	#--------------------
 	print('Start creating data loaders...')
@@ -495,10 +478,7 @@ def create_char_data_loaders(charset, num_train_examples_per_class, num_test_exa
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
 
-	classes = train_dataset.classes
-	num_classes = train_dataset.num_classes
-
-	return train_dataloader, test_dataloader, classes, num_classes
+	return train_dataloader, test_dataloader, label_converter
 
 def create_mixed_char_data_loaders(charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_clipping_ratio_interval, color_functor, batch_size, shuffle, num_workers):
 	# Load and normalize datasets.
@@ -529,35 +509,36 @@ def create_mixed_char_data_loaders(charset, num_simple_char_examples_per_class, 
 
 	print('Start creating datasets...')
 	start_time = time.time()
+	label_converter = swl_langproc_util.LabelConverter(list(charset) + [swl_langproc_util.LabelConverter.UNKNOWN])
 	datasets = []
 	chars = list(charset * num_simple_char_examples_per_class)
 	random.shuffle(chars)
-	datasets.append(text_data.SimpleCharacterDataset(chars, charset, image_channel, font_list, font_size_interval, color_functor=color_functor))
+	datasets.append(text_data.SimpleCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, color_functor=color_functor))
 	chars = list(charset * num_noisy_examples_per_class)
 	random.shuffle(chars)
-	datasets.append(text_data.NoisyCharacterDataset(chars, charset, image_channel, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor))
+	datasets.append(text_data.NoisyCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor))
 	# REF [function] >> generate_chars_from_chars74k_data() in chars74k_data_test.py
 	image_label_info_filepath = data_base_dir_path + '/text/chars74k/English/Img/char_images.txt'
 	is_image_used = True
-	datasets.append(text_data.FileBasedCharacterDataset(image_label_info_filepath, charset, image_channel, is_image_used=is_image_used))
+	datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
 	# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
 	image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_kr.txt'
 	is_image_used = True
-	datasets.append(text_data.FileBasedCharacterDataset(image_label_info_filepath, charset, image_channel, is_image_used=is_image_used))
+	datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
 	# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
 	image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_en.txt'
 	is_image_used = True
-	datasets.append(text_data.FileBasedCharacterDataset(image_label_info_filepath, charset, image_channel, is_image_used=is_image_used))
+	datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
 	# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
 	image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_kr.txt'
 	is_image_used = True
-	datasets.append(text_data.FileBasedCharacterDataset(image_label_info_filepath, charset, image_channel, is_image_used=is_image_used))
+	datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
 	# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
 	image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_en.txt'
 	is_image_used = True
-	datasets.append(text_data.FileBasedCharacterDataset(image_label_info_filepath, charset, image_channel, is_image_used=is_image_used))
+	datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
 
-	dataset = MyConcatDataset(datasets)
+	dataset = torch.utils.data.ConcatDataset(datasets)
 	num_examples = len(dataset)
 	num_train_examples = int(num_examples * train_test_ratio)
 
@@ -566,10 +547,7 @@ def create_mixed_char_data_loaders(charset, num_simple_char_examples_per_class, 
 	test_dataset = MySubsetDataset(test_subset, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-
-	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
-	#assert train_dataset.num_classes == test_dataset.num_classes, 'Unmatched number of classes, {} != {}'.format(train_dataset.num_classes, test_dataset.num_classes)
-	print('#classes = {}.'.format(train_dataset.num_classes))
+	print('#classes = {}.'.format(label_converter.num_classes))
 
 	#--------------------
 	print('Start creating data loaders...')
@@ -578,10 +556,7 @@ def create_mixed_char_data_loaders(charset, num_simple_char_examples_per_class, 
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
 
-	classes = train_dataset.classes
-	num_classes = train_dataset.num_classes
-
-	return train_dataloader, test_dataloader, classes, num_classes
+	return train_dataloader, test_dataloader, label_converter
 
 def create_word_data_loaders(wordset, charset, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers):
 	if 'posix' == os.name:
@@ -632,20 +607,17 @@ def create_word_data_loaders(wordset, charset, num_train_examples, num_test_exam
 
 	print('Start creating datasets...')
 	start_time = time.time()
+	label_converter = swl_langproc_util.LabelConverter(list(charset) + [swl_langproc_util.LabelConverter.UNKNOWN], default_value=-1)
+	#label_converter = swl_langproc_util.LabelConverter(list(charset) + [swl_langproc_util.LabelConverter.UNKNOWN], label_prefix=[text_data.SimpleWordDataset.SOS], label_suffix=[text_data.SimpleWordDataset.EOS], default_value=-1)
 	if True:
-		train_dataset = text_data.SimpleWordDataset(wordset, charset, num_train_examples, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, default_value=-1)
-		#train_dataset = text_data.SimpleWordDataset(wordset, charset, num_train_examples, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, label_prefix=[text_data.SimpleWordDataset.SOS], label_suffix=[text_data.SimpleWordDataset.EOS], default_value=-1)
-		test_dataset = text_data.SimpleWordDataset(wordset, charset, num_test_examples, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, default_value=-1)
-		#test_dataset = text_data.SimpleWordDataset(wordset, charset, num_test_examples, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, label_prefix=[text_data.SimpleWordDataset.SOS], label_suffix=[text_data.SimpleWordDataset.EOS], default_value=-1)
+		train_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_train_examples, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=train_transform)
+		test_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_test_examples, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=test_transform)
 	elif False:
 		chars = charset  # Can make the number of each character different.
-		train_dataset = text_data.RandomWordDataset(chars, num_train_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, default_value=-1)
-		#train_dataset = text_data.RandomWordDataset(chars, num_train_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, label_prefix=[text_data.RandomWordDataset.SOS], label_suffix=[text_data.RandomWordDataset.EOS], default_value=-1)
-		test_dataset = text_data.RandomWordDataset(chars, num_train_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, default_value=-1)
-		#test_dataset = text_data.RandomWordDataset(chars, num_train_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, label_prefix=[text_data.RandomWordDataset.SOS], label_suffix=[text_data.RandomWordDataset.EOS], default_value=-1)
+		train_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform)
+		test_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform)
 	else:
-		dataset = text_data.FileBasedWordDataset(image_label_info_filepath, charset, image_channel, max_word_len, is_image_used=is_image_used, default_value=-1)
-		#dataset = text_data.FileBasedWordDataset(image_label_info_filepath, charset, image_channel, max_word_len, is_image_used=is_image_used, label_prefix=[text_data.FileBasedWordDataset.SOS], label_suffix=[text_data.FileBasedWordDataset.EOS], default_value=-1)
+		dataset = text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used)
 		num_examples = len(dataset)
 		num_train_examples = int(num_examples * train_test_ratio)
 
@@ -654,10 +626,7 @@ def create_word_data_loaders(wordset, charset, num_train_examples, num_test_exam
 		test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-
-	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
-	#assert train_dataset.num_classes == test_dataset.num_classes, 'Unmatched number of classes, {} != {}'.format(train_dataset.num_classes, test_dataset.num_classes)
-	print('#classes = {}.'.format(train_dataset.num_classes))
+	print('#classes = {}.'.format(label_converter.num_classes))
 
 	#--------------------
 	print('Start creating data loaders...')
@@ -666,10 +635,7 @@ def create_word_data_loaders(wordset, charset, num_train_examples, num_test_exam
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
 
-	classes = train_dataset.classes
-	num_classes = train_dataset.num_classes
-
-	return train_dataloader, test_dataloader, classes, num_classes
+	return train_dataloader, test_dataloader, label_converter
 
 def create_mixed_word_data_loaders(wordset, charset, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers):
 	# Load and normalize datasets.
@@ -702,34 +668,30 @@ def create_mixed_word_data_loaders(wordset, charset, num_simple_examples, num_ra
 
 	print('Start creating datasets...')
 	start_time = time.time()
+	label_converter = swl_langproc_util.LabelConverter(list(charset) + [swl_langproc_util.LabelConverter.UNKNOWN], default_value=-1)
+	#label_converter = swl_langproc_util.LabelConverter(list(charset) + [swl_langproc_util.LabelConverter.UNKNOWN], label_prefix=[text_data.SimpleWordDataset.SOS], label_suffix=[text_data.SimpleWordDataset.EOS], default_value=-1)
 	datasets = []
-	datasets.append(text_data.SimpleWordDataset(wordset, charset, num_simple_examples, image_channel, font_list, font_size_interval, color_functor=color_functor, default_value=-1))
-	#datasets.append(text_data.SimpleWordDataset(wordset, charset, num_simple_examples, image_channel, font_list, font_size_interval, color_functor=color_functor, label_prefix=[text_data.SimpleWordDataset.SOS], label_suffix=[text_data.SimpleWordDataset.EOS], default_value=-1))
+	datasets.append(text_data.SimpleWordDataset(label_converter, wordset, num_simple_examples, image_channel, font_list, font_size_interval, color_functor=color_functor))
 	chars = charset  # Can make the number of each character different.
-	datasets.append(text_data.RandomWordDataset(chars, num_random_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor, default_value=-1))
-	#datasets.append(text_data.RandomWordDataset(chars, num_random_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor, label_prefix=[text_data.RandomWordDataset.SOS], label_suffix=[text_data.RandomWordDataset.EOS], default_value=-1))
+	datasets.append(text_data.RandomWordDataset(label_converter, chars, num_random_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor))
 	# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
 	image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
 	is_image_used = False
-	datasets.append(text_data.FileBasedWordDataset(image_label_info_filepath, charset, image_channel, max_word_len, is_image_used=is_image_used, default_value=-1))
-	#datasets.append(text_data.FileBasedWordDataset(image_label_info_filepath, charset, image_channel, max_word_len, is_image_used=is_image_used, label_prefix=[text_data.FileBasedWordDataset.SOS], label_suffix=[text_data.FileBasedWordDataset.EOS], default_value=-1))
+	datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
 	# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
 	image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_en.txt'
 	is_image_used = False
-	datasets.append(text_data.FileBasedWordDataset(image_label_info_filepath, charset, image_channel, max_word_len, is_image_used=is_image_used, default_value=-1))
-	#datasets.append(text_data.FileBasedWordDataset(image_label_info_filepath, charset, image_channel, max_word_len, is_image_used=is_image_used, label_prefix=[text_data.FileBasedWordDataset.SOS], label_suffix=[text_data.FileBasedWordDataset.EOS], default_value=-1))
+	datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
 	# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
 	image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
 	is_image_used = True
-	datasets.append(text_data.FileBasedWordDataset(image_label_info_filepath, charset, image_channel, max_word_len, is_image_used=is_image_used, default_value=-1))
-	#datasets.append(text_data.FileBasedWordDataset(image_label_info_filepath, charset, image_channel, max_word_len, is_image_used=is_image_used, label_prefix=[text_data.FileBasedWordDataset.SOS], label_suffix=[text_data.FileBasedWordDataset.EOS], default_value=-1))
+	datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
 	# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
 	image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_en.txt'
 	is_image_used = True
-	datasets.append(text_data.FileBasedWordDataset(image_label_info_filepath, charset, image_channel, max_word_len, is_image_used=is_image_used, default_value=-1))
-	#datasets.append(text_data.FileBasedWordDataset(image_label_info_filepath, charset, image_channel, max_word_len, is_image_used=is_image_used, label_prefix=[text_data.FileBasedWordDataset.SOS], label_suffix=[text_data.FileBasedWordDataset.EOS], default_value=-1))
+	datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
 
-	dataset = MyConcatDataset(datasets)
+	dataset = torch.utils.data.ConcatDataset(datasets)
 	num_examples = len(dataset)
 	num_train_examples = int(num_examples * train_test_ratio)
 
@@ -738,10 +700,7 @@ def create_mixed_word_data_loaders(wordset, charset, num_simple_examples, num_ra
 	test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-
-	assert train_dataset.classes == test_dataset.classes, 'Unmatched classes, {} != {}'.format(train_dataset.classes, test_dataset.classes)
-	#assert train_dataset.num_classes == test_dataset.num_classes, 'Unmatched number of classes, {} != {}'.format(train_dataset.num_classes, test_dataset.num_classes)
-	print('#classes = {}.'.format(train_dataset.num_classes))
+	print('#classes = {}.'.format(label_converter.num_classes))
 
 	#--------------------
 	print('Start creating data loaders...')
@@ -750,10 +709,7 @@ def create_mixed_word_data_loaders(wordset, charset, num_simple_examples, num_ra
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
 
-	classes = train_dataset.classes
-	num_classes = train_dataset.num_classes
-
-	return train_dataloader, test_dataloader, classes, num_classes
+	return train_dataloader, test_dataloader, label_converter
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 def recognize_character():
@@ -783,8 +739,9 @@ def recognize_character():
 	model_filepath = './single_char_recognition.pth'
 
 	#--------------------
-	#train_dataloader, test_dataloader, classes, num_classes = create_char_data_loaders(charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_clipping_ratio_interval, color_functor, batch_size, shuffle, num_workers)
-	train_dataloader, test_dataloader, classes, num_classes = create_mixed_char_data_loaders(charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_clipping_ratio_interval, color_functor, batch_size, shuffle, num_workers)
+	#train_dataloader, test_dataloader, label_converter = create_char_data_loaders(charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_clipping_ratio_interval, color_functor, batch_size, shuffle, num_workers)
+	train_dataloader, test_dataloader, label_converter = create_mixed_char_data_loaders(charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_clipping_ratio_interval, color_functor, batch_size, shuffle, num_workers)
+	classes, num_classes = label_converter.classes, label_converter.num_classes
 
 	def imshow(img):
 		img = img / 2 + 0.5  # Unnormalize.
@@ -796,10 +753,10 @@ def recognize_character():
 	dataiter = iter(train_dataloader)
 	images, labels = dataiter.next()
 
+	# Print labels.
+	print('Labels:', ' '.join(label_converter.decode(labels)))
 	# Show images.
 	imshow(torchvision.utils.make_grid(images))
-	# Print labels.
-	print(' '.join('%s' % classes[labels[j]] for j in range(len(labels))))
 
 	#--------------------
 	# Define a convolutional neural network.
@@ -874,16 +831,16 @@ def recognize_character():
 	dataiter = iter(test_dataloader)
 	images, labels = dataiter.next()
 
-	# Print images.
+	# Show images.
+	print('Ground truth:', ' '.join(label_converter.decode(labels)))
 	imshow(torchvision.utils.make_grid(images))
-	print('Ground truth: ', ' '.join('%5s' % classes[labels[j]] for j in range(len(labels))))
 
 	# Now let us see what the neural network thinks these examples above are.
 	model.eval()
 	outputs = model(images.to(device))
 
-	_, predicted = torch.max(outputs, 1)
-	print('Predicted: ', ' '.join('%5s' % classes[predicted[j]] for j in range(len(labels))))
+	_, predictions = torch.max(outputs, 1)
+	print('Prediction:', ' '.join(label_converter.decode(predictions)))
 
 	# Let us look at how the network performs on the whole dataset.
 	correct = 0
@@ -892,9 +849,9 @@ def recognize_character():
 		for images, labels in test_dataloader:
 			images, labels = images.to(device), labels.to(device)
 			outputs = model(images)
-			_, predicted = torch.max(outputs.data, 1)
+			_, predictions = torch.max(outputs.data, 1)
 			total += labels.size(0)
-			correct += (predicted == labels).sum().item()
+			correct += (predictions == labels).sum().item()
 
 	print('Accuracy of the network on the test images: {} %%.'.format(100 * correct / total))
 
@@ -905,8 +862,8 @@ def recognize_character():
 		for images, labels in test_dataloader:
 			images, labels = images.to(device), labels.to(device)
 			outputs = model(images)
-			_, predicted = torch.max(outputs, 1)
-			c = (predicted == labels).squeeze()
+			_, predictions = torch.max(outputs, 1)
+			c = (predictions == labels).squeeze()
 			for i in range(len(labels)):
 				label = labels[i]
 				class_correct[label] += c[i].item()
@@ -956,8 +913,9 @@ def recognize_character_using_mixup():
 	model_filepath = './single_char_recognition_mixup.pth'
 
 	#--------------------
-	#train_dataloader, test_dataloader, classes, num_classes = create_char_data_loaders(charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_clipping_ratio_interval, color_functor, batch_size, shuffle, num_workers)
-	train_dataloader, test_dataloader, classes, num_classes = create_mixed_char_data_loaders(charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_clipping_ratio_interval, color_functor, batch_size, shuffle, num_workers)
+	#train_dataloader, test_dataloader, label_converter = create_char_data_loaders(charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_clipping_ratio_interval, color_functor, batch_size, shuffle, num_workers)
+	train_dataloader, test_dataloader, label_converter = create_mixed_char_data_loaders(charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_clipping_ratio_interval, color_functor, batch_size, shuffle, num_workers)
+	classes, num_classes = label_converter.classes, label_converter.num_classes
 
 	def imshow(img):
 		img = img / 2 + 0.5  # Unnormalize.
@@ -969,10 +927,10 @@ def recognize_character_using_mixup():
 	dataiter = iter(train_dataloader)
 	images, labels = dataiter.next()
 
+	# Print labels.
+	print('Labels:', ' '.join(label_converter.decode(labels)))
 	# Show images.
 	imshow(torchvision.utils.make_grid(images))
-	# Print labels.
-	print(' '.join('%s' % classes[labels[j]] for j in range(len(labels))))
 
 	#--------------------
 	# Define a convolutional neural network.
@@ -1058,15 +1016,15 @@ def recognize_character_using_mixup():
 	images, labels = dataiter.next()
 
 	# Print images.
+	print('Ground truth:', ' '.join(label_converter.decode(labels)))
 	imshow(torchvision.utils.make_grid(images))
-	print('Ground truth: ', ' '.join('%5s' % classes[labels[j]] for j in range(len(labels))))
 
 	# Now let us see what the neural network thinks these examples above are.
 	model.eval()
 	outputs = model(images.to(device))
 
-	_, predicted = torch.max(outputs, 1)
-	print('Predicted: ', ' '.join('%5s' % classes[predicted[j]] for j in range(len(labels))))
+	_, predictions = torch.max(outputs, 1)
+	print('Prediction:', ' '.join(label_converter.decode(predictions)))
 
 	# Let us look at how the network performs on the whole dataset.
 	correct = 0
@@ -1075,9 +1033,9 @@ def recognize_character_using_mixup():
 		for images, labels in test_dataloader:
 			images, labels = images.to(device), labels.to(device)
 			outputs = model(images)
-			_, predicted = torch.max(outputs.data, 1)
+			_, predictions = torch.max(outputs.data, 1)
 			total += labels.size(0)
-			correct += (predicted == labels).sum().item()
+			correct += (predictions == labels).sum().item()
 
 	print('Accuracy of the network on the test images: {} %%.'.format(100 * correct / total))
 
@@ -1088,8 +1046,8 @@ def recognize_character_using_mixup():
 		for images, labels in test_dataloader:
 			images, labels = images.to(device), labels.to(device)
 			outputs = model(images)
-			_, predicted = torch.max(outputs, 1)
-			c = (predicted == labels).squeeze()
+			_, predictions = torch.max(outputs, 1)
+			c = (predictions == labels).squeeze()
 			for i in range(len(labels)):
 				label = labels[i]
 				class_correct[label] += c[i].item()
@@ -1138,8 +1096,9 @@ def recognize_word():
 	model_filepath = './single_word_recognition.pth'
 
 	#--------------------
-	#train_dataloader, test_dataloader, classes, num_classes = create_word_data_loaders(wordset, charset, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers)
-	train_dataloader, test_dataloader, classes, num_classes = create_mixed_word_data_loaders(wordset, charset, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers)
+	#train_dataloader, test_dataloader, label_converter = create_word_data_loaders(wordset, charset, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers)
+	train_dataloader, test_dataloader, label_converter = create_mixed_word_data_loaders(wordset, charset, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers)
+	classes, num_classes = label_converter.classes, label_converter.num_classes
 
 	def imshow(img):
 		img = img / 2 + 0.5  # Unnormalize.
@@ -1151,10 +1110,10 @@ def recognize_word():
 	dataiter = iter(train_dataloader)
 	images, labels = dataiter.next()
 
+	# Print labels.
+	print('Labels:', ' '.join(label_converter.decode(labels)))
 	# Show images.
 	imshow(torchvision.utils.make_grid(images))
-	# Print labels.
-	print(' '.join('%s' % classes[labels[j]] for j in range(len(labels))))
 
 	#--------------------
 	# Define a model.
@@ -1218,15 +1177,15 @@ def recognize_word():
 	images, labels = dataiter.next()
 
 	# Print images.
+	print('Ground truth:', ' '.join(label_converter.decode(labels)))
 	imshow(torchvision.utils.make_grid(images))
-	print('Ground truth: ', ' '.join('%5s' % classes[labels[j]] for j in range(len(labels))))
 
 	# Now let us see what the neural network thinks these examples above are.
 	model.eval()
 	outputs = model(images.to(device))
 
-	_, predicted = torch.max(outputs, 1)
-	print('Predicted: ', ' '.join('%5s' % classes[predicted[j]] for j in range(len(labels))))
+	_, predictions = torch.max(outputs, 1)
+	print('Prediction:', ' '.join(label_converter.decode(predictions)))
 
 	# Let us look at how the network performs on the whole dataset.
 	correct = 0
@@ -1235,9 +1194,9 @@ def recognize_word():
 		for images, labels in test_dataloader:
 			images, labels = images.to(device), labels.to(device)
 			outputs = model(images)
-			_, predicted = torch.max(outputs.data, 1)
+			_, predictions = torch.max(outputs.data, 1)
 			total += labels.size(0)
-			correct += (predicted == labels).sum().item()
+			correct += (predictions == labels).sum().item()
 
 	print('Accuracy of the network on the test images: {} %%.'.format(100 * correct / total))
 
@@ -1248,8 +1207,8 @@ def recognize_word():
 		for images, labels in test_dataloader:
 			images, labels = images.to(device), labels.to(device)
 			outputs = model(images)
-			_, predicted = torch.max(outputs, 1)
-			c = (predicted == labels).squeeze()
+			_, predictions = torch.max(outputs, 1)
+			c = (predictions == labels).squeeze()
 			for i in range(len(labels)):
 				label = labels[i]
 				class_correct[label] += c[i].item()
@@ -1301,8 +1260,9 @@ def recognize_word_using_mixup():
 	model_filepath = './single_word_recognition_mixup.pth'
 
 	#--------------------
-	#train_dataloader, test_dataloader, classes, num_classes = create_word_data_loaders(wordset, charset, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers)
-	train_dataloader, test_dataloader, classes, num_classes = create_mixed_word_data_loaders(wordset, charset, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers)
+	#train_dataloader, test_dataloader, label_converter = create_word_data_loaders(wordset, charset, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers)
+	train_dataloader, test_dataloader, label_converter = create_mixed_word_data_loaders(wordset, charset, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers)
+	classes, num_classes = label_converter.classes, label_converter.num_classes
 
 	def imshow(img):
 		img = img / 2 + 0.5  # Unnormalize.
@@ -1314,10 +1274,10 @@ def recognize_word_using_mixup():
 	dataiter = iter(train_dataloader)
 	images, labels = dataiter.next()
 
+	# Print labels.
+	print('Labels:', ' '.join(label_converter.decode(labels)))
 	# Show images.
 	imshow(torchvision.utils.make_grid(images))
-	# Print labels.
-	print(' '.join('%s' % classes[labels[j]] for j in range(len(labels))))
 
 	#--------------------
 	# Define a model.
@@ -1381,15 +1341,15 @@ def recognize_word_using_mixup():
 	images, labels = dataiter.next()
 
 	# Print images.
+	print('Ground truth:', ' '.join(label_converter.decode(labels)))
 	imshow(torchvision.utils.make_grid(images))
-	print('Ground truth: ', ' '.join('%5s' % classes[labels[j]] for j in range(len(labels))))
 
 	# Now let us see what the neural network thinks these examples above are.
 	model.eval()
 	outputs = model(images.to(device))
 
-	_, predicted = torch.max(outputs, 1)
-	print('Predicted: ', ' '.join('%5s' % classes[predicted[j]] for j in range(len(labels))))
+	_, predictions = torch.max(outputs, 1)
+	print('Prediction:', ' '.join(label_converter.decode(predictions)))
 
 	# Let us look at how the network performs on the whole dataset.
 	correct = 0
@@ -1398,9 +1358,9 @@ def recognize_word_using_mixup():
 		for images, labels in test_dataloader:
 			images, labels = images.to(device), labels.to(device)
 			outputs = model(images)
-			_, predicted = torch.max(outputs.data, 1)
+			_, predictions = torch.max(outputs.data, 1)
 			total += labels.size(0)
-			correct += (predicted == labels).sum().item()
+			correct += (predictions == labels).sum().item()
 
 	print('Accuracy of the network on the test images: {} %%.'.format(100 * correct / total))
 
@@ -1411,8 +1371,8 @@ def recognize_word_using_mixup():
 		for images, labels in test_dataloader:
 			images, labels = images.to(device), labels.to(device)
 			outputs = model(images)
-			_, predicted = torch.max(outputs, 1)
-			c = (predicted == labels).squeeze()
+			_, predictions = torch.max(outputs, 1)
+			c = (predictions == labels).squeeze()
 			for i in range(len(labels)):
 				label = labels[i]
 				class_correct[label] += c[i].item()
