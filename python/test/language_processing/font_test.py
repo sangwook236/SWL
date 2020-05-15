@@ -76,7 +76,11 @@ def font_display_test(font_dir_path):
 	#cv2.destroyAllWindows()
 
 def is_valid_font(font_filepath, char_pair, height=64, width=64):
-	font = ImageFont.truetype(font_filepath, size=height - 6)
+	try:
+		font = ImageFont.truetype(font_filepath, size=height - 6)
+	except Exception as ex:
+		print('Invalid font, {}: {}.'.format(font_filepath, ex))
+		return False
 
 	img1 = Image.new(mode='1', size=(width, height))
 	draw = ImageDraw.Draw(img1)

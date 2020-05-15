@@ -95,11 +95,11 @@ class ImgaugDataAugmenter(object):
 			iaa.Sometimes(0.5, iaa.SomeOf(1, [
 				iaa.Affine(
 					scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
-					translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent (per axis).
-					rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
-					shear=(-5, 5),  # Shear by -5 to +5 degrees.
-					#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
-					order=0,  # Use nearest neighbour or bilinear interpolation (fast).
+					translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent along x-axis and -10 to +10 percent along y-axis.
+					rotate=(-2, 2),  # Rotate by -2 to +2 degrees.
+					shear=(-2, 2),  # Shear by -2 to +2 degrees.
+					order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
+					#order=0,  # Use nearest neighbour or bilinear interpolation (fast).
 					#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
 					#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
 					#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
