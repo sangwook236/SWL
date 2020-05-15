@@ -394,33 +394,6 @@ class MySubsetDataset(torch.utils.data.Dataset):
 		return self.subset.dataset.default_value
 
 def create_char_data_loaders(charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_clipping_ratio_interval, color_functor, batch_size, shuffle, num_workers):
-	if 'posix' == os.name:
-		data_base_dir_path = '/home/sangwook/work/dataset'
-	else:
-		data_base_dir_path = 'D:/work/dataset'
-
-	if True:
-		# REF [function] >> generate_chars_from_chars74k_data() in chars74k_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/chars74k/English/Img/char_images.txt'
-		is_image_used = True
-	elif False:
-		# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_kr.txt'
-		is_image_used = True
-	elif False:
-		# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_en.txt'
-		is_image_used = True
-	elif False:
-		# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_kr.txt'
-		is_image_used = True
-	elif False:
-		# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_en.txt'
-		is_image_used = True
-
-	#--------------------
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(create_char_augmenter()),
@@ -460,6 +433,32 @@ def create_char_data_loaders(charset, num_train_examples_per_class, num_test_exa
 		random.shuffle(chars)
 		test_dataset = text_data.NoisyCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor, transform=test_transform)
 	else:
+		if 'posix' == os.name:
+			data_base_dir_path = '/home/sangwook/work/dataset'
+		else:
+			data_base_dir_path = 'D:/work/dataset'
+
+		if True:
+			# REF [function] >> generate_chars_from_chars74k_data() in chars74k_data_test.py
+			image_label_info_filepath = data_base_dir_path + '/text/chars74k/English/Img/char_images.txt'
+			is_image_used = True
+		elif False:
+			# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
+			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_kr.txt'
+			is_image_used = True
+		elif False:
+			# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
+			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_en.txt'
+			is_image_used = True
+		elif False:
+			# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
+			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_kr.txt'
+			is_image_used = True
+		elif False:
+			# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
+			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_en.txt'
+			is_image_used = True
+
 		dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used)
 		num_examples = len(dataset)
 		num_train_examples = int(num_examples * train_test_ratio)
@@ -511,32 +510,39 @@ def create_mixed_char_data_loaders(charset, num_simple_char_examples_per_class, 
 	start_time = time.time()
 	label_converter = swl_langproc_util.LabelConverter(list(charset) + [swl_langproc_util.LabelConverter.UNKNOWN])
 	datasets = []
-	chars = list(charset * num_simple_char_examples_per_class)
-	random.shuffle(chars)
-	datasets.append(text_data.SimpleCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, color_functor=color_functor))
-	chars = list(charset * num_noisy_examples_per_class)
-	random.shuffle(chars)
-	datasets.append(text_data.NoisyCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor))
-	# REF [function] >> generate_chars_from_chars74k_data() in chars74k_data_test.py
-	image_label_info_filepath = data_base_dir_path + '/text/chars74k/English/Img/char_images.txt'
-	is_image_used = True
-	datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
-	# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
-	image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_kr.txt'
-	is_image_used = True
-	datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
-	# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
-	image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_en.txt'
-	is_image_used = True
-	datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
-	# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
-	image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_kr.txt'
-	is_image_used = True
-	datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
-	# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
-	image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_en.txt'
-	is_image_used = True
-	datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+	if True:
+		chars = list(charset * num_simple_char_examples_per_class)
+		random.shuffle(chars)
+		datasets.append(text_data.SimpleCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, color_functor=color_functor))
+	if True:
+		chars = list(charset * num_noisy_examples_per_class)
+		random.shuffle(chars)
+		datasets.append(text_data.NoisyCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor))
+	if True:
+		# REF [function] >> generate_chars_from_chars74k_data() in chars74k_data_test.py
+		image_label_info_filepath = data_base_dir_path + '/text/chars74k/English/Img/char_images.txt'
+		is_image_used = True
+		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+	if True:
+		# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
+		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_kr.txt'
+		is_image_used = True
+		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+	if True:
+		# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
+		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_en.txt'
+		is_image_used = True
+		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+	if True:
+		# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
+		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_kr.txt'
+		is_image_used = True
+		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+	if True:
+		# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
+		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_en.txt'
+		is_image_used = True
+		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
 
 	dataset = torch.utils.data.ConcatDataset(datasets)
 	num_examples = len(dataset)
@@ -559,29 +565,6 @@ def create_mixed_char_data_loaders(charset, num_simple_char_examples_per_class, 
 	return train_dataloader, test_dataloader, label_converter
 
 def create_word_data_loaders(wordset, charset, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers):
-	if 'posix' == os.name:
-		data_base_dir_path = '/home/sangwook/work/dataset'
-	else:
-		data_base_dir_path = 'D:/work/dataset'
-
-	if True:
-		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
-		is_image_used = False
-	elif False:
-		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_en.txt'
-		is_image_used = False
-	elif False:
-		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
-		is_image_used = True
-	elif False:
-		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_en.txt'
-		is_image_used = True
-
-	#--------------------
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(create_word_augmenter()),
@@ -617,6 +600,28 @@ def create_word_data_loaders(wordset, charset, num_train_examples, num_test_exam
 		train_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform)
 		test_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform)
 	else:
+		if 'posix' == os.name:
+			data_base_dir_path = '/home/sangwook/work/dataset'
+		else:
+			data_base_dir_path = 'D:/work/dataset'
+
+		if True:
+			# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
+			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
+			is_image_used = False
+		elif False:
+			# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
+			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_en.txt'
+			is_image_used = False
+		elif False:
+			# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
+			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
+			is_image_used = True
+		elif False:
+			# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
+			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_en.txt'
+			is_image_used = True
+
 		dataset = text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used)
 		num_examples = len(dataset)
 		num_train_examples = int(num_examples * train_test_ratio)
@@ -671,25 +676,31 @@ def create_mixed_word_data_loaders(wordset, charset, num_simple_examples, num_ra
 	label_converter = swl_langproc_util.LabelConverter(list(charset) + [swl_langproc_util.LabelConverter.UNKNOWN], default_value=-1)
 	#label_converter = swl_langproc_util.LabelConverter(list(charset) + [swl_langproc_util.LabelConverter.UNKNOWN], label_prefix=[text_data.SimpleWordDataset.SOS], label_suffix=[text_data.SimpleWordDataset.EOS], default_value=-1)
 	datasets = []
-	datasets.append(text_data.SimpleWordDataset(label_converter, wordset, num_simple_examples, image_channel, font_list, font_size_interval, color_functor=color_functor))
-	chars = charset  # Can make the number of each character different.
-	datasets.append(text_data.RandomWordDataset(label_converter, chars, num_random_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor))
-	# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
-	image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
-	is_image_used = False
-	datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
-	# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
-	image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_en.txt'
-	is_image_used = False
-	datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
-	# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
-	image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
-	is_image_used = True
-	datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
-	# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
-	image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_en.txt'
-	is_image_used = True
-	datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+	if True:
+		datasets.append(text_data.SimpleWordDataset(label_converter, wordset, num_simple_examples, image_channel, font_list, font_size_interval, color_functor=color_functor))
+	if True:
+		chars = charset  # Can make the number of each character different.
+		datasets.append(text_data.RandomWordDataset(label_converter, chars, num_random_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor))
+	if True:
+		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
+		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
+		is_image_used = False
+		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+	if True:
+		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
+		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_en.txt'
+		is_image_used = False
+		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+	if True:
+		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
+		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
+		is_image_used = True
+		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+	if True:
+		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
+		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_en.txt'
+		is_image_used = True
+		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
 
 	dataset = torch.utils.data.ConcatDataset(datasets)
 	num_examples = len(dataset)
@@ -720,7 +731,7 @@ def recognize_character():
 	charset, font_list = construct_charset()
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
-	num_simple_char_examples_per_class, num_noisy_examples_per_class = 100, 100
+	num_simple_char_examples_per_class, num_noisy_examples_per_class = 300, 300
 	font_size_interval = (10, 100)
 	char_clipping_ratio_interval = (0.8, 1.25)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
@@ -891,7 +902,7 @@ def recognize_character_using_mixup():
 	charset, font_list = construct_charset()
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
-	num_simple_char_examples_per_class, num_noisy_examples_per_class = 100, 100
+	num_simple_char_examples_per_class, num_noisy_examples_per_class = 300, 300
 	font_size_interval = (10, 100)
 	char_clipping_ratio_interval = (0.8, 1.25)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
