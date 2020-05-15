@@ -7,14 +7,33 @@ import swl.language_processing.util as swl_langproc_util
 #--------------------------------------------------------------------
 
 class TextDatasetBase(torch.utils.data.Dataset):
+	SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
+	EOS = '<EOS>'  # All strings will end with the End-Of-String token.
+	#SOJC = '<SOJC>'  # All Hangeul jamo strings will start with the Start-Of-Jamo-Character token.
+	#EOJC = '<EOJC>'  # All Hangeul jamo strings will end with the End-Of-Jamo-Character token.
 	UNKNOWN = '<UNK>'  # Unknown label token.
 	SPACE = ' '  # Space token.
 
-	def __init__(self, classes, default_value=-1):
+	def __init__(self, classes, label_prefix=None, label_suffix=None, default_value=-1):
+		"""
+		Inputs:
+			classes (list of string tokens): Tokens which consist of a text. They include special tokens such as '<UNK>'.
+			label_prefix (list of string tokens): Special tokens to be used as label prefix such as '<SOS>'.
+			label_suffix (list of string tokens): Special tokens to be used as label suffix such as '<EOS>'.
+			default_value (int): A default value which means its position is not part of a text. This value must be < 0 and >= len(classes + label_prefix + label_suffix).
+		"""
+
 		super().__init__()
 
-		self._classes = classes
+		if label_prefix is None: label_prefix = []
+		if label_suffix is None: label_suffix = []
+
+		self._classes = classes + label_prefix + label_suffix
 		self._default_value = default_value
+
+		label_prefix, label_suffix = [self._classes.index(tok) for tok in label_prefix], [self._classes.index(tok) for tok in label_suffix]
+		self.decoration_tokens = [self._default_value] + label_prefix + label_suffix
+		self.decoration_functor = lambda x: label_prefix + x + label_suffix
 
 	@property
 	def num_classes(self):
@@ -37,7 +56,7 @@ class TextDatasetBase(torch.utils.data.Dataset):
 			except ValueError:
 				print('[SWL] Error: Failed to encode a character, {} in {}.'.format(ch, label_str))
 				return self._classes.index(TextDatasetBase.UNKNOWN)
-		return list(label2index(ch) for ch in label_str)
+		return self.decoration_functor([label2index(ch) for ch in label_str])
 
 	# Integer label -> string label.
 	# REF [function] >> TextLineDatasetBase.decode_label() in text_line_data.py.
@@ -48,13 +67,13 @@ class TextDatasetBase(torch.utils.data.Dataset):
 			except IndexError:
 				print('[SWL] Error: Failed to decode an identifier, {} in {}.'.format(id, label_int))
 				return TextDatasetBase.UNKNOWN  # TODO [check] >> Is it correct?
-		return ''.join(list(index2label(id) for id in label_int if id != self._default_value))
+		return ''.join([index2label(id) for id in label_int if id not in self.decoration_tokens])
 
 #--------------------------------------------------------------------
 
 class FileBasedTextDatasetBase(TextDatasetBase):
-	def __init__(self, classes, default_value=-1):
-		super().__init__(classes, default_value)
+	def __init__(self, classes, label_prefix=None, label_suffix=None, default_value=-1):
+		super().__init__(classes, label_prefix, label_suffix, default_value)
 
 	# REF [function] >> FileBasedTextLineDatasetBase._load_data_from_image_label_info() in text_line_data.py
 	def _load_data_from_image_label_info(self, image_label_info_filepath, image_height, image_width, image_channel, max_label_len, image_label_separator=' ', is_image_used=True):
@@ -179,9 +198,9 @@ class FileBasedTextDatasetBase(TextDatasetBase):
 #--------------------------------------------------------------------
 
 class SimpleCharacterDataset(TextDatasetBase):
-	def __init__(self, chars, image_channel, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None):
-		#super().__init__(np.unique(chars).tolist())
-		super().__init__(np.unique(chars).tolist() + [FileBasedCharacterDataset.UNKNOWN])
+	def __init__(self, chars, charset, image_channel, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None):
+		#super().__init__(list(charset))
+		super().__init__(list(charset) + [SimpleCharacterDataset.UNKNOWN])
 
 		self.image_channel = image_channel
 		self.chars = chars
@@ -229,9 +248,9 @@ class SimpleCharacterDataset(TextDatasetBase):
 #--------------------------------------------------------------------
 
 class NoisyCharacterDataset(TextDatasetBase):
-	def __init__(self, chars, image_channel, fonts, font_size_interval, char_clipping_ratio_interval, color_functor=None, transform=None, target_transform=None):
-		#super().__init__(np.unique(chars).tolist())
-		super().__init__(np.unique(chars).tolist() + [FileBasedCharacterDataset.UNKNOWN])
+	def __init__(self, chars, charset, image_channel, fonts, font_size_interval, char_clipping_ratio_interval, color_functor=None, transform=None, target_transform=None):
+		#super().__init__(list(charset))
+		super().__init__(list(charset) + [NoisyCharacterDataset.UNKNOWN])
 
 		self.image_channel = image_channel
 		self.chars = chars
@@ -369,8 +388,8 @@ class FileBasedCharacterDataset(FileBasedTextDatasetBase):
 #--------------------------------------------------------------------
 
 class SimpleWordDataset(TextDatasetBase):
-	def __init__(self, words, charset, num_examples, image_channel, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None, default_value=-1):
-		super().__init__(list(charset) + [SimpleWordDataset.UNKNOWN], default_value)
+	def __init__(self, words, charset, num_examples, image_channel, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None, label_prefix=None, label_suffix=None, default_value=-1):
+		super().__init__(list(charset) + [SimpleWordDataset.UNKNOWN], label_prefix, label_suffix, default_value)
 
 		self.words = words
 		self.num_examples = num_examples
@@ -422,8 +441,8 @@ class SimpleWordDataset(TextDatasetBase):
 #--------------------------------------------------------------------
 
 class RandomWordDataset(TextDatasetBase):
-	def __init__(self, chars, num_examples, image_channel, char_len_interval, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None, default_value=-1):
-		super().__init__(np.unique(list(chars)).tolist() + [RandomWordDataset.UNKNOWN], default_value)
+	def __init__(self, chars, num_examples, image_channel, char_len_interval, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None, label_prefix=None, label_suffix=None, default_value=-1):
+		super().__init__(np.unique(list(chars)).tolist() + [RandomWordDataset.UNKNOWN], label_prefix, label_suffix, default_value)
 
 		self.chars = chars
 		self.num_examples = num_examples
@@ -477,9 +496,9 @@ class RandomWordDataset(TextDatasetBase):
 #--------------------------------------------------------------------
 
 class FileBasedWordDataset(FileBasedTextDatasetBase):
-	def __init__(self, image_label_info_filepath, charset, image_channel, max_word_len, is_image_used=True, transform=None, target_transform=None, default_value=-1):
-	#def __init__(self, image_filepaths, label_filepaths, charset, image_channel, max_word_len, is_image_used=True, transform=None, target_transform=None, default_value=-1):
-		super().__init__(list(charset) + [FileBasedWordDataset.UNKNOWN], default_value)
+	def __init__(self, image_label_info_filepath, charset, image_channel, max_word_len, is_image_used=True, transform=None, target_transform=None, label_prefix=None, label_suffix=None, default_value=-1):
+	#def __init__(self, image_filepaths, label_filepaths, charset, image_channel, max_word_len, is_image_used=True, transform=None, target_transform=None, label_prefix=None, label_suffix=None, default_value=-1):
+		super().__init__(list(charset) + [FileBasedWordDataset.UNKNOWN], label_prefix, label_suffix, default_value)
 
 		self.image_channel = image_channel
 		self.max_word_len = max_word_len
@@ -536,8 +555,8 @@ class FileBasedWordDataset(FileBasedTextDatasetBase):
 #--------------------------------------------------------------------
 
 class SimpleTextLineDataset(TextDatasetBase):
-	def __init__(self, words, charset, num_examples, image_height, image_width, image_channel, max_text_len, fonts, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor=None, transform=None, target_transform=None, default_value=-1):
-		super().__init__(list(charset) + [SimpleTextLineDataset.SPACE, SimpleTextLineDataset.UNKNOWN], default_value)
+	def __init__(self, words, charset, num_examples, image_height, image_width, image_channel, max_text_len, fonts, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor=None, transform=None, target_transform=None, label_prefix=None, label_suffix=None, default_value=-1):
+		super().__init__(list(charset) + [SimpleTextLineDataset.SPACE, SimpleTextLineDataset.UNKNOWN], label_prefix, label_suffix, default_value)
 
 		self.words = words
 		self.num_examples = num_examples
