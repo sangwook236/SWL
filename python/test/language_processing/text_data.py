@@ -10,7 +10,11 @@ class TextDatasetBase(torch.utils.data.Dataset):
 	def __init__(self, label_converter):
 		super().__init__()
 
-		self.label_converter = label_converter
+		self._label_converter = label_converter
+
+	@property
+	def label_converter(self):
+		return len(self._label_converter)
 
 #--------------------------------------------------------------------
 
@@ -218,8 +222,8 @@ class NoisyCharacterDataset(TextDatasetBase):
 
 	def __getitem__(self, idx):
 		ch = self.chars[idx]
-		ch2 = random.sample(self.label_converter.classes, 2)
-		#ch2 = [random.choice(self.label_converter.classes) for _ in range(2)]
+		ch2 = random.sample(self.label_converter.tokens, 2)
+		#ch2 = [random.choice(self.label_converter.tokens) for _ in range(2)]
 		ch3 = ch2[0] + ch + ch2[1]
 		target = self.label_converter.encode([ch])[0]
 		font_type, font_index = random.choice(self.fonts)
@@ -339,6 +343,7 @@ class SimpleWordDataset(TextDatasetBase):
 		self.font_size_interval = font_size_interval
 		self.transform = transform
 		self.target_transform = target_transform
+		self.max_word_len = len(max(self.words, key=len))
 
 		if self.image_channel == 1:
 			self.mode = 'L'
@@ -351,7 +356,6 @@ class SimpleWordDataset(TextDatasetBase):
 			raise ValueError('Invalid image channel, {}'.format(self.image_channel))
 
 		self.color_functor = color_functor if color_functor else lambda: ((255,) * self.image_channel, (0,) * self.image_channel)
-		self.max_word_len = len(max(self.words, key=len))
 
 	def __len__(self):
 		return self.num_examples
@@ -359,7 +363,7 @@ class SimpleWordDataset(TextDatasetBase):
 	def __getitem__(self, idx):
 		#word = random.choice(self.words)
 		word = random.sample(self.words, 1)[0]
-		target = [self.label_converter.default_value] * self.max_word_len
+		target = [self.label_converter.nil_token] * self.max_word_len
 		target[:len(word)] = self.label_converter.encode(word)
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
@@ -393,6 +397,7 @@ class RandomWordDataset(TextDatasetBase):
 		self.font_size_interval = font_size_interval
 		self.transform = transform
 		self.target_transform = target_transform
+		self.max_word_len = char_len_interval[1]
 
 		if self.image_channel == 1:
 			self.mode = 'L'
@@ -405,7 +410,6 @@ class RandomWordDataset(TextDatasetBase):
 			raise ValueError('Invalid image channel, {}'.format(self.image_channel))
 
 		self.color_functor = color_functor if color_functor else lambda: ((255,) * self.image_channel, (0,) * self.image_channel)
-		self.max_word_len = char_len_interval[1]
 
 	def __len__(self):
 		return self.num_examples
@@ -413,8 +417,8 @@ class RandomWordDataset(TextDatasetBase):
 	def __getitem__(self, idx):
 		char_len = random.randint(*self.char_len_interval)
 		#word = ''.join(random.sample(self.chars, char_len))
-		word = ''.join([random.choice(self.chars) for _ in range(char_len)])
-		target = [self.label_converter.default_value] * self.max_word_len
+		word = ''.join(random.choice(self.chars) for _ in range(char_len))
+		target = [self.label_converter.nil_token] * self.max_word_len
 		target[:len(word)] = self.label_converter.encode(word)
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
@@ -479,7 +483,7 @@ class FileBasedWordDataset(FileBasedTextDatasetBase):
 				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
 				image = None
 		label = self.labels_int[idx]
-		target = [self.label_converter.default_value] * self.max_word_len
+		target = [self.label_converter.nil_token] * self.max_word_len
 		target[:len(label)] = label
 
 		if image and image.mode != self.mode:
@@ -529,7 +533,7 @@ class SimpleTextLineDataset(TextDatasetBase):
 	def __getitem__(self, idx):
 		words = random.sample(self.words, random.randint(*self.word_count_interval))	
 		textline = functools.reduce(lambda t, w: t + ' ' * random.randint(*self.space_count_interval) + w, words[1:], words[0])[:self.max_text_len]
-		target = [self.label_converter.default_value] * self.max_text_len
+		target = [self.label_converter.nil_token] * self.max_text_len
 		target[:len(textline)] = self.label_converter.encode(textline)
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)

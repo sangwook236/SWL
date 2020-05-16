@@ -6,63 +6,77 @@ import cv2
 #--------------------------------------------------------------------
 
 class LabelConverter(object):
+	UNKNOWN = '<UNK>'  # Unknown token.
 	SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
 	EOS = '<EOS>'  # All strings will end with the End-Of-String token.
 	#SOJC = '<SOJC>'  # All Hangeul jamo strings will start with the Start-Of-Jamo-Character token.
 	#EOJC = '<EOJC>'  # All Hangeul jamo strings will end with the End-Of-Jamo-Character token.
-	UNKNOWN = '<UNK>'  # Unknown label token.
-	SPACE = ' '  # Space token.
+	BLANK = '<BLANK>'  # Blank label (For CTC).
 
-	def __init__(self, classes, label_prefix=None, label_suffix=None, default_value=-1):
+	def __init__(self, tokens, prefixes=None, suffixes=None, nil_token=None):
 		"""
 		Inputs:
-			classes (list of string tokens): Tokens which consist of a text. They include special tokens such as '<UNK>'.
-			label_prefix (list of string tokens): Special tokens to be used as label prefix such as '<SOS>'.
-			label_suffix (list of string tokens): Special tokens to be used as label suffix such as '<EOS>'.
-			default_value (int): A default value which means its position is not part of a text. This value must be < 0 and >= len(classes + label_prefix + label_suffix).
+			tokens (list of tokens): Tokens to be regarded as individual units They can include special tokens such as <UNK>.
+			prefixes (list of tokens): Special tokens to be used as prefix such as <SOS>.
+			suffixes (list of tokens): Special tokens to be used as suffix such as <EOS>.
+			nil_token (int): A special integer token for a placeholder, which is not an actual token. This token must be < 0 or >= len(tokens + prefixes + suffixes).
 		"""
 
-		if label_prefix is None: label_prefix = []
-		if label_suffix is None: label_suffix = []
+		if prefixes is None: prefixes = []
+		if suffixes is None: suffixes = []
 
-		self._classes = classes + label_prefix + label_suffix
-		self._default_value = default_value
+		self._tokens = tokens
 
-		label_prefix, label_suffix = [self._classes.index(tok) for tok in label_prefix], [self._classes.index(tok) for tok in label_suffix]
-		self.decoration_tokens = [self._default_value] + label_prefix + label_suffix
-		self.decoration_functor = lambda x: label_prefix + x + label_suffix
+		"""
+		self.extended_tokens = tokens + [self.UNKNOWN] + prefixes + suffixes
+
+		self.UNKNOWN_int = self.extended_tokens.index(self.UNKNOWN)
+		prefixes, suffixes = [self.extended_tokens.index(tok) for tok in prefixes], [self.extended_tokens.index(tok) for tok in suffixes]
+		self._nil_token_int = nil_token if nil_token else -1
+		#self._nil_token_int = nil_token if nil_token else len(self.extended_tokens)
+		"""
+		self.UNKNOWN_int = len(tokens)
+		prefixes = [idx for idx, _ in enumerate(prefixes, self.UNKNOWN_int + 1)]
+		suffixes = [idx for idx, _ in enumerate(suffixes, prefixes[-1] + 1)]
+		self._nil_token_int = nil_token if nil_token else -1
+		#self._nil_token_int = nil_token if nil_token else (suffixes[-1] + 1)
+
+		self.decoration_tokens_int = [self._nil_token_int] + prefixes + suffixes
+		self.decoration_functor = lambda x: prefixes + x + suffixes
 
 	@property
-	def num_classes(self):
-		return len(self._classes)
+	def num_tokens(self):
+		return len(self._tokens)
 
 	@property
-	def classes(self):
-		return self._classes
+	def tokens(self):
+		return self._tokens
 
 	@property
-	def default_value(self):
-		return self._default_value
+	def nil_token(self):
+		return self._nil_token_int
 
-	# String label -> integer label.
-	def encode(self, label_str, *args, **kwargs):
-		def label2index(ch):
+	# Tokens -> integer tokens.
+	def encode(self, tokens, *args, **kwargs):
+		def tok2int(tok):
 			try:
-				return self._classes.index(ch)
+				return self._tokens.index(tok)
+				#return self.extended_tokens.index(tok)
 			except ValueError:
-				print('[SWL] Error: Failed to encode a character, {} in {}.'.format(ch, label_str))
-				return self._classes.index(self.UNKNOWN)
-		return self.decoration_functor([label2index(ch) for ch in label_str])
+				print('[SWL] Error: Failed to encode a token, {} in {}.'.format(tok, tokens))
+				return self.UNKNOWN_int
+		return self.decoration_functor([tok2int(tok) for tok in tokens])
 
-	# Integer label -> string label.
-	def decode(self, label_int, *args, **kwargs):
-		def index2label(id):
+	# Integer tokens -> tokens.
+	def decode(self, integer_tokens, *args, **kwargs):
+		def int2tok(tok):
 			try:
-				return self._classes[id]
+				return self._tokens[tok]
+				#return self.extended_tokens[tok]
 			except IndexError:
-				print('[SWL] Error: Failed to decode an identifier, {} in {}.'.format(id, label_int))
+				print('[SWL] Error: Failed to decode an integer token, {} in {}.'.format(tok, integer_tokens))
 				return self.UNKNOWN  # TODO [check] >> Is it correct?
-		return ''.join([index2label(id) for id in label_int if id not in self.decoration_tokens])
+		return ''.join([int2tok(tok) for tok in integer_tokens if tok not in self.decoration_tokens_int])
 
 #--------------------------------------------------------------------
 
