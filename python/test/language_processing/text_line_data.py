@@ -31,7 +31,7 @@ class TextLineDatasetBase(abc.ABC):
 		return self._default_value
 
 	# String label -> integer label.
-	# REF [function] >> LabelConverter.encode() in swl/language_processing/util.py.
+	# REF [function] >> TokenConverter.encode() in swl/language_processing/util.py.
 	def encode_label(self, label_str, *args, **kwargs):
 		def label2index(ch):
 			try:
@@ -42,7 +42,7 @@ class TextLineDatasetBase(abc.ABC):
 		return list(label2index(ch) for ch in label_str)
 
 	# Integer label -> string label.
-	# REF [function] >> LabelConverter.decode() in swl/language_processing/util.py.
+	# REF [function] >> TokenConverter.decode() in swl/language_processing/util.py.
 	def decode_label(self, label_int, *args, **kwargs):
 		def index2label(id):
 			try:
