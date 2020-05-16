@@ -5,7 +5,7 @@ import cv2
 
 #--------------------------------------------------------------------
 
-class LabelConverter(object):
+class TokenConverter(object):
 	UNKNOWN = '<UNK>'  # Unknown token.
 	SOS = '<SOS>'  # All token strings may start with the Start-Of-String (SOS) token.
 	EOS = '<EOS>'  # All token strings may end with the End-Of-String (EOS) token.
@@ -25,44 +25,22 @@ class LabelConverter(object):
 		if suffixes is None: suffixes = []
 
 		self._tokens = tokens
+		extended_tokens = tokens + [self.UNKNOWN] + prefixes + suffixes
 
-		"""
-		self.extended_tokens = tokens + [self.UNKNOWN] + prefixes + suffixes
-
-		self.UNKNOWN_int = self.extended_tokens.index(self.UNKNOWN)
-		prefixes_int, suffixes_int = [self.extended_tokens.index(tok) for tok in prefixes], [self.extended_tokens.index(tok) for tok in suffixes]
+		self.UNKNOWN_int = extended_tokens.index(self.UNKNOWN)
+		prefixes_int, suffixes_int = [extended_tokens.index(tok) for tok in prefixes], [extended_tokens.index(tok) for tok in suffixes]
 	
-		#self._nil_token_int = nil_token if nil_token else -1
-		#self._nil_token_int = nil_token if nil_token else len(self.extended_tokens)
 		if not nil_token:
 			self._nil_token_int = -1
-			#self._nil_token_int = len(self.extended_tokens)
+			#self._nil_token_int = len(extended_tokens)
 		elif isinstance(nil_token, int):
 			self._nil_token_int = nil_token
 		else:
 			try:
-				self._nil_token_int = self.extended_tokens.index(nil_token)
+				self._nil_token_int = extended_tokens.index(nil_token)
 			except ValueError:
 				self._nil_token_int = -1
-				#self._nil_token_int = len(self.extended_tokens)
-		"""
-		self.UNKNOWN_int = len(tokens)
-		prefixes_int = [idx for idx, _ in enumerate(prefixes, self.UNKNOWN_int + 1)]
-		suffixes_int = [idx for idx, _ in enumerate(suffixes, prefixes_int[-1] + 1)]
-	
-		#self._nil_token_int = nil_token if nil_token else -1
-		#self._nil_token_int = nil_token if nil_token else (suffixes_int[-1] + 1)
-		if not nil_token:
-			self._nil_token_int = -1
-			#self._nil_token_int = suffixes_int[-1] + 1
-		elif isinstance(nil_token, int):
-			self._nil_token_int = nil_token
-		else:
-			try:
-				self._nil_token_int = (tokens + [self.UNKNOWN] + prefixes + suffixes).index(nil_token)
-			except ValueError:
-				self._nil_token_int = -1
-				#self._nil_token_int = suffixes_int[-1] + 1
+				#self._nil_token_int = len(extended_tokens)
 
 		self.auxiliary_tokens_int = [self._nil_token_int] + prefixes_int + suffixes_int
 		self.decoration_functor = lambda x: prefixes_int + x + suffixes_int
