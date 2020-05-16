@@ -14,7 +14,7 @@ class TextDatasetBase(torch.utils.data.Dataset):
 
 	@property
 	def label_converter(self):
-		return len(self._label_converter)
+		return self._label_converter
 
 #--------------------------------------------------------------------
 

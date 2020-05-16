@@ -7,19 +7,18 @@ import cv2
 
 class LabelConverter(object):
 	UNKNOWN = '<UNK>'  # Unknown token.
-	SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
-	EOS = '<EOS>'  # All strings will end with the End-Of-String token.
-	#SOJC = '<SOJC>'  # All Hangeul jamo strings will start with the Start-Of-Jamo-Character token.
-	#EOJC = '<EOJC>'  # All Hangeul jamo strings will end with the End-Of-Jamo-Character token.
-	BLANK = '<BLANK>'  # Blank label (For CTC).
+	SOS = '<SOS>'  # All token strings may start with the Start-Of-String (SOS) token.
+	EOS = '<EOS>'  # All token strings may end with the End-Of-String (EOS) token.
+	#SOJ = '<SOJ>'  # All Hangeul jamo strings may start with the Start-Of-Jamo-String (SOJ) token.
+	#EOJ = '<EOJ>'  # All Hangeul jamo strings may end with the End-Of-Jamo-String (EOJ) token.
 
 	def __init__(self, tokens, prefixes=None, suffixes=None, nil_token=None):
 		"""
 		Inputs:
 			tokens (list of tokens): Tokens to be regarded as individual units They can include special tokens such as <UNK>.
-			prefixes (list of tokens): Special tokens to be used as prefix such as <SOS>.
-			suffixes (list of tokens): Special tokens to be used as suffix such as <EOS>.
-			nil_token (int): A special integer token for a placeholder, which is not an actual token. This token must be < 0 or >= len(tokens + prefixes + suffixes).
+			prefixes (list of tokens): Special tokens to be used as prefix such as <SOS> or <SOJ>.
+			suffixes (list of tokens): Special tokens to be used as suffix such as <EOS> or <EOJ>.
+			nil_token (int, token, or None): A special token for a placeholder, which is not an actual token.
 		"""
 
 		if prefixes is None: prefixes = []
@@ -31,18 +30,42 @@ class LabelConverter(object):
 		self.extended_tokens = tokens + [self.UNKNOWN] + prefixes + suffixes
 
 		self.UNKNOWN_int = self.extended_tokens.index(self.UNKNOWN)
-		prefixes, suffixes = [self.extended_tokens.index(tok) for tok in prefixes], [self.extended_tokens.index(tok) for tok in suffixes]
-		self._nil_token_int = nil_token if nil_token else -1
+		prefixes_int, suffixes_int = [self.extended_tokens.index(tok) for tok in prefixes], [self.extended_tokens.index(tok) for tok in suffixes]
+	
+		#self._nil_token_int = nil_token if nil_token else -1
 		#self._nil_token_int = nil_token if nil_token else len(self.extended_tokens)
+		if not nil_token:
+			self._nil_token_int = -1
+			#self._nil_token_int = len(self.extended_tokens)
+		elsif isinstance(nil_token, int):
+			self._nil_token_int = nil_token
+		else:
+			try:
+				self._nil_token_int = self.extended_tokens.index(nil_token)
+			except ValueError:
+				self._nil_token_int = -1
+				#self._nil_token_int = len(self.extended_tokens)
 		"""
 		self.UNKNOWN_int = len(tokens)
-		prefixes = [idx for idx, _ in enumerate(prefixes, self.UNKNOWN_int + 1)]
-		suffixes = [idx for idx, _ in enumerate(suffixes, prefixes[-1] + 1)]
-		self._nil_token_int = nil_token if nil_token else -1
-		#self._nil_token_int = nil_token if nil_token else (suffixes[-1] + 1)
+		prefixes_int = [idx for idx, _ in enumerate(prefixes, self.UNKNOWN_int + 1)]
+		suffixes_int = [idx for idx, _ in enumerate(suffixes, prefixes_int[-1] + 1)]
+	
+		#self._nil_token_int = nil_token if nil_token else -1
+		#self._nil_token_int = nil_token if nil_token else (suffixes_int[-1] + 1)
+		if not nil_token:
+			self._nil_token_int = -1
+			#self._nil_token_int = suffixes_int[-1] + 1
+		elsif isinstance(nil_token, int):
+			self._nil_token_int = nil_token
+		else:
+			try:
+				self._nil_token_int = (tokens + [self.UNKNOWN] + prefixes + suffixes).index(nil_token)
+			except ValueError:
+				self._nil_token_int = -1
+				#self._nil_token_int = suffixes_int[-1] + 1
 
-		self.decoration_tokens_int = [self._nil_token_int] + prefixes + suffixes
-		self.decoration_functor = lambda x: prefixes + x + suffixes
+		self.auxiliary_tokens_int = [self._nil_token_int] + prefixes_int + suffixes_int
+		self.decoration_functor = lambda x: prefixes_int + x + suffixes_int
 
 	@property
 	def num_tokens(self):
@@ -56,7 +79,7 @@ class LabelConverter(object):
 	def nil_token(self):
 		return self._nil_token_int
 
-	# Tokens -> integer tokens.
+	# Token string -> integer token sring.
 	def encode(self, tokens, *args, **kwargs):
 		def tok2int(tok):
 			try:
@@ -67,7 +90,7 @@ class LabelConverter(object):
 				return self.UNKNOWN_int
 		return self.decoration_functor([tok2int(tok) for tok in tokens])
 
-	# Integer tokens -> tokens.
+	# Integer token string -> token string.
 	def decode(self, integer_tokens, *args, **kwargs):
 		def int2tok(tok):
 			try:
@@ -76,7 +99,7 @@ class LabelConverter(object):
 			except IndexError:
 				print('[SWL] Error: Failed to decode an integer token, {} in {}.'.format(tok, integer_tokens))
 				return self.UNKNOWN  # TODO [check] >> Is it correct?
-		return ''.join([int2tok(tok) for tok in integer_tokens if tok not in self.decoration_tokens_int])
+		return ''.join([int2tok(tok) for tok in integer_tokens if tok not in self.auxiliary_tokens_int])
 
 #--------------------------------------------------------------------
 
