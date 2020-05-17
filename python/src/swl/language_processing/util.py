@@ -12,17 +12,18 @@ class TokenConverter(object):
 	#SOJ = '<SOJ>'  # All Hangeul jamo strings may start with the Start-Of-Jamo-String (SOJ) token.
 	#EOJ = '<EOJ>'  # All Hangeul jamo strings may end with the End-Of-Jamo-String (EOJ) token.
 
-	def __init__(self, tokens, prefixes=None, suffixes=None, nil_token=None):
+	def __init__(self, tokens, prefixes=None, suffixes=None, fill_value=None):
 		"""
 		Inputs:
 			tokens (list of tokens): Tokens to be regarded as individual units They can include special tokens such as <UNK>.
 			prefixes (list of tokens): Special tokens to be used as prefix such as <SOS> or <SOJ>.
 			suffixes (list of tokens): Special tokens to be used as suffix such as <EOS> or <EOJ>.
-			nil_token (int, token, or None): A special token for a placeholder, which is not an actual token.
+			fill_value (int, token, or None): A special value for a placeholder, which is not an actual token.
 		"""
 
 		if prefixes is None: prefixes = []
 		if suffixes is None: suffixes = []
+		self._num_affixes = len(prefixes + suffixes)
 
 		self._tokens = tokens
 		extended_tokens = tokens + [self.UNKNOWN] + prefixes + suffixes
@@ -30,19 +31,19 @@ class TokenConverter(object):
 		self.UNKNOWN_int = extended_tokens.index(self.UNKNOWN)
 		prefixes_int, suffixes_int = [extended_tokens.index(tok) for tok in prefixes], [extended_tokens.index(tok) for tok in suffixes]
 	
-		if not nil_token:
-			self._nil_token_int = -1
-			#self._nil_token_int = len(extended_tokens)
-		elif isinstance(nil_token, int):
-			self._nil_token_int = nil_token
+		if not fill_value:
+			self.fill_token_int = -1
+			#self.fill_token_int = len(extended_tokens)
+		elif isinstance(fill_value, int):
+			self.fill_token_int = fill_value
 		else:
 			try:
-				self._nil_token_int = extended_tokens.index(nil_token)
+				self.fill_token_int = extended_tokens.index(fill_value)
 			except ValueError:
-				self._nil_token_int = -1
-				#self._nil_token_int = len(extended_tokens)
+				self.fill_token_int = -1
+				#self.fill_token_int = len(extended_tokens)
 
-		self.auxiliary_tokens_int = [self._nil_token_int] + prefixes_int + suffixes_int
+		self.auxiliary_tokens_int = [self.fill_token_int] + prefixes_int + suffixes_int
 		self.decoration_functor = lambda x: prefixes_int + x + suffixes_int
 
 	@property
@@ -54,8 +55,12 @@ class TokenConverter(object):
 		return self._tokens
 
 	@property
-	def nil_token(self):
-		return self._nil_token_int
+	def fill_value(self):
+		return self.fill_token_int
+
+	@property
+	def num_affixes(self):
+		return self._num_affixes
 
 	# Token string -> integer token sring.
 	def encode(self, tokens, *args, **kwargs):

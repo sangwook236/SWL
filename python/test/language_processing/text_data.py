@@ -63,7 +63,7 @@ class FileBasedTextDatasetBase(TextDatasetBase):
 
 			#img = self.resize(img, None, image_height, image_width)
 			try:
-				label_int = self.label_converter.encode(label_str)
+				label_int = self.label_converter.encode(label_str)  # Decorated/undecorated integer label.
 			except Exception:
 				#print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
 				continue
@@ -124,7 +124,7 @@ class FileBasedTextDatasetBase(TextDatasetBase):
 
 			#img = self.resize(img, None, image_height, image_width)
 			try:
-				label_int = self.label_converter.encode(label_str)
+				label_int = self.label_converter.encode(label_str)  # Decorated/undecorated integer label.
 			except Exception:
 				#print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
 				continue
@@ -172,7 +172,7 @@ class SimpleCharacterDataset(TextDatasetBase):
 
 	def __getitem__(self, idx):
 		ch = self.chars[idx]
-		target = self.label_converter.encode([ch])[0]
+		target = self.label_converter.encode([ch])[0]  # Undecorated integer label.
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
 		font_color, bg_color = self.color_functor()
@@ -225,7 +225,7 @@ class NoisyCharacterDataset(TextDatasetBase):
 		ch2 = random.sample(self.label_converter.tokens, 2)
 		#ch2 = [random.choice(self.label_converter.tokens) for _ in range(2)]
 		ch3 = ch2[0] + ch + ch2[1]
-		target = self.label_converter.encode([ch])[0]
+		target = self.label_converter.encode([ch])[0]  # Undecorated integer label.
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
 		font_color, bg_color = self.color_functor()
@@ -317,7 +317,7 @@ class FileBasedCharacterDataset(FileBasedTextDatasetBase):
 			except IOError as ex:
 				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
 				image = None
-		target = self.labels_int[idx][0]
+		target = self.labels_int[idx][0]  # Undecorated integer label.
 
 		if image and image.mode != self.mode:
 			image = image.convert(self.mode)
@@ -333,17 +333,17 @@ class FileBasedCharacterDataset(FileBasedTextDatasetBase):
 #--------------------------------------------------------------------
 
 class SimpleWordDataset(TextDatasetBase):
-	def __init__(self, label_converter, words, num_examples, image_channel, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None):
+	def __init__(self, label_converter, words, num_examples, image_channel, max_word_len, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None):
 		super().__init__(label_converter)
 
 		self.words = words
 		self.num_examples = num_examples
 		self.image_channel = image_channel
+		self.max_word_len = min(max_word_len, len(max(self.words, key=len))) if max_word_len else len(max(self.words, key=len))
 		self.fonts = fonts
 		self.font_size_interval = font_size_interval
 		self.transform = transform
 		self.target_transform = target_transform
-		self.max_word_len = len(max(self.words, key=len))
 
 		if self.image_channel == 1:
 			self.mode = 'L'
@@ -362,9 +362,12 @@ class SimpleWordDataset(TextDatasetBase):
 
 	def __getitem__(self, idx):
 		#word = random.choice(self.words)
-		word = random.sample(self.words, 1)[0]
-		target = [self.label_converter.nil_token] * self.max_word_len
-		target[:len(word)] = self.label_converter.encode(word)
+		word = random.sample(self.words, 1)[0][:self.max_word_len]
+		target = [self.label_converter.fill_value] * (self.max_word_len + self.label_converter.num_affixes)
+		#target[:len(word)] = self.label_converter.encode(word)  # Undecorated integer label.
+		word_int_ext = self.label_converter.encode(word)  # Decorated/undecorated integer label.
+		target_len = len(word_int_ext)
+		target[:target_len] = word_int_ext
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
 		font_color, bg_color = self.color_functor()
@@ -380,24 +383,25 @@ class SimpleWordDataset(TextDatasetBase):
 			image = self.transform(image)
 		if self.target_transform:
 			target = self.target_transform(target)
+		target_len = torch.tensor(target_len, dtype=torch.int32)
 
-		return image, target
+		return image, target, target_len
 
 #--------------------------------------------------------------------
 
 class RandomWordDataset(TextDatasetBase):
-	def __init__(self, label_converter, chars, num_examples, image_channel, char_len_interval, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None):
+	def __init__(self, label_converter, chars, num_examples, image_channel, max_word_len, char_len_interval, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None):
 		super().__init__(label_converter)
 
 		self.chars = chars
 		self.num_examples = num_examples
 		self.image_channel = image_channel
+		self.max_word_len = min(max_word_len, char_len_interval[1]) if max_word_len else char_len_interval[1]
 		self.char_len_interval = char_len_interval
 		self.fonts = fonts
 		self.font_size_interval = font_size_interval
 		self.transform = transform
 		self.target_transform = target_transform
-		self.max_word_len = char_len_interval[1]
 
 		if self.image_channel == 1:
 			self.mode = 'L'
@@ -416,10 +420,13 @@ class RandomWordDataset(TextDatasetBase):
 
 	def __getitem__(self, idx):
 		char_len = random.randint(*self.char_len_interval)
-		#word = ''.join(random.sample(self.chars, char_len))
-		word = ''.join(random.choice(self.chars) for _ in range(char_len))
-		target = [self.label_converter.nil_token] * self.max_word_len
-		target[:len(word)] = self.label_converter.encode(word)
+		#word = ''.join(random.sample(self.chars, char_len))[:self.max_word_len]
+		word = ''.join(random.choice(self.chars) for _ in range(char_len))[:self.max_word_len]
+		target = [self.label_converter.fill_value] * (self.max_word_len + self.label_converter.num_affixes)
+		#target[:len(word)] = self.label_converter.encode(word)  # Undecorated integer label.
+		word_int_ext = self.label_converter.encode(word)  # Decorated/undecorated integer label.
+		target_len = len(word_int_ext)
+		target[:target_len] = word_int_ext
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
 		font_color, bg_color = self.color_functor()
@@ -435,8 +442,9 @@ class RandomWordDataset(TextDatasetBase):
 			image = self.transform(image)
 		if self.target_transform:
 			target = self.target_transform(target)
+		target_len = torch.tensor(target_len, dtype=torch.int32)
 
-		return image, target
+		return image, target, target_len
 
 #--------------------------------------------------------------------
 
@@ -482,9 +490,10 @@ class FileBasedWordDataset(FileBasedTextDatasetBase):
 			except IOError as ex:
 				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
 				image = None
-		label = self.labels_int[idx]
-		target = [self.label_converter.nil_token] * self.max_word_len
-		target[:len(label)] = label
+		target = [self.label_converter.fill_value] * (self.max_word_len + self.label_converter.num_affixes)
+		word_ext_int = self.labels_int[idx]  # Decorated/undecorated integer label.
+		target_len = len(word_ext_int)
+		target[:target_len] = word_ext_int
 
 		if image and image.mode != self.mode:
 			image = image.convert(self.mode)
@@ -494,19 +503,20 @@ class FileBasedWordDataset(FileBasedTextDatasetBase):
 			image = self.transform(image)
 		if self.target_transform:
 			target = self.target_transform(target)
+		target_len = torch.tensor(target_len, dtype=torch.int32)
 
-		return image, target
+		return image, target, target_len
 
 #--------------------------------------------------------------------
 
 class SimpleTextLineDataset(TextDatasetBase):
-	def __init__(self, label_converter, words, num_examples, image_height, image_width, image_channel, max_text_len, fonts, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor=None, transform=None, target_transform=None):
+	def __init__(self, label_converter, words, num_examples, image_height, image_width, image_channel, max_textline_len, fonts, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor=None, transform=None, target_transform=None):
 		super().__init__(label_converter)
 
 		self.words = words
 		self.num_examples = num_examples
 		self.image_height, self.image_width, self.image_channel = image_height, image_width, image_channel
-		self.max_text_len = max_text_len
+		self.max_textline_len = max_textline_len
 		self.fonts = fonts
 		self.font_size_interval = font_size_interval
 		self.char_space_ratio_interval = char_space_ratio_interval
@@ -532,9 +542,12 @@ class SimpleTextLineDataset(TextDatasetBase):
 
 	def __getitem__(self, idx):
 		words = random.sample(self.words, random.randint(*self.word_count_interval))	
-		textline = functools.reduce(lambda t, w: t + ' ' * random.randint(*self.space_count_interval) + w, words[1:], words[0])[:self.max_text_len]
-		target = [self.label_converter.nil_token] * self.max_text_len
-		target[:len(textline)] = self.label_converter.encode(textline)
+		textline = functools.reduce(lambda t, w: t + ' ' * random.randint(*self.space_count_interval) + w, words[1:], words[0])[:self.max_textline_len]
+		target = [self.label_converter.fill_value] * (self.max_textline_len + self.label_converter.num_affixes)
+		#target[:len(textline)] = self.label_converter.encode(textline)  # Undecorated integer label.
+		textline_int_ext = self.label_converter.encode(textline)  # Decorated/undecorated integer label.
+		target_len = len(textline_int_ext)
+		target[:target_len] = textline_int_ext
 		font_type, font_index = random.choice(self.fonts)
 		font_size = random.randint(*self.font_size_interval)
 		char_space_ratio = None if self.char_space_ratio_interval is None else random.uniform(*self.char_space_ratio_interval)
@@ -551,8 +564,9 @@ class SimpleTextLineDataset(TextDatasetBase):
 			image = self.transform(image)
 		if self.target_transform:
 			target = self.target_transform(target)
+		target_len = torch.tensor(target_len, dtype=torch.int32)
 
-		return image, target
+		return image, target, target_len
 
 	@property
 	def shape(self):

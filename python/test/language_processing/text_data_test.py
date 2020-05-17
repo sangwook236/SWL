@@ -406,15 +406,15 @@ class MySubsetDataset(torch.utils.data.Dataset):
 		self.subset = subset
 		self.transform = transform
 		self.target_transform = target_transform
-		
+
 	def __getitem__(self, idx):
-		x, y = self.subset[idx]
+		inp, outp, outp_len = self.subset[idx]
 		if self.transform:
-			x = self.transform(x)
+			inp = self.transform(inp)
 		if self.target_transform:
-			y = self.target_transform(y)
-		return x, y
-		
+			outp = self.target_transform(outp)
+		return inp, outp, outp_len
+
 	def __len__(self):
 		return len(self.subset)
 
@@ -713,6 +713,7 @@ def SimpleWordDataset_test():
 	wordset = construct_word_set()
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
+	max_word_len = None  # Use max. word length.
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
@@ -746,10 +747,10 @@ def SimpleWordDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	label_converter = swl_langproc_util.TokenConverter(list(charset), nil_token=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], nil_token=None)
-	train_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_train_examples, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
-	test_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_test_examples, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
+	label_converter = swl_langproc_util.TokenConverter(list(charset), fill_value=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=None)
+	train_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_train_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
+	test_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_test_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 	print('#classes = {}.'.format(label_converter.num_tokens))
@@ -765,27 +766,29 @@ def SimpleWordDataset_test():
 	# Show data info.
 	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
 	data_iter = iter(train_dataloader)
-	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
-	images, labels = images.numpy(), labels.numpy()
+	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+	print('Train label len: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
 	data_iter = iter(test_dataloader)
-	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
-	images, labels = images.numpy(), labels.numpy()
+	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+	print('Test label len: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	#--------------------
 	# Visualize.
 	for dataloader in [train_dataloader, test_dataloader]:
 		data_iter = iter(dataloader)
-		images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
-		images, labels = images.numpy(), labels.numpy()
+		images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+		images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 		images = images.transpose(0, 2, 3, 1)
-		for idx, (img, lbl) in enumerate(zip(images, labels)):
-			print('Label: {} (int), {} (str).'.format([ll for ll in lbl if ll != label_converter.nil_token], label_converter.decode(lbl)))
+		for idx, (img, lbl, l) in enumerate(zip(images, labels, label_lens)):
+			print('Label (len={}): {} (int), {} (str).'.format(l, [ll for ll in lbl if ll != label_converter.fill_value], label_converter.decode(lbl)))
 			cv2.imshow('Image', img)
 			cv2.waitKey(0)
 			if idx >= 9: break
@@ -799,6 +802,7 @@ def RandomWordDataset_test():
 	charset, font_list = construct_charset()
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
+	max_word_len = None  # Use max. word length.
 	char_len_interval = (1, 20)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
@@ -833,11 +837,11 @@ def RandomWordDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	label_converter = swl_langproc_util.TokenConverter(list(charset), nil_token=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], nil_token=None)
+	label_converter = swl_langproc_util.TokenConverter(list(charset), fill_value=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=None)
 	chars = charset  # Can make the number of each character different.
-	train_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
-	test_dataset = text_data.RandomWordDataset(label_converter, chars, num_test_examples, image_channel, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
+	train_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, max_word_len, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
+	test_dataset = text_data.RandomWordDataset(label_converter, chars, num_test_examples, image_channel, max_word_len, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 	print('#classes = {}.'.format(label_converter.num_tokens))
@@ -853,27 +857,29 @@ def RandomWordDataset_test():
 	# Show data info.
 	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
 	data_iter = iter(train_dataloader)
-	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
-	images, labels = images.numpy(), labels.numpy()
+	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+	print('Train label: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
 	data_iter = iter(test_dataloader)
-	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
-	images, labels = images.numpy(), labels.numpy()
+	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+	print('Test label: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	#--------------------
 	# Visualize.
 	for dataloader in [train_dataloader, test_dataloader]:
 		data_iter = iter(dataloader)
-		images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
-		images, labels = images.numpy(), labels.numpy()
+		images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+		images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 		images = images.transpose(0, 2, 3, 1)
-		for idx, (img, lbl) in enumerate(zip(images, labels)):
-			print('Label: {} (int), {} (str).'.format([ll for ll in lbl if ll != label_converter.nil_token], label_converter.decode(lbl)))
+		for idx, (img, lbl, l) in enumerate(zip(images, labels, label_lens)):
+			print('Label (len={}): {} (int), {} (str).'.format(l, [ll for ll in lbl if ll != label_converter.fill_value], label_converter.decode(lbl)))
 			cv2.imshow('Image', img)
 			cv2.waitKey(0)
 			if idx >= 9: break
@@ -885,8 +891,8 @@ def FileBasedWordDataset_test():
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	charset, _ = construct_charset()
-	max_word_len = 30
 
+	max_word_len = 30
 	train_test_ratio = 0.8
 	batch_size = 64
 	shuffle = True
@@ -940,8 +946,8 @@ def FileBasedWordDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	label_converter = swl_langproc_util.TokenConverter(list(charset), nil_token=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], nil_token=None)
+	label_converter = swl_langproc_util.TokenConverter(list(charset), fill_value=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=None)
 	dataset = text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used)
 	num_examples = len(dataset)
 	num_train_examples = int(num_examples * train_test_ratio)
@@ -964,27 +970,29 @@ def FileBasedWordDataset_test():
 	# Show data info.
 	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
 	data_iter = iter(train_dataloader)
-	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
-	images, labels = images.numpy(), labels.numpy()
+	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+	print('Train label len: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
 	data_iter = iter(test_dataloader)
-	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
-	images, labels = images.numpy(), labels.numpy()
+	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+	print('Test label len: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	#--------------------
 	# Visualize.
 	for dataloader in [train_dataloader, test_dataloader]:
 		data_iter = iter(dataloader)
-		images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
-		images, labels = images.numpy(), labels.numpy()
+		images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+		images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 		images = images.transpose(0, 2, 3, 1)
-		for idx, (img, lbl) in enumerate(zip(images, labels)):
-			print('Label: {} (int), {} (str).'.format([ll for ll in lbl if ll != label_converter.nil_token], label_converter.decode(lbl)))
+		for idx, (img, lbl, l) in enumerate(zip(images, labels, label_lens)):
+			print('Label (len={}): {} (int), {} (str).'.format(l, [ll for ll in lbl if ll != label_converter.fill_value], label_converter.decode(lbl)))
 			cv2.imshow('Image', img)
 			cv2.waitKey(0)
 			if idx >= 9: break
@@ -996,11 +1004,11 @@ def SimpleTextLineDataset_test():
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	charset, font_list = construct_charset()
-	charset += [' ']  # Add space character.
+	charset += ' '  # Add space character.
 	wordset = construct_word_set()
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
-	max_text_len = 80
+	max_textline_len = 80
 	font_size_interval = (10, 100)
 	char_space_ratio_interval = (0.8, 1.25)
 	word_count_interval = (1, 5)
@@ -1037,10 +1045,10 @@ def SimpleTextLineDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	label_converter = swl_langproc_util.TokenConverter(list(charset), nil_token=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], nil_token=None)
-	train_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_train_examples, image_height, image_width, image_channel, max_text_len, font_list, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor, transform=train_transform, target_transform=train_target_transform)
-	test_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_test_examples, image_height, image_width, image_channel, max_text_len, font_list, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor, transform=test_transform, target_transform=test_target_transform)
+	label_converter = swl_langproc_util.TokenConverter(list(charset), fill_value=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=None)
+	train_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_train_examples, image_height, image_width, image_channel, max_textline_len, font_list, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor, transform=train_transform, target_transform=train_target_transform)
+	test_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_test_examples, image_height, image_width, image_channel, max_textline_len, font_list, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 	print('#classes = {}.'.format(label_converter.num_tokens))
@@ -1056,27 +1064,29 @@ def SimpleTextLineDataset_test():
 	# Show data info.
 	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
 	data_iter = iter(train_dataloader)
-	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
-	images, labels = images.numpy(), labels.numpy()
+	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+	print('Train label len: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
 	data_iter = iter(test_dataloader)
-	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
-	images, labels = images.numpy(), labels.numpy()
+	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+	print('Test label len: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	#--------------------
 	# Visualize.
 	for dataloader in [train_dataloader, test_dataloader]:
 		data_iter = iter(dataloader)
-		images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
-		images, labels = images.numpy(), labels.numpy()
+		images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+		images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 		images = images.transpose(0, 2, 3, 1)
-		for idx, (img, lbl) in enumerate(zip(images, labels)):
-			print('Label: {} (int), {} (str).'.format([ll for ll in lbl if ll != label_converter.nil_token], label_converter.decode(lbl)))
+		for idx, (img, lbl, l) in enumerate(zip(images, labels, label_lens)):
+			print('Label (len={}): {} (int), {} (str).'.format(l, [ll for ll in lbl if ll != label_converter.fill_value], label_converter.decode(lbl)))
 			cv2.imshow('Image', img)
 			cv2.waitKey(0)
 			if idx >= 9: break
