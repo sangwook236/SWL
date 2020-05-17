@@ -72,10 +72,10 @@ class MyRunner(object):
 
 		#--------------------
 		self._logger.info('Start training...')
+		start_total_time = start_epoch_time = time.time()
 		epoch_time = utils.AverageMeter()
 		best_performance_measure = 0
 		best_model_filepath = None
-		start_total_time = start_epoch_time = time.time()
 		for epoch in range(initial_epoch, final_epoch):
 			self._logger.info('Epoch {}/{}'.format(epoch, final_epoch - 1))
 
@@ -146,8 +146,8 @@ class MyRunner(object):
 		model.eval()
 
 		self._logger.info('Start testing a model...')
-		inferences, ground_truths = list(), list()
 		start_time = time.time()
+		inferences, ground_truths = list(), list()
 		with torch.no_grad():
 			for batch_inputs, batch_outputs in dataloader:
 				#batch_inputs, batch_outputs = batch_inputs.to(device), batch_outputs.to(device)
@@ -532,6 +532,8 @@ def main():
 	is_resumed = args.model_file is not None
 	num_workers = 4
 
+	initial_learning_rate, momentum, weight_decay = 0.001, 0.9, 0.0001
+
 	model_filepath, output_dir_path = os.path.normpath(args.model_file) if args.model_file else None, os.path.normpath(args.out_dir) if args.out_dir else None
 	if model_filepath:
 		if not output_dir_path:
@@ -558,21 +560,51 @@ def main():
 		# Create a model.
 		model = MyModel()
 
-		# Create a trainer.
-		criterion = torch.nn.CrossEntropyLoss().to(device)
-		initial_learning_rate, momentum, weight_decay = 0.001, 0.9, 0.0001
-		optimizer = torch.optim.SGD(model.parameters(), lr=initial_learning_rate, momentum=momentum, weight_decay=weight_decay, nesterov=True)
-		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
-		scheduler = MyLRScheduler(optimizer, initial_learning_rate)
-
-		# Load a model.
 		if is_resumed:
+			optimizer = torch.optim.SGD(model.parameters(), lr=initial_learning_rate, momentum=momentum, weight_decay=weight_decay, nesterov=True)
+
+			# Load a model.
 			model, optimizer, recorder, loaded_initial_epoch = runner.load_model(model_filepath, model, optimizer, device=device)
 			if loaded_initial_epoch:
 				initial_epoch += loaded_initial_epoch
 				final_epoch += loaded_initial_epoch
 		else:
 			recorder = None
+
+			if False:
+				# Initialize model weights.
+				for name, param in model.named_parameters():
+					if 'variable_name' in name:
+						print(f'Skip {name} as it is already initialized')
+						continue
+					try:
+						if 'bias' in name:
+							torch.nn.init.constant_(param, 0.0)
+						elif 'weight' in name:
+							torch.nn.init.kaiming_normal_(param)
+					except Exception as ex:  # For batch normalization.
+						if 'weight' in name:
+							param.data.fill_(1)
+						continue
+
+			if False:
+				# Filter model parameters that only require gradient decent.
+				model_params, params_num = list(), list()
+				for p in filter(lambda p: p.requires_grad, model.parameters()):
+					model_params.append(p)
+					params_num.append(np.prod(p.size()))
+				print('#trainable parameters = {}.'.format(sum(params_num)))
+				#print('Trainable parameters:')
+				#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+			else:
+				model_params = model.parameters()
+
+			optimizer = torch.optim.SGD(model_params, lr=initial_learning_rate, momentum=momentum, weight_decay=weight_decay, nesterov=True)
+
+		# Create a trainer.
+		criterion = torch.nn.CrossEntropyLoss().to(device)
+		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+		scheduler = MyLRScheduler(optimizer, initial_learning_rate)
 
 		if model:
 			# Train a model.
