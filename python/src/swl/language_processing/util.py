@@ -25,8 +25,9 @@ class TokenConverter(object):
 		if suffixes is None: suffixes = []
 		self._num_affixes = len(prefixes + suffixes)
 
-		self._tokens = tokens
-		extended_tokens = tokens + [self.UNKNOWN] + prefixes + suffixes
+		extended_tokens = tokens + prefixes + suffixes + [self.UNKNOWN]
+		#self._tokens = tokens
+		self._tokens = extended_tokens
 
 		self.UNKNOWN_int = extended_tokens.index(self.UNKNOWN)
 		prefixes_int, suffixes_int = [extended_tokens.index(tok) for tok in prefixes], [extended_tokens.index(tok) for tok in suffixes]
@@ -67,7 +68,6 @@ class TokenConverter(object):
 		def tok2int(tok):
 			try:
 				return self._tokens.index(tok)
-				#return self.extended_tokens.index(tok)
 			except ValueError:
 				print('[SWL] Error: Failed to encode a token, {} in {}.'.format(tok, tokens))
 				return self.UNKNOWN_int
@@ -78,7 +78,6 @@ class TokenConverter(object):
 		def int2tok(tok):
 			try:
 				return self._tokens[tok]
-				#return self.extended_tokens[tok]
 			except IndexError:
 				print('[SWL] Error: Failed to decode an integer token, {} in {}.'.format(tok, integer_tokens))
 				return self.UNKNOWN  # TODO [check] >> Is it correct?
