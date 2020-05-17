@@ -749,7 +749,7 @@ def recognize_character():
 	# Print labels.
 	print('Labels:', ' '.join(label_converter.decode(labels)))
 	# Show images.
-	imshow(torchvision.utils.make_grid(images))
+	#imshow(torchvision.utils.make_grid(images))
 
 	#--------------------
 	# Define a convolutional neural network.
@@ -851,9 +851,10 @@ def recognize_character():
 	dataiter = iter(test_dataloader)
 	images, labels = dataiter.next()
 
-	# Show images.
+	# Print ground truths.
 	print('Ground truth:', ' '.join(label_converter.decode(labels)))
-	imshow(torchvision.utils.make_grid(images))
+	# Show images.
+	#imshow(torchvision.utils.make_grid(images))
 
 	# Now let us see what the neural network thinks these examples above are.
 	model.eval()
@@ -952,7 +953,7 @@ def recognize_character_using_mixup():
 	# Print labels.
 	print('Labels:', ' '.join(label_converter.decode(labels)))
 	# Show images.
-	imshow(torchvision.utils.make_grid(images))
+	#imshow(torchvision.utils.make_grid(images))
 
 	#--------------------
 	# Define a convolutional neural network.
@@ -1064,9 +1065,10 @@ def recognize_character_using_mixup():
 	dataiter = iter(test_dataloader)
 	images, labels = dataiter.next()
 
-	# Print images.
+	# Print ground truths.
 	print('Ground truth:', ' '.join(label_converter.decode(labels)))
-	imshow(torchvision.utils.make_grid(images))
+	# Show images.
+	#imshow(torchvision.utils.make_grid(images))
 
 	# Now let us see what the neural network thinks these examples above are.
 	model.eval()
@@ -1182,7 +1184,7 @@ def recognize_word():
 	# Print labels.
 	print('Labels:', ' '.join([label_converter.decode(lbl) for lbl in labels]))
 	# Show images.
-	imshow(torchvision.utils.make_grid(images))
+	#imshow(torchvision.utils.make_grid(images))
 
 	#--------------------
 	# Define a model.
@@ -1297,9 +1299,10 @@ def recognize_word():
 	dataiter = iter(test_dataloader)
 	images, labels, label_lens = dataiter.next()
 
-	# Print images.
+	# Print ground truths.
 	print('Ground truth:', ' '.join([label_converter.decode(lbl) for lbl in labels]))
-	imshow(torchvision.utils.make_grid(images))
+	# Show images.
+	#imshow(torchvision.utils.make_grid(images))
 
 	# Now let us see what the neural network thinks these examples above are.
 	model.eval()
@@ -1418,7 +1421,7 @@ def recognize_word_using_mixup():
 	# Print labels.
 	print('Labels:', ' '.join([label_converter.decode(lbl) for lbl in labels]))
 	# Show images.
-	imshow(torchvision.utils.make_grid(images))
+	#imshow(torchvision.utils.make_grid(images))
 
 	#--------------------
 	# Define a model.
@@ -1533,9 +1536,10 @@ def recognize_word_using_mixup():
 	dataiter = iter(test_dataloader)
 	images, labels, label_lens = dataiter.next()
 
-	# Print images.
+	# Print ground truths.
 	print('Ground truth:', ' '.join([label_converter.decode(lbl) for lbl in labels]))
-	imshow(torchvision.utils.make_grid(images))
+	# Show images.
+	#imshow(torchvision.utils.make_grid(images))
 
 	# Now let us see what the neural network thinks these examples above are.
 	model.eval()
