@@ -332,7 +332,9 @@ class ResizeImage(object):
 			return cv2.resize(input, (width, height), interpolation=interpolation)
 		else:
 			aspect_ratio = height / hi
-			min_width = min(width, int(wi * aspect_ratio))
+			#min_width = min(width, int(wi * aspect_ratio))
+			min_width = max(min(width, int(wi * aspect_ratio)), height // 2)
+			assert min_width > 0 and height > 0
 			input = cv2.resize(input, (min_width, height), interpolation=interpolation)
 			if min_width < width:
 				image_zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
@@ -343,7 +345,9 @@ class ResizeImage(object):
 		"""
 		hi, wi = input.shape[:2]
 		aspect_ratio = height / hi
-		min_width = min(width, int(wi * aspect_ratio))
+		#min_width = min(width, int(wi * aspect_ratio))
+		min_width = max(min(width, int(wi * aspect_ratio)), height // 2)
+		assert min_width > 0 and height > 0
 		zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
 		zeropadded[:,:min_width] = cv2.resize(input, (min_width, height), interpolation=interpolation)
 		return zeropadded
@@ -356,7 +360,9 @@ class ResizeImage(object):
 		interpolation = Image.BICUBIC
 		wi, hi = input.size
 		aspect_ratio = height / hi
-		min_width = min(width, int(wi * aspect_ratio))
+		#min_width = min(width, int(wi * aspect_ratio))
+		min_width = max(min(width, int(wi * aspect_ratio)), height // 2)
+		assert min_width > 0 and height > 0
 		zeropadded = Image.new(input.mode, (width, height), color=0)
 		zeropadded.paste(input.resize((min_width, height), resample=interpolation), (0, 0, min_width, height))
 		return zeropadded
@@ -793,20 +799,21 @@ def recognize_character():
 	model = model.to(device)
 
 	if False:
-		# Filter parameters that only require gradient decent.
-		filtered_parameters = []
-		params_num = []
+		# Filter model parameters that only require gradient decent.
+		model_params, num_params = [], []
 		for p in filter(lambda p: p.requires_grad, model.parameters()):
-			filtered_parameters.append(p)
-			params_num.append(np.prod(p.size()))
-		print('#trainable parameters =', sum(params_num))
+			model_params.append(p)
+			num_params.append(np.prod(p.size()))
+		print('#trainable parameters =', sum(num_params))
 		#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+	else:
+		model_params = model.parameters()
 
 	#--------------------
 	# Define a loss function and optimizer.
 
 	criterion = torch.nn.CrossEntropyLoss().to(device)
-	optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+	optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
 	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 
 	#--------------------
@@ -1007,20 +1014,21 @@ def recognize_character_using_mixup():
 	model = model.to(device)
 
 	if False:
-		# Filter parameters that only require gradient decent.
-		filtered_parameters = []
-		params_num = []
+		# Filter model parameters that only require gradient decent.
+		model_params, num_params = [], []
 		for p in filter(lambda p: p.requires_grad, model.parameters()):
-			filtered_parameters.append(p)
-			params_num.append(np.prod(p.size()))
-		print('#trainable parameters =', sum(params_num))
+			model_params.append(p)
+			num_params.append(np.prod(p.size()))
+		print('#trainable parameters =', sum(num_params))
 		#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+	else:
+		model_params = model.parameters()
 
 	#--------------------
 	# Define a loss function and optimizer.
 
 	criterion = torch.nn.CrossEntropyLoss().to(device)
-	optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+	optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
 	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 
 	#--------------------
@@ -1163,8 +1171,9 @@ def recognize_word():
 		assert label_converter.encode([BLANK_LABEL])[0] == 0
 		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL])[0]
 	else:
-		label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=swl_langproc_util.TokenConverter.SOS)
-		SOS_TOKEN_INT = label_converter.encode([swl_langproc_util.TokenConverter.SOS])[0]
+		label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=None)
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=None, suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=None)
+
 	chars = charset  # Can make the number of each character different.
 	#train_dataloader, test_dataloader = create_word_data_loaders(label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers)
 	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers)
@@ -1189,8 +1198,8 @@ def recognize_word():
 	#--------------------
 	# Define a model.
 
-	import rare.model_sangwook
-	model = rare.model_sangwook.Model(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, transformer, feature_extracter, sequence_model, predictor)
+	import rare.model
+	model = rare.model.Model(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, label_converter.num_affixes, label_converter.fill_value, transformer, feature_extracter, sequence_model, predictor)
 
 	if True:
 		# Initialize weights.
@@ -1213,14 +1222,16 @@ def recognize_word():
 
 	model = model.to(device)
 
-	# Filter parameters that only require gradient decent.
-	filtered_parameters = []
-	params_num = []
-	for p in filter(lambda p: p.requires_grad, model.parameters()):
-		filtered_parameters.append(p)
-		params_num.append(np.prod(p.size()))
-	print('#trainable parameters =', sum(params_num))
-	#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+	if True:
+		# Filter model parameters that only require gradient decent.
+		model_params, num_params = [], []
+		for p in filter(lambda p: p.requires_grad, model.parameters()):
+			model_params.append(p)
+			num_params.append(np.prod(p.size()))
+		print('#trainable parameters =', sum(num_params))
+		#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+	else:
+		model_params = model.parameters()
 
 	#--------------------
 	# Define a loss function and optimizer.
@@ -1242,23 +1253,24 @@ def recognize_word():
 			torch.backends.cudnn.enabled = True
 			return cost
 	else:
-		criterion = torch.nn.CrossEntropyLoss(ignore_index=SOS_TOKEN_INT).to(device)  # Ignore <SOS> token.
+		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
 		def forward(batch):
 			inputs, outputs, _ = batch
 			inputs, outputs = inputs.to(device), outputs.to(device)
 
 			outputs = outputs.long()
+			# FIXME [fix] >> Delete?
 			#outputs1 = outputs[:,:-1]  # Align with Attention.forward().
 			outputs1 = outputs
-			# FIXME [fix] >> Instead of using <SOS>, it would be better to replace it with a fill value.
-			outputs2 = outputs[:,1:]  # Remove <SOS> token.
+			#outputs2 = outputs[:,1:]  # Remove <SOS> token.
+			outputs2 = outputs
 
 			model_outputs = model(inputs, outputs1, is_train=True, device=device)
 			# FIXME [fix] >> All examples in a batch are combined together. Can each example be handled individually?
 			return criterion(model_outputs.view(-1, model_outputs.shape[-1]), outputs2.contiguous().view(-1))
-	#optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-	optimizer = torch.optim.Adam(filtered_parameters, lr=1.0, betas=(0.9, 0.999))
-	#optimizer = torch.optim.Adadelta(filtered_parameters, lr=1.0, rho=0.95, eps=1e-8)
+	#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
+	optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
+	#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
 	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 
 	#--------------------
@@ -1400,8 +1412,9 @@ def recognize_word_using_mixup():
 		assert label_converter.encode([BLANK_LABEL])[0] == 0
 		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL])[0]
 	else:
-		label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=swl_langproc_util.TokenConverter.SOS)
-		SOS_TOKEN_INT = label_converter.encode([swl_langproc_util.TokenConverter.SOS])[0]
+		label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=None)
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=None, suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=None)
+
 	chars = charset  # Can make the number of each character different.
 	#train_dataloader, test_dataloader = create_word_data_loaders(label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers)
 	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers)
@@ -1426,8 +1439,8 @@ def recognize_word_using_mixup():
 	#--------------------
 	# Define a model.
 
-	import rare.model_sangwook
-	model = rare.model_sangwook.Model(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, transformer, feature_extracter, sequence_model, predictor)
+	import rare.model
+	model = rare.model.Model(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, label_converter.num_affixes, label_converter.fill_value, transformer, feature_extracter, sequence_model, predictor)
 
 	if True:
 		# Initialize weights.
@@ -1450,14 +1463,16 @@ def recognize_word_using_mixup():
 
 	model = model.to(device)
 
-	# Filter parameters that only require gradient decent.
-	filtered_parameters = []
-	params_num = []
-	for p in filter(lambda p: p.requires_grad, model.parameters()):
-		filtered_parameters.append(p)
-		params_num.append(np.prod(p.size()))
-	print('#trainable parameters =', sum(params_num))
-	#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+	if True:
+		# Filter model parameters that only require gradient decent.
+		model_params, num_params = [], []
+		for p in filter(lambda p: p.requires_grad, model.parameters()):
+			model_params.append(p)
+			num_params.append(np.prod(p.size()))
+		print('#trainable parameters =', sum(num_params))
+		#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+	else:
+		model_params = model.parameters()
 
 	#--------------------
 	# Define a loss function and optimizer.
@@ -1479,23 +1494,24 @@ def recognize_word_using_mixup():
 			torch.backends.cudnn.enabled = True
 			return cost
 	else:
-		criterion = torch.nn.CrossEntropyLoss(ignore_index=SOS_TOKEN_INT).to(device)  # Ignore <SOS> token.
+		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
 		def forward(batch):
 			inputs, outputs, _ = batch
 			inputs, outputs = inputs.to(device), outputs.to(device)
 
 			outputs = outputs.long()
+			# FIXME [fix] >> Delete?
 			#outputs1 = outputs[:,:-1]  # Align with Attention.forward().
 			outputs1 = outputs
-			# FIXME [fix] >> Instead of using <SOS>, it would be better to replace it with a fill value.
-			outputs2 = outputs[:,1:]  # Remove <SOS> token.
+			#outputs2 = outputs[:,1:]  # Remove <SOS> token.
+			outputs2 = outputs
 
 			model_outputs = model(inputs, outputs1, is_train=True, device=device)
 			# FIXME [fix] >> All examples in a batch are combined together. Can each example be handled individually?
 			return criterion(model_outputs.view(-1, model_outputs.shape[-1]), outputs2.contiguous().view(-1))
-	#optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-	optimizer = torch.optim.Adam(filtered_parameters, lr=1.0, betas=(0.9, 0.999))
-	#optimizer = torch.optim.Adadelta(filtered_parameters, lr=1.0, rho=0.95, eps=1e-8)
+	#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
+	optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
+	#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
 	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 
 	#--------------------

@@ -69,7 +69,7 @@ class TokenConverter(object):
 			try:
 				return self._tokens.index(tok)
 			except ValueError:
-				print('[SWL] Error: Failed to encode a token, {} in {}.'.format(tok, tokens))
+				#print('[SWL] Error: Failed to encode a token, {} in {}.'.format(tok, tokens))
 				return self.UNKNOWN_int
 		return self.decoration_functor([tok2int(tok) for tok in tokens])
 
@@ -79,7 +79,7 @@ class TokenConverter(object):
 			try:
 				return self._tokens[tok]
 			except IndexError:
-				print('[SWL] Error: Failed to decode an integer token, {} in {}.'.format(tok, integer_tokens))
+				#print('[SWL] Error: Failed to decode an integer token, {} in {}.'.format(tok, integer_tokens))
 				return self.UNKNOWN  # TODO [check] >> Is it correct?
 		return ''.join([int2tok(tok) for tok in integer_tokens if tok not in self.auxiliary_tokens_int])
 

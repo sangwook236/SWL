@@ -563,11 +563,11 @@ def main():
 
 		if False:
 			# Filter model parameters that only require gradient decent.
-			model_params, params_num = list(), list()
+			model_params, num_params = list(), list()
 			for p in filter(lambda p: p.requires_grad, model.parameters()):
 				model_params.append(p)
-				params_num.append(np.prod(p.size()))
-			print('#trainable parameters = {}.'.format(sum(params_num)))
+				num_params.append(np.prod(p.size()))
+			print('#trainable parameters = {}.'.format(sum(num_params)))
 			#print('Trainable parameters:')
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 		else:
