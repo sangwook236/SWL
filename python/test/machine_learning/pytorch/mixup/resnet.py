@@ -244,15 +244,15 @@ class ResNet(nn.Module):
 		elif mixup_input:
 			layer_mix = 0
 		else:
-			layer_mix = None   
-		
+			layer_mix = None
+
 		out = x
-		
+
 		if mixup_alpha is not None:
 			lam = mixup.utils.get_lambda(mixup_alpha)
 			lam = torch.from_numpy(np.array([lam]).astype('float32')).to(device)
 			#lam = Variable(lam)
-		
+
 		if target is not None:
 			target_reweighted = mixup.utils.to_one_hot(target, self.num_classes, device)
 
@@ -288,7 +288,7 @@ class ResNet(nn.Module):
 		out = self.avgpool(out)
 		out = torch.flatten(out, 1)
 		out = self.fc(out)
-		
+
 		if target is not None:
 			return out, target_reweighted
 		else: 

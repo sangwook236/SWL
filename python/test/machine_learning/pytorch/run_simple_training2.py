@@ -549,7 +549,7 @@ def main():
 			# Initialize model weights.
 			for name, param in model.named_parameters():
 				if 'variable_name' in name:
-					print(f'Skip {name} as it is already initialized')
+					logger.info(f'Skip {name} as it is already initialized.')
 					continue
 				try:
 					if 'bias' in name:
@@ -562,7 +562,7 @@ def main():
 					continue
 
 		if False:
-			# Filter model parameters that only require gradient decent.
+			# Filter model parameters only that require gradients.
 			model_params, num_params = list(), list()
 			for p in filter(lambda p: p.requires_grad, model.parameters()):
 				model_params.append(p)
