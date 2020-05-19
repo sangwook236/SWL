@@ -769,7 +769,7 @@ def recognize_character():
 	elif True:
 		import rare.modules.feature_extraction
 		model = rare.modules.feature_extraction.create_resnet_for_character(input_channel, output_channel, num_classes=num_classes)
-	elif True:
+	elif False:
 		import rare.modules.feature_extraction
 		model = rare.modules.feature_extraction.create_rcnn_for_character(input_channel, output_channel, num_classes=num_classes)
 
@@ -972,7 +972,7 @@ def recognize_character_using_mixup():
 	elif True:
 		import rare.modules.feature_extraction
 		model = rare.modules.feature_extraction.create_resnet_mixup_for_character(input_channel, output_channel, num_classes=num_classes)
-	elif True:
+	elif False:
 		import rare.modules.feature_extraction
 		model = rare.modules.feature_extraction.create_rcnn_mixup_for_character(input_channel, output_channel, num_classes=num_classes)
 
@@ -1642,6 +1642,9 @@ def recognize_text_using_craft_and_character_recognizer():
 	elif True:
 		import rare.modules.feature_extraction
 		model = rare.modules.feature_extraction.create_resnet_mixup_for_character(input_channel, output_channel, num_classes=num_classes)
+	elif False:
+		import rare.modules.feature_extraction
+		model = rare.modules.feature_extraction.create_rcnn_mixup_for_character(input_channel, output_channel, num_classes=num_classes)
 
 	# Load a model.
 	model = load_model(model_filepath, model, device=device)
