@@ -754,10 +754,11 @@ def recognize_character():
 	dataiter = iter(train_dataloader)
 	images, labels = dataiter.next()
 
-	# Print labels.
-	print('Labels:', ' '.join(label_converter.decode(labels)))
-	# Show images.
-	#imshow(torchvision.utils.make_grid(images))
+	if False:
+		# Print labels.
+		print('Labels:', ' '.join(label_converter.decode(labels)))
+		# Show images.
+		imshow(torchvision.utils.make_grid(images))
 
 	#--------------------
 	# Define a convolutional neural network.
@@ -768,6 +769,9 @@ def recognize_character():
 	elif True:
 		import rare.modules.feature_extraction
 		model = rare.modules.feature_extraction.create_resnet_for_character(input_channel, output_channel, num_classes=num_classes)
+	elif True:
+		import rare.modules.feature_extraction
+		model = rare.modules.feature_extraction.create_rcnn_for_character(input_channel, output_channel, num_classes=num_classes)
 
 	if False:
 		# Initialize model weights.
@@ -792,11 +796,12 @@ def recognize_character():
 
 	if False:
 		# Filter model parameters only that require gradients.
-		model_params, num_params = [], []
+		model_params, num_model_params = [], []
 		for p in filter(lambda p: p.requires_grad, model.parameters()):
 			model_params.append(p)
-			num_params.append(np.prod(p.size()))
-		print('#trainable model parameters = {}.'.format(sum(num_params)))
+			num_model_params.append(np.prod(p.size()))
+		print('#trainable model parameters = {}.'.format(sum(num_model_params)))
+		#print('Trainable model parameters:')
 		#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 	else:
 		model_params = model.parameters()
@@ -951,10 +956,11 @@ def recognize_character_using_mixup():
 	dataiter = iter(train_dataloader)
 	images, labels = dataiter.next()
 
-	# Print labels.
-	print('Labels:', ' '.join(label_converter.decode(labels)))
-	# Show images.
-	#imshow(torchvision.utils.make_grid(images))
+	if False:
+		# Print labels.
+		print('Labels:', ' '.join(label_converter.decode(labels)))
+		# Show images.
+		imshow(torchvision.utils.make_grid(images))
 
 	#--------------------
 	# Define a convolutional neural network.
@@ -966,6 +972,9 @@ def recognize_character_using_mixup():
 	elif True:
 		import rare.modules.feature_extraction
 		model = rare.modules.feature_extraction.create_resnet_mixup_for_character(input_channel, output_channel, num_classes=num_classes)
+	elif True:
+		import rare.modules.feature_extraction
+		model = rare.modules.feature_extraction.create_rcnn_mixup_for_character(input_channel, output_channel, num_classes=num_classes)
 
 	if False:
 		# Initialize model weights.
@@ -990,11 +999,12 @@ def recognize_character_using_mixup():
 
 	if False:
 		# Filter model parameters only that require gradients.
-		model_params, num_params = [], []
+		model_params, num_model_params = [], []
 		for p in filter(lambda p: p.requires_grad, model.parameters()):
 			model_params.append(p)
-			num_params.append(np.prod(p.size()))
-		print('#trainable model parameters = {}.'.format(sum(num_params)))
+			num_model_params.append(np.prod(p.size()))
+		print('#trainable model parameters = {}.'.format(sum(num_model_params)))
+		#print('Trainable model parameters:')
 		#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 	else:
 		model_params = model.parameters()
@@ -1112,6 +1122,7 @@ def recognize_word():
 	input_channel = image_channel  # The number of input channel of feature extractor.
 	output_channel = 512  # The number of output channel of feature extractor.
 	hidden_size = 256  # The size of the LSTM hidden states.
+	max_gradient_norm = 5  # Gradient clipping value.
 	transformer = 'TPS'  # The type of transformer. {None, 'TPS'}.
 	feature_extracter = 'VGG'  # The type of feature extracter. {'VGG', 'RCNN', 'ResNet'}.
 	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
@@ -1149,6 +1160,7 @@ def recognize_word():
 		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick.
 		FILL_TOKEN = '<FILL>'
 		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=FILL_VALUE)
+		#assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
 		assert label_converter.encode([FILL_TOKEN])[1] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN])[1], FILL_VALUE)
 
 	chars = charset  # Can make the number of each character different.
@@ -1167,10 +1179,11 @@ def recognize_word():
 	dataiter = iter(train_dataloader)
 	images, labels, _ = dataiter.next()
 
-	# Print labels.
-	print('Labels:', ' '.join([label_converter.decode(lbl) for lbl in labels]))
-	# Show images.
-	#imshow(torchvision.utils.make_grid(images))
+	if False:
+		# Print labels.
+		print('Labels:', ' '.join([label_converter.decode(lbl) for lbl in labels]))
+		# Show images.
+		imshow(torchvision.utils.make_grid(images))
 
 	#--------------------
 	# Define a model.
@@ -1201,11 +1214,12 @@ def recognize_word():
 
 	if True:
 		# Filter model parameters only that require gradients.
-		model_params, num_params = [], []
+		model_params, num_model_params = [], []
 		for p in filter(lambda p: p.requires_grad, model.parameters()):
 			model_params.append(p)
-			num_params.append(np.prod(p.size()))
-		print('#trainable model parameters = {}.'.format(sum(num_params)))
+			num_model_params.append(np.prod(p.size()))
+		print('#trainable model parameters = {}.'.format(sum(num_model_params)))
+		#print('Trainable model parameters:')
 		#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 	else:
 		model_params = model.parameters()
@@ -1221,9 +1235,9 @@ def recognize_word():
 			model_outputs = model(inputs, None, device=device).log_softmax(2)
 			N, T = model_outputs.shape[:2]
 			model_outputs = model_outputs.permute(1, 0, 2)  # (N, T, C) -> (T, N, C).
-			model_output_lens = torch.IntTensor([T] * N).to(device)
+			model_output_lens = torch.full([N], T, dtype=torch.int32, device=device)
 
-			# To avoid CTC loss issue, disable cuDNN for the computation of the CTC loss.
+			# TODO [check] >> To avoid CTC loss issue, disable cuDNN for the computation of the CTC loss.
 			# https://github.com/jpuigcerver/PyLaia/issues/16
 			torch.backends.cudnn.enabled = False
 			cost = criterion(model_outputs, outputs, model_output_lens, output_lens)
@@ -1266,6 +1280,7 @@ def recognize_word():
 				# Forward + backward + optimize.
 				loss = forward(batch, device)
 				loss.backward()
+				torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
 				optimizer.step()
 
 				# Print statistics.
@@ -1354,6 +1369,7 @@ def recognize_word_using_mixup():
 	input_channel = image_channel  # The number of input channel of feature extractor.
 	output_channel = 512  # The number of output channel of feature extractor.
 	hidden_size = 256  # The size of the LSTM hidden states.
+	max_gradient_norm = 5  # Gradient clipping value.
 	transformer = 'TPS'  # The type of transformer. {None, 'TPS'}.
 	feature_extracter = 'VGG'  # The type of feature extracter. {'VGG', 'RCNN', 'ResNet'}.
 	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
@@ -1394,6 +1410,7 @@ def recognize_word_using_mixup():
 		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick.
 		FILL_TOKEN = '<FILL>'
 		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=FILL_VALUE)
+		#assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
 		assert label_converter.encode([FILL_TOKEN])[1] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN])[1], FILL_VALUE)
 
 	chars = charset  # Can make the number of each character different.
@@ -1412,16 +1429,18 @@ def recognize_word_using_mixup():
 	dataiter = iter(train_dataloader)
 	images, labels, _ = dataiter.next()
 
-	# Print labels.
-	print('Labels:', ' '.join([label_converter.decode(lbl) for lbl in labels]))
-	# Show images.
-	#imshow(torchvision.utils.make_grid(images))
+	if False:
+		# Print labels.
+		print('Labels:', ' '.join([label_converter.decode(lbl) for lbl in labels]))
+		# Show images.
+		imshow(torchvision.utils.make_grid(images))
 
 	#--------------------
 	# Define a model.
 
+	# FIXME [error] >> rare.model.Model_MixUp is not working.
 	import rare.model
-	model = rare.model.Model(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, label_converter.num_affixes, label_converter.fill_value, transformer, feature_extracter, sequence_model, predictor)
+	model = rare.model.Model_MixUp(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, label_converter.num_affixes, label_converter.fill_value, transformer, feature_extracter, sequence_model, predictor)
 
 	if True:
 		# Initialize model weights.
@@ -1446,11 +1465,12 @@ def recognize_word_using_mixup():
 
 	if True:
 		# Filter model parameters only that require gradients.
-		model_params, num_params = [], []
+		model_params, num_model_params = [], []
 		for p in filter(lambda p: p.requires_grad, model.parameters()):
 			model_params.append(p)
-			num_params.append(np.prod(p.size()))
-		print('#trainable model parameters = {}.'.format(sum(num_params)))
+			num_model_params.append(np.prod(p.size()))
+		print('#trainable model parameters = {}.'.format(sum(num_model_params)))
+		#print('Trainable model parameters:')
 		#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 	else:
 		model_params = model.parameters()
@@ -1460,15 +1480,15 @@ def recognize_word_using_mixup():
 
 	if predictor == 'CTC':
 		criterion = torch.nn.CTCLoss(blank=BLANK_LABEL_INT, zero_infinity=True).to(device)  # Blank label <BLANK>.
-		def forward(batch):
+		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 			inputs, outputs, output_lens = inputs.to(device), outputs.to(device), output_lens.to(device)
-			model_outputs = model(inputs, None).log_softmax(2)
+			model_outputs = model(inputs, outputs, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, device=device).log_softmax(2)
 			N, T = model_outputs.shape[:2]
 			model_outputs = model_outputs.permute(1, 0, 2)  # (N, T, C) -> (T, N, C).
-			model_output_lens = torch.IntTensor([T] * N).to(device)
+			model_output_lens = torch.full([N], T, dtype=torch.int32, device=device)
 
-			# To avoid CTC loss issue, disable cuDNN for the computation of the CTC loss.
+			# TODO [check] >> To avoid CTC loss issue, disable cuDNN for the computation of the CTC loss.
 			# https://github.com/jpuigcerver/PyLaia/issues/16
 			torch.backends.cudnn.enabled = False
 			cost = criterion(model_outputs, outputs, model_output_lens, output_lens)
@@ -1476,7 +1496,7 @@ def recognize_word_using_mixup():
 			return cost
 	else:
 		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
-		def forward(batch):
+		def forward(batch, device):
 			inputs, outputs, _ = batch
 			inputs, outputs = inputs.to(device), outputs.to(device)
 
@@ -1487,7 +1507,7 @@ def recognize_word_using_mixup():
 			#outputs2 = outputs[:,1:]  # Remove <SOS> token.
 			outputs2 = outputs
 
-			model_outputs = model(inputs, outputs1, is_train=True, device=device)
+			model_outputs = model(inputs, outputs1, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, is_train=True, device=device)
 			# FIXME [fix] >> All examples in a batch are combined together. Can each example be handled individually?
 			return criterion(model_outputs.view(-1, model_outputs.shape[-1]), outputs2.contiguous().view(-1))
 	#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
@@ -1509,8 +1529,9 @@ def recognize_word_using_mixup():
 				optimizer.zero_grad()
 
 				# Forward + backward + optimize.
-				loss = forward(batch)
+				loss = forward(batch, device)
 				loss.backward()
+				torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
 				optimizer.step()
 
 				# Print statistics.
@@ -1846,7 +1867,7 @@ def main():
 
 	#--------------------
 	recognize_word()  # Use RARE.
-	#recognize_word_using_mixup()  # Use RARE.
+	#recognize_word_using_mixup()  # Use RARE. Not working.
 
 	# Recognize text using CRAFT (scene text detector) + word recognizer.
 	#recognize_text_using_craft_and_word_recognizer()  # Not yet implemented.

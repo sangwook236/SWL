@@ -468,11 +468,11 @@ def main():
 
 		if False:
 			# Filter model parameters only that require gradients.
-			model_params, num_params = list(), list()
+			model_params, num_model_params = list(), list()
 			for p in filter(lambda p: p.requires_grad, model.parameters()):
 				model_params.append(p)
-				num_params.append(np.prod(p.size()))
-			print('#trainable model parameters = {}.'.format(sum(num_params)))
+				num_model_params.append(np.prod(p.size()))
+			print('#trainable model parameters = {}.'.format(sum(num_model_params)))
 			#print('Trainable model parameters:')
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 		else:
