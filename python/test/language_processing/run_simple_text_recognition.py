@@ -1859,7 +1859,7 @@ def recognize_text_using_craft_and_word_recognizer():
 		print('No text detected.')
 
 def main():
-	#recognize_character()
+	recognize_character()
 	#recognize_character_using_mixup()
 
 	# Recognize text using CRAFT (scene text detector) + character recognizer.
