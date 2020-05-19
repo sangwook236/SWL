@@ -31,20 +31,19 @@ class TokenConverter(object):
 
 		self.UNKNOWN_int = extended_tokens.index(self.UNKNOWN)
 		prefixes_int, suffixes_int = [extended_tokens.index(tok) for tok in prefixes], [extended_tokens.index(tok) for tok in suffixes]
-	
-		if not fill_value:
-			self.fill_token_int = -1
-			#self.fill_token_int = len(extended_tokens)
+
+		default_fill_value = -1 #len(extended_tokens)
+		if fill_value is None:
+			self._fill_value = default_fill_value
 		elif isinstance(fill_value, int):
-			self.fill_token_int = fill_value
+			self._fill_value = fill_value
 		else:
 			try:
-				self.fill_token_int = extended_tokens.index(fill_value)
+				self._fill_value = extended_tokens.index(fill_value)
 			except ValueError:
-				self.fill_token_int = -1
-				#self.fill_token_int = len(extended_tokens)
+				self._fill_value = default_fill_value
 
-		self.auxiliary_tokens_int = [self.fill_token_int] + prefixes_int + suffixes_int
+		self.auxiliary_tokens_int = [self._fill_value] + prefixes_int + suffixes_int
 		self.decoration_functor = lambda x: prefixes_int + x + suffixes_int
 
 	@property
@@ -57,7 +56,7 @@ class TokenConverter(object):
 
 	@property
 	def fill_value(self):
-		return self.fill_token_int
+		return self._fill_value
 
 	@property
 	def num_affixes(self):

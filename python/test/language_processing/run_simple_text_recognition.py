@@ -780,7 +780,7 @@ def recognize_character():
 					torch.nn.init.constant_(param, 0.0)
 				elif 'weight' in name:
 					torch.nn.init.kaiming_normal_(param)
-			except Exception as e:  # For batch normalization.
+			except Exception as ex:  # For batch normalization.
 				if 'weight' in name:
 					param.data.fill_(1)
 				continue
@@ -796,7 +796,7 @@ def recognize_character():
 		for p in filter(lambda p: p.requires_grad, model.parameters()):
 			model_params.append(p)
 			num_params.append(np.prod(p.size()))
-		print('#trainable parameters =', sum(num_params))
+		print('#trainable model parameters = {}.'.format(sum(num_params)))
 		#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 	else:
 		model_params = model.parameters()
@@ -978,7 +978,7 @@ def recognize_character_using_mixup():
 					torch.nn.init.constant_(param, 0.0)
 				elif 'weight' in name:
 					torch.nn.init.kaiming_normal_(param)
-			except Exception as e:  # For batch normalization.
+			except Exception as ex:  # For batch normalization.
 				if 'weight' in name:
 					param.data.fill_(1)
 				continue
@@ -994,7 +994,7 @@ def recognize_character_using_mixup():
 		for p in filter(lambda p: p.requires_grad, model.parameters()):
 			model_params.append(p)
 			num_params.append(np.prod(p.size()))
-		print('#trainable parameters =', sum(num_params))
+		print('#trainable model parameters = {}.'.format(sum(num_params)))
 		#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 	else:
 		model_params = model.parameters()
@@ -1143,11 +1143,13 @@ def recognize_word():
 	if predictor == 'CTC':
 		BLANK_LABEL = '<BLANK>'  # Blank label for CTC.
 		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), fill_value=None)
-		assert label_converter.encode([BLANK_LABEL])[0] == 0
+		assert label_converter.encode([BLANK_LABEL])[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL])[0])
 		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL])[0]
 	else:
-		label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=None)
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=None, suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=None)
+		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick.
+		FILL_TOKEN = '<FILL>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=FILL_VALUE)
+		assert label_converter.encode([FILL_TOKEN])[1] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN])[1], FILL_VALUE)
 
 	chars = charset  # Can make the number of each character different.
 	#train_dataloader, test_dataloader = create_word_data_loaders(label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers)
@@ -1187,7 +1189,7 @@ def recognize_word():
 					torch.nn.init.constant_(param, 0.0)
 				elif 'weight' in name:
 					torch.nn.init.kaiming_normal_(param)
-			except Exception as e:  # For batch normalization.
+			except Exception as ex:  # For batch normalization.
 				if 'weight' in name:
 					param.data.fill_(1)
 				continue
@@ -1203,7 +1205,7 @@ def recognize_word():
 		for p in filter(lambda p: p.requires_grad, model.parameters()):
 			model_params.append(p)
 			num_params.append(np.prod(p.size()))
-		print('#trainable parameters =', sum(num_params))
+		print('#trainable model parameters = {}.'.format(sum(num_params)))
 		#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 	else:
 		model_params = model.parameters()
@@ -1213,10 +1215,10 @@ def recognize_word():
 
 	if predictor == 'CTC':
 		criterion = torch.nn.CTCLoss(blank=BLANK_LABEL_INT, zero_infinity=True).to(device)  # Blank label <BLANK>.
-		def forward(batch):
+		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 			inputs, outputs, output_lens = inputs.to(device), outputs.to(device), output_lens.to(device)
-			model_outputs = model(inputs, None).log_softmax(2)
+			model_outputs = model(inputs, None, device=device).log_softmax(2)
 			N, T = model_outputs.shape[:2]
 			model_outputs = model_outputs.permute(1, 0, 2)  # (N, T, C) -> (T, N, C).
 			model_output_lens = torch.IntTensor([T] * N).to(device)
@@ -1229,7 +1231,7 @@ def recognize_word():
 			return cost
 	else:
 		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
-		def forward(batch):
+		def forward(batch, device):
 			inputs, outputs, _ = batch
 			inputs, outputs = inputs.to(device), outputs.to(device)
 
@@ -1262,7 +1264,7 @@ def recognize_word():
 				optimizer.zero_grad()
 
 				# Forward + backward + optimize.
-				loss = forward(batch)
+				loss = forward(batch, device)
 				loss.backward()
 				optimizer.step()
 
@@ -1386,11 +1388,13 @@ def recognize_word_using_mixup():
 	if predictor == 'CTC':
 		BLANK_LABEL = '<BLANK>'  # Blank label for CTC.
 		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), fill_value=None)
-		assert label_converter.encode([BLANK_LABEL])[0] == 0
+		assert label_converter.encode([BLANK_LABEL])[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL])[0])
 		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL])[0]
 	else:
-		label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=None)
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=None, suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=None)
+		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick.
+		FILL_TOKEN = '<FILL>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=FILL_VALUE)
+		assert label_converter.encode([FILL_TOKEN])[1] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN])[1], FILL_VALUE)
 
 	chars = charset  # Can make the number of each character different.
 	#train_dataloader, test_dataloader = create_word_data_loaders(label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers)
@@ -1430,7 +1434,7 @@ def recognize_word_using_mixup():
 					torch.nn.init.constant_(param, 0.0)
 				elif 'weight' in name:
 					torch.nn.init.kaiming_normal_(param)
-			except Exception as e:  # For batch normalization.
+			except Exception as ex:  # For batch normalization.
 				if 'weight' in name:
 					param.data.fill_(1)
 				continue
@@ -1446,7 +1450,7 @@ def recognize_word_using_mixup():
 		for p in filter(lambda p: p.requires_grad, model.parameters()):
 			model_params.append(p)
 			num_params.append(np.prod(p.size()))
-		print('#trainable parameters =', sum(num_params))
+		print('#trainable model parameters = {}.'.format(sum(num_params)))
 		#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 	else:
 		model_params = model.parameters()
@@ -1591,7 +1595,8 @@ def recognize_text_using_craft_and_character_recognizer():
 	#import craft.file_utils as file_utils
 	import craft.test_utils as test_utils
 
-	image_height, image_width = 64, 64
+	image_height, image_width, image_channel = 64, 64, 3
+	input_channel, output_channel = image_channel, 1024
 
 	charset, _ = construct_charset()
 
@@ -1609,32 +1614,13 @@ def recognize_text_using_craft_and_character_recognizer():
 	#--------------------
 	# Define a convolutional neural network.
 
+	# REF [function] >> mnist_predefined_mixup_test() in ${SWL_PYTHON_HOME}/test/machine_learning/pytorch/run_mnist_cnn.py.
 	if False:
-		# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/pytorch/mixup/vgg.py
-		import mixup.vgg
-		# NOTE [info] >> Hard to train.
-		model = mixup.vgg.vgg19(pretrained=False, num_classes=num_classes)
-		#model = mixup.vgg.vgg19_bn(pretrained=False, num_classes=num_classes)
-	elif False:
-		# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/pytorch/mixup/vgg.py
-		import mixup.vgg
-		# NOTE [error] >> Cannot load the pretrained model weights because the model is slightly changed.
-		#model = mixup.vgg.vgg19(pretrained=True, progress=True)
-		model = mixup.vgg.vgg19_bn(pretrained=True, progress=True)
-		num_features = model.classifier[6].in_features
-		model.classifier[6] = torch.nn.Linear(num_features, num_classes)
-		model.num_classes = num_classes
-	elif False:
-		# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/pytorch/mixup/resnet.py
-		import mixup.resnet
-		model = mixup.resnet.resnet18(pretrained=False, num_classes=num_classes)
-	else:
-		# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/pytorch/mixup/resnet.py
-		import mixup.resnet
-		model = mixup.resnet.resnet18(pretrained=True, progress=True)
-		num_features = model.fc.in_features
-		model.fc = torch.nn.Linear(num_features, num_classes)
-		model.num_classes = num_classes
+		import rare.modules.feature_extraction
+		model = rare.modules.feature_extraction.create_vgg_mixup_for_character(input_channel, output_channel, num_classes=num_classes)
+	elif True:
+		import rare.modules.feature_extraction
+		model = rare.modules.feature_extraction.create_resnet_mixup_for_character(input_channel, output_channel, num_classes=num_classes)
 
 	# Load a model.
 	model = load_model(model_filepath, model, device=device)

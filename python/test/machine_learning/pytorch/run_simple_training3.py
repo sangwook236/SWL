@@ -560,9 +560,26 @@ def main():
 		# Create a model.
 		model = MyModel()
 
-		if is_resumed:
-			optimizer = torch.optim.SGD(model.parameters(), lr=initial_learning_rate, momentum=momentum, weight_decay=weight_decay, nesterov=True)
+		# TODO [check] >> Is this position right?
+		if False:
+			# Filter model parameters only that require gradients.
+			model_params, num_params = list(), list()
+			for p in filter(lambda p: p.requires_grad, model.parameters()):
+				model_params.append(p)
+				num_params.append(np.prod(p.size()))
+			print('#trainable model parameters = {}.'.format(sum(num_params)))
+			#print('Trainable model parameters:')
+			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+		else:
+			model_params = model.parameters()
 
+		# Create a trainer.
+		criterion = torch.nn.CrossEntropyLoss().to(device)
+		optimizer = torch.optim.SGD(model_params, lr=initial_learning_rate, momentum=momentum, weight_decay=weight_decay, nesterov=True)
+		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+		scheduler = MyLRScheduler(optimizer, initial_learning_rate)
+
+		if is_resumed:
 			# Load a model.
 			model, optimizer, recorder, loaded_initial_epoch = runner.load_model(model_filepath, model, optimizer, device=device)
 			if loaded_initial_epoch:
@@ -586,25 +603,6 @@ def main():
 						if 'weight' in name:
 							param.data.fill_(1)
 						continue
-
-			if False:
-				# Filter model parameters only that require gradients.
-				model_params, num_params = list(), list()
-				for p in filter(lambda p: p.requires_grad, model.parameters()):
-					model_params.append(p)
-					num_params.append(np.prod(p.size()))
-				print('#trainable parameters = {}.'.format(sum(num_params)))
-				#print('Trainable parameters:')
-				#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
-			else:
-				model_params = model.parameters()
-
-			optimizer = torch.optim.SGD(model_params, lr=initial_learning_rate, momentum=momentum, weight_decay=weight_decay, nesterov=True)
-
-		# Create a trainer.
-		criterion = torch.nn.CrossEntropyLoss().to(device)
-		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
-		scheduler = MyLRScheduler(optimizer, initial_learning_rate)
 
 		if model:
 			# Train a model.

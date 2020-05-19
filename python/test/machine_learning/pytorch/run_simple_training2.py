@@ -567,8 +567,8 @@ def main():
 			for p in filter(lambda p: p.requires_grad, model.parameters()):
 				model_params.append(p)
 				num_params.append(np.prod(p.size()))
-			print('#trainable parameters = {}.'.format(sum(num_params)))
-			#print('Trainable parameters:')
+			print('#trainable model parameters = {}.'.format(sum(num_params)))
+			#print('Trainable model parameters:')
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 		else:
 			model_params = model.parameters()
