@@ -764,14 +764,14 @@ def recognize_character():
 	# Define a convolutional neural network.
 
 	if False:
-		import rare.modules.feature_extraction
-		model = rare.modules.feature_extraction.create_vgg_for_character(input_channel, output_channel, num_classes=num_classes)
+		import rare.model_char
+		model = rare.model_char.create_vgg(input_channel, output_channel, num_classes=num_classes)
 	elif True:
-		import rare.modules.feature_extraction
-		model = rare.modules.feature_extraction.create_resnet_for_character(input_channel, output_channel, num_classes=num_classes)
+		import rare.model_char
+		model = rare.model_char.create_resnet(input_channel, output_channel, num_classes=num_classes)
 	elif False:
-		import rare.modules.feature_extraction
-		model = rare.modules.feature_extraction.create_rcnn_for_character(input_channel, output_channel, num_classes=num_classes)
+		import rare.model_char
+		model = rare.model_char.create_rcnn(input_channel, output_channel, num_classes=num_classes)
 
 	if False:
 		# Initialize model weights.
@@ -818,9 +818,10 @@ def recognize_character():
 
 	if True:
 		print('Start training...')
-		start_time = time.time()
+		start_total_time = time.time()
 		model.train()
 		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
+			start_time = time.time()
 			running_loss = 0.0
 			for i, (inputs, outputs) in enumerate(train_dataloader):
 				inputs, outputs = inputs.to(device), outputs.to(device)
@@ -837,13 +838,15 @@ def recognize_character():
 				# Print statistics.
 				running_loss += loss.item()
 				if i % log_print_freq == (log_print_freq - 1):
-					print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / log_print_freq))
+					print('[{}, {:5d}] loss = {:.3f}: {} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
 					running_loss = 0.0
+			print('Epoch {}: {} secs.'.format(epoch + 1, time.time() - start_time))
+
 			#scheduler.step()
 
 			# Save a checkpoint.
 			save_model(model_filepath, model)
-		print('End training: {} secs.'.format(time.time() - start_time))
+		print('End training: {} secs.'.format(time.time() - start_total_time))
 
 		# Save a model.
 		save_model(model_filepath, model)
@@ -851,21 +854,22 @@ def recognize_character():
 	#--------------------
 	# Test the network on the test data.
 
-	dataiter = iter(test_dataloader)
-	images, labels = dataiter.next()
+	if False:
+		dataiter = iter(test_dataloader)
+		images, labels = dataiter.next()
 
-	# Print ground truths.
-	print('Ground truth:', ' '.join(label_converter.decode(labels)))
-	# Show images.
-	#imshow(torchvision.utils.make_grid(images))
+		# Print ground truths.
+		print('Ground truth: {}.'.format(' '.join(label_converter.decode(labels))))
+		# Show images.
+		#imshow(torchvision.utils.make_grid(images))
 
-	# Now let us see what the neural network thinks these examples above are.
-	model.eval()
-	with torch.no_grad():
-		outputs = model(images.to(device))
+		# Now let us see what the neural network thinks these examples above are.
+		model.eval()
+		with torch.no_grad():
+			outputs = model(images.to(device))
 
-	_, predictions = torch.max(outputs, 1)
-	print('Prediction:', ' '.join(label_converter.decode(predictions)))
+		_, predictions = torch.max(outputs, 1)
+		print('Prediction: {}.'.format(' '.join(label_converter.decode(predictions))))
 
 	# Let us look at how the network performs on the whole dataset.
 	correct = 0
@@ -967,14 +971,14 @@ def recognize_character_using_mixup():
 
 	# REF [function] >> mnist_predefined_mixup_test() in ${SWL_PYTHON_HOME}/test/machine_learning/pytorch/run_mnist_cnn.py.
 	if False:
-		import rare.modules.feature_extraction
-		model = rare.modules.feature_extraction.create_vgg_mixup_for_character(input_channel, output_channel, num_classes=num_classes)
+		import rare.model_char
+		model = rare.model_char.create_vgg_mixup(input_channel, output_channel, num_classes=num_classes)
 	elif True:
-		import rare.modules.feature_extraction
-		model = rare.modules.feature_extraction.create_resnet_mixup_for_character(input_channel, output_channel, num_classes=num_classes)
+		import rare.model_char
+		model = rare.model_char.create_resnet_mixup(input_channel, output_channel, num_classes=num_classes)
 	elif False:
-		import rare.modules.feature_extraction
-		model = rare.modules.feature_extraction.create_rcnn_mixup_for_character(input_channel, output_channel, num_classes=num_classes)
+		import rare.model_char
+		model = rare.model_char.create_rcnn_mixup(input_channel, output_channel, num_classes=num_classes)
 
 	if False:
 		# Initialize model weights.
@@ -1021,9 +1025,10 @@ def recognize_character_using_mixup():
 
 	if True:
 		print('Start training...')
-		start_time = time.time()
+		start_total_time = time.time()
 		model.train()
 		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
+			start_time = time.time()
 			running_loss = 0.0
 			for i, (inputs, outputs) in enumerate(train_dataloader):
 				inputs, outputs = inputs.to(device), outputs.to(device)
@@ -1040,13 +1045,15 @@ def recognize_character_using_mixup():
 				# Print statistics.
 				running_loss += loss.item()
 				if i % log_print_freq == (log_print_freq - 1):
-					print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / log_print_freq))
+					print('[{}, {:5d}] loss = {:.3f}: {} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
 					running_loss = 0.0
+			print('Epoch {}: {} secs.'.format(epoch + 1, time.time() - start_time))
+
 			#scheduler.step()
 
 			# Save a checkpoint.
 			save_model(model_filepath, model)
-		print('End training: {} secs.'.format(time.time() - start_time))
+		print('End training: {} secs.'.format(time.time() - start_total_time))
 
 		# Save a model.
 		save_model(model_filepath, model)
@@ -1054,21 +1061,22 @@ def recognize_character_using_mixup():
 	#--------------------
 	# Test the network on the test data.
 
-	dataiter = iter(test_dataloader)
-	images, labels = dataiter.next()
+	if False:
+		dataiter = iter(test_dataloader)
+		images, labels = dataiter.next()
 
-	# Print ground truths.
-	print('Ground truth:', ' '.join(label_converter.decode(labels)))
-	# Show images.
-	#imshow(torchvision.utils.make_grid(images))
+		# Print ground truths.
+		print('Ground truth: {}.'.format(' '.join(label_converter.decode(labels))))
+		# Show images.
+		#imshow(torchvision.utils.make_grid(images))
 
-	# Now let us see what the neural network thinks these examples above are.
-	model.eval()
-	with torch.no_grad():
-		outputs = model(images.to(device))
+		# Now let us see what the neural network thinks these examples above are.
+		model.eval()
+		with torch.no_grad():
+			outputs = model(images.to(device))
 
-	_, predictions = torch.max(outputs, 1)
-	print('Prediction:', ' '.join(label_converter.decode(predictions)))
+		_, predictions = torch.max(outputs, 1)
+		print('Prediction: {}.'.format(' '.join(label_converter.decode(predictions))))
 
 	# Let us look at how the network performs on the whole dataset.
 	correct = 0
@@ -1232,7 +1240,7 @@ def recognize_word():
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 			inputs, outputs, output_lens = inputs.to(device), outputs.to(device), output_lens.to(device)
-			model_outputs = model(inputs, None, device=device).log_softmax(2)
+			model_outputs = model(inputs, None, is_train=True, device=device).log_softmax(2)
 			N, T = model_outputs.shape[:2]
 			model_outputs = model_outputs.permute(1, 0, 2)  # (N, T, C) -> (T, N, C).
 			model_output_lens = torch.full([N], T, dtype=torch.int32, device=device)
@@ -1269,9 +1277,10 @@ def recognize_word():
 
 	if True:
 		print('Start training...')
-		start_time = time.time()
+		start_total_time = time.time()
 		model.train()
 		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
+			start_time = time.time()
 			running_loss = 0.0
 			for i, batch in enumerate(train_dataloader):
 				# Zero the parameter gradients.
@@ -1286,13 +1295,15 @@ def recognize_word():
 				# Print statistics.
 				running_loss += loss.item()
 				if i % log_print_freq == (log_print_freq - 1):
-					print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / log_print_freq))
+					print('[{}, {:5d}] loss = {:.3f}: {} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
 					running_loss = 0.0
+			print('Epoch {}: {} secs.'.format(epoch + 1, time.time() - start_time))
+
 			#scheduler.step()
 
 			# Save a checkpoint.
 			save_model(model_filepath, model)
-		print('End training: {} secs.'.format(time.time() - start_time))
+		print('End training: {} secs.'.format(time.time() - start_total_time))
 
 		# Save a model.
 		save_model(model_filepath, model)
@@ -1300,21 +1311,22 @@ def recognize_word():
 	#--------------------
 	# Test the network on the test data.
 
-	dataiter = iter(test_dataloader)
-	images, labels, _ = dataiter.next()
+	if False:
+		dataiter = iter(test_dataloader)
+		images, labels, _ = dataiter.next()
 
-	# Print ground truths.
-	print('Ground truth:', ' '.join([label_converter.decode(lbl) for lbl in labels]))
-	# Show images.
-	#imshow(torchvision.utils.make_grid(images))
+		# Print ground truths.
+		print('Ground truth: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels])))
+		# Show images.
+		#imshow(torchvision.utils.make_grid(images))
 
-	# Now let us see what the neural network thinks these examples above are.
-	model.eval()
-	with torch.no_grad():
-		predictions = model(images.to(device))
+		# Now let us see what the neural network thinks these examples above are.
+		model.eval()
+		with torch.no_grad():
+			predictions = model(images.to(device), device=device)
 
-	_, predictions = torch.max(predictions, 1)
-	print('Prediction:', ' '.join([label_converter.decode(lbl) for lbl in predictions]))
+		_, predictions = torch.max(predictions, 1)
+		print('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in predictions])))
 
 	# FIXME [fix] >> Computing accuracy here is wrong.
 	# Let us look at how the network performs on the whole dataset.
@@ -1323,7 +1335,7 @@ def recognize_word():
 	with torch.no_grad():
 		for images, labels, _ in test_dataloader:
 			images, labels = images.to(device), labels.to(device)
-			predictions = model(images)
+			predictions = model(images, device=device)
 			_, predictions = torch.max(predictions.data, 1)
 			total += labels.size(0)
 			correct += (predictions == labels).sum().item()
@@ -1336,7 +1348,7 @@ def recognize_word():
 	with torch.no_grad():
 		for images, labels, _ in test_dataloader:
 			images, labels = images.to(device), labels.to(device)
-			predictions = model(images)
+			predictions = model(images, device=device)
 			_, predictions = torch.max(predictions, 1)
 			c = (predictions == labels).squeeze()
 			for i in range(len(labels)):
@@ -1483,7 +1495,7 @@ def recognize_word_using_mixup():
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 			inputs, outputs, output_lens = inputs.to(device), outputs.to(device), output_lens.to(device)
-			model_outputs = model(inputs, outputs, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, device=device).log_softmax(2)
+			model_outputs = model(inputs, None, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, is_train=True, device=device).log_softmax(2)
 			N, T = model_outputs.shape[:2]
 			model_outputs = model_outputs.permute(1, 0, 2)  # (N, T, C) -> (T, N, C).
 			model_output_lens = torch.full([N], T, dtype=torch.int32, device=device)
@@ -1520,9 +1532,10 @@ def recognize_word_using_mixup():
 
 	if True:
 		print('Start training...')
-		start_time = time.time()
+		start_total_time = time.time()
 		model.train()
 		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
+			start_time = time.time()
 			running_loss = 0.0
 			for i, batch in enumerate(train_dataloader):
 				# Zero the parameter gradients.
@@ -1537,13 +1550,15 @@ def recognize_word_using_mixup():
 				# Print statistics.
 				running_loss += loss.item()
 				if i % log_print_freq == (log_print_freq - 1):
-					print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / log_print_freq))
+					print('[{}, {:5d}] loss = {:.3f}: {} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
 					running_loss = 0.0
+			print('Epoch {}: {} secs.'.format(epoch + 1, time.time() - start_time))
+
 			#scheduler.step()
 
 			# Save a checkpoint.
 			save_model(model_filepath, model)
-		print('End training: {} secs.'.format(time.time() - start_time))
+		print('End training: {} secs.'.format(time.time() - start_total_time))
 
 		# Save a model.
 		save_model(model_filepath, model)
@@ -1551,21 +1566,22 @@ def recognize_word_using_mixup():
 	#--------------------
 	# Test the network on the test data.
 
-	dataiter = iter(test_dataloader)
-	images, labels, _ = dataiter.next()
+	if False:
+		dataiter = iter(test_dataloader)
+		images, labels, _ = dataiter.next()
 
-	# Print ground truths.
-	print('Ground truth:', ' '.join([label_converter.decode(lbl) for lbl in labels]))
-	# Show images.
-	#imshow(torchvision.utils.make_grid(images))
+		# Print ground truths.
+		print('Ground truth: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels])))
+		# Show images.
+		#imshow(torchvision.utils.make_grid(images))
 
-	# Now let us see what the neural network thinks these examples above are.
-	model.eval()
-	with torch.no_grad():
-		predictions = model(images.to(device))
+		# Now let us see what the neural network thinks these examples above are.
+		model.eval()
+		with torch.no_grad():
+			predictions = model(images.to(device), device=device)
 
-	_, predictions = torch.max(predictions, 1)
-	print('Prediction:', ' '.join([label_converter.decode(lbl) for lbl in predictions]))
+		_, predictions = torch.max(predictions, 1)
+		print('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in predictions])))
 
 	# FIXME [fix] >> Computing accuracy here is wrong.
 	# Let us look at how the network performs on the whole dataset.
@@ -1574,7 +1590,7 @@ def recognize_word_using_mixup():
 	with torch.no_grad():
 		for images, labels, _ in test_dataloader:
 			images, labels = images.to(device), labels.to(device)
-			predictions = model(images)
+			predictions = model(images, device=device)
 			_, predictions = torch.max(predictions.data, 1)
 			total += labels.size(0)
 			correct += (predictions == labels).sum().item()
@@ -1587,7 +1603,7 @@ def recognize_word_using_mixup():
 	with torch.no_grad():
 		for images, labels, _ in test_dataloader:
 			images, labels = images.to(device), labels.to(device)
-			predictions = model(images)
+			predictions = model(images, device=device)
 			_, predictions = torch.max(predictions, 1)
 			c = (predictions == labels).squeeze()
 			for i in range(len(labels)):
@@ -1637,14 +1653,14 @@ def recognize_text_using_craft_and_character_recognizer():
 
 	# REF [function] >> mnist_predefined_mixup_test() in ${SWL_PYTHON_HOME}/test/machine_learning/pytorch/run_mnist_cnn.py.
 	if False:
-		import rare.modules.feature_extraction
-		model = rare.modules.feature_extraction.create_vgg_mixup_for_character(input_channel, output_channel, num_classes=num_classes)
+		import rare.model_char
+		model = rare.model_char.create_vgg_mixup(input_channel, output_channel, num_classes=num_classes)
 	elif True:
-		import rare.modules.feature_extraction
-		model = rare.modules.feature_extraction.create_resnet_mixup_for_character(input_channel, output_channel, num_classes=num_classes)
+		import rare.model_char
+		model = rare.model_char.create_resnet_mixup(input_channel, output_channel, num_classes=num_classes)
 	elif False:
-		import rare.modules.feature_extraction
-		model = rare.modules.feature_extraction.create_rcnn_mixup_for_character(input_channel, output_channel, num_classes=num_classes)
+		import rare.model_char
+		model = rare.model_char.create_rcnn_mixup(input_channel, output_channel, num_classes=num_classes)
 
 	# Load a model.
 	model = load_model(model_filepath, model, device=device)
@@ -1862,7 +1878,7 @@ def recognize_text_using_craft_and_word_recognizer():
 		print('No text detected.')
 
 def main():
-	recognize_character()
+	#recognize_character()
 	#recognize_character_using_mixup()
 
 	# Recognize text using CRAFT (scene text detector) + character recognizer.
