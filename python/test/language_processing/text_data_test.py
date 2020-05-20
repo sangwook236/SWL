@@ -14,20 +14,6 @@ import text_data
 import text_generation_util as tg_util
 
 def construct_charset():
-	if 'posix' == os.name:
-		system_font_dir_path = '/usr/share/fonts'
-		font_base_dir_path = '/home/sangwook/work/font'
-	else:
-		system_font_dir_path = 'C:/Windows/Fonts'
-		font_base_dir_path = 'D:/work/font'
-	font_dir_path = font_base_dir_path + '/kor'
-	#font_dir_path = font_base_dir_path + '/eng'
-
-	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
-	#font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-	font_list = tg_util.generate_font_list(font_filepaths)
-
-	#--------------------
 	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
 	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
 	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
@@ -49,7 +35,7 @@ def construct_charset():
 
 	#charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset + hangeul_jamo_charset
 	charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset
-	return charset, font_list
+	return charset
 
 def construct_word_set():
 	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
@@ -76,6 +62,21 @@ def construct_word_set():
 	#return set(korean_words)
 	#return set(english_words)
 	return set(korean_words + english_words)
+
+def construct_font():
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		font_base_dir_path = '/home/sangwook/work/font'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_base_dir_path = 'D:/work/font'
+	font_dir_path = font_base_dir_path + '/kor'
+	#font_dir_path = font_base_dir_path + '/eng'
+
+	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+	#font_list = tg_util.generate_hangeul_font_list(font_filepaths)
+	font_list = tg_util.generate_font_list(font_filepaths)
+	return font_list
 
 def construct_chars():
 	import string
@@ -423,7 +424,7 @@ def SimpleCharacterDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset, font_list = construct_charset()
+	charset, font_list = construct_charset(), construct_font()
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
 	font_size_interval = (10, 100)
@@ -510,7 +511,7 @@ def NoisyCharacterDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset, font_list = construct_charset()
+	charset, font_list = construct_charset(), construct_font()
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
 	font_size_interval = (10, 100)
@@ -598,7 +599,7 @@ def FileBasedCharacterDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset, _ = construct_charset()
+	charset = construct_charset()
 
 	train_test_ratio = 0.8
 	batch_size = 64
@@ -709,8 +710,7 @@ def SimpleWordDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset, font_list = construct_charset()
-	wordset = construct_word_set()
+	charset, wordset, font_list = construct_charset(), construct_word_set(), construct_font()
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	max_word_len = None  # Use max. word length.
@@ -799,7 +799,7 @@ def RandomWordDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset, font_list = construct_charset()
+	charset, font_list = construct_charset(), construct_font()
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	max_word_len = None  # Use max. word length.
@@ -890,7 +890,7 @@ def FileBasedWordDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset, _ = construct_charset()
+	charset = construct_charset()
 
 	max_word_len = 30
 	train_test_ratio = 0.8
@@ -1003,9 +1003,8 @@ def SimpleTextLineDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset, font_list = construct_charset()
+	charset, wordset, font_list = construct_charset(), construct_word_set(), construct_font()
 	charset += ' '  # Add space character.
-	wordset = construct_word_set()
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	max_textline_len = 80

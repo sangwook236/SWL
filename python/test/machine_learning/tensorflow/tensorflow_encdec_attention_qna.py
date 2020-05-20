@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 np.random.seed(0)
 tf.set_random_seed(1234)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def infer(x, y, batch_size, is_training, num_input_digits=None, num_output_digits=None, num_hidden=None, num_out=None):
 	def weight_variable(shape):
@@ -112,7 +112,7 @@ def train(loss, learning_rate, global_step=None):
 	train_step = optimizer.minimize(loss, global_step=global_step)
 	return train_step
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Prepare dataset.
 
 def generate_number(max_digits=3):
@@ -168,7 +168,7 @@ for i in range(num_examples):
 
 X_train, X_validation, Y_train, Y_validation = train_test_split(X, Y, train_size=num_train_examples)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Build a model.
 
 num_in = len(chars)  # 12.
@@ -209,7 +209,7 @@ test_summary_writer = tf.summary.FileWriter(test_summary_dir_path)
 saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 """
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Build a model.
 
 num_epochs = 200
@@ -291,7 +291,7 @@ with tf.Session() as sess:
 				print('F')
 		print('-' * 10)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Visualize.
 
 loss = history['val_loss']

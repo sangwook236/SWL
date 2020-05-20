@@ -591,9 +591,9 @@ def main():
 			if False:
 				# Initialize model weights.
 				for name, param in model.named_parameters():
-					if 'variable_name' in name:
-						logger.info(f'Skip {name} as it is already initialized.')
-						continue
+					#if 'initialized_variable_name' in name:
+					#	logger.info(f'Skip {name} as it is already initialized.')
+					#	continue
 					try:
 						if 'bias' in name:
 							torch.nn.init.constant_(param, 0.0)

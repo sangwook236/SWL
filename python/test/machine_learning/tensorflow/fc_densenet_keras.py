@@ -2,7 +2,7 @@ import densenet_fc as dc
 import tensorflow as tf
 from simple_neural_net import SimpleNeuralNet
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class FcDenseNetUsingKeras(SimpleNeuralNet):
 	def __init__(self, input_shape, output_shape):

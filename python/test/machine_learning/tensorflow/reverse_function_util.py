@@ -2,7 +2,7 @@ import numpy as np
 import keras
 from random import choice, randrange
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # REF [site] >> https://talbaumel.github.io/attention/
 
 class ReverseFunctionDataset(object):

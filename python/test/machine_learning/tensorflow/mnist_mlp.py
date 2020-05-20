@@ -2,7 +2,7 @@ import tensorflow as tf
 import math
 from swl.machine_learning.tensorflow.simple_neural_net import SimpleNeuralNet
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class MnistMLP(SimpleNeuralNet):
 	def __init__(self, input_shape, output_shape, model_type, max_neuron_count):

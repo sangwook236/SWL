@@ -392,14 +392,14 @@ class SimpleWordDataset(TextDatasetBase):
 #--------------------------------------------------------------------
 
 class RandomWordDataset(TextDatasetBase):
-	def __init__(self, label_converter, chars, num_examples, image_channel, max_word_len, char_len_interval, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None):
+	def __init__(self, label_converter, chars, num_examples, image_channel, max_word_len, word_len_interval, fonts, font_size_interval, color_functor=None, transform=None, target_transform=None):
 		super().__init__(label_converter)
 
 		self.chars = chars
 		self.num_examples = num_examples
 		self.image_channel = image_channel
-		self.max_word_len = min(max_word_len, char_len_interval[1]) if max_word_len else char_len_interval[1]
-		self.char_len_interval = char_len_interval
+		self.max_word_len = min(max_word_len, word_len_interval[1]) if max_word_len else word_len_interval[1]
+		self.word_len_interval = word_len_interval
 		self.fonts = fonts
 		self.font_size_interval = font_size_interval
 		self.transform = transform
@@ -421,9 +421,9 @@ class RandomWordDataset(TextDatasetBase):
 		return self.num_examples
 
 	def __getitem__(self, idx):
-		char_len = random.randint(*self.char_len_interval)
-		#word = ''.join(random.sample(self.chars, char_len))[:self.max_word_len]
-		word = ''.join(random.choice(self.chars) for _ in range(char_len))[:self.max_word_len]
+		word_len = random.randint(*self.word_len_interval)
+		#word = ''.join(random.sample(self.chars, word_len))[:self.max_word_len]
+		word = ''.join(random.choice(self.chars) for _ in range(word_len))[:self.max_word_len]
 		target = [self.label_converter.fill_value] * (self.max_word_len + self.label_converter.num_affixes)
 		#target[:len(word)] = self.label_converter.encode(word)  # Undecorated integer label.
 		word_int_ext = self.label_converter.encode(word)  # Decorated/undecorated integer label.

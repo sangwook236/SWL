@@ -2,7 +2,7 @@ import abc
 import numpy as np
 import tensorflow as tf
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class Synth90kCrnn(abc.ABC):
 	def __init__(self, input_tensor_ph, output_tensor_ph, batch_size_ph, image_height, image_width, image_channel, num_classes):
@@ -191,7 +191,7 @@ class Synth90kCrnn(abc.ABC):
 		return tf.nn.rnn_cell.LSTMCell(num_units, initializer=tf.variance_scaling_initializer(scale=2.0, mode='fan_in', distribution='truncated_normal'), forget_bias=1.0, name=name)
 		#return tf.nn.rnn_cell.GRUCell(num_units, kernel_initializer=tf.variance_scaling_initializer(scale=2.0, mode='fan_in', distribution='truncated_normal'), name=name)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class Synth90kCrnnWithCrossEntropyLoss(Synth90kCrnn):
 	def __init__(self, image_height, image_width, image_channel, num_classes):
@@ -231,7 +231,7 @@ class Synth90kCrnnWithCrossEntropyLoss(Synth90kCrnn):
 	def _get_final_output(self, logits, seq_lens):
 		return logits, logits, seq_lens
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class Synth90kCrnnWithCtcLoss(Synth90kCrnn):
 	def __init__(self, image_height, image_width, image_channel, num_classes, eos_token=-1):

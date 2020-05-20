@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from swl.machine_learning.tensorflow.simple_neural_net import SimpleSeq2SeqNeuralNet
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 	def __init__(self, encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, is_bidirectional=True, is_time_major=False):

@@ -5,7 +5,7 @@ from swl.machine_learning.util import to_one_hot_encoding
 import os, json
 from PIL import Image
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class RdaPlantDataset(object):
 	@staticmethod

@@ -2,7 +2,7 @@ import abc
 import numpy as np
 import tensorflow as tf
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class MnistCRNN(abc.ABC):
 	def __init__(self, input_tensor_ph, output_tensor_ph, input_seq_lens_ph, batch_size_ph, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=False):
@@ -206,7 +206,7 @@ class MnistCRNN(abc.ABC):
 	def _get_final_output(self, logits, seq_lens):
 		raise NotImplementedError
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class MnistCrnnWithCrossEntropyLoss(MnistCRNN):
 	def __init__(self, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=False):
@@ -256,7 +256,7 @@ class MnistCrnnWithCrossEntropyLoss(MnistCRNN):
 	def _get_final_output(self, logits, seq_lens):
 		return logits, logits
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class MnistCrnnWithCtcLoss(MnistCRNN):
 	def __init__(self, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=False, eos_token=-1):

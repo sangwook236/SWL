@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 np.random.seed(0)
 tf.set_random_seed(1234)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Load datasets.
 
 mnist = datasets.fetch_mldata('MNIST original', data_home='.')
@@ -47,7 +47,7 @@ Y = np.eye(10)[y.astype(int)]  # One-hot encoding.
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, train_size=num_train_examples)
 X_train, X_validation, Y_train, Y_validation = train_test_split(X_train, Y_train, test_size=num_val_examples)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def infer(x, num_in, num_time, num_hidden, num_out):
 	def weight_variable(shape):
@@ -111,7 +111,7 @@ class EarlyStopping():
 
 		return False
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 num_in = 28
 num_time = 28
@@ -149,7 +149,7 @@ saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
 early_stopping = EarlyStopping(patience=10, verbose=1)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 num_epoches = 300
 batch_size = 250
@@ -191,7 +191,7 @@ with tf.Session() as sess:
 	accuracy_rate = accuracy.eval(session=sess, feed_dict={x_ph: X_test, t_ph: Y_test})
 	print('accuracy: ', accuracy_rate)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Visualize.
 
 loss = history['val_loss']

@@ -2,7 +2,7 @@ import tensorflow as tf
 from swl.machine_learning.tensorflow.simple_neural_net import SimpleNeuralNet
 from swl.machine_learning.tensorflow.attention_mechanism import BahdanauAttentionMechanism, LuongAttentionMechanism
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class SimpleEncoderDecoderWithAttention(SimpleNeuralNet):
 	def __init__(self, input_shape, output_shape, is_dynamic=True, is_bidirectional=True, is_time_major=False):

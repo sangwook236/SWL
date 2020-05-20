@@ -26,7 +26,7 @@ import matplotlib.pyplot as plt
 np.random.seed(0)
 tf.set_random_seed(1234)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def infer(x, q, batch_size, vocab_size=None, embedding_dim=None, story_maxlen=None, question_maxlen=None):
 	def weight_variable(shape, stddev=0.08):
@@ -168,7 +168,7 @@ def get_file(filename, url=None, datadir=None):
 
 	return fpath
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Prepare dataset.
 
 print('Fetching data...')
@@ -198,7 +198,7 @@ inputs_train, questions_train, answers_train = vectorize_stories(train_stories, 
 
 inputs_test, questions_test, answers_test = vectorize_stories(test_stories, word_indices, story_maxlen, question_maxlen)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Build a model.
 
 print('Building model...')
@@ -233,7 +233,7 @@ test_summary_writer = tf.summary.FileWriter(test_summary_dir_path)
 saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 """
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Build a model.
 
 print('Training model...')
@@ -283,7 +283,7 @@ with tf.Session() as sess:
 		history['val_acc'].append(val_acc)
 		print('epoch:', epoch, ' validation loss:', val_loss, ' validation accuracy:', val_acc)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Visualize.
 
 loss = history['val_loss']

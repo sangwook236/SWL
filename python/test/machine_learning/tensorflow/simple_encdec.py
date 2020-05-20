@@ -1,7 +1,7 @@
 import tensorflow as tf
 from swl.machine_learning.tensorflow.simple_neural_net import SimpleNeuralNet
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class SimpleEncoderDecoder(SimpleNeuralNet):
 	def __init__(self, input_shape, output_shape, is_dynamic=True, is_bidirectional=True, is_time_major=False):

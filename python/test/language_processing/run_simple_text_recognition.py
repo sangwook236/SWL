@@ -29,20 +29,6 @@ def load_model(model_filepath, model, device='cpu'):
 	return model
 
 def construct_charset():
-	if 'posix' == os.name:
-		system_font_dir_path = '/usr/share/fonts'
-		font_base_dir_path = '/home/sangwook/work/font'
-	else:
-		system_font_dir_path = 'C:/Windows/Fonts'
-		font_base_dir_path = 'D:/work/font'
-	font_dir_path = font_base_dir_path + '/kor'
-	#font_dir_path = font_base_dir_path + '/eng'
-
-	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
-	#font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-	font_list = tg_util.generate_font_list(font_filepaths)
-
-	#--------------------
 	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
 	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
 	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
@@ -64,7 +50,7 @@ def construct_charset():
 
 	#charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset + hangeul_jamo_charset
 	charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset
-	return charset, font_list
+	return charset
 
 def construct_word_set():
 	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
@@ -91,6 +77,22 @@ def construct_word_set():
 	#return set(korean_words)
 	#return set(english_words)
 	return set(korean_words + english_words)
+
+def construct_font():
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		font_base_dir_path = '/home/sangwook/work/font'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_base_dir_path = 'D:/work/font'
+	font_dir_path = font_base_dir_path + '/kor'
+	#font_dir_path = font_base_dir_path + '/eng'
+
+	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+	#font_list = tg_util.generate_hangeul_font_list(font_filepaths)
+	font_list = tg_util.generate_font_list(font_filepaths)
+
+	return font_list
 
 def create_char_augmenter():
 	#import imgaug as ia
@@ -558,7 +560,7 @@ def create_mixed_char_data_loaders(label_converter, charset, num_simple_char_exa
 
 	return train_dataloader, test_dataloader
 
-def create_word_data_loaders(label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers):
+def create_word_data_loaders(label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers):
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(create_word_augmenter()),
@@ -588,8 +590,8 @@ def create_word_data_loaders(label_converter, wordset, chars, num_train_examples
 		train_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_train_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
 		test_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_test_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
 	elif False:
-		train_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, max_word_len, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
-		test_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, max_word_len, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
+		train_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
+		test_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
 	else:
 		if 'posix' == os.name:
 			data_base_dir_path = '/home/sangwook/work/dataset'
@@ -632,7 +634,7 @@ def create_word_data_loaders(label_converter, wordset, chars, num_train_examples
 
 	return train_dataloader, test_dataloader
 
-def create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers):
+def create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers):
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(create_word_augmenter()),
@@ -667,7 +669,7 @@ def create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_e
 	if True:
 		datasets.append(text_data.SimpleWordDataset(label_converter, wordset, num_simple_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor))
 	if True:
-		datasets.append(text_data.RandomWordDataset(label_converter, chars, num_random_examples, image_channel, max_word_len, char_len_interval, font_list, font_size_interval, color_functor=color_functor))
+		datasets.append(text_data.RandomWordDataset(label_converter, chars, num_random_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor))
 	if True:
 		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
@@ -708,15 +710,22 @@ def create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_e
 
 	return train_dataloader, test_dataloader
 
+def show_image(img):
+	img = img / 2 + 0.5  # Unnormalize.
+	npimg = img.numpy()
+	plt.imshow(np.transpose(npimg, (1, 2, 0)))
+	plt.show()
+
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 def recognize_character():
 	image_height, image_width, image_channel = 64, 64, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
 
-	charset, font_list = construct_charset()
+	charset, font_list = construct_charset(), construct_font()
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
 	num_simple_char_examples_per_class, num_noisy_examples_per_class = 300, 300
@@ -738,47 +747,36 @@ def recognize_character():
 	model_filepath = './simple_char_recognition.pth'
 
 	#--------------------
+	# Prepare data.
+
 	label_converter = swl_langproc_util.TokenConverter(list(charset))
 	#train_dataloader, test_dataloader = create_char_data_loaders(label_converter, charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_clipping_ratio_interval, color_functor, batch_size, shuffle, num_workers)
 	train_dataloader, test_dataloader = create_mixed_char_data_loaders(label_converter, charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_clipping_ratio_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
 
-	def imshow(img):
-		img = img / 2 + 0.5  # Unnormalize.
-		npimg = img.numpy()
-		plt.imshow(np.transpose(npimg, (1, 2, 0)))
-		plt.show()
-
-	# Get some random training images.
-	dataiter = iter(train_dataloader)
-	images, labels = dataiter.next()
-
 	if False:
+		# Get some random training images.
+		dataiter = iter(train_dataloader)
+		images, labels = dataiter.next()
+
 		# Print labels.
-		print('Labels:', ' '.join(label_converter.decode(labels)))
+		print('Labels: {}.'.format(' '.join(label_converter.decode(labels))))
 		# Show images.
-		imshow(torchvision.utils.make_grid(images))
+		show_image(torchvision.utils.make_grid(images))
 
 	#--------------------
 	# Define a convolutional neural network.
 
-	if False:
-		import rare.model_char
-		model = rare.model_char.create_vgg(input_channel, output_channel, num_classes=num_classes)
-	elif True:
-		import rare.model_char
-		model = rare.model_char.create_resnet(input_channel, output_channel, num_classes=num_classes)
-	elif False:
-		import rare.model_char
-		model = rare.model_char.create_rcnn(input_channel, output_channel, num_classes=num_classes)
+	import rare.model_char
+	model = rare.model_char.create_model(model_name, input_channel, output_channel, num_classes)
 
 	if False:
 		# Initialize model weights.
 		for name, param in model.named_parameters():
-			if 'variable_name' in name:
-				print(f'Skip {name} as it is already initialized.')
-				continue
+			#if 'initialized_variable_name' in name:
+			#	print(f'Skip {name} as it is already initialized.')
+			#	continue
 			try:
 				if 'bias' in name:
 					torch.nn.init.constant_(param, 0.0)
@@ -794,32 +792,32 @@ def recognize_character():
 
 	model = model.to(device)
 
-	if False:
-		# Filter model parameters only that require gradients.
-		model_params, num_model_params = [], []
-		for p in filter(lambda p: p.requires_grad, model.parameters()):
-			model_params.append(p)
-			num_model_params.append(np.prod(p.size()))
-		print('#trainable model parameters = {}.'.format(sum(num_model_params)))
-		#print('Trainable model parameters:')
-		#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
-	else:
-		model_params = model.parameters()
-
-	#--------------------
-	# Define a loss function and optimizer.
-
-	criterion = torch.nn.CrossEntropyLoss().to(device)
-	optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
-	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
-
 	#--------------------
 	# Train the network.
 
 	if True:
+		if False:
+			# Filter model parameters only that require gradients.
+			model_params, num_model_params = [], []
+			for p in filter(lambda p: p.requires_grad, model.parameters()):
+				model_params.append(p)
+				num_model_params.append(np.prod(p.size()))
+			print('#trainable model parameters = {}.'.format(sum(num_model_params)))
+			#print('Trainable model parameters:')
+			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+		else:
+			model_params = model.parameters()
+
+		# Define a loss function and optimizer.
+		criterion = torch.nn.CrossEntropyLoss().to(device)
+		optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
+		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+
+		#--------------------
+		model.train()
+
 		print('Start training...')
 		start_total_time = time.time()
-		model.train()
 		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
 			start_time = time.time()
 			running_loss = 0.0
@@ -838,9 +836,9 @@ def recognize_character():
 				# Print statistics.
 				running_loss += loss.item()
 				if i % log_print_freq == (log_print_freq - 1):
-					print('[{}, {:5d}] loss = {:.3f}: {} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
+					print('[{}, {:5d}] loss = {:.3f}: {:.3f} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
 					running_loss = 0.0
-			print('Epoch {}: {} secs.'.format(epoch + 1, time.time() - start_time))
+			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			#scheduler.step()
 
@@ -854,6 +852,8 @@ def recognize_character():
 	#--------------------
 	# Test the network on the test data.
 
+	model.eval()
+
 	if False:
 		dataiter = iter(test_dataloader)
 		images, labels = dataiter.next()
@@ -861,10 +861,9 @@ def recognize_character():
 		# Print ground truths.
 		print('Ground truth: {}.'.format(' '.join(label_converter.decode(labels))))
 		# Show images.
-		#imshow(torchvision.utils.make_grid(images))
+		#show_image(torchvision.utils.make_grid(images))
 
 		# Now let us see what the neural network thinks these examples above are.
-		model.eval()
 		with torch.no_grad():
 			outputs = model(images.to(device))
 
@@ -882,7 +881,7 @@ def recognize_character():
 			total += labels.size(0)
 			correct += (predictions == labels).sum().item()
 
-	print('Accuracy of the network on the test images: {} %%.'.format(100 * correct / total))
+	print('Accuracy of the network on the test images = {} %.'.format(100 * correct / total))
 
 	# What are the classes that performed well, and the classes that did not perform well.
 	class_correct = list(0 for i in range(num_classes))
@@ -899,7 +898,7 @@ def recognize_character():
 				class_total[label] += 1
 
 	#for i in range(num_classes):
-	#	print('Accuracy of %5s : %2d %%.' % (classes[i], 100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1))
+	#	print('Accuracy of {:5s} = {:2d} %.'.format(classes[i], 100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1))
 	accuracies = [100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1 for i in range(num_classes)]
 	#print('Accuracy: {}.'.format(accuracies))
 	hist, bin_edges = np.histogram(accuracies, bins=range(-1, 101), density=False)
@@ -917,9 +916,10 @@ def recognize_character_using_mixup():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
 
-	charset, font_list = construct_charset()
+	charset, font_list = construct_charset(), construct_font()
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
 	num_simple_char_examples_per_class, num_noisy_examples_per_class = 300, 300
@@ -944,48 +944,37 @@ def recognize_character_using_mixup():
 	model_filepath = './simple_char_recognition_mixup.pth'
 
 	#--------------------
+	# Prepare data.
+
 	label_converter = swl_langproc_util.TokenConverter(list(charset))
 	#train_dataloader, test_dataloader = create_char_data_loaders(label_converter, charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_clipping_ratio_interval, color_functor, batch_size, shuffle, num_workers)
 	train_dataloader, test_dataloader = create_mixed_char_data_loaders(label_converter, charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_clipping_ratio_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
 
-	def imshow(img):
-		img = img / 2 + 0.5  # Unnormalize.
-		npimg = img.numpy()
-		plt.imshow(np.transpose(npimg, (1, 2, 0)))
-		plt.show()
-
-	# Get some random training images.
-	dataiter = iter(train_dataloader)
-	images, labels = dataiter.next()
-
 	if False:
+		# Get some random training images.
+		dataiter = iter(train_dataloader)
+		images, labels = dataiter.next()
+
 		# Print labels.
-		print('Labels:', ' '.join(label_converter.decode(labels)))
+		print('Labels: {}.'.format(' '.join(label_converter.decode(labels))))
 		# Show images.
-		imshow(torchvision.utils.make_grid(images))
+		show_image(torchvision.utils.make_grid(images))
 
 	#--------------------
 	# Define a convolutional neural network.
 
 	# REF [function] >> mnist_predefined_mixup_test() in ${SWL_PYTHON_HOME}/test/machine_learning/pytorch/run_mnist_cnn.py.
-	if False:
-		import rare.model_char
-		model = rare.model_char.create_vgg_mixup(input_channel, output_channel, num_classes=num_classes)
-	elif True:
-		import rare.model_char
-		model = rare.model_char.create_resnet_mixup(input_channel, output_channel, num_classes=num_classes)
-	elif False:
-		import rare.model_char
-		model = rare.model_char.create_rcnn_mixup(input_channel, output_channel, num_classes=num_classes)
+	import rare.model_char
+	model = rare.model_char.create_mixup_model(model_name, input_channel, output_channel, num_classes)
 
 	if False:
 		# Initialize model weights.
 		for name, param in model.named_parameters():
-			if 'variable_name' in name:
-				print(f'Skip {name} as it is already initialized.')
-				continue
+			#if 'initialized_variable_name' in name:
+			#	print(f'Skip {name} as it is already initialized.')
+			#	continue
 			try:
 				if 'bias' in name:
 					torch.nn.init.constant_(param, 0.0)
@@ -1001,32 +990,32 @@ def recognize_character_using_mixup():
 
 	model = model.to(device)
 
-	if False:
-		# Filter model parameters only that require gradients.
-		model_params, num_model_params = [], []
-		for p in filter(lambda p: p.requires_grad, model.parameters()):
-			model_params.append(p)
-			num_model_params.append(np.prod(p.size()))
-		print('#trainable model parameters = {}.'.format(sum(num_model_params)))
-		#print('Trainable model parameters:')
-		#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
-	else:
-		model_params = model.parameters()
-
-	#--------------------
-	# Define a loss function and optimizer.
-
-	criterion = torch.nn.CrossEntropyLoss().to(device)
-	optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
-	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
-
 	#--------------------
 	# Train the network.
 
 	if True:
+		if False:
+			# Filter model parameters only that require gradients.
+			model_params, num_model_params = [], []
+			for p in filter(lambda p: p.requires_grad, model.parameters()):
+				model_params.append(p)
+				num_model_params.append(np.prod(p.size()))
+			print('#trainable model parameters = {}.'.format(sum(num_model_params)))
+			#print('Trainable model parameters:')
+			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+		else:
+			model_params = model.parameters()
+
+		# Define a loss function and optimizer.
+		criterion = torch.nn.CrossEntropyLoss().to(device)
+		optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
+		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+
+		#--------------------
+		model.train()
+
 		print('Start training...')
 		start_total_time = time.time()
-		model.train()
 		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
 			start_time = time.time()
 			running_loss = 0.0
@@ -1045,9 +1034,9 @@ def recognize_character_using_mixup():
 				# Print statistics.
 				running_loss += loss.item()
 				if i % log_print_freq == (log_print_freq - 1):
-					print('[{}, {:5d}] loss = {:.3f}: {} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
+					print('[{}, {:5d}] loss = {:.3f}: {:.3f} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
 					running_loss = 0.0
-			print('Epoch {}: {} secs.'.format(epoch + 1, time.time() - start_time))
+			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			#scheduler.step()
 
@@ -1061,6 +1050,8 @@ def recognize_character_using_mixup():
 	#--------------------
 	# Test the network on the test data.
 
+	model.eval()
+
 	if False:
 		dataiter = iter(test_dataloader)
 		images, labels = dataiter.next()
@@ -1068,10 +1059,9 @@ def recognize_character_using_mixup():
 		# Print ground truths.
 		print('Ground truth: {}.'.format(' '.join(label_converter.decode(labels))))
 		# Show images.
-		#imshow(torchvision.utils.make_grid(images))
+		#show_image(torchvision.utils.make_grid(images))
 
 		# Now let us see what the neural network thinks these examples above are.
-		model.eval()
 		with torch.no_grad():
 			outputs = model(images.to(device))
 
@@ -1089,7 +1079,7 @@ def recognize_character_using_mixup():
 			total += labels.size(0)
 			correct += (predictions == labels).sum().item()
 
-	print('Accuracy of the network on the test images: {} %%.'.format(100 * correct / total))
+	print('Accuracy of the network on the test images = {} %.'.format(100 * correct / total))
 
 	# What are the classes that performed well, and the classes that did not perform well.
 	class_correct = list(0 for i in range(num_classes))
@@ -1106,7 +1096,7 @@ def recognize_character_using_mixup():
 				class_total[label] += 1
 
 	#for i in range(num_classes):
-	#	print('Accuracy of %5s : %2d %%.' % (classes[i], 100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1))
+	#	print('Accuracy of {:5s} = {:2d} %.'.format(classes[i], 100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1))
 	accuracies = [100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1 for i in range(num_classes)]
 	#print('Accuracy: {}.'.format(accuracies))
 	hist, bin_edges = np.histogram(accuracies, bins=range(-1, 101), density=False)
@@ -1134,14 +1124,13 @@ def recognize_word():
 	transformer = 'TPS'  # The type of transformer. {None, 'TPS'}.
 	feature_extracter = 'VGG'  # The type of feature extracter. {'VGG', 'RCNN', 'ResNet'}.
 	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
-	predictor = 'Attn'  # The type of predictor. {'CTC', 'Attn'}.
+	decoder = 'Attn'  # The type of decoder. {'CTC', 'Attn'}.
 
-	charset, font_list = construct_charset()
-	wordset = construct_word_set()
+	charset, wordset, font_list = construct_charset(), construct_word_set(), construct_font()
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	num_simple_examples, num_random_examples = int(1e4), int(1e4)
-	char_len_interval = (1, max_word_len)
+	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
@@ -1159,45 +1148,45 @@ def recognize_word():
 	model_filepath = './simple_word_recognition.pth'
 
 	#--------------------
-	if predictor == 'CTC':
-		BLANK_LABEL = '<BLANK>'  # Blank label for CTC.
-		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), fill_value=None)
+	# Prepare data.
+
+	if decoder == 'CTC':
+		BLANK_LABEL = '<BLANK>'  # The BLANK label for CTC.
+		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), fill_value=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
 		assert label_converter.encode([BLANK_LABEL])[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL])[0])
 		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL])[0]
+		SOS_VALUE, FILL_VALUE = None, None
+		num_suffixes = 0
 	else:
-		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick.
+		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick. The ID of a valid token is used as the fill value.
 		FILL_TOKEN = '<FILL>'
 		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=FILL_VALUE)
 		#assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
 		assert label_converter.encode([FILL_TOKEN])[1] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN])[1], FILL_VALUE)
+		SOS_VALUE = label_converter.encode([label_converter.SOS])[1]
+		num_suffixes = 1
 
 	chars = charset  # Can make the number of each character different.
-	#train_dataloader, test_dataloader = create_word_data_loaders(label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers)
-	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers)
+	#train_dataloader, test_dataloader = create_word_data_loaders(label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
+	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
 
-	def imshow(img):
-		img = img / 2 + 0.5  # Unnormalize.
-		npimg = img.numpy()
-		plt.imshow(np.transpose(npimg, (1, 2, 0)))
-		plt.show()
-
-	# Get some random training images.
-	dataiter = iter(train_dataloader)
-	images, labels, _ = dataiter.next()
-
 	if False:
+		# Get some random training images.
+		dataiter = iter(train_dataloader)
+		images, labels, _ = dataiter.next()
+
 		# Print labels.
-		print('Labels:', ' '.join([label_converter.decode(lbl) for lbl in labels]))
+		print('Labels: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels])))
 		# Show images.
-		imshow(torchvision.utils.make_grid(images))
+		show_image(torchvision.utils.make_grid(images))
 
 	#--------------------
 	# Define a model.
 
 	import rare.model
-	model = rare.model.Model(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, label_converter.num_affixes, label_converter.fill_value, transformer, feature_extracter, sequence_model, predictor)
+	model = rare.model.Model(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, num_suffixes, SOS_VALUE, label_converter.fill_value, transformer, feature_extracter, sequence_model, decoder)
 
 	if True:
 		# Initialize model weights.
@@ -1220,65 +1209,62 @@ def recognize_word():
 
 	model = model.to(device)
 
-	if True:
-		# Filter model parameters only that require gradients.
-		model_params, num_model_params = [], []
-		for p in filter(lambda p: p.requires_grad, model.parameters()):
-			model_params.append(p)
-			num_model_params.append(np.prod(p.size()))
-		print('#trainable model parameters = {}.'.format(sum(num_model_params)))
-		#print('Trainable model parameters:')
-		#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
-	else:
-		model_params = model.parameters()
-
-	#--------------------
-	# Define a loss function and optimizer.
-
-	if predictor == 'CTC':
-		criterion = torch.nn.CTCLoss(blank=BLANK_LABEL_INT, zero_infinity=True).to(device)  # Blank label <BLANK>.
-		def forward(batch, device):
-			inputs, outputs, output_lens = batch
-			inputs, outputs, output_lens = inputs.to(device), outputs.to(device), output_lens.to(device)
-			model_outputs = model(inputs, None, is_train=True, device=device).log_softmax(2)
-			N, T = model_outputs.shape[:2]
-			model_outputs = model_outputs.permute(1, 0, 2)  # (N, T, C) -> (T, N, C).
-			model_output_lens = torch.full([N], T, dtype=torch.int32, device=device)
-
-			# TODO [check] >> To avoid CTC loss issue, disable cuDNN for the computation of the CTC loss.
-			# https://github.com/jpuigcerver/PyLaia/issues/16
-			torch.backends.cudnn.enabled = False
-			cost = criterion(model_outputs, outputs, model_output_lens, output_lens)
-			torch.backends.cudnn.enabled = True
-			return cost
-	else:
-		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
-		def forward(batch, device):
-			inputs, outputs, _ = batch
-			inputs, outputs = inputs.to(device), outputs.to(device)
-
-			outputs = outputs.long()
-			# FIXME [fix] >> Delete?
-			#outputs1 = outputs[:,:-1]  # Align with Attention.forward().
-			outputs1 = outputs
-			#outputs2 = outputs[:,1:]  # Remove <SOS> token.
-			outputs2 = outputs
-
-			model_outputs = model(inputs, outputs1, is_train=True, device=device)
-			# FIXME [fix] >> All examples in a batch are combined together. Can each example be handled individually?
-			return criterion(model_outputs.view(-1, model_outputs.shape[-1]), outputs2.contiguous().view(-1))
-	#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
-	optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
-	#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
-	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
-
 	#--------------------
 	# Train the network.
 
 	if True:
+		if True:
+			# Filter model parameters only that require gradients.
+			model_params, num_model_params = [], []
+			for p in filter(lambda p: p.requires_grad, model.parameters()):
+				model_params.append(p)
+				num_model_params.append(np.prod(p.size()))
+			print('#trainable model parameters = {}.'.format(sum(num_model_params)))
+			#print('Trainable model parameters:')
+			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+		else:
+			model_params = model.parameters()
+
+		# Define a loss function and optimizer.
+		if decoder == 'CTC':
+			criterion = torch.nn.CTCLoss(blank=BLANK_LABEL_INT, zero_infinity=True).to(device)  # The BLANK label.
+			def forward(batch, device):
+				inputs, outputs, output_lens = batch
+				inputs, outputs, output_lens = inputs.to(device), outputs.to(device), output_lens.to(device)
+				model_outputs = model(inputs, None, is_train=True, device=device).log_softmax(2)
+				N, T = model_outputs.shape[:2]
+				model_outputs = model_outputs.permute(1, 0, 2)  # (N, T, C) -> (T, N, C).
+				model_output_lens = torch.full([N], T, dtype=torch.int32, device=device)
+
+				# TODO [check] >> To avoid CTC loss issue, disable cuDNN for the computation of the CTC loss.
+				# https://github.com/jpuigcerver/PyLaia/issues/16
+				torch.backends.cudnn.enabled = False
+				cost = criterion(model_outputs, outputs, model_output_lens, output_lens)
+				torch.backends.cudnn.enabled = True
+				return cost
+		else:
+			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
+			def forward(batch, device):
+				inputs, outputs, _ = batch
+				inputs, outputs = inputs.to(device), outputs.to(device)
+
+				outputs = outputs.long()
+				outputs1 = outputs[:,:-1]  # Construct inputs for one-step look-ahead.
+				outputs2 = outputs[:,1:]  # Remove <SOS> token to construct outputs for one-step look-ahead.
+
+				model_outputs = model(inputs, outputs1, is_train=True, device=device)
+				# FIXME [fix] >> All examples in a batch are combined together. Can each example be handled individually?
+				return criterion(model_outputs.view(-1, model_outputs.shape[-1]), outputs2.contiguous().view(-1))
+		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
+		optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
+		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
+		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+
+		#--------------------
+		model.train()
+
 		print('Start training...')
 		start_total_time = time.time()
-		model.train()
 		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
 			start_time = time.time()
 			running_loss = 0.0
@@ -1295,9 +1281,9 @@ def recognize_word():
 				# Print statistics.
 				running_loss += loss.item()
 				if i % log_print_freq == (log_print_freq - 1):
-					print('[{}, {:5d}] loss = {:.3f}: {} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
+					print('[{}, {:5d}] loss = {:.3f}: {:.3f} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
 					running_loss = 0.0
-			print('Epoch {}: {} secs.'.format(epoch + 1, time.time() - start_time))
+			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			#scheduler.step()
 
@@ -1311,6 +1297,8 @@ def recognize_word():
 	#--------------------
 	# Test the network on the test data.
 
+	model.eval()
+
 	if False:
 		dataiter = iter(test_dataloader)
 		images, labels, _ = dataiter.next()
@@ -1318,10 +1306,9 @@ def recognize_word():
 		# Print ground truths.
 		print('Ground truth: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels])))
 		# Show images.
-		#imshow(torchvision.utils.make_grid(images))
+		#show_image(torchvision.utils.make_grid(images))
 
 		# Now let us see what the neural network thinks these examples above are.
-		model.eval()
 		with torch.no_grad():
 			predictions = model(images.to(device), device=device)
 
@@ -1340,7 +1327,7 @@ def recognize_word():
 			total += labels.size(0)
 			correct += (predictions == labels).sum().item()
 
-	print('Accuracy of the network on the test images: {} %%.'.format(100 * correct / total))
+	print('Accuracy of the network on the test images = {} %.'.format(100 * correct / total))
 
 	# What are the classes that performed well, and the classes that did not perform well.
 	class_correct = list(0 for i in range(num_classes))
@@ -1357,7 +1344,7 @@ def recognize_word():
 				class_total[label] += 1
 
 	#for i in range(num_classes):
-	#	print('Accuracy of %5s : %2d %%.' % (classes[i], 100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1))
+	#	print('Accuracy of {:5s} = {:2d} %.'.format(classes[i], 100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1))
 	accuracies = [100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1 for i in range(num_classes)]
 	#print('Accuracy: {}.'.format(accuracies))
 	hist, bin_edges = np.histogram(accuracies, bins=range(-1, 101), density=False)
@@ -1385,14 +1372,13 @@ def recognize_word_using_mixup():
 	transformer = 'TPS'  # The type of transformer. {None, 'TPS'}.
 	feature_extracter = 'VGG'  # The type of feature extracter. {'VGG', 'RCNN', 'ResNet'}.
 	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
-	predictor = 'Attn'  # The type of predictor. {'CTC', 'Attn'}.
+	decoder = 'Attn'  # The type of decoder. {'CTC', 'Attn'}.
 
-	charset, font_list = construct_charset()
-	wordset = construct_word_set()
+	charset, wordset, font_list = construct_charset(), construct_word_set(), construct_font()
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	num_simple_examples, num_random_examples = int(1e4), int(1e4)
-	char_len_interval = (1, max_word_len)
+	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
@@ -1413,46 +1399,46 @@ def recognize_word_using_mixup():
 	model_filepath = './simple_word_recognition_mixup.pth'
 
 	#--------------------
-	if predictor == 'CTC':
-		BLANK_LABEL = '<BLANK>'  # Blank label for CTC.
-		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), fill_value=None)
+	# Prepare data.
+
+	if decoder == 'CTC':
+		BLANK_LABEL = '<BLANK>'  # The BLANK label for CTC.
+		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), fill_value=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
 		assert label_converter.encode([BLANK_LABEL])[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL])[0])
 		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL])[0]
+		SOS_VALUE, FILL_VALUE = None, None
+		num_suffixes = 0
 	else:
-		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick.
+		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick. The ID of a valid token is used as the fill value.
 		FILL_TOKEN = '<FILL>'
 		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=FILL_VALUE)
 		#assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
 		assert label_converter.encode([FILL_TOKEN])[1] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN])[1], FILL_VALUE)
+		SOS_VALUE = label_converter.encode([label_converter.SOS])[1]
+		num_suffixes = 1
 
 	chars = charset  # Can make the number of each character different.
-	#train_dataloader, test_dataloader = create_word_data_loaders(label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers)
-	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, char_len_interval, color_functor, batch_size, shuffle, num_workers)
+	#train_dataloader, test_dataloader = create_word_data_loaders(label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
+	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
 
-	def imshow(img):
-		img = img / 2 + 0.5  # Unnormalize.
-		npimg = img.numpy()
-		plt.imshow(np.transpose(npimg, (1, 2, 0)))
-		plt.show()
-
-	# Get some random training images.
-	dataiter = iter(train_dataloader)
-	images, labels, _ = dataiter.next()
-
 	if False:
+		# Get some random training images.
+		dataiter = iter(train_dataloader)
+		images, labels, _ = dataiter.next()
+
 		# Print labels.
-		print('Labels:', ' '.join([label_converter.decode(lbl) for lbl in labels]))
+		print('Labels: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels])))
 		# Show images.
-		imshow(torchvision.utils.make_grid(images))
+		show_image(torchvision.utils.make_grid(images))
 
 	#--------------------
 	# Define a model.
 
 	# FIXME [error] >> rare.model.Model_MixUp is not working.
 	import rare.model
-	model = rare.model.Model_MixUp(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, label_converter.num_affixes, label_converter.fill_value, transformer, feature_extracter, sequence_model, predictor)
+	model = rare.model.Model_MixUp(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, num_suffixes, SOS_VALUE, FILL_VALUE, transformer, feature_extracter, sequence_model, decoder)
 
 	if True:
 		# Initialize model weights.
@@ -1475,65 +1461,62 @@ def recognize_word_using_mixup():
 
 	model = model.to(device)
 
-	if True:
-		# Filter model parameters only that require gradients.
-		model_params, num_model_params = [], []
-		for p in filter(lambda p: p.requires_grad, model.parameters()):
-			model_params.append(p)
-			num_model_params.append(np.prod(p.size()))
-		print('#trainable model parameters = {}.'.format(sum(num_model_params)))
-		#print('Trainable model parameters:')
-		#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
-	else:
-		model_params = model.parameters()
-
-	#--------------------
-	# Define a loss function and optimizer.
-
-	if predictor == 'CTC':
-		criterion = torch.nn.CTCLoss(blank=BLANK_LABEL_INT, zero_infinity=True).to(device)  # Blank label <BLANK>.
-		def forward(batch, device):
-			inputs, outputs, output_lens = batch
-			inputs, outputs, output_lens = inputs.to(device), outputs.to(device), output_lens.to(device)
-			model_outputs = model(inputs, None, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, is_train=True, device=device).log_softmax(2)
-			N, T = model_outputs.shape[:2]
-			model_outputs = model_outputs.permute(1, 0, 2)  # (N, T, C) -> (T, N, C).
-			model_output_lens = torch.full([N], T, dtype=torch.int32, device=device)
-
-			# TODO [check] >> To avoid CTC loss issue, disable cuDNN for the computation of the CTC loss.
-			# https://github.com/jpuigcerver/PyLaia/issues/16
-			torch.backends.cudnn.enabled = False
-			cost = criterion(model_outputs, outputs, model_output_lens, output_lens)
-			torch.backends.cudnn.enabled = True
-			return cost
-	else:
-		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
-		def forward(batch, device):
-			inputs, outputs, _ = batch
-			inputs, outputs = inputs.to(device), outputs.to(device)
-
-			outputs = outputs.long()
-			# FIXME [fix] >> Delete?
-			#outputs1 = outputs[:,:-1]  # Align with Attention.forward().
-			outputs1 = outputs
-			#outputs2 = outputs[:,1:]  # Remove <SOS> token.
-			outputs2 = outputs
-
-			model_outputs = model(inputs, outputs1, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, is_train=True, device=device)
-			# FIXME [fix] >> All examples in a batch are combined together. Can each example be handled individually?
-			return criterion(model_outputs.view(-1, model_outputs.shape[-1]), outputs2.contiguous().view(-1))
-	#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
-	optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
-	#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
-	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
-
 	#--------------------
 	# Train the network.
 
 	if True:
+		if True:
+			# Filter model parameters only that require gradients.
+			model_params, num_model_params = [], []
+			for p in filter(lambda p: p.requires_grad, model.parameters()):
+				model_params.append(p)
+				num_model_params.append(np.prod(p.size()))
+			print('#trainable model parameters = {}.'.format(sum(num_model_params)))
+			#print('Trainable model parameters:')
+			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+		else:
+			model_params = model.parameters()
+
+		# Define a loss function and optimizer.
+		if decoder == 'CTC':
+			criterion = torch.nn.CTCLoss(blank=BLANK_LABEL_INT, zero_infinity=True).to(device)  # The BLANK label.
+			def forward(batch, device):
+				inputs, outputs, output_lens = batch
+				inputs, outputs, output_lens = inputs.to(device), outputs.to(device), output_lens.to(device)
+				model_outputs = model(inputs, None, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, is_train=True, device=device).log_softmax(2)
+				N, T = model_outputs.shape[:2]
+				model_outputs = model_outputs.permute(1, 0, 2)  # (N, T, C) -> (T, N, C).
+				model_output_lens = torch.full([N], T, dtype=torch.int32, device=device)
+
+				# TODO [check] >> To avoid CTC loss issue, disable cuDNN for the computation of the CTC loss.
+				# https://github.com/jpuigcerver/PyLaia/issues/16
+				torch.backends.cudnn.enabled = False
+				cost = criterion(model_outputs, outputs, model_output_lens, output_lens)
+				torch.backends.cudnn.enabled = True
+				return cost
+		else:
+			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
+			def forward(batch, device):
+				inputs, outputs, _ = batch
+				inputs, outputs = inputs.to(device), outputs.to(device)
+
+				outputs = outputs.long()
+				outputs1 = outputs[:,:-1]  # Construct inputs for one-step look-ahead.
+				outputs2 = outputs[:,1:]  # Remove <SOS> token to construct outputs for one-step look-ahead.
+
+				model_outputs = model(inputs, outputs1, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, is_train=True, device=device)
+				# FIXME [fix] >> All examples in a batch are combined together. Can each example be handled individually?
+				return criterion(model_outputs.view(-1, model_outputs.shape[-1]), outputs2.contiguous().view(-1))
+		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
+		optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
+		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
+		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+
+		#--------------------
+		model.train()
+
 		print('Start training...')
 		start_total_time = time.time()
-		model.train()
 		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
 			start_time = time.time()
 			running_loss = 0.0
@@ -1550,9 +1533,9 @@ def recognize_word_using_mixup():
 				# Print statistics.
 				running_loss += loss.item()
 				if i % log_print_freq == (log_print_freq - 1):
-					print('[{}, {:5d}] loss = {:.3f}: {} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
+					print('[{}, {:5d}] loss = {:.3f}: {:.3f} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
 					running_loss = 0.0
-			print('Epoch {}: {} secs.'.format(epoch + 1, time.time() - start_time))
+			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			#scheduler.step()
 
@@ -1566,6 +1549,8 @@ def recognize_word_using_mixup():
 	#--------------------
 	# Test the network on the test data.
 
+	model.eval()
+
 	if False:
 		dataiter = iter(test_dataloader)
 		images, labels, _ = dataiter.next()
@@ -1573,10 +1558,9 @@ def recognize_word_using_mixup():
 		# Print ground truths.
 		print('Ground truth: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels])))
 		# Show images.
-		#imshow(torchvision.utils.make_grid(images))
+		#show_image(torchvision.utils.make_grid(images))
 
 		# Now let us see what the neural network thinks these examples above are.
-		model.eval()
 		with torch.no_grad():
 			predictions = model(images.to(device), device=device)
 
@@ -1595,7 +1579,7 @@ def recognize_word_using_mixup():
 			total += labels.size(0)
 			correct += (predictions == labels).sum().item()
 
-	print('Accuracy of the network on the test images: {} %%.'.format(100 * correct / total))
+	print('Accuracy of the network on the test images = {} %.'.format(100 * correct / total))
 
 	# What are the classes that performed well, and the classes that did not perform well.
 	class_correct = list(0 for i in range(num_classes))
@@ -1612,7 +1596,7 @@ def recognize_word_using_mixup():
 				class_total[label] += 1
 
 	#for i in range(num_classes):
-	#	print('Accuracy of %5s : %2d %%.' % (classes[i], 100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1))
+	#	print('Accuracy of {:5s} = {:2d} %.'.format(classes[i], 100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1))
 	accuracies = [100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1 for i in range(num_classes)]
 	#print('Accuracy: {}.'.format(accuracies))
 	hist, bin_edges = np.histogram(accuracies, bins=range(-1, 101), density=False)
@@ -1633,61 +1617,62 @@ def recognize_text_using_craft_and_character_recognizer():
 	import craft.test_utils as test_utils
 
 	image_height, image_width, image_channel = 64, 64, 3
+
+	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
 
-	charset, _ = construct_charset()
+	charset = construct_charset()
 
 	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
 	print('Device: {}.'.format(device))
 
-	#model_filepath = './craft/simple_char_recognition.pth'
-	model_filepath = './craft/simple_char_recognition_mixup.pth'
+	# For CRAFT.
+	craft_trained_model_filepath = './craft/craft_mlt_25k.pth'
+	craft_refiner_model_filepath = './craft/craft_refiner_CTW1500.pth'  # Pretrained refiner model.
+	craft_refine = False  # Enable link refiner.
+	craft_cuda = gpu >= 0  # Use cuda for inference.
+
+	# For char recognizer.
+	#recognizer_model_filepath = './craft/simple_char_recognition.pth'
+	recognizer_model_filepath = './craft/simple_char_recognition_mixup.pth'
+
+	#image_filepath = './craft/images/I3.jpg'
+	image_filepath = './craft/images/book_1.png'
+	#image_filepath = './craft/images/book_2.png'
+
 	output_dir_path = './char_recog_results'
 
 	label_converter = swl_langproc_util.TokenConverter(list(charset))
 	num_classes = label_converter.num_tokens
 
 	#--------------------
-	# Define a convolutional neural network.
-
-	# REF [function] >> mnist_predefined_mixup_test() in ${SWL_PYTHON_HOME}/test/machine_learning/pytorch/run_mnist_cnn.py.
-	if False:
-		import rare.model_char
-		model = rare.model_char.create_vgg_mixup(input_channel, output_channel, num_classes=num_classes)
-	elif True:
-		import rare.model_char
-		model = rare.model_char.create_resnet_mixup(input_channel, output_channel, num_classes=num_classes)
-	elif False:
-		import rare.model_char
-		model = rare.model_char.create_rcnn_mixup(input_channel, output_channel, num_classes=num_classes)
-
-	# Load a model.
-	model = load_model(model_filepath, model, device=device)
-
-	model = model.to(device)
-
-	#--------------------
-	#image_filepath = './craft/images/I3.jpg'
-	image_filepath = './craft/images/book_1.png'
-	#image_filepath = './craft/images/book_2.png'
-
 	print('Start loading CRAFT...')
 	start_time = time.time()
-	trained_model = './craft/craft_mlt_25k.pth'
-	refiner_model = './craft/craft_refiner_CTW1500.pth'  # Pretrained refiner model.
-	refine = False  # Enable link refiner.
-	cuda = True  # Use cuda for inference.
-	net, refine_net = test_utils.load_craft(trained_model, refiner_model, refine, cuda)
+	craft_net, craft_refine_net = test_utils.load_craft(craft_trained_model_filepath, craft_refiner_model_filepath, craft_refine, craft_cuda)
 	print('End loading CRAFT: {} secs.'.format(time.time() - start_time))
 
+	print('Start loading char recognizer...')
+	start_time = time.time()
+	import rare.model_char
+	recognizer = rare.model_char.create_model(model_name, input_channel, output_channel, num_classes)
+
+	recognizer = load_model(recognizer_model_filepath, recognizer, device=device)
+	recognizer = recognizer.to(device)
+	print('End loading char recognizer: {} secs.'.format(time.time() - start_time))
+
+	#--------------------
 	print('Start running CRAFT...')
 	start_time = time.time()
 	rgb = imgproc.loadImage(image_filepath)  # RGB order.
-	bboxes, ch_bboxes_lst, score_text = test_utils.run_char_craft(rgb, net, refine_net, cuda)
+	bboxes, ch_bboxes_lst, score_text = test_utils.run_char_craft(rgb, craft_net, craft_refine_net, craft_cuda)
 	print('End running CRAFT: {} secs.'.format(time.time() - start_time))
 
 	if len(bboxes) > 0:
+		os.makedirs(output_dir_path, exist_ok=True)
+
+		print('Start inferring...')
+		start_time = time.time()
 		image = cv2.imread(image_filepath)
 
 		"""
@@ -1703,10 +1688,6 @@ def recognize_text_using_craft_and_character_recognizer():
 		cv2.waitKey(0)
 		"""
 
-		os.makedirs(output_dir_path, exist_ok=True)
-
-		print('Start inferring...')
-		start_time = time.time()
 		ch_images = []
 		rgb = image.copy()
 		for i, ch_bboxes in enumerate(ch_bboxes_lst):
@@ -1735,12 +1716,14 @@ def recognize_text_using_craft_and_character_recognizer():
 			torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 		])
 
+		recognizer.eval()
 		with torch.no_grad():
 			for idx, imgs in enumerate(ch_images):
 				imgs = torch.stack([transform(Image.fromarray(img)) for img in imgs]).to(device)
-				
-				outputs = model(imgs)
-				_, predictions = torch.max(outputs, 1)
+
+				predictions = recognizer(imgs)
+
+				_, predictions = torch.max(predictions, 1)
 				predictions = predictions.cpu().numpy()
 				print('\t{}: {} (int), {} (str).'.format(idx, predictions, ''.join(label_converter.decode(predictions))))
 		print('End inferring: {} secs.'.format(time.time() - start_time))
@@ -1752,77 +1735,71 @@ def recognize_text_using_craft_and_word_recognizer():
 	#import craft.file_utils as file_utils
 	import craft.test_utils as test_utils
 
-	image_height, image_width = 64, 64
+	image_height, image_width, image_channel = 64, 64, 3
 
-	charset, _ = construct_charset()
+	max_word_len = 25  # Max. word length.
+	num_fiducials = 20  # The number of fiducial points of TPS-STN.
+	input_channel = image_channel  # The number of input channel of feature extractor.
+	output_channel = 512  # The number of output channel of feature extractor.
+	hidden_size = 256  # The size of the LSTM hidden states.
+	max_gradient_norm = 5  # Gradient clipping value.
+	transformer = 'TPS'  # The type of transformer. {None, 'TPS'}.
+	feature_extracter = 'VGG'  # The type of feature extracter. {'VGG', 'RCNN', 'ResNet'}.
+	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
+	decoder = 'Attn'  # The type of decoder. {'CTC', 'Attn'}.
+
+	charset = construct_charset()
 
 	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
 	print('Device: {}.'.format(device))
 
-	#model_filepath = './craft/simple_word_recognition.pth'
-	model_filepath = './craft/simple_word_recognition_mixup.pth'
+	# For CRAFT.
+	craft_trained_model_filepath = './craft/craft_mlt_25k.pth'
+	craft_refiner_model_filepath = './craft/craft_refiner_CTW1500.pth'  # Pretrained refiner model.
+	craft_refine = False  # Enable link refiner.
+	craft_cuda = gpu >= 0  # Use cuda for inference.
+
+	# For word recognizer.
+	recognizer_model_filepath = './craft/simple_word_recognition.pth'
+	#recognizer_model_filepath = './craft/simple_word_recognition_mixup.pth'
+
+	#image_filepath = './craft/images/I3.jpg'
+	image_filepath = './craft/images/book_1.png'
+	#image_filepath = './craft/images/book_2.png'
+
 	output_dir_path = './word_recog_results'
 
 	label_converter = swl_langproc_util.TokenConverter(list(charset))
 	num_classes = label_converter.num_tokens
 
 	#--------------------
-	# Define a convolutional neural network.
-
-	if False:
-		# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/pytorch/mixup/vgg.py
-		import mixup.vgg
-		# NOTE [info] >> Hard to train.
-		model = mixup.vgg.vgg19(pretrained=False, num_classes=num_classes)
-		#model = mixup.vgg.vgg19_bn(pretrained=False, num_classes=num_classes)
-	elif False:
-		# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/pytorch/mixup/vgg.py
-		import mixup.vgg
-		# NOTE [error] >> Cannot load the pretrained model weights because the model is slightly changed.
-		#model = mixup.vgg.vgg19(pretrained=True, progress=True)
-		model = mixup.vgg.vgg19_bn(pretrained=True, progress=True)
-		num_features = model.classifier[6].in_features
-		model.classifier[6] = torch.nn.Linear(num_features, num_classes)
-		model.num_classes = num_classes
-	elif False:
-		# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/pytorch/mixup/resnet.py
-		import mixup.resnet
-		model = mixup.resnet.resnet18(pretrained=False, num_classes=num_classes)
-	else:
-		# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/pytorch/mixup/resnet.py
-		import mixup.resnet
-		model = mixup.resnet.resnet18(pretrained=True, progress=True)
-		num_features = model.fc.in_features
-		model.fc = torch.nn.Linear(num_features, num_classes)
-		model.num_classes = num_classes
-
-	# Load a model.
-	model = load_model(model_filepath, model, device=device)
-
-	model = model.to(device)
-
-	#--------------------
-	#image_filepath = './craft/images/I3.jpg'
-	image_filepath = './craft/images/book_1.png'
-	#image_filepath = './craft/images/book_2.png'
-
 	print('Start loading CRAFT...')
 	start_time = time.time()
-	trained_model = './craft/craft_mlt_25k.pth'
-	refiner_model = './craft/craft_refiner_CTW1500.pth'  # Pretrained refiner model.
-	refine = False  # Enable link refiner.
-	cuda = True  # Use cuda for inference.
-	net, refine_net = test_utils.load_craft(trained_model, refiner_model, refine, cuda)
+	craft_net, craft_refine_net = test_utils.load_craft(craft_trained_model_filepath, craft_refiner_model_filepath, craft_refine, craft_cuda)
 	print('End loading CRAFT: {} secs.'.format(time.time() - start_time))
 
+	print('Start loading word recognizer...')
+	start_time = time.time()
+	import rare.model
+	recognizer = rare.model.Model(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, num_suffixes, SOS_VALUE, label_converter.fill_value, transformer, feature_extracter, sequence_model, decoder)
+
+	recognizer = load_model(recognizer_model_filepath, recognizer, device=device)
+	recognizer = recognizer.to(device)
+	print('End loading word recognizer: {} secs.'.format(time.time() - start_time))
+
+	#--------------------
 	print('Start running CRAFT...')
 	start_time = time.time()
 	rgb = imgproc.loadImage(image_filepath)  # RGB order.
-	bboxes, polys, score_text = test_utils.run_word_craft(rgb, net, refine_net, cuda)
+	bboxes, polys, score_text = test_utils.run_word_craft(rgb, craft_net, craft_refine_net, craft_cuda)
 	print('End running CRAFT: {} secs.'.format(time.time() - start_time))
 
 	if len(bboxes) > 0:
+		os.makedirs(output_dir_path, exist_ok=True)
+
+		print('Start inferring...')
+		start_time = time.time()
 		image = cv2.imread(image_filepath)
 
 		"""
@@ -1837,10 +1814,6 @@ def recognize_text_using_craft_and_word_recognizer():
 		cv2.waitKey(0)
 		"""
 
-		os.makedirs(output_dir_path, exist_ok=True)
-
-		print('Start inferring...')
-		start_time = time.time()
 		word_images = []
 		rgb = image.copy()
 		for i, bbox in enumerate(bboxes):
@@ -1865,11 +1838,13 @@ def recognize_text_using_craft_and_word_recognizer():
 			torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 		])
 
+		recognizer.eval()
 		with torch.no_grad():
 			imgs = torch.stack([transform(Image.fromarray(img)) for img in word_images]).to(device)
 
-			outputs = model(imgs)
-			_, predictions = torch.max(outputs, 1)
+			predictions = recognizer(imgs)
+
+			_, predictions = torch.max(predictions, 1)
 			predictions = predictions.cpu().numpy()
 			for idx, pred in enumerate(predictions):
 				print('\t{}: {} (int), {} (str).'.format(idx, pred, ''.join(label_converter.decode(pred))))

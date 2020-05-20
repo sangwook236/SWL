@@ -2,7 +2,7 @@ import tensorflow as tf
 from tf.keras.layers import LSTM, Dense, Bidirectional
 from swl.machine_learning.tensorflow.simple_neural_net import SimpleNeuralNet
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class SimpleRnnUsingKeras(SimpleNeuralNet):
 	def __init__(self, input_shape, output_shape, is_bidirectional=True, is_stacked=True):
