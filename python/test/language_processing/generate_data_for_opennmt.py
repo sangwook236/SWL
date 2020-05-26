@@ -4,7 +4,7 @@
 import sys
 sys.path.append('../../src')
 
-import os, random, functools, glob, time
+import os, random, functools, glob, argparse, time
 import numpy as np
 import torch, torchvision
 from PIL import Image, ImageOps
@@ -419,18 +419,6 @@ class MySubsetDataset(torch.utils.data.Dataset):
 	def __len__(self):
 		return len(self.subset)
 
-def visualize_data(dataloader, num_data=10):
-	data_iter = iter(dataloader)
-	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
-	images, labels = images.numpy(), labels.numpy()
-	images = images.transpose(0, 2, 3, 1)
-	for idx, (img, lbl) in enumerate(zip(images, labels)):
-		print('Label: {} (int), {} (str).'.format(lbl, label_converter.decode([lbl])[0]))
-		cv2.imshow('Image', img)
-		cv2.waitKey(0)
-		if idx >= (num_data - 1): break
-	cv2.destroyAllWindows()
-
 def visualize_data_with_length(dataloader, num_data=10):
 	data_iter = iter(dataloader)
 	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
@@ -443,280 +431,45 @@ def visualize_data_with_length(dataloader, num_data=10):
 		if idx >= (num_data - 1): break
 	cv2.destroyAllWindows()
 
-def SimpleCharacterDataset_test():
-	image_height, image_width, image_channel = 64, 64, 3
-	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
-	image_height_before_crop, image_width_before_crop = image_height, image_width
+def save_data_and_images(is_train, dataloader, data_dir_path, image_dir_path, label_converter):
+	src_filepath = os.path.join(data_dir_path, 'src-{}.txt'.format('train' if is_train else 'val'))
+	tgt_filepath = os.path.join(data_dir_path, 'tgt-{}.txt'.format('train' if is_train else 'val'))
+	image_file_format = 'train_img_{}.png' if is_train else 'val_img_{}.png'
+	try:
+		with open(src_filepath, 'w', encoding='UTF8') as src_fd, open(tgt_filepath, 'w', encoding='UTF8') as tgt_fd:
+			idx = 0
+			for batch in dataloader:
+				images, labels, _ = batch  # torch.Tensor & torch.Tensor.
+				images, labels = images.numpy(), labels.numpy()
+				images = (images.transpose(0, 2, 3, 1) * 255).astype(np.uint8)
+				for img, lbl in zip(images, labels):
+					image_filename = image_file_format.format(idx)
+					image_filepath = os.path.join(image_dir_path, image_filename)
+					cv2.imwrite(image_filepath, img)
+					#src_fd.write(os.path.relpath(image_filepath, image_dir_path) + os.linesep)
+					src_fd.write(image_filename + os.linesep)
+					lbl = label_converter.decode(lbl)
+					tgt_fd.write(' '.join(lbl) + os.linesep)
+					idx += 1
+	except FileNotFoundError as ex:
+		print('File not found: {}.'.format(ex))
+	except UnicodeDecodeError as ex:
+		print('Unicode decode error: {}.'.format(ex))
 
-	charset, font_list = construct_charset(), construct_font()
-
-	num_train_examples_per_class, num_test_examples_per_class = 500, 50
-	font_size_interval = (10, 100)
-	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
-
-	batch_size = 64
-	shuffle = True
-	num_workers = 4
-
-	#--------------------
-	train_transform = torchvision.transforms.Compose([
-		RandomAugment(create_char_augmenter()),
-		RandomInvert(),
-		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
-		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
-		#torchvision.transforms.RandomCrop((image_height, image_width)),
-		torchvision.transforms.ToTensor(),
-		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-	])
-	test_transform = torchvision.transforms.Compose([
-		RandomInvert(),
-		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
-		#torchvision.transforms.Resize((image_height, image_width)),
-		#torchvision.transforms.CenterCrop((image_height, image_width)),
-		torchvision.transforms.ToTensor(),
-		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-	])
-
-	#--------------------
-	print('Start creating datasets...')
-	start_time = time.time()
-	label_converter = swl_langproc_util.TokenConverter(list(charset))
-	chars = list(charset * num_train_examples_per_class)
-	random.shuffle(chars)
-	train_dataset = text_data.SimpleCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=train_transform)
-	chars = list(charset * num_test_examples_per_class)
-	random.shuffle(chars)
-	test_dataset = text_data.SimpleCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=test_transform)
-	print('End creating datasets: {} secs.'.format(time.time() - start_time))
-	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-	print('#classes = {}.'.format(label_converter.num_tokens))
-
-	#--------------------
-	print('Start creating data loaders...')
-	start_time = time.time()
-	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
-
-	#--------------------
-	# Show data info.
-	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
-	data_iter = iter(train_dataloader)
-	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
-	images, labels = images.numpy(), labels.numpy()
-	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
-	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
-
-	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
-	data_iter = iter(test_dataloader)
-	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
-	images, labels = images.numpy(), labels.numpy()
-	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
-	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
-
-	#--------------------
-	# Visualize.
-	visualize_data(train_dataloader, num_data=10)
-	visualize_data(test_dataloader, num_data=10)
-
-def NoisyCharacterDataset_test():
-	image_height, image_width, image_channel = 64, 64, 3
-	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
-	image_height_before_crop, image_width_before_crop = image_height, image_width
-
-	charset, font_list = construct_charset(), construct_font()
-
-	num_train_examples_per_class, num_test_examples_per_class = 500, 50
-	font_size_interval = (10, 100)
-	char_clipping_ratio_interval = (0.8, 1.25)
-	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
-
-	batch_size = 64
-	shuffle = True
-	num_workers = 4
-
-	#--------------------
-	train_transform = torchvision.transforms.Compose([
-		RandomAugment(create_char_augmenter()),
-		RandomInvert(),
-		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
-		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
-		#torchvision.transforms.RandomCrop((image_height, image_width)),
-		torchvision.transforms.ToTensor(),
-		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-	])
-	test_transform = torchvision.transforms.Compose([
-		RandomInvert(),
-		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
-		#torchvision.transforms.Resize((image_height, image_width)),
-		#torchvision.transforms.CenterCrop((image_height, image_width)),
-		torchvision.transforms.ToTensor(),
-		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-	])
-
-	#--------------------
-	print('Start creating datasets...')
-	start_time = time.time()
-	label_converter = swl_langproc_util.TokenConverter(list(charset))
-	chars = list(charset * num_train_examples_per_class)
-	random.shuffle(chars)
-	train_dataset = text_data.NoisyCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor, transform=train_transform)
-	chars = list(charset * num_test_examples_per_class)
-	random.shuffle(chars)
-	test_dataset = text_data.NoisyCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor, transform=test_transform)
-	print('End creating datasets: {} secs.'.format(time.time() - start_time))
-	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-	print('#classes = {}.'.format(label_converter.num_tokens))
-
-	#--------------------
-	print('Start creating data loaders...')
-	start_time = time.time()
-	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
-
-	#--------------------
-	# Show data info.
-	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
-	data_iter = iter(train_dataloader)
-	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
-	images, labels = images.numpy(), labels.numpy()
-	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
-	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
-
-	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
-	data_iter = iter(test_dataloader)
-	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
-	images, labels = images.numpy(), labels.numpy()
-	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
-	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
-
-	#--------------------
-	# Visualize.
-	visualize_data(train_dataloader, num_data=10)
-	visualize_data(test_dataloader, num_data=10)
-
-def FileBasedCharacterDataset_test():
-	image_height, image_width, image_channel = 64, 64, 3
-	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
-	image_height_before_crop, image_width_before_crop = image_height, image_width
-
-	charset = construct_charset()
-
-	train_test_ratio = 0.8
-	batch_size = 64
-	shuffle = True
-	num_workers = 4
-
-	if 'posix' == os.name:
-		data_base_dir_path = '/home/sangwook/work/dataset'
-	else:
-		data_base_dir_path = 'D:/work/dataset'
-
-	if True:
-		# REF [function] >> generate_chars_from_chars74k_data() in chars74k_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/chars74k/English/Img/char_images.txt'
-		is_image_used = True
-	elif False:
-		# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_kr.txt'
-		is_image_used = True
-	elif False:
-		# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_en.txt'
-		is_image_used = True
-	elif False:
-		# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_kr.txt'
-		is_image_used = True
-	elif False:
-		# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_en.txt'
-		is_image_used = True
-
-	#--------------------
-	train_transform = torchvision.transforms.Compose([
-		#RandomAugment(create_char_augmenter()),
-		RandomInvert(),
-		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
-		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
-		#torchvision.transforms.RandomCrop((image_height, image_width)),
-		torchvision.transforms.ToTensor(),
-		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-	])
-	test_transform = torchvision.transforms.Compose([
-		RandomInvert(),
-		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
-		#torchvision.transforms.Resize((image_height, image_width)),
-		#torchvision.transforms.CenterCrop((image_height, image_width)),
-		torchvision.transforms.ToTensor(),
-		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-	])
-
-	#--------------------
-	print('Start creating datasets...')
-	start_time = time.time()
-	label_converter = swl_langproc_util.TokenConverter(list(charset))
-	dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used)
-	num_examples = len(dataset)
-	num_train_examples = int(num_examples * train_test_ratio)
-
-	train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
-	train_dataset = MySubsetDataset(train_subset, transform=train_transform)
-	test_dataset = MySubsetDataset(test_subset, transform=test_transform)
-	print('End creating datasets: {} secs.'.format(time.time() - start_time))
-	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-	print('#classes = {}.'.format(label_converter.num_tokens))
-
-	#--------------------
-	print('Start creating data loaders...')
-	start_time = time.time()
-	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
-
-	#--------------------
-	# Show data info.
-	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
-	data_iter = iter(train_dataloader)
-	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
-	images, labels = images.numpy(), labels.numpy()
-	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
-	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
-
-	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
-	data_iter = iter(test_dataloader)
-	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
-	images, labels = images.numpy(), labels.numpy()
-	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
-	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
-
-	#--------------------
-	# Visualize.
-	visualize_data(train_dataloader, num_data=10)
-	visualize_data(test_dataloader, num_data=10)
-
-def SimpleWordDataset_test():
-	image_height, image_width, image_channel = 64, 640, 3
+# REF [function] >> SimpleWordDataset_test() in text_data_test.py
+def generate_simple_word_data(image_height, image_width, image_channel, max_word_len, batch_size, data_dir_path, image_dir_path):
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	charset, wordset, font_list = construct_charset(), construct_word_set(), construct_font()
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
-	max_word_len = None  # Use max. word length.
+	#max_word_len = None  # Use max. word length.
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
-	batch_size = 64
 	shuffle = True
-	num_workers = 4
+	num_workers = 8
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -779,25 +532,31 @@ def SimpleWordDataset_test():
 
 	#--------------------
 	# Visualize.
-	visualize_data_with_length(train_dataloader, num_data=10)
-	visualize_data_with_length(test_dataloader, num_data=10)
+	#visualize_data_with_length(train_dataloader, num_data=10)
+	#visualize_data_with_length(test_dataloader, num_data=10)
 
-def RandomWordDataset_test():
-	image_height, image_width, image_channel = 64, 640, 3
+	# Save data and images.
+	print('Start saving data and images for OpenNMT...')
+	start_time = time.time()
+	save_data_and_images(True, train_dataloader, data_dir_path, image_dir_path, label_converter)
+	save_data_and_images(False, test_dataloader, data_dir_path, image_dir_path, label_converter)
+	print('End saving data and images for OpenNMT: {} secs.'.format(time.time() - start_time))
+
+# REF [function] >> RandomWordDataset_test() in text_data_test.py
+def generate_random_word_data(image_height, image_width, image_channel, max_word_len, batch_size, data_dir_path, image_dir_path):
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	charset, font_list = construct_charset(), construct_font()
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
-	max_word_len = None  # Use max. word length.
+	#max_word_len = None  # Use max. word length.
 	char_len_interval = (1, 20)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
-	batch_size = 64
 	shuffle = True
-	num_workers = 4
+	num_workers = 8
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -861,21 +620,27 @@ def RandomWordDataset_test():
 
 	#--------------------
 	# Visualize.
-	visualize_data_with_length(train_dataloader, num_data=10)
-	visualize_data_with_length(test_dataloader, num_data=10)
+	#visualize_data_with_length(train_dataloader, num_data=10)
+	#visualize_data_with_length(test_dataloader, num_data=10)
 
-def FileBasedWordDataset_test():
-	image_height, image_width, image_channel = 64, 640, 3
+	# Save data and images.
+	print('Start saving data and images for OpenNMT...')
+	start_time = time.time()
+	save_data_and_images(True, train_dataloader, data_dir_path, image_dir_path, label_converter)
+	save_data_and_images(False, test_dataloader, data_dir_path, image_dir_path, label_converter)
+	print('End saving data and images for OpenNMT: {} secs.'.format(time.time() - start_time))
+
+# REF [function] >> FileBasedWordDataset_test() in text_data_test.py
+def generate_file_based_word_data(image_height, image_width, image_channel, max_word_len, batch_size, data_dir_path, image_dir_path):
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	charset = construct_charset()
 
-	max_word_len = 30
+	#max_word_len = 30
 	train_test_ratio = 0.8
-	batch_size = 64
 	shuffle = True
-	num_workers = 4
+	num_workers = 8
 
 	if 'posix' == os.name:
 		data_base_dir_path = '/home/sangwook/work/dataset'
@@ -965,11 +730,18 @@ def FileBasedWordDataset_test():
 
 	#--------------------
 	# Visualize.
-	visualize_data_with_length(train_dataloader, num_data=10)
-	visualize_data_with_length(test_dataloader, num_data=10)
+	#visualize_data_with_length(train_dataloader, num_data=10)
+	#visualize_data_with_length(test_dataloader, num_data=10)
 
-def SimpleTextLineDataset_test():
-	image_height, image_width, image_channel = 64, 1280, 3
+	# Save data and images.
+	print('Start saving data and images for OpenNMT...')
+	start_time = time.time()
+	save_data_and_images(True, train_dataloader, data_dir_path, image_dir_path, label_converter)
+	save_data_and_images(False, test_dataloader, data_dir_path, image_dir_path, label_converter)
+	print('End saving data and images for OpenNMT: {} secs.'.format(time.time() - start_time))
+
+# REF [function] >> SimpleTextLineDataset_test() in text_data_test.py
+def generate_simple_text_line_data(image_height, image_width, image_channel, max_textline_len, batch_size, data_dir_path, image_dir_path):
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
@@ -977,16 +749,15 @@ def SimpleTextLineDataset_test():
 	charset += ' '  # Add space character.
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
-	max_textline_len = 80
+	#max_textline_len = 80
 	font_size_interval = (10, 100)
 	char_space_ratio_interval = (0.8, 1.25)
 	word_count_interval = (1, 5)
 	space_count_interval = (1, 3)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
-	batch_size = 64
 	shuffle = True
-	num_workers = 4
+	num_workers = 8
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -1049,21 +820,91 @@ def SimpleTextLineDataset_test():
 
 	#--------------------
 	# Visualize.
-	visualize_data_with_length(train_dataloader, num_data=10)
-	visualize_data_with_length(test_dataloader, num_data=10)
+	#visualize_data_with_length(train_dataloader, num_data=10)
+	#visualize_data_with_length(test_dataloader, num_data=10)
+
+	# Save data and images.
+	print('Start saving data and images for OpenNMT...')
+	start_time = time.time()
+	save_data_and_images(True, train_dataloader, data_dir_path, image_dir_path, label_converter)
+	save_data_and_images(False, test_dataloader, data_dir_path, image_dir_path, label_converter)
+	print('End saving data and images for OpenNMT: {} secs.'.format(time.time() - start_time))
+
+#--------------------------------------------------------------------
+
+def parse_command_line_options():
+	parser = argparse.ArgumentParser(description='Generate data for OpenNMT.')
+
+	parser.add_argument(
+		'-d',
+		'--data_type',
+		type=str,
+		help="The data type to generate. {'simple_word', 'random_word', 'file_based_word', 'simple_textline'}.",
+		required=True,
+		default='simple_word'
+	)
+	parser.add_argument(
+		'-dd',
+		'--data_dir',
+		type=str,
+		help='The directory to save data',
+		required=True,
+		default='openmnt_data'
+	)
+	parser.add_argument(
+		'-id',
+		'--image_dir',
+		type=str,
+		help='The directory to save images',
+		required=True,
+		default='openmnt_images'
+	)
+	parser.add_argument(
+		'-i',
+		'--image_shape',
+		type=str,
+		help="The image shape to generate. 'height x width x channel'. e.g.) '64x640x3'",
+		required=True,
+		default='64x640x3'
+	)
+	parser.add_argument(
+		'-t',
+		'--max_text_len',
+		type=int,
+		help='Max. length of words or text lines',
+		default=50
+	)
+	parser.add_argument(
+		'-b',
+		'--batch_size',
+		type=int,
+		help='Batch size',
+		default=64
+	)
+
+	return parser.parse_args()
+
+#--------------------------------------------------------------------
 
 def main():
-	SimpleCharacterDataset_test()
-	#NoisyCharacterDataset_test()
-	#FileBasedCharacterDataset_test()
+	args = parse_command_line_options()
 
-	#--------------------
-	#SimpleWordDataset_test()
-	#RandomWordDataset_test()
-	#FileBasedWordDataset_test()
+	image_shape = [int(v) for v in args.image_shape.split('x')]
+	assert len(image_shape) == 3
 
-	#--------------------
-	#SimpleTextLineDataset_test()
+	os.makedirs(args.data_dir, exist_ok=True)
+	os.makedirs(args.image_dir, exist_ok=True)
+
+	if args.data_type == 'simple_word':
+		generate_simple_word_data(*image_shape, args.max_text_len, args.batch_size, args.data_dir, args.image_dir)
+	elif args.data_type == 'random_word':
+		generate_random_word_data(*image_shape, args.max_text_len, args.batch_size, args.data_dir, args.image_dir)
+	elif args.data_type == 'file_based_word':
+		generate_file_based_word_data(*image_shape, args.max_text_len, args.batch_size, args.data_dir, args.image_dir)
+	elif args.data_type == 'simple_textline':
+		generate_simple_text_line_data(*image_shape, args.max_text_len, args.batch_size, args.data_dir, args.image_dir)
+	else:
+		ValueError('Invalid data type, {}'.format(args.data_type))
 
 #--------------------------------------------------------------------
 
