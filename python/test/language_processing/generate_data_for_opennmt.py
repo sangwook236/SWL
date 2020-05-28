@@ -448,7 +448,7 @@ def save_data_and_images(is_train, dataloader, data_dir_path, image_dir_path, la
 					cv2.imwrite(image_filepath, img)
 					#src_fd.write(os.path.relpath(image_filepath, image_dir_path) + os.linesep)
 					src_fd.write(image_filename + os.linesep)
-					lbl = label_converter.decode(lbl)
+					lbl = label_converter.decode(lbl, is_string=False)
 					tgt_fd.write(' '.join(lbl) + os.linesep)
 					idx += 1
 	except FileNotFoundError as ex:
@@ -463,7 +463,8 @@ def generate_simple_word_data(image_height, image_width, image_channel, max_word
 
 	charset, wordset, font_list = construct_charset(), construct_word_set(), construct_font()
 
-	num_train_examples, num_test_examples = int(1e6), int(1e4)
+	#num_train_examples, num_test_examples = int(1e6), int(1e4)
+	num_train_examples, num_test_examples = int(1e5), int(1e3)
 	#max_word_len = None  # Use max. word length.
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
@@ -549,7 +550,8 @@ def generate_random_word_data(image_height, image_width, image_channel, max_word
 
 	charset, font_list = construct_charset(), construct_font()
 
-	num_train_examples, num_test_examples = int(1e6), int(1e4)
+	#num_train_examples, num_test_examples = int(1e6), int(1e4)
+	num_train_examples, num_test_examples = int(1e5), int(1e3)
 	#max_word_len = None  # Use max. word length.
 	char_len_interval = (1, 20)
 	font_size_interval = (10, 100)
@@ -748,7 +750,8 @@ def generate_simple_text_line_data(image_height, image_width, image_channel, max
 	charset, wordset, font_list = construct_charset(), construct_word_set(), construct_font()
 	charset += ' '  # Add space character.
 
-	num_train_examples, num_test_examples = int(1e6), int(1e4)
+	#num_train_examples, num_test_examples = int(1e6), int(1e4)
+	num_train_examples, num_test_examples = int(1e5), int(1e3)
 	#max_textline_len = 80
 	font_size_interval = (10, 100)
 	char_space_ratio_interval = (0.8, 1.25)
@@ -839,7 +842,7 @@ def parse_command_line_options():
 		'-d',
 		'--data_type',
 		type=str,
-		help="The data type to generate. {'simple_word', 'random_word', 'file_based_word', 'simple_textline'}.",
+		help="The data type to generate. {'simple_word', 'random_word', 'file_based_word', 'simple_text_line'}.",
 		required=True,
 		default='simple_word'
 	)
@@ -901,7 +904,7 @@ def main():
 		generate_random_word_data(*image_shape, args.max_text_len, args.batch_size, args.data_dir, args.image_dir)
 	elif args.data_type == 'file_based_word':
 		generate_file_based_word_data(*image_shape, args.max_text_len, args.batch_size, args.data_dir, args.image_dir)
-	elif args.data_type == 'simple_textline':
+	elif args.data_type == 'simple_text_line':
 		generate_simple_text_line_data(*image_shape, args.max_text_len, args.batch_size, args.data_dir, args.image_dir)
 	else:
 		ValueError('Invalid data type, {}'.format(args.data_type))

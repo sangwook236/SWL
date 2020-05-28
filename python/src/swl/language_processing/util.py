@@ -73,14 +73,17 @@ class TokenConverter(object):
 		return self.decoration_functor([tok2int(tok) for tok in tokens])
 
 	# Integer token string -> token string.
-	def decode(self, integer_tokens, *args, **kwargs):
+	def decode(self, integer_tokens, is_string=True, *args, **kwargs):
 		def int2tok(tok):
 			try:
 				return self._tokens[tok]
 			except IndexError:
 				#print('[SWL] Error: Failed to decode an integer token, {} in {}.'.format(tok, integer_tokens))
 				return self.UNKNOWN  # TODO [check] >> Is it correct?
-		return ''.join([int2tok(tok) for tok in integer_tokens if tok not in self.auxiliary_tokens_int])
+		if is_string:
+			return ''.join([int2tok(tok) for tok in integer_tokens if tok not in self.auxiliary_tokens_int])
+		else:
+			return [int2tok(tok) for tok in integer_tokens if tok not in self.auxiliary_tokens_int]
 
 #--------------------------------------------------------------------
 
