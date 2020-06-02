@@ -6,19 +6,18 @@ PREPROCESSED_DATA_PREFIX=${DATA_DIR}/preprocessed_data
 MODEL_PREFIX=${DATA_DIR}/model
 IMAGE_CHANNEL=3
 MAX_TEXT_LEN=100
-BATCH_SIZE=512
-TRAIN_STEPS=1000
+BATCH_SIZE=128
+TRAIN_STEPS_PER_DATASET=10000
 GPU=0
 DATA_TYPES=("simple_word" "random_word" "file_based_word" "simple_text_line")
 #DATA_TYPES=("simple_word" "random_word" "file_based_word")
 
 for id in {1..10}
 do
-	# Generate a new dataset.
-	echo ">>>>>>>>>> Generate a new dataset: $id."
 	DATA_TYPE=${DATA_TYPES[$(($RANDOM % ${#DATA_TYPES[@]}))]}
-	echo "Data type to generate: ${DATA_TYPE}."
 
+	# Generate a new dataset.
+	echo ">>>>>>>>>> Generate a new dataset: $DATA_TYPE (Iteration: #$id)."
 	python generate_data_for_opennmt.py \
 		--data_type ${DATA_TYPE} \
 		--data_dir ${DATA_DIR} \
@@ -43,15 +42,15 @@ do
 		-overwrite
 
 	# Train.
-	echo ">>>>>>>>>> Train: $id."
-	#MODEL_FILEPATH=${MODEL_PREFIX}_step_$((${TRAIN_STEPS}*(${id}-1))).pt
+	echo ">>>>>>>>>> Train: $DATA_TYPE (Iteration: #$id)."
+	TRAIN_STEPS=$((TRAIN_STEPS_PER_DATASET * ${id}))
 	MODEL_FILEPATH=${MODEL_PREFIX}_step_${TRAIN_STEPS}.pt
 
 	if [ $id -eq 1 ]
 	then
 		PRETRAINED_MODEL_FILEPATH=
 	else
-		PRETRAINED_MODEL_FILEPATH=${MODEL_FILEPATH}
+		PRETRAINED_MODEL_FILEPATH=${MODEL_PREFIX}_step_$((${TRAIN_STEPS_PER_DATASET} * (${id} - 1))).pt
 	fi
 	CUDA_VISIBLE_DEVICES=${GPU} onmt_train -model_type img \
 		-train_from "${PRETRAINED_MODEL_FILEPATH}" \
@@ -68,7 +67,7 @@ do
 		-image_channel_size ${IMAGE_CHANNEL}
 
 	# Translate.
-	echo ">>>>>>>>>> Translate: $id."
+	echo ">>>>>>>>>> Translate: $DATA_TYPE (Iteration: #$id)."
 	onmt_translate -data_type img \
 		-model ${MODEL_FILEPATH} \
 		-src_dir ${IMAGE_DIR} \
@@ -80,7 +79,7 @@ do
 		-verbose
 
 	# Delete the dataset.
-	echo ">>>>>>>>>> Delete the dataset: $id."
+	echo ">>>>>>>>>> Delete the dataset: $DATA_TYPE (Iteration: #$id)."
 	#rm -Rf ${IMAGE_DIR} ${DATA_DIR}
 	#rm -Rf ${IMAGE_DIR}
 done

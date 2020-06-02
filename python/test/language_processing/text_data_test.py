@@ -419,7 +419,7 @@ class MySubsetDataset(torch.utils.data.Dataset):
 	def __len__(self):
 		return len(self.subset)
 
-def visualize_data(dataloader, num_data=10):
+def visualize_data(dataloader, label_converter, num_data=10):
 	data_iter = iter(dataloader)
 	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels = images.numpy(), labels.numpy()
@@ -431,7 +431,7 @@ def visualize_data(dataloader, num_data=10):
 		if idx >= (num_data - 1): break
 	cv2.destroyAllWindows()
 
-def visualize_data_with_length(dataloader, num_data=10):
+def visualize_data_with_length(dataloader, label_converter, num_data=10):
 	data_iter = iter(dataloader)
 	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
@@ -518,8 +518,8 @@ def SimpleCharacterDataset_test():
 
 	#--------------------
 	# Visualize.
-	visualize_data(train_dataloader, num_data=10)
-	visualize_data(test_dataloader, num_data=10)
+	visualize_data(train_dataloader, label_converter, num_data=10)
+	visualize_data(test_dataloader, label_converter, num_data=10)
 
 def NoisyCharacterDataset_test():
 	image_height, image_width, image_channel = 64, 64, 3
@@ -597,8 +597,8 @@ def NoisyCharacterDataset_test():
 
 	#--------------------
 	# Visualize.
-	visualize_data(train_dataloader, num_data=10)
-	visualize_data(test_dataloader, num_data=10)
+	visualize_data(train_dataloader, label_converter, num_data=10)
+	visualize_data(test_dataloader, label_converter, num_data=10)
 
 def FileBasedCharacterDataset_test():
 	image_height, image_width, image_channel = 64, 64, 3
@@ -616,27 +616,6 @@ def FileBasedCharacterDataset_test():
 		data_base_dir_path = '/home/sangwook/work/dataset'
 	else:
 		data_base_dir_path = 'D:/work/dataset'
-
-	if True:
-		# REF [function] >> generate_chars_from_chars74k_data() in chars74k_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/chars74k/English/Img/char_images.txt'
-		is_image_used = True
-	elif False:
-		# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_kr.txt'
-		is_image_used = True
-	elif False:
-		# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_en.txt'
-		is_image_used = True
-	elif False:
-		# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_kr.txt'
-		is_image_used = True
-	elif False:
-		# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_en.txt'
-		is_image_used = True
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -663,7 +642,36 @@ def FileBasedCharacterDataset_test():
 	print('Start creating datasets...')
 	start_time = time.time()
 	label_converter = swl_langproc_util.TokenConverter(list(charset))
-	dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used)
+
+	datasets = []
+	if True:
+		# REF [function] >> generate_chars_from_chars74k_data() in chars74k_data_test.py
+		image_label_info_filepath = data_base_dir_path + '/text/chars74k/English/Img/char_images.txt'
+		is_image_used = True
+		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+	if True:
+		# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
+		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_kr.txt'
+		is_image_used = True
+		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+	if True:
+		# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
+		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_en.txt'
+		is_image_used = True
+		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+	if True:
+		# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
+		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_kr.txt'
+		is_image_used = True
+		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+	if True:
+		# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
+		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_en.txt'
+		is_image_used = True
+		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+	assert datasets, 'NO Dataset'
+
+	dataset = torch.utils.data.ConcatDataset(datasets)
 	num_examples = len(dataset)
 	num_train_examples = int(num_examples * train_test_ratio)
 
@@ -699,8 +707,8 @@ def FileBasedCharacterDataset_test():
 
 	#--------------------
 	# Visualize.
-	visualize_data(train_dataloader, num_data=10)
-	visualize_data(test_dataloader, num_data=10)
+	visualize_data(train_dataloader, label_converter, num_data=10)
+	visualize_data(test_dataloader, label_converter, num_data=10)
 
 def SimpleWordDataset_test():
 	image_height, image_width, image_channel = 64, 640, 3
@@ -779,8 +787,8 @@ def SimpleWordDataset_test():
 
 	#--------------------
 	# Visualize.
-	visualize_data_with_length(train_dataloader, num_data=10)
-	visualize_data_with_length(test_dataloader, num_data=10)
+	visualize_data_with_length(train_dataloader, label_converter, num_data=10)
+	visualize_data_with_length(test_dataloader, label_converter, num_data=10)
 
 def RandomWordDataset_test():
 	image_height, image_width, image_channel = 64, 640, 3
@@ -861,8 +869,8 @@ def RandomWordDataset_test():
 
 	#--------------------
 	# Visualize.
-	visualize_data_with_length(train_dataloader, num_data=10)
-	visualize_data_with_length(test_dataloader, num_data=10)
+	visualize_data_with_length(train_dataloader, label_converter, num_data=10)
+	visualize_data_with_length(test_dataloader, label_converter, num_data=10)
 
 def FileBasedWordDataset_test():
 	image_height, image_width, image_channel = 64, 640, 3
@@ -881,23 +889,6 @@ def FileBasedWordDataset_test():
 		data_base_dir_path = '/home/sangwook/work/dataset'
 	else:
 		data_base_dir_path = 'D:/work/dataset'
-
-	if True:
-		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
-		is_image_used = False
-	elif False:
-		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_en.txt'
-		is_image_used = False
-	elif False:
-		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
-		is_image_used = True
-	elif False:
-		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_en.txt'
-		is_image_used = True
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -927,7 +918,31 @@ def FileBasedWordDataset_test():
 	start_time = time.time()
 	label_converter = swl_langproc_util.TokenConverter(list(charset), fill_value=None)
 	#label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=None)
-	dataset = text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used)
+
+	datasets = []
+	if True:
+		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
+		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
+		is_image_used = False
+		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+	if True:
+		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
+		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_en.txt'
+		is_image_used = False
+		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+	if True:
+		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
+		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
+		is_image_used = True
+		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+	if True:
+		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
+		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_en.txt'
+		is_image_used = True
+		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+	assert datasets, 'NO Dataset'
+
+	dataset = torch.utils.data.ConcatDataset(datasets)
 	num_examples = len(dataset)
 	num_train_examples = int(num_examples * train_test_ratio)
 
@@ -965,8 +980,8 @@ def FileBasedWordDataset_test():
 
 	#--------------------
 	# Visualize.
-	visualize_data_with_length(train_dataloader, num_data=10)
-	visualize_data_with_length(test_dataloader, num_data=10)
+	visualize_data_with_length(train_dataloader, label_converter, num_data=10)
+	visualize_data_with_length(test_dataloader, label_converter, num_data=10)
 
 def SimpleTextLineDataset_test():
 	image_height, image_width, image_channel = 64, 1280, 3
@@ -1049,8 +1064,8 @@ def SimpleTextLineDataset_test():
 
 	#--------------------
 	# Visualize.
-	visualize_data_with_length(train_dataloader, num_data=10)
-	visualize_data_with_length(test_dataloader, num_data=10)
+	visualize_data_with_length(train_dataloader, label_converter, num_data=10)
+	visualize_data_with_length(test_dataloader, label_converter, num_data=10)
 
 def main():
 	SimpleCharacterDataset_test()
