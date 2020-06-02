@@ -49,11 +49,6 @@ class MyRunner(object):
 		}
 		log_print_freq = 500
 
-		#if torch.cuda.device_count() > 1:
-		#	device_ids = [0, 1]
-		#	model = torch.nn.DataParallel(model, device_ids=device_ids)
-		model = model.to(device)
-
 		#--------------------
 		self._logger.info('Start training...')
 		start_total_time = time.time()
@@ -93,11 +88,6 @@ class MyRunner(object):
 		return best_model_filepath, history
 
 	def test(self, model, dataloader, device='cpu'):
-		#if torch.cuda.device_count() > 1:
-		#	device_ids = [0, 1]
-		#	model = torch.nn.DataParallel(model, device_ids=device_ids)
-		model = model.to(device)
-
 		# Switch to evaluation mode.
 		model.eval()
 
@@ -126,11 +116,6 @@ class MyRunner(object):
 			self._logger.warning('Invalid test results.')
 
 	def infer(self, model, inputs, device='cpu'):
-		#if torch.cuda.device_count() > 1:
-		#	device_ids = [0, 1]
-		#	model = torch.nn.DataParallel(model, device_ids=device_ids)
-		model = model.to(device)
-
 		# Switch to evaluation mode.
 		model.eval()
 
@@ -261,6 +246,7 @@ class MyRunner(object):
 
 		val_loss, val_acc, num_examples = 0.0, 0.0, 0
 		with torch.no_grad():
+			show = True
 			for batch_step, (batch_inputs, batch_outputs) in enumerate(dataloader):
 				"""
 				# One-hot encoding.
@@ -279,9 +265,15 @@ class MyRunner(object):
 				val_loss += loss.item()
 				val_acc += (model_outputs == batch_outputs).sum().item()
 				num_examples += batch_outputs.size(0)
-			val_loss /= batch_step + 1
-			val_acc /= num_examples
-			return val_loss, val_acc
+
+				# Show results.
+				if show:
+					self._logger.info('\tPrediction: {}.'.format(np.argmax(model_outputs.cpu().numpy(), axis=-1)))
+					self._logger.info('\tG/T:        {}.'.format(batch_outputs.cpu().numpy()))
+					show = False
+		val_loss /= batch_step + 1
+		val_acc /= num_examples
+		return val_loss, val_acc
 
 #--------------------------------------------------------------------
 
@@ -427,7 +419,7 @@ def main():
 			output_dir_path = os.path.dirname(model_filepath)
 	else:
 		if not output_dir_path:
-			output_dir_prefix = 'simple_training'
+			output_dir_prefix = 'simple_training1'
 			output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 		model_filepath = os.path.join(output_dir_path, 'model.pth')
@@ -484,6 +476,11 @@ def main():
 		scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 
 		if model:
+			#if torch.cuda.device_count() > 1:
+			#	device_ids = [0, 1]
+			#	model = torch.nn.DataParallel(model, device_ids=device_ids)
+			model = model.to(device)
+
 			# Train a model.
 			best_model_filepath, history = runner.train(model, criterion, optimizer, scheduler, train_dataloader, test_dataloader, model_checkpoint_filepath, initial_epoch, final_epoch, device=device)
 
@@ -510,6 +507,12 @@ def main():
 			model = MyModel()
 			# Load a model.
 			model = runner.load_model(model_filepath, model, device=device)
+
+			if model:
+				#if torch.cuda.device_count() > 1:
+				#	device_ids = [0, 1]
+				#	model = torch.nn.DataParallel(model, device_ids=device_ids)
+				model = model.to(device)
 
 			if args.test and model:
 				runner.test(model, test_dataloader, device=device)

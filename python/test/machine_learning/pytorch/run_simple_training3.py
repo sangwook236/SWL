@@ -65,11 +65,6 @@ class MyRunner(object):
 		train_result_image_filepath = os.path.join(output_dir_path, 'results.png')
 		log_print_freq = 500
 
-		#if torch.cuda.device_count() > 1:
-		#	device_ids = [0, 1]
-		#	model = torch.nn.DataParallel(model, device_ids=device_ids)
-		model = model.to(device)
-
 		#--------------------
 		self._logger.info('Start training...')
 		start_total_time = start_epoch_time = time.time()
@@ -89,7 +84,7 @@ class MyRunner(object):
 			#start_time = time.time()
 			losses, top1, top5 = self._train(model, criterion, optimizer, train_dataloader, epoch, log_print_freq, device)
 			train_loss, train_acc = losses.avg, top1.avg
-			self._logger.info('  **Train** Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f} Error@1 {error1:.3f}.'.format(top1=top1, top5=top5, error1=100 - top1.avg))
+			self._logger.info('\tTrain:      Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f} Error@1 {error1:.3f}.'.format(top1=top1, top5=top5, error1=100 - top1.avg))
 			#self._logger.info('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
 
 			history['loss'].append(train_loss)
@@ -99,7 +94,7 @@ class MyRunner(object):
 			#start_time = time.time()
 			losses, top1, top5 = self._evaluate(model, criterion, test_dataloader, device)
 			val_loss, val_acc = losses.avg, top1.avg
-			self._logger.info('  **Validation** Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f} Error@1 {error1:.3f} Loss: {losses.avg:.3f}.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses))
+			self._logger.info('\tValidation: Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f} Error@1 {error1:.3f} Loss: {losses.avg:.3f}.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses))
 			#self._logger.info('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
 
 			history['val_loss'].append(val_loss)
@@ -137,11 +132,6 @@ class MyRunner(object):
 		return best_model_filepath, history
 
 	def test(self, model, dataloader, device='cpu'):
-		#if torch.cuda.device_count() > 1:
-		#	device_ids = [0, 1]
-		#	model = torch.nn.DataParallel(model, device_ids=device_ids)
-		model = model.to(device)
-
 		# Switch to evaluation mode.
 		model.eval()
 
@@ -170,11 +160,6 @@ class MyRunner(object):
 			self._logger.warning('Invalid test results.')
 
 	def infer(self, model, inputs, device='cpu'):
-		#if torch.cuda.device_count() > 1:
-		#	device_ids = [0, 1]
-		#	model = torch.nn.DataParallel(model, device_ids=device_ids)
-		model = model.to(device)
-
 		# Switch to evaluation mode.
 		model.eval()
 
@@ -320,7 +305,7 @@ class MyRunner(object):
 			start_batch_time = time.time()
 
 			if (batch_step + 1) % log_print_freq == 0:
-				self._logger.info('  Epoch: [{:03d}][{:03d}/{:03d}]   '
+				self._logger.info('\tEpoch: [{:03d}][{:03d}/{:03d}]   '
 					'Time {batch_time.val:.3f} ({batch_time.avg:.3f})   '
 					'Data {data_time.val:.3f} ({data_time.avg:.3f})   '
 					'Loss {loss.val:.4f} ({loss.avg:.4f})   '
@@ -336,6 +321,7 @@ class MyRunner(object):
 
 		losses, top1, top5 = utils.AverageMeter(), utils.AverageMeter(), utils.AverageMeter()
 		with torch.no_grad():
+			show = True
 			for batch_step, (batch_inputs, batch_outputs) in enumerate(dataloader):
 				"""
 				# One-hot encoding.
@@ -356,6 +342,12 @@ class MyRunner(object):
 				losses.update(loss.item(), batch_inputs.size(0))
 				top1.update(prec1.item(), batch_inputs.size(0))
 				top5.update(prec5.item(), batch_inputs.size(0))
+
+				# Show results.
+				if show:
+					self._logger.info('\tPrediction: {}.'.format(np.argmax(model_outputs.cpu().numpy(), axis=-1)))
+					self._logger.info('\tG/T:        {}.'.format(batch_outputs.cpu().numpy()))
+					show = False
 		return losses, top1, top5
 
 #--------------------------------------------------------------------
@@ -540,7 +532,7 @@ def main():
 			output_dir_path = os.path.dirname(model_filepath)
 	else:
 		if not output_dir_path:
-			output_dir_prefix = 'simple_training'
+			output_dir_prefix = 'simple_training3'
 			output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 		model_filepath = os.path.join(output_dir_path, 'model.pth')
@@ -605,6 +597,11 @@ def main():
 						continue
 
 		if model:
+			#if torch.cuda.device_count() > 1:
+			#	device_ids = [0, 1]
+			#	model = torch.nn.DataParallel(model, device_ids=device_ids)
+			model = model.to(device)
+
 			# Train a model.
 			best_model_filepath, history = runner.train(model, criterion, optimizer, scheduler, train_dataloader, test_dataloader, model_checkpoint_filepath, output_dir_path, initial_epoch, final_epoch, recorder, device=device)
 
@@ -631,6 +628,12 @@ def main():
 			model = MyModel()
 			# Load a model.
 			model, _, _, _ = runner.load_model(model_filepath, model, None, device=device)
+
+			if model:
+				#if torch.cuda.device_count() > 1:
+				#	device_ids = [0, 1]
+				#	model = torch.nn.DataParallel(model, device_ids=device_ids)
+				model = model.to(device)
 
 			if args.test and model:
 				runner.test(model, test_dataloader, device=device)

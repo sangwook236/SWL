@@ -748,6 +748,34 @@ def concatenate_labels(labels, eos_value, lengths=None):
 			concat_labels.append(lbl[:ll])
 	return list(itertools.chain(*concat_labels))
 
+def show_char_prediction(model, dataloader, label_converter, device='cpu'):
+	dataiter = iter(dataloader)
+	images, labels = dataiter.next()
+
+	# Show images.
+	#show_image(torchvision.utils.make_grid(images))
+
+	with torch.no_grad():
+		predictions = model(images.to(device))
+	_, predictions = torch.max(predictions, 1)
+
+	print('Prediction: {}.'.format(' '.join(label_converter.decode(predictions))))
+	print('G/T:        {}.'.format(' '.join(label_converter.decode(labels))))
+
+def show_text_prediction(model, dataloader, label_converter, device='cpu'):
+	dataiter = iter(dataloader)
+	images, labels, _ = dataiter.next()
+
+	# Show images.
+	#show_image(torchvision.utils.make_grid(images))
+
+	with torch.no_grad():
+		predictions = model(images.to(device), device=device)
+	_, predictions = torch.max(predictions, 1)
+
+	print('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in predictions])))
+	print('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels])))
+
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 def recognize_character():
 	image_height, image_width, image_channel = 64, 64, 3
@@ -827,19 +855,6 @@ def recognize_character():
 	#--------------------
 	# Train the model.
 
-	def evaluate(model, dataloader, label_converter, device='cpu'):
-		dataiter = iter(dataloader)
-		images, labels = dataiter.next()
-
-		# Show images.
-		#show_image(torchvision.utils.make_grid(images))
-
-		with torch.no_grad():
-			predictions = model(images.to(device))
-		_, predictions = torch.max(predictions, 1)
-
-		print('Ground truth: {}, prediction: {}.'.format(' '.join(label_converter.decode(labels)), ' '.join(label_converter.decode(predictions))))
-
 	if True:
 		if False:
 			# Filter model parameters only that require gradients.
@@ -886,7 +901,7 @@ def recognize_character():
 			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			model.eval()
-			evaluate(model, test_dataloader, label_converter, device)
+			show_char_prediction(model, test_dataloader, label_converter, device)
 
 			#scheduler.step()
 
@@ -901,7 +916,7 @@ def recognize_character():
 	# Evaluate the model.
 
 	model.eval()
-	#evaluate(model, test_dataloader, label_converter, device)
+	#show_char_prediction(model, test_dataloader, label_converter, device)
 
 	correct = 0
 	total = 0
@@ -1025,20 +1040,6 @@ def recognize_character_using_mixup():
 	#--------------------
 	# Train the model.
 
-	def evaluate(model, dataloader, label_converter, device='cpu'):
-		dataiter = iter(dataloader)
-		images, labels = dataiter.next()
-
-		# Show images.
-		#show_image(torchvision.utils.make_grid(images))
-
-		with torch.no_grad():
-			predictions = model(images.to(device))
-		_, predictions = torch.max(predictions, 1)
-
-		print('Ground truth: {}, prediction: {}.'.format(' '.join(label_converter.decode(labels)), ' '.join(label_converter.decode(predictions))))
-		print('.'.format())
-
 	if True:
 		if False:
 			# Filter model parameters only that require gradients.
@@ -1085,7 +1086,7 @@ def recognize_character_using_mixup():
 			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			model.eval()
-			evaluate(model, test_dataloader, label_converter, device)
+			show_char_prediction(model, test_dataloader, label_converter, device)
 
 			#scheduler.step()
 
@@ -1100,7 +1101,7 @@ def recognize_character_using_mixup():
 	# Evaluate the model.
 
 	model.eval()
-	#evaluate(model, test_dataloader, label_converter, device)
+	#show_char_prediction(model, test_dataloader, label_converter, device)
 
 	correct = 0
 	total = 0
@@ -1245,19 +1246,6 @@ def recognize_word():
 	#--------------------
 	# Train the model.
 
-	def evaluate(model, dataloader, label_converter, device='cpu'):
-		dataiter = iter(dataloader)
-		images, labels, _ = dataiter.next()
-
-		# Show images.
-		#show_image(torchvision.utils.make_grid(images))
-
-		with torch.no_grad():
-			predictions = model(images.to(device), device=device)
-		_, predictions = torch.max(predictions, 1)
-
-		print('Ground truth: {}, prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels]), ' '.join([label_converter.decode(lbl) for lbl in predictions])))
-
 	if True:
 		if True:
 			# Filter model parameters only that require gradients.
@@ -1349,7 +1337,7 @@ def recognize_word():
 			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			model.eval()
-			evaluate(model, test_dataloader, label_converter, device)
+			show_text_prediction(model, test_dataloader, label_converter, device)
 
 			#scheduler.step()
 
@@ -1364,7 +1352,7 @@ def recognize_word():
 	# Evaluate the model.
 
 	model.eval()
-	#evaluate(model, test_dataloader, label_converter, device)
+	#show_text_prediction(model, test_dataloader, label_converter, device)
 
 	# FIXME [fix] >> Computing accuracy here is wrong.
 	correct = 0
@@ -1453,7 +1441,7 @@ def recognize_word_2():
 	num_suffixes = 1
 
 	chars = charset  # Can make the number of each character different.
-	#train_dataloader, test_dataloader = create_word_data_loaders(label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
+	#train_dataloader, test_dataloader = create_word_data_loaders('simple_word', label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
@@ -1497,19 +1485,6 @@ def recognize_word_2():
 
 	#--------------------
 	# Train the model.
-
-	def evaluate(model, dataloader, label_converter, device='cpu'):
-		dataiter = iter(dataloader)
-		images, labels, _ = dataiter.next()
-
-		# Show images.
-		#show_image(torchvision.utils.make_grid(images))
-
-		with torch.no_grad():
-			predictions = model(images.to(device), device=device)
-		_, predictions = torch.max(predictions, 1)
-
-		print('Ground truth: {}, prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels]), ' '.join([label_converter.decode(lbl) for lbl in predictions])))
 
 	if True:
 		if True:
@@ -1581,7 +1556,7 @@ def recognize_word_2():
 			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			model.eval()
-			evaluate(model, test_dataloader, label_converter, device)
+			show_text_prediction(model, test_dataloader, label_converter, device)
 
 			#scheduler.step()
 
@@ -1596,7 +1571,7 @@ def recognize_word_2():
 	# Evaluate the model.
 
 	model.eval()
-	#evaluate(model, test_dataloader, label_converter, device)
+	#show_text_prediction(model, test_dataloader, label_converter, device)
 
 	# FIXME [fix] >> Computing accuracy here is wrong.
 	correct = 0
@@ -1700,7 +1675,7 @@ def recognize_word_using_mixup():
 		num_suffixes = 1
 
 	chars = charset  # Can make the number of each character different.
-	#train_dataloader, test_dataloader = create_word_data_loaders(label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
+	#train_dataloader, test_dataloader = create_word_data_loaders('simple_word', label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
@@ -1745,19 +1720,6 @@ def recognize_word_using_mixup():
 
 	#--------------------
 	# Train the model.
-
-	def evaluate(model, dataloader, label_converter, device='cpu'):
-		dataiter = iter(dataloader)
-		images, labels, _ = dataiter.next()
-
-		# Show images.
-		#show_image(torchvision.utils.make_grid(images))
-
-		with torch.no_grad():
-			predictions = model(images.to(device), device=device)
-		_, predictions = torch.max(predictions, 1)
-
-		print('Ground truth: {}, prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels]), ' '.join([label_converter.decode(lbl) for lbl in predictions])))
 
 	if True:
 		if True:
@@ -1850,7 +1812,7 @@ def recognize_word_using_mixup():
 			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			model.eval()
-			evaluate(model, test_dataloader, label_converter, device)
+			show_text_prediction(model, test_dataloader, label_converter, device)
 
 			#scheduler.step()
 
@@ -1865,7 +1827,7 @@ def recognize_word_using_mixup():
 	# Evaluate the model.
 
 	model.eval()
-	#evaluate(model, test_dataloader, label_converter, device)
+	#show_text_prediction(model, test_dataloader, label_converter, device)
 
 	# FIXME [fix] >> Computing accuracy here is wrong.
 	correct = 0
