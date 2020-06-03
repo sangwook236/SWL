@@ -5,6 +5,112 @@ import cv2
 import swl.language_processing.util as swl_langproc_util
 from swl.language_processing.text_generator import Transformer, HangeulJamoGenerator, HangeulLetterGenerator, TextGenerator, SceneProvider, SceneTextGenerator
 
+def construct_charset(digit=True, alphabet_uppercase=True, alphabet_lowercase=True, punctuation=True, whitespace=True, hangeul=True, hangeul_jamo=True, unit=False, currency=False, latin=False, greek_uppercase=False, greek_lowercase=False, chinese=False, hiragana=False, katakana=False, hangeul_letter_filepath=None):
+	charset = ''
+
+	# Latin.
+	# Unicode: Basic Latin (U+0020 ~ U+007F).
+	import string
+	if digit:
+		charset += string.digits
+	if alphabet_uppercase:
+		charset += string.ascii_uppercase
+	if alphabet_lowercase:
+		charset += string.ascii_lowercase
+	if punctuation:
+		charset += string.punctuation
+	if whitespace:
+		charset += ' '
+
+	if hangeul:
+		# Unicode: Hangul Syllables (U+AC00 ~ U+D7AF).
+		#charset += ''.join([chr(ch) for ch in range(0xAC00, 0xD7A3 + 1)])
+
+		if hangeul_letter_filepath is None:
+			hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
+			#hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
+			#hangeul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
+		with open(hangeul_letter_filepath, 'r', encoding='UTF-8') as fd:
+			#charset += fd.read().strip('\n')  # A string.
+			charset += fd.read().replace(' ', '').replace('\n', '')  # A string.
+			#charset += fd.readlines()  # A list of strings.
+			#charset += fd.read().splitlines()  # A list of strings.
+	if hangeul_jamo:
+		# Unicode: Hangul Jamo (U+1100 ~ U+11FF), Hangul Compatibility Jamo (U+3130 ~ U+318F), Hangul Jamo Extended-A (U+A960 ~ U+A97F), & Hangul Jamo Extended-B (U+D7B0 ~ U+D7FF).
+		##unicodes = list(range(0x1100, 0x11FF + 1)) + list(range(0x3131, 0x318E + 1))
+		#unicodes = range(0x3131, 0x318E + 1)
+		#charset += ''.join([chr(ch) for ch in unicodes])
+
+		#charset += 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+		charset += 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+		#charset += 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
+
+	if unit:
+		# REF [site] >> http://xahlee.info/comp/unicode_units.html
+		unicodes = list(range(0x3371, 0x337A + 1)) + list(range(0x3380, 0x33DF + 1)) + [0x33FF]
+		charset += ''.join([chr(ch) for ch in unicodes])
+
+	if currency:
+		# Unicode: Currency Symbols (U+20A0 ~ U+20CF).
+		charset += ''.join([chr(ch) for ch in range(0x20A0, 0x20BF + 1)])
+
+	if latin:
+		# Unicode: Latin-1 Supplement (U+0080 ~ U+00FF), Latin Extended-A (U+0100 ~ U+017F), Latin Extended-B (U+0180 ~ U+024F).
+		charset += ''.join([chr(ch) for ch in range(0x00C0, 0x024F + 1)])
+
+	# Unicode: Greek and Coptic (U+0370 ~ U+03FF) & Greek Extended (U+1F00 ~ U+1FFF).
+	if greek_uppercase:
+		unicodes = list(range(0x0391, 0x03A1 + 1)) + list(range(0x03A3, 0x03A9 + 1))
+		charset += ''.join([chr(ch) for ch in unicodes])
+	if greek_lowercase:
+		unicodes = list(range(0x03B1, 0x03C1 + 1)) + list(range(0x03C3, 0x03C9 + 1))
+		charset += ''.join([chr(ch) for ch in unicodes])
+
+	if chinese:
+		# Unicode: CJK Unified Ideographs (U+4E00 ~ U+9FFF) & CJK Unified Ideographs Extension A (U+3400 ~ U+4DBF).
+		unicodes = list(range(0x4E00, 0x9FD5 + 1)) + list(range(0x3400, 0x4DB5 + 1))
+		charset += ''.join([chr(ch) for ch in unicodes])
+
+	if hiragana:
+		# Unicode: Hiragana (U+3040 ~ U+309F).
+		charset += ''.join([chr(ch) for ch in range(0x3041, 0x3096 + 1)])
+	if katakana:
+		# Unicode: Katakana (U+30A0 ~ U+30FF).
+		charset += ''.join([chr(ch) for ch in range(0x30A1, 0x30FA + 1)])
+
+	return charset
+
+def construct_word_set(korean=True, english=True, korean_dictionary_filepath=None, english_dictionary_filepath=None):
+	words = []
+	if korean:
+		if korean_dictionary_filepath is None:
+			korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
+
+		print('Start loading a Korean dictionary...')
+		start_time = time.time()
+		with open(korean_dictionary_filepath, 'r', encoding='UTF-8') as fd:
+			#korean_words = fd.readlines()
+			#korean_words = fd.read().strip('\n')
+			korean_words = fd.read().splitlines()
+		print('End loading a Korean dictionary: {} secs.'.format(time.time() - start_time))
+		words += korean_words
+	if english:
+		if english_dictionary_filepath is None:
+			#english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
+			english_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
+			#english_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
+
+		print('Start loading an English dictionary...')
+		start_time = time.time()
+		with open(english_dictionary_filepath, 'r', encoding='UTF-8') as fd:
+			#english_words = fd.readlines()
+			#english_words = fd.read().strip('\n')
+			english_words = fd.read().splitlines()
+		print('End loading an English dictionary: {} secs.'.format(time.time() - start_time))
+		words += english_words
+
+	return set(words)
+
 def generate_random_words(chars, min_char_len=1, max_char_len=10):
 	chars = list(chars)
 	random.shuffle(chars)

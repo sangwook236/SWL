@@ -67,7 +67,7 @@ class MyRunner(object):
 
 		#--------------------
 		self._logger.info('Start training...')
-		start_total_time = start_epoch_time = time.time()
+		start_train_time = start_epoch_time = time.time()
 		epoch_time = utils.AverageMeter()
 		best_performance_measure = 0
 		best_model_filepath = None
@@ -127,7 +127,7 @@ class MyRunner(object):
 
 			sys.stdout.flush()
 			time.sleep(0)
-		self._logger.info('End training: {} secs.'.format(time.time() - start_total_time))
+		self._logger.info('End training: {} secs.'.format(time.time() - start_train_time))
 
 		return best_model_filepath, history
 
@@ -230,18 +230,12 @@ class MyRunner(object):
 
 		return train_dataloader, test_dataloader
 
-	def show_data_info(self, train_dataloader, test_dataloader):
-		data_iter = iter(train_dataloader)
+	def show_data_info(self, dataloader, mode='Train'):
+		data_iter = iter(dataloader)
 		images, labels = data_iter.next()
 		images, labels = images.numpy(), labels.numpy()
-		self._logger.info('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
-		self._logger.info('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(labels.shape, labels.dtype, np.min(labels), np.max(labels)))
-
-		data_iter = iter(test_dataloader)
-		images, labels = data_iter.next()
-		images, labels = images.numpy(), labels.numpy()
-		self._logger.info('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
-		self._logger.info('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(labels.shape, labels.dtype, np.min(labels), np.max(labels)))
+		self._logger.info('{} image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, images.shape, images.dtype, np.min(images), np.max(images)))
+		self._logger.info('{} label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, labels.shape, labels.dtype, np.min(labels), np.max(labels)))
 
 	def _train(self, model, criterion, optimizer, dataloader, epoch, log_print_freq, device):
 		# Switch to train mode.
@@ -542,7 +536,8 @@ def main():
 
 	# Load datasets.
 	train_dataloader, test_dataloader = runner.load_data(batch_size, num_workers=num_workers)
-	runner.show_data_info(train_dataloader, test_dataloader)
+	runner.show_data_info(train_dataloader, 'Train')
+	runner.show_data_info(test_dataloader, 'Test')
 
 	if args.train:
 		model_checkpoint_filepath = os.path.join(output_dir_path, 'model_ckpt.{epoch:04d}-{val_acc:.5f}.pth')
@@ -584,7 +579,7 @@ def main():
 				# Initialize model weights.
 				for name, param in model.named_parameters():
 					#if 'initialized_variable_name' in name:
-					#	logger.info(f'Skip {name} as it is already initialized.')
+					#	logger.info(f'Skip {name} as it has already been initialized.')
 					#	continue
 					try:
 						if 'bias' in name:

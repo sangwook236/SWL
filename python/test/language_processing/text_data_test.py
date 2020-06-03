@@ -13,69 +13,25 @@ import swl.language_processing.util as swl_langproc_util
 import text_data
 import text_generation_util as tg_util
 
-def construct_charset():
-	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
-	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
-	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
-	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#hangeul_charset = fd.read().strip('\n')  # A string.
-		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
-		#hangeul_charset = fd.readlines()  # A list of strings.
-		#hangeul_charset = fd.read().splitlines()  # A list of strings.
-
-	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-	hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
-
-	import string
-	alphabet_charset = string.ascii_uppercase + string.ascii_lowercase
-	digit_charset = string.digits
-	symbol_charset = string.punctuation
-	#symbol_charset = string.punctuation + ' '
-
-	#charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset + hangeul_jamo_charset
-	charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset
-	return charset
-
-def construct_word_set():
-	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
-	#english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
-	english_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
-	#english_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
-
-	print('Start loading a Korean dictionary...')
-	start_time = time.time()
-	with open(korean_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-		#korean_words = fd.readlines()
-		#korean_words = fd.read().strip('\n')
-		korean_words = fd.read().splitlines()
-	print('End loading a Korean dictionary: {} secs.'.format(time.time() - start_time))
-
-	print('Start loading an English dictionary...')
-	start_time = time.time()
-	with open(english_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-		#english_words = fd.readlines()
-		#english_words = fd.read().strip('\n')
-		english_words = fd.read().splitlines()
-	print('End loading an English dictionary: {} secs.'.format(time.time() - start_time))
-
-	#return set(korean_words)
-	#return set(english_words)
-	return set(korean_words + english_words)
-
-def construct_font():
+def construct_font(korean=True, english=True):
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
 		font_base_dir_path = '/home/sangwook/work/font'
 	else:
 		system_font_dir_path = 'C:/Windows/Fonts'
 		font_base_dir_path = 'D:/work/font'
-	font_dir_path = font_base_dir_path + '/kor'
-	#font_dir_path = font_base_dir_path + '/eng'
 
-	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
-	#font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-	font_list = tg_util.generate_font_list(font_filepaths)
+	font_dir_paths = []
+	if korean:
+		font_dir_paths.append(font_base_dir_path + '/kor')
+	if english:
+		font_dir_paths.append(font_base_dir_path + '/eng')
+
+	font_list = []
+	for font_dir_path in font_dir_paths:
+		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+		#font_list = tg_util.generate_hangeul_font_list(font_filepaths)
+		font_list.extend(tg_util.generate_font_list(font_filepaths))
 	return font_list
 
 def construct_chars():
@@ -448,7 +404,8 @@ def SimpleCharacterDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset, font_list = construct_charset(), construct_font()
+	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
+	font_list = construct_font(korean=True, english=False)
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
 	font_size_interval = (10, 100)
@@ -526,7 +483,8 @@ def NoisyCharacterDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset, font_list = construct_charset(), construct_font()
+	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
+	font_list = construct_font(korean=True, english=False)
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
 	font_size_interval = (10, 100)
@@ -605,7 +563,7 @@ def FileBasedCharacterDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset = construct_charset()
+	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
 
 	train_test_ratio = 0.8
 	batch_size = 64
@@ -715,7 +673,8 @@ def SimpleWordDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset, wordset, font_list = construct_charset(), construct_word_set(), construct_font()
+	charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+	font_list = construct_font(korean=True, english=False)
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	max_word_len = None  # Use max. word length.
@@ -795,7 +754,8 @@ def RandomWordDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset, font_list = construct_charset(), construct_font()
+	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
+	font_list = construct_font(korean=True, english=False)
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	max_word_len = None  # Use max. word length.
@@ -877,7 +837,7 @@ def FileBasedWordDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset = construct_charset()
+	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
 
 	max_word_len = 30
 	train_test_ratio = 0.8
@@ -988,8 +948,8 @@ def SimpleTextLineDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset, wordset, font_list = construct_charset(), construct_word_set(), construct_font()
-	charset += ' '  # Add space character.
+	charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=True), tg_util.construct_word_set(korean=True, english=True)
+	font_list = construct_font(korean=True, english=False)
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	max_textline_len = 80
