@@ -4,7 +4,7 @@
 import sys
 sys.path.append('../../src')
 
-import os, random, functools, itertools, glob, time
+import os, random, functools, itertools, time
 import numpy as np
 import torch
 import torchvision
@@ -42,12 +42,7 @@ def construct_font(korean=True, english=True):
 	if english:
 		font_dir_paths.append(font_base_dir_path + '/eng')
 
-	font_list = []
-	for font_dir_path in font_dir_paths:
-		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
-		#font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-		font_list.extend(tg_util.generate_font_list(font_filepaths))
-	return font_list
+	return tg_util.construct_font(font_dir_paths)
 
 def create_char_augmenter():
 	#import imgaug as ia
@@ -1428,7 +1423,7 @@ def recognize_word_2():
 	if True:
 		# Initialize model weights.
 		for name, param in model.named_parameters():
-			if 'localization_fc2' in name:
+			if 'localization_fc2' in name:  # Exists in TPS_SpatialTransformerNetwork.
 				print(f'Skip {name} as it has already been initialized.')
 				continue
 			try:
@@ -1648,7 +1643,7 @@ def recognize_word_2_eng():
 	if True:
 		# Initialize model weights.
 		for name, param in model.named_parameters():
-			if 'localization_fc2' in name:
+			if 'localization_fc2' in name:  # Exists in TPS_SpatialTransformerNetwork.
 				print(f'Skip {name} as it has already been initialized.')
 				continue
 			try:
@@ -1886,7 +1881,7 @@ def recognize_word_using_mixup():
 	if True:
 		# Initialize model weights.
 		for name, param in model.named_parameters():
-			if 'localization_fc2' in name:
+			if 'localization_fc2' in name:  # Exists in TPS_SpatialTransformerNetwork.
 				print(f'Skip {name} as it has already been initialized.')
 				continue
 			try:

@@ -4,7 +4,7 @@
 import sys
 sys.path.append('../../src')
 
-import os, random, functools, glob, argparse, time
+import os, random, functools, argparse, time
 import numpy as np
 import torch, torchvision
 from PIL import Image, ImageOps
@@ -13,70 +13,21 @@ import swl.language_processing.util as swl_langproc_util
 import text_data
 import text_generation_util as tg_util
 
-def construct_charset():
-	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
-	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
-	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
-	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#hangeul_charset = fd.read().strip('\n')  # A string.
-		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
-		#hangeul_charset = fd.readlines()  # A list of strings.
-		#hangeul_charset = fd.read().splitlines()  # A list of strings.
-
-	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-	hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
-
-	import string
-	alphabet_charset = string.ascii_uppercase + string.ascii_lowercase
-	digit_charset = string.digits
-	symbol_charset = string.punctuation
-	#symbol_charset = string.punctuation + ' '
-
-	#charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset + hangeul_jamo_charset
-	charset = alphabet_charset + digit_charset + symbol_charset + hangeul_charset
-	return charset
-
-def construct_word_set():
-	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
-	#english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
-	english_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
-	#english_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
-
-	print('Start loading a Korean dictionary...')
-	start_time = time.time()
-	with open(korean_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-		#korean_words = fd.readlines()
-		#korean_words = fd.read().strip('\n')
-		korean_words = fd.read().splitlines()
-	print('End loading a Korean dictionary: {} secs.'.format(time.time() - start_time))
-
-	print('Start loading an English dictionary...')
-	start_time = time.time()
-	with open(english_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-		#english_words = fd.readlines()
-		#english_words = fd.read().strip('\n')
-		english_words = fd.read().splitlines()
-	print('End loading an English dictionary: {} secs.'.format(time.time() - start_time))
-
-	#return set(korean_words)
-	#return set(english_words)
-	return set(korean_words + english_words)
-
-def construct_font():
+def construct_font(korean=True, english=True):
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
 		font_base_dir_path = '/home/sangwook/work/font'
 	else:
 		system_font_dir_path = 'C:/Windows/Fonts'
 		font_base_dir_path = 'D:/work/font'
-	font_dir_path = font_base_dir_path + '/kor'
-	#font_dir_path = font_base_dir_path + '/eng'
 
-	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
-	#font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-	font_list = tg_util.generate_font_list(font_filepaths)
-	return font_list
+	font_dir_paths = []
+	if korean:
+		font_dir_paths.append(font_base_dir_path + '/kor')
+	if english:
+		font_dir_paths.append(font_base_dir_path + '/eng')
+
+	return tg_util.construct_font(font_dir_paths)
 
 def construct_chars():
 	import string
@@ -461,7 +412,8 @@ def generate_simple_word_data(image_height, image_width, image_channel, max_word
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset, wordset, font_list = construct_charset(), construct_word_set(), construct_font()
+	charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+	font_list = construct_font(korean=True, english=False)
 
 	#num_train_examples, num_test_examples = int(1e6), int(1e4)
 	num_train_examples, num_test_examples = int(1e5), int(1e3)
@@ -548,7 +500,8 @@ def generate_random_word_data(image_height, image_width, image_channel, max_word
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset, font_list = construct_charset(), construct_font()
+	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
+	font_list = construct_font(korean=True, english=False)
 
 	#num_train_examples, num_test_examples = int(1e6), int(1e4)
 	num_train_examples, num_test_examples = int(1e5), int(1e3)
@@ -637,7 +590,7 @@ def generate_file_based_word_data(image_height, image_width, image_channel, max_
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset = construct_charset()
+	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
 
 	#max_word_len = 30
 	train_test_ratio = 0.8
@@ -648,23 +601,6 @@ def generate_file_based_word_data(image_height, image_width, image_channel, max_
 		data_base_dir_path = '/home/sangwook/work/dataset'
 	else:
 		data_base_dir_path = 'D:/work/dataset'
-
-	if True:
-		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
-		is_image_used = False
-	elif False:
-		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_en.txt'
-		is_image_used = False
-	elif False:
-		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
-		is_image_used = True
-	elif False:
-		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_en.txt'
-		is_image_used = True
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -694,7 +630,31 @@ def generate_file_based_word_data(image_height, image_width, image_channel, max_
 	start_time = time.time()
 	label_converter = swl_langproc_util.TokenConverter(list(charset), fill_value=None)
 	#label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=None)
-	dataset = text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used)
+
+	datasets = []
+	if True:
+		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
+		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
+		is_image_used = False
+		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+	if True:
+		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
+		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_en.txt'
+		is_image_used = False
+		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+	if True:
+		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
+		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
+		is_image_used = True
+		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+	if True:
+		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
+		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_en.txt'
+		is_image_used = True
+		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+	assert datasets, 'NO Dataset'
+
+	dataset = torch.utils.data.ConcatDataset(datasets)
 	num_examples = len(dataset)
 	num_train_examples = int(num_examples * train_test_ratio)
 
@@ -747,8 +707,8 @@ def generate_simple_text_line_data(image_height, image_width, image_channel, max
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset, wordset, font_list = construct_charset(), construct_word_set(), construct_font()
-	charset += ' '  # Add space character.
+	charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=True), tg_util.construct_word_set(korean=True, english=True)
+	font_list = construct_font(korean=True, english=False)
 
 	#num_train_examples, num_test_examples = int(1e6), int(1e4)
 	num_train_examples, num_test_examples = int(1e5), int(1e3)

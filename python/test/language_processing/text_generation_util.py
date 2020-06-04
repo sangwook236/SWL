@@ -1,4 +1,4 @@
-import os, math, random, csv, time, copy
+import os, math, random, glob, csv, time, copy
 from functools import reduce
 import numpy as np
 import cv2
@@ -111,6 +111,40 @@ def construct_word_set(korean=True, english=True, korean_dictionary_filepath=Non
 
 	return set(words)
 
+def generate_font_list(font_filepaths):
+	num_fonts = 1
+	font_list = list()
+	for fpath in font_filepaths:
+		for font_idx in range(num_fonts):
+			font_list.append((fpath, font_idx))
+
+	return font_list
+
+def generate_hangeul_font_list(font_filepaths):
+	# NOTE [caution] >>
+	#	Font가 깨져 (한글) 문자가 물음표로 표시되는 경우 발생.
+	#	생성된 (한글) 문자의 하단부가 일부 짤리는 경우 발생.
+	#	Image resizing에 의해 얇은 획이 사라지는 경우 발생.
+
+	font_list = list()
+	for fpath in font_filepaths:
+		num_fonts = 4 if os.path.basename(fpath).lower() in ['gulim.ttf', 'batang.ttf'] else 1
+
+		for font_idx in range(num_fonts):
+			font_list.append((fpath, font_idx))
+
+	return font_list
+
+def construct_font(font_dir_paths):
+	font_list = []
+	for dir_path in font_dir_paths:
+		font_filepaths = glob.glob(os.path.join(dir_path, '*.ttf'))
+		#font_list = generate_hangeul_font_list(font_filepaths)
+		font_list.extend(generate_font_list(font_filepaths))
+	return font_list
+
+#--------------------------------------------------------------------
+
 def generate_random_words(chars, min_char_len=1, max_char_len=10):
 	chars = list(chars)
 	random.shuffle(chars)
@@ -175,30 +209,6 @@ def generate_repetitive_word_set(num_char_repetitions, charset, min_char_count, 
 	return word_set
 
 #--------------------------------------------------------------------
-
-def generate_font_list(font_filepaths):
-	num_fonts = 1
-	font_list = list()
-	for fpath in font_filepaths:
-		for font_idx in range(num_fonts):
-			font_list.append((fpath, font_idx))
-
-	return font_list
-
-def generate_hangeul_font_list(font_filepaths):
-	# NOTE [caution] >>
-	#	Font가 깨져 (한글) 문자가 물음표로 표시되는 경우 발생.
-	#	생성된 (한글) 문자의 하단부가 일부 짤리는 경우 발생.
-	#	Image resizing에 의해 얇은 획이 사라지는 경우 발생.
-
-	font_list = list()
-	for fpath in font_filepaths:
-		num_fonts = 4 if os.path.basename(fpath).lower() in ['gulim.ttf', 'batang.ttf'] else 1
-
-		for font_idx in range(num_fonts):
-			font_list.append((fpath, font_idx))
-
-	return font_list
 
 def generate_phd08_dict(from_npy=True):
 	if from_npy:
