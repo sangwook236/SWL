@@ -550,11 +550,12 @@ def main():
 		# TODO [check] >> Is this position right?
 		if False:
 			# Filter model parameters only that require gradients.
-			model_params, num_model_params = list(), list()
+			#model_params = filter(lambda p: p.requires_grad, model.parameters())
+			model_params, num_model_params = list(), 0
 			for p in filter(lambda p: p.requires_grad, model.parameters()):
 				model_params.append(p)
-				num_model_params.append(np.prod(p.size()))
-			print('#trainable model parameters = {}.'.format(sum(num_model_params)))
+				num_model_params += np.prod(p.size())
+			print('#trainable model parameters = {}.'.format(num_model_params))
 			#print('Trainable model parameters:')
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 		else:
