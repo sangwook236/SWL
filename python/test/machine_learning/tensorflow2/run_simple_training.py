@@ -132,7 +132,7 @@ class MyRunner(object):
 	def dataset(self):
 		return self._dataset
 
-	def train(self, checkpoint_dir_path, output_dir_path, batch_size, final_epoch, initial_epoch=0, is_training_resumed=False):
+	def train(self, model, output_dir_path, ckpt, ckpt_manager, batch_size, final_epoch, initial_epoch=0):
 		if batch_size is None or batch_size <= 0:
 			raise ValueError('Invalid batch size: {}'.format(batch_size))
 
@@ -162,24 +162,6 @@ class MyRunner(object):
 			self._test_loss(loss)
 			self._test_accuracy(outputs, predictions)
 
-		# Create a model.
-		model = MyModel(self._dataset.num_classes)
-
-		# Create checkpoint objects.
-		ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=self._optimizer, net=model)
-		ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir_path, max_to_keep=5, keep_checkpoint_every_n_hours=2)
-
-		if is_training_resumed:
-			# Restore a model.
-			self._logger.info('Start restoring a model...')
-			start_time = time.time()
-			ckpt.restore(ckpt_manager.latest_checkpoint)
-			if ckpt_manager.latest_checkpoint:
-				self._logger.info('End restoring a model from {}: {} secs.'.format(ckpt_manager.latest_checkpoint, time.time() - start_time))
-			else:
-				self._logger.error('Failed to restore a model from {}.'.format(checkpoint_dir_path))
-				return
-
 		# Create a dataset.
 		train_dataset = tf.data.Dataset.from_tensor_slices(self._dataset.train_data).shuffle(batch_size).batch(batch_size, drop_remainder=False)
 		test_dataset = tf.data.Dataset.from_tensor_slices(self._dataset.test_data).batch(batch_size, drop_remainder=False)
@@ -198,10 +180,7 @@ class MyRunner(object):
 		val_summary_writer = tf.summary.create_file_writer(val_summary_dir_path)
 
 		#--------------------
-		if is_training_resumed:
-			self._logger.info('Resume training...')
-		else:
-			self._logger.info('Start training...')
+		self._logger.info('Start training...')
 		best_performance_measure = 0
 		start_total_time = time.time()
 		for epoch in range(initial_epoch, final_epoch):
@@ -291,31 +270,39 @@ class MyRunner(object):
 			self._logger.warning('Invalid test results.')
 
 	def infer(self, model, inputs):
+		# A new probability model which does not need to be trained because it has no trainable parameter.
+		#model = tf.keras.Sequential([model, tf.keras.layers.Softmax()])
+
 		self._logger.info('Start inferring...')
 		start_time = time.time()
 		inferences = model(inputs)
 		self._logger.info('End inferring: {} secs.'.format(time.time() - start_time))
 		return inferences.numpy()
 
-	def load_evaluation_model(self, checkpoint_dir_path):
+	def load_model(self, checkpoint_dir_path, is_train=False, is_loaded=False):
 		# Create a model.
 		model = MyModel(self._dataset.num_classes)
 
 		# Create checkpoint objects.
 		#ckpt = tf.train.Checkpoint(net=model)  # Not good.
 		ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=self._optimizer, net=model)
-		ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir_path, max_to_keep=None)
-
-		# Load a model.
-		self._logger.info('Start loading a model...')
-		start_time = time.time()
-		ckpt.restore(ckpt_manager.latest_checkpoint)
-		if ckpt_manager.latest_checkpoint:
-			self._logger.info('End loading a model from {}: {} secs.'.format(ckpt_manager.latest_checkpoint, time.time() - start_time))
-			return model
+		if is_train:
+			ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir_path, max_to_keep=5, keep_checkpoint_every_n_hours=2)
 		else:
-			self._logger.error('Failed to load a model from {}.'.format(checkpoint_dir_path))
-			return None
+			ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir_path, max_to_keep=None)
+
+		if is_loaded:
+			# Load a model.
+			self._logger.info('Start loading a model...')
+			start_time = time.time()
+			ckpt.restore(ckpt_manager.latest_checkpoint)
+			if ckpt_manager.latest_checkpoint:
+				self._logger.info('End loading a model from {}: {} secs.'.format(ckpt_manager.latest_checkpoint, time.time() - start_time))
+			else:
+				self._logger.error('Failed to load a model from {}.'.format(checkpoint_dir_path))
+				return None, None, None
+
+		return model, ckpt, ckpt_manager
 
 #--------------------------------------------------------------------
 
@@ -336,12 +323,6 @@ def parse_command_line_options():
 		'--infer',
 		action='store_true',
 		help='Specify whether to infer by a trained model'
-	)
-	parser.add_argument(
-		'-r',
-		'--resume',
-		action='store_true',
-		help='Specify whether to resume training'
 	)
 	parser.add_argument(
 		'-m',
@@ -454,8 +435,8 @@ def main():
 		os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
 
 	#--------------------
-	is_training_resumed = args.resume
 	initial_epoch, final_epoch, batch_size = 0, args.epoch, args.batch_size
+	is_resumed = args.model_dir is not None
 
 	checkpoint_dir_path, output_dir_path = os.path.normpath(args.model_dir) if args.model_dir else None, os.path.normpath(args.out_dir) if args.out_dir else None
 	if checkpoint_dir_path:
@@ -477,18 +458,21 @@ def main():
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
-		# TODO [check] >> Make sure whether the checkpoint directory ('tf_checkpoint') is copied to 'output_dir_path'.
+		# Load a model.
+		model, ckpt, ckpt_manager = runner.load_model(checkpoint_dir_path, is_train=True, is_loaded=is_resumed)
+		if not model: return None
 
-		history = runner.train(checkpoint_dir_path, output_dir_path, batch_size, final_epoch, initial_epoch, is_training_resumed)
+		history = runner.train(model, output_dir_path, ckpt, ckpt_manager, batch_size, final_epoch, initial_epoch)
 
-		#logger.info('Train history = {}.'.format(history))
-		swl_ml_util.display_train_history(history)
-		if os.path.exists(output_dir_path):
-			swl_ml_util.save_train_history(history, output_dir_path)
+		if history:
+			#logger.info('Train history = {}.'.format(history))
+			swl_ml_util.display_train_history(history)
+			if os.path.exists(output_dir_path):
+				swl_ml_util.save_train_history(history, output_dir_path)
 
 	if args.test or args.infer:
 		if checkpoint_dir_path and os.path.exists(checkpoint_dir_path):
-			model = runner.load_evaluation_model(checkpoint_dir_path)
+			model, _, _ = runner.load_model(checkpoint_dir_path, is_train=False, is_loaded=True)
 
 			if args.test and model:
 				runner.test(model, batch_size)

@@ -301,7 +301,7 @@ class MyRunner(object):
 					saver.restore(sess, ckpt_filepath)
 				else:
 					self._logger.error('Failed to restore a model from {}.'.format(checkpoint_dir_path))
-					return
+					return None
 				self._logger.info('End restoring a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
 
 			history = {
@@ -446,7 +446,7 @@ class MyRunner(object):
 				saver.restore(sess, ckpt_filepath)
 			else:
 				self._logger.error('Failed to load a model from {}.'.format(checkpoint_dir_path))
-				return
+				return None
 			self._logger.info('End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
 
 			#--------------------
@@ -674,12 +674,6 @@ def parse_command_line_options():
 		help='Specify whether to visualize CNN results'
 	)
 	parser.add_argument(
-		'-r',
-		'--resume',
-		action='store_true',
-		help='Specify whether to resume training'
-	)
-	parser.add_argument(
 		'-m',
 		'--model_dir',
 		type=str,
@@ -790,8 +784,8 @@ def main():
 		os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
 
 	#--------------------
-	is_training_resumed = args.resume
 	initial_epoch, final_epoch, batch_size = 0, args.epoch, args.batch_size
+	is_resumed = args.model_dir is not None
 
 	checkpoint_dir_path, output_dir_path = os.path.normpath(args.model_dir) if args.model_dir else None, os.path.normpath(args.out_dir) if args.out_dir else None
 	if checkpoint_dir_path:
@@ -813,57 +807,52 @@ def main():
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
-		# TODO [check] >> Make sure whether the checkpoint directory ('tf_checkpoint') is copied to 'output_dir_path'.
-
-		history = runner.train(checkpoint_dir_path, output_dir_path, batch_size, final_epoch, initial_epoch, is_training_resumed)
+		history = runner.train(checkpoint_dir_path, output_dir_path, batch_size, final_epoch, initial_epoch, is_resumed)
 
 		#logger.info('Train history = {}.'.format(history))
 		swl_ml_util.display_train_history(history)
 		if os.path.exists(output_dir_path):
 			swl_ml_util.save_train_history(history, output_dir_path)
 
-	if args.test:
-		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
-			logger.error('Model directory, {} does not exist.'.format(checkpoint_dir_path))
-			return
+	if args.test or args.infer:
+		if checkpoint_dir_path and os.path.exists(checkpoint_dir_path):
+			if args.test:
+				runner.test(checkpoint_dir_path, batch_size)
 
-		runner.test(checkpoint_dir_path, batch_size)
+			if args.infer:
+				inf_images, _ = runner.dataset.test_data
 
-	if args.infer:
-		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
-			logger.error('Model directory, {} does not exist.'.format(checkpoint_dir_path))
-			return
+				inferences = runner.infer(checkpoint_dir_path, inf_images)
+				if not inferences: return
 
-		inf_images, _ = runner.dataset.test_data
+				inferences = np.vstack(inferences)
+				if inferences is not None:
+					logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
-		inferences = runner.infer(checkpoint_dir_path, inf_images)
+					if runner.dataset.num_classes > 2:
+						inferences = np.argmax(inferences, -1)
+					elif 2 == runner.dataset.num_classes:
+						inferences = np.around(inferences)
+					else:
+						raise ValueError('Invalid number of classes')
 
-		inferences = np.vstack(inferences)
-		if inferences is not None:
-			logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
-
-			if runner.dataset.num_classes > 2:
-				inferences = np.argmax(inferences, -1)
-			elif 2 == runner.dataset.num_classes:
-				inferences = np.around(inferences)
-			else:
-				raise ValueError('Invalid number of classes')
-
-			results = {idx: inf for idx, inf in enumerate(inferences) if idx < 100}
-			logger.info('Inference results (index: inference): {}.'.format(results))
+					results = {idx: inf for idx, inf in enumerate(inferences) if idx < 100}
+					logger.info('Inference results (index: inference): {}.'.format(results))
+				else:
+					logger.warning('Invalid inference results.')
 		else:
-			logger.warning('Invalid inference results.')
+			logger.error('Model directory, {} does not exist.'.format(checkpoint_dir_path))
 
 	if args.visualize:
-		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
-			logger.error('Model directory, {} does not exist.'.format(checkpoint_dir_path))
-			return
-		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
-			os.makedirs(output_dir_path, exist_ok=True)
+		if checkpoint_dir_path and os.path.exists(checkpoint_dir_path):
+			if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
+				os.makedirs(output_dir_path, exist_ok=True)
 
-		images, _ = runner.dataset.test_data
-		#runner.visualize_using_tf_cnnvis(checkpoint_dir_path, output_dir_path, images)
-		runner.visualize_using_saliency(checkpoint_dir_path, output_dir_path, images[0])
+			images, _ = runner.dataset.test_data
+			#runner.visualize_using_tf_cnnvis(checkpoint_dir_path, output_dir_path, images)
+			runner.visualize_using_saliency(checkpoint_dir_path, output_dir_path, images[0])
+		else:
+			logger.error('Model directory, {} does not exist.'.format(checkpoint_dir_path))
 
 #--------------------------------------------------------------------
 

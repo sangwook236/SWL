@@ -116,6 +116,9 @@ class MyRunner(object):
 			self._logger.warning('Invalid test results.')
 
 	def infer(self, model, inputs, device='cpu'):
+		# A new probability model which does not need to be trained because it has no trainable parameter.
+		#model = torch.nn.Sequential(model, torch.nn.Softmax(dim=-1))
+
 		# Switch to evaluation mode.
 		model.eval()
 

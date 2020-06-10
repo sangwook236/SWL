@@ -72,12 +72,12 @@ class MyRunner(object):
 		best_performance_measure = 0
 		best_model_filepath = None
 		for epoch in range(initial_epoch, final_epoch):
-			self._logger.info('Epoch {}/{}'.format(epoch, final_epoch - 1))
+			self._logger.info('Epoch {}/{}'.format(epoch + 1, final_epoch))
 
 			current_learning_rate = scheduler.get_lr() if scheduler else 0.0
 			need_hour, need_mins, need_secs = utils.convert_secs2time(epoch_time.avg * (final_epoch - epoch))
 			need_time = '[Need: {:02d}:{:02d}:{:02d}]'.format(need_hour, need_mins, need_secs)
-			self._logger.info('==>>{:s} [Epoch={:03d}/{:03d}] {:s} [learning_rate={}]'.format(utils.time_string(), epoch, final_epoch, need_time, current_learning_rate) \
+			self._logger.info('==>>{:s} [Epoch={:03d}/{:03d}] {:s} [learning_rate={}]'.format(utils.time_string(), epoch + 1, final_epoch, need_time, current_learning_rate) \
 				+ ' [Best : Accuracy={:.2f}, Error={:.2f}].'.format(recorder.max_accuracy(False), 100 - recorder.max_accuracy(False)))
 
 			#--------------------
@@ -160,6 +160,9 @@ class MyRunner(object):
 			self._logger.warning('Invalid test results.')
 
 	def infer(self, model, inputs, device='cpu'):
+		# A new probability model which does not need to be trained because it has no trainable parameter.
+		#model = torch.nn.Sequential(model, torch.nn.Softmax(dim=-1)).to(device)
+
 		# Switch to evaluation mode.
 		model.eval()
 

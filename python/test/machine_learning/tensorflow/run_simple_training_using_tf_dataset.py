@@ -414,7 +414,7 @@ def main():
 	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
 
-	is_training_resumed = False
+	is_resumed = False
 	initial_epoch, final_epoch, batch_size = 0, 30, 128
 
 	#--------------------
@@ -435,7 +435,7 @@ def main():
 		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
 			os.makedirs(checkpoint_dir_path, exist_ok=True)
 
-		history = runner.train(checkpoint_dir_path, batch_size, final_epoch, initial_epoch, is_training_resumed)
+		history = runner.train(checkpoint_dir_path, batch_size, final_epoch, initial_epoch, is_resumed)
 
 		#print('History =', history)
 		swl_ml_util.display_train_history(history)

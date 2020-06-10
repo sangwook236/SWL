@@ -252,30 +252,7 @@ class MyRunner(object):
 	def dataset(self):
 		return self._dataset
 
-	def train(self, model_filepath, model_checkpoint_filepath, output_dir_path, batch_size, final_epoch, initial_epoch=0, is_training_resumed=False):
-		if is_training_resumed:
-			# Restore a model.
-			try:
-				self._logger.info('Start restoring a model...')
-				start_time = time.time()
-				"""
-				# Load only the architecture of a model.
-				model = tf.keras.models.model_from_json(json_string)
-				#model = tf.keras.models.model_from_yaml(yaml_string)
-				# Load only the weights of a model.
-				model.load_weights(model_weight_filepath)
-				"""
-				# Load a model.
-				model = tf.keras.models.load_model(model_filepath)
-				self._logger.info('End restoring a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
-			except (ImportError, IOError):
-				self._logger.error('Failed to restore a model from {}.'.format(model_filepath))
-				return
-		else:
-			# Create a model.
-			model = MyModel.create_model(self._dataset.shape, self._dataset.num_classes)
-			#model.summary()
-
+	def train(self, model, model_checkpoint_filepath, output_dir_path, batch_size, final_epoch, initial_epoch=0):
 		# Create a trainer.
 		loss = tf.keras.losses.categorical_crossentropy
 		optimizer = tf.keras.optimizers.SGD(learning_rate=0.001, momentum=0.9, nesterov=True)
@@ -316,10 +293,7 @@ class MyRunner(object):
 		num_epochs = final_epoch - initial_epoch
 
 		#--------------------
-		if is_training_resumed:
-			self._logger.info('Resume training...')
-		else:
-			self._logger.info('Start training...')
+		self._logger.info('Start training...')
 		start_time = time.time()
 		if self._use_keras_data_sequence:
 			# Use Keras sequences.
@@ -356,21 +330,7 @@ class MyRunner(object):
 		self._logger.info('\tValidation: loss = {:.6f}, accuracy = {:.6f}.'.format(*score))
 		self._logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-		#--------------------
-		self._logger.info('Start saving a model...')
-		start_time = time.time()
-		"""
-		# Save only the architecture of a model.
-		json_string = model.to_json()
-		#yaml_string = model.to_yaml()
-		# Save only the weights of a model.
-		model.save_weights(model_weight_filepath)
-		"""
-		# Save a model.
-		model.save(model_filepath)
-		self._logger.info('End saving a model to {}: {} secs.'.format(model_filepath, time.time() - start_time))
-
-		return history.history
+		return model, history.history
 
 	def test(self, model, batch_size=None, shuffle=False):
 		self._logger.info('Start testing...')
@@ -426,7 +386,7 @@ class MyRunner(object):
 		self._logger.info('End inferring: {} secs.'.format(time.time() - start_time))
 		return inferences
 
-	def load_evaluation_model(self, model_filepath):
+	def load_model(self, model_filepath):
 		try:
 			self._logger.info('Start loading a model...')
 			start_time = time.time()
@@ -465,12 +425,6 @@ def parse_command_line_options():
 		'--infer',
 		action='store_true',
 		help='Specify whether to infer by a trained model'
-	)
-	parser.add_argument(
-		'-r',
-		'--resume',
-		action='store_true',
-		help='Specify whether to resume training'
 	)
 	parser.add_argument(
 		'-m',
@@ -583,8 +537,8 @@ def main():
 		os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
 
 	#--------------------
-	is_training_resumed = args.resume
 	initial_epoch, final_epoch, batch_size = 0, args.epoch, args.batch_size
+	is_resumed = args.model_file is not None
 
 	model_filepath, output_dir_path = os.path.normpath(args.model_file) if args.model_file else None, os.path.normpath(args.out_dir) if args.out_dir else None
 	if model_filepath:
@@ -606,17 +560,31 @@ def main():
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
-		# Copy the model file to the output directory.
-		new_model_filepath = os.path.join(output_dir_path, os.path.basename(model_filepath))
-		if os.path.exists(model_filepath) and not os.path.samefile(model_filepath, new_model_filepath):
-			try:
-				shutil.copyfile(model_filepath, new_model_filepath)
-			except (FileNotFoundError, PermissionError) as ex:
-				logger.error('Failed to copy a model, {}: {}.'.format(model_filepath, ex))
-				return
-		model_filepath = new_model_filepath
+		if is_resumed:
+			# Load a model.
+			model = runner.load_model(model_filepath)
+			if not model: return
+		else:
+			# Create a model.
+			model = MyModel.create_model(runner.dataset.shape, runner.dataset.num_classes)
+			#model.summary()
 
-		history = runner.train(model_filepath, model_checkpoint_filepath, output_dir_path, batch_size, final_epoch, initial_epoch, is_training_resumed)
+		model, history = runner.train(model, model_checkpoint_filepath, output_dir_path, batch_size, final_epoch, initial_epoch)
+
+		if model:
+			model_filepath = os.path.join(output_dir_path, 'best_model.hdf5')
+			logger.info('Start saving a model...')
+			start_time = time.time()
+			"""
+			# Save only the architecture of a model.
+			json_string = model.to_json()
+			#yaml_string = model.to_yaml()
+			# Save only the weights of a model.
+			model.save_weights(model_weight_filepath)
+			"""
+			# Save a model.
+			model.save(model_filepath)
+			logger.info('End saving a model to {}: {} secs.'.format(model_filepath, time.time() - start_time))
 
 		#logger.info('Train history = {}.'.format(history))
 		swl_ml_util.display_train_history(history)
@@ -625,7 +593,7 @@ def main():
 
 	if args.test or args.infer:
 		if model_filepath and os.path.exists(model_filepath):
-			model = runner.load_evaluation_model(model_filepath)
+			model = runner.load_model(model_filepath)
 
 			if args.test and model:
 				runner.test(model)
