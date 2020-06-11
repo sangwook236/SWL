@@ -107,7 +107,7 @@ def create_word_augmenter():
 	from imgaug import augmenters as iaa
 
 	augmenter = iaa.Sequential([
-		iaa.Grayscale(alpha=(0.0, 1.0)),  # Requires RGB images.
+		#iaa.Grayscale(alpha=(0.0, 1.0)),  # Requires RGB images.
 		#iaa.Sometimes(0.5, iaa.OneOf([
 		#	iaa.Crop(px=(0, 100)),  # Crop images from each side by 0 to 16px (randomly chosen).
 		#	iaa.Crop(percent=(0, 0.1)),  # Crop images by 0-10% of their height/width.
@@ -683,12 +683,6 @@ def create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_e
 
 	return train_dataloader, test_dataloader
 
-def show_image(img):
-	img = img / 2 + 0.5  # Unnormalize.
-	npimg = img.numpy()
-	plt.imshow(np.transpose(npimg, (1, 2, 0)))
-	plt.show()
-
 def concatenate_labels(labels, eos_value, lengths=None):
 	concat_labels = []
 	if lengths == None:
@@ -702,6 +696,29 @@ def concatenate_labels(labels, eos_value, lengths=None):
 			concat_labels.append(lbl[:ll])
 	return list(itertools.chain(*concat_labels))
 
+def show_image(img):
+	img = img / 2 + 0.5  # Unnormalize.
+	npimg = img.numpy()
+	plt.imshow(np.transpose(npimg, (1, 2, 0)))
+	plt.show()
+
+def visualize_char_data(dataloader, label_converter):
+	dataiter = iter(dataloader)
+	images, labels = dataiter.next()
+
+	print('Labels: {}.'.format(' '.join(label_converter.decode(labels))))
+	show_image(torchvision.utils.make_grid(images))
+
+def visualize_text_data(dataloader, label_converter, SOS_VALUE=None, EOS_VALUE=None):
+	dataiter = iter(dataloader)
+	images, labels, label_lens = dataiter.next()
+
+	#print('Labels: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels])))
+	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.fill_value, SOS_VALUE, EOS_VALUE))
+	for idx, (lbl, ll) in enumerate(zip(labels, label_lens)):
+		print('Label #{} (len = {}): (str) {}, (int) {}.'.format(idx, ll.numpy(), label_converter.decode(lbl), lbl.numpy()))
+	show_image(torchvision.utils.make_grid(images))
+
 def show_char_prediction(model, dataloader, label_converter, device='cpu'):
 	dataiter = iter(dataloader)
 	images, labels = dataiter.next()
@@ -713,8 +730,10 @@ def show_char_prediction(model, dataloader, label_converter, device='cpu'):
 		predictions = model(images.to(device))
 	_, predictions = torch.max(predictions, 1)
 
-	print('Prediction: {}.'.format(' '.join(label_converter.decode(predictions))))
-	print('G/T:        {}.'.format(' '.join(label_converter.decode(labels))))
+	#print('G/T:        {}.'.format(' '.join(label_converter.decode(labels))))
+	#print('Prediction: {}.'.format(' '.join(label_converter.decode(predictions))))
+	for gt, pred in zip(label_converter.decode(labels), label_converter.decode(predictions)):
+		print('G/T - prediction: {}, {}.'.format(gt, pred))
 
 def show_text_prediction(model, dataloader, label_converter, device='cpu'):
 	dataiter = iter(dataloader)
@@ -727,8 +746,10 @@ def show_text_prediction(model, dataloader, label_converter, device='cpu'):
 		predictions = model(images.to(device), device=device)
 	_, predictions = torch.max(predictions, 2)
 
-	print('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in predictions])))
-	print('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels])))
+	#print('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels])))
+	#print('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in predictions])))
+	for gt, pred in zip(labels, predictions):
+		print('G/T - prediction: {}, {}.'.format(label_converter.decode(gt), label_converter.decode(pred)))
 
 def show_text_prediction_for_aster(model, dataloader, label_converter, device='cpu'):
 	dataiter = iter(dataloader)
@@ -739,23 +760,27 @@ def show_text_prediction_for_aster(model, dataloader, label_converter, device='c
 
 	# Construct outputs for one-step look-ahead.
 	decoder_labels = labels[:,1:]  # Remove <SOS> token.
+	decoder_label_lens = label_lens - 1
 
-	images, label_lens = images.to(device), label_lens.to(device)
-	decoder_labels = decoder_labels.to(device)
+	images = images.to(device)
+	decoder_labels, decoder_label_lens = decoder_labels.to(device), decoder_label_lens.to(device)
 
 	input_dict = dict()
 	input_dict['images'] = images
 	input_dict['rec_targets'] = decoder_labels  # FIXME [check] >>
-	input_dict['rec_lengths'] = label_lens - 1  # FIXME [check] >>
+	input_dict['rec_lengths'] = decoder_label_lens  # FIXME [check] >>
 
 	with torch.no_grad():
 		output_dict = model(input_dict, device=device)
-	#loss = output_dict['losses']['loss_rec']
-	predictions = output_dict['output']['pred_rec']  # [batch size, max label len].
-	#prediction_scores = output_dict['output']['pred_rec_score']  # [batch size, max label len].
 
-	print('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in predictions])))
-	print('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels])))
+	#loss = output_dict['losses']['loss_rec'].cpu().numpy()
+	predictions = output_dict['output']['pred_rec'].cpu().numpy()  # [batch size, max label len].
+	#prediction_scores = output_dict['output']['pred_rec_score'].cpu().numpy()  # [batch size, max label len].
+
+	#print('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels])))
+	#print('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in predictions])))
+	for gt, pred in zip(labels, predictions):
+		print('G/T - prediction: {}, {}.'.format(label_converter.decode(gt), label_converter.decode(pred)))
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 def recognize_character():
@@ -798,15 +823,9 @@ def recognize_character():
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
 
-	if False:
-		# Get some random training images.
-		dataiter = iter(train_dataloader)
-		images, labels = dataiter.next()
-
-		# Print labels.
-		print('Labels: {}.'.format(' '.join(label_converter.decode(labels))))
-		# Show images.
-		show_image(torchvision.utils.make_grid(images))
+	# Visualize data.
+	#visualize_char_data(train_dataloader, label_converter)
+	#visualize_char_data(test_dataloader, label_converter)
 
 	#--------------------
 	# Define a convolutional neural network.
@@ -906,11 +925,14 @@ def recognize_character():
 	total = 0
 	with torch.no_grad():
 		for images, labels in test_dataloader:
-			images, labels = images.to(device), labels.to(device)
+			images = images.to(device)
+
 			predictions = model(images)
-			_, predictions = torch.max(predictions.data, 1)
-			total += labels.size(0)
+
+			_, predictions = torch.max(predictions, 1)
+			predictions = predictions.cpu().numpy()
 			correct += (predictions == labels).sum().item()
+			total += labels.size(0)
 
 	print('Accuracy of the network on the test images = {} %.'.format(100 * correct / total))
 
@@ -919,9 +941,12 @@ def recognize_character():
 	class_total = list(0 for i in range(num_classes))
 	with torch.no_grad():
 		for images, labels in test_dataloader:
-			images, labels = images.to(device), labels.to(device)
+			images = images.to(device)
+
 			predictions = model(images)
+
 			_, predictions = torch.max(predictions, 1)
+			predictions = predictions.cpu().numpy()
 			c = (predictions == labels).squeeze()
 			for i in range(len(labels)):
 				label = labels[i]
@@ -985,15 +1010,9 @@ def recognize_character_using_mixup():
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
 
-	if False:
-		# Get some random training images.
-		dataiter = iter(train_dataloader)
-		images, labels = dataiter.next()
-
-		# Print labels.
-		print('Labels: {}.'.format(' '.join(label_converter.decode(labels))))
-		# Show images.
-		show_image(torchvision.utils.make_grid(images))
+	# Visualize data.
+	#visualize_char_data(train_dataloader, label_converter)
+	#visualize_char_data(test_dataloader, label_converter)
 
 	#--------------------
 	# Define a convolutional neural network.
@@ -1094,11 +1113,14 @@ def recognize_character_using_mixup():
 	total = 0
 	with torch.no_grad():
 		for images, labels in test_dataloader:
-			images, labels = images.to(device), labels.to(device)
+			images = images.to(device)
+
 			predictions = model(images)
-			_, predictions = torch.max(predictions.data, 1)
-			total += labels.size(0)
+
+			_, predictions = torch.max(predictions, 1)
+			predictions = predictions.cpu().numpy()
 			correct += (predictions == labels).sum().item()
+			total += labels.size(0)
 
 	print('Accuracy of the network on the test images = {} %.'.format(100 * correct / total))
 
@@ -1107,9 +1129,12 @@ def recognize_character_using_mixup():
 	class_total = list(0 for i in range(num_classes))
 	with torch.no_grad():
 		for images, labels in test_dataloader:
-			images, labels = images.to(device), labels.to(device)
+			images = images.to(device)
+
 			predictions = model(images)
+
 			_, predictions = torch.max(predictions, 1)
+			predictions = predictions.cpu().numpy()
 			c = (predictions == labels).squeeze()
 			for i in range(len(labels)):
 				label = labels[i]
@@ -1181,13 +1206,14 @@ def recognize_word_1():
 		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), fill_value=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
 		assert label_converter.encode([BLANK_LABEL])[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL])[0])
 		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL])[0]
-		SOS_VALUE, FILL_VALUE = None, None
+		SOS_VALUE, EOS_VALUE = None, None
 		num_suffixes = 0
 	else:
+		# When the fill value is the ID of a valid token.
 		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
 		FILL_TOKEN = '<FILL>'
 		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=FILL_VALUE)
-		#assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
+		assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
 		assert label_converter.encode([FILL_TOKEN])[1] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN])[1], FILL_VALUE)
 		SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS])[1], label_converter.encode([label_converter.EOS])[1]
 		num_suffixes = 1
@@ -1198,15 +1224,9 @@ def recognize_word_1():
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
 
-	if False:
-		# Get some random training images.
-		dataiter = iter(train_dataloader)
-		images, labels, _ = dataiter.next()
-
-		# Print labels.
-		print('Labels: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels])))
-		# Show images.
-		show_image(torchvision.utils.make_grid(images))
+	# Visualize data.
+	#visualize_text_data(train_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
+	#visualize_text_data(test_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
 
 	#--------------------
 	# Define a model.
@@ -1352,11 +1372,14 @@ def recognize_word_1():
 	total = 0
 	with torch.no_grad():
 		for images, labels, _ in test_dataloader:
-			images, labels = images.to(device), labels.to(device)
+			images = images.to(device)
+
 			predictions = model(images, device=device)
-			_, predictions = torch.max(predictions.data, 1)
-			total += labels.size(0)
+
+			_, predictions = torch.max(predictions, 1)
+			predictions = predictions.cpu().numpy()
 			correct += (predictions == labels).sum().item()
+			total += labels.size(0)
 
 	print('Accuracy of the network on the test images = {} %.'.format(100 * correct / total))
 
@@ -1365,9 +1388,12 @@ def recognize_word_1():
 	class_total = list(0 for i in range(num_classes))
 	with torch.no_grad():
 		for images, labels, _ in test_dataloader:
-			images, labels = images.to(device), labels.to(device)
+			images = images.to(device)
+
 			predictions = model(images, device=device)
+
 			_, predictions = torch.max(predictions, 1)
+			predictions = predictions.cpu().numpy()
 			c = (predictions == labels).squeeze()
 			for i in range(len(labels)):
 				label = labels[i]
@@ -1439,14 +1465,19 @@ def recognize_word_1_eng():
 		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), fill_value=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
 		assert label_converter.encode([BLANK_LABEL])[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL])[0])
 		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL])[0]
-		SOS_VALUE, FILL_VALUE = None, None
+		SOS_VALUE, EOS_VALUE = None, None
 		num_suffixes = 0
 	else:
-		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
-		FILL_TOKEN = '<FILL>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=FILL_VALUE)
-		#assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
-		assert label_converter.encode([FILL_TOKEN])[1] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN])[1], FILL_VALUE)
+		if True:
+			# When the fill value is the ID of a valid token.
+			FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
+			FILL_TOKEN = '<FILL>'
+			label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=FILL_VALUE)
+			assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
+			assert label_converter.encode([FILL_TOKEN])[1] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN])[1], FILL_VALUE)
+		else:
+			# When the fill value = the ID of <SOS> token.
+			label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=swl_langproc_util.TokenConverter.SOS)
 		SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS])[1], label_converter.encode([label_converter.EOS])[1]
 		num_suffixes = 1
 
@@ -1456,15 +1487,9 @@ def recognize_word_1_eng():
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
 
-	if False:
-		# Get some random training images.
-		dataiter = iter(train_dataloader)
-		images, labels, _ = dataiter.next()
-
-		# Print labels.
-		print('Labels: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels])))
-		# Show images.
-		show_image(torchvision.utils.make_grid(images))
+	# Visualize data.
+	#visualize_text_data(train_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
+	#visualize_text_data(test_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
 
 	#--------------------
 	# Define a model.
@@ -1531,17 +1556,15 @@ def recognize_word_1_eng():
 			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
 			def forward(batch, device):
 				inputs, outputs, output_lens = batch
+				outputs[outputs == label_converter.fill_value] = SOS_VALUE  # Replace the fill value with <SOS> token.
 				outputs = outputs.long()
 
 				# Construct inputs for one-step look-ahead.
-				decoder_inputs = outputs.clone()
-				for idx, ll in enumerate(output_lens):
-					decoder_inputs[idx, ll-1] = label_converter.fill_value  # Remove <EOS> token.
-				decoder_inputs = decoder_inputs[:,:-1]
+				decoder_inputs = outputs[:,:-1]
 				# Construct outputs for one-step look-ahead.
 				decoder_outputs = outputs[:,1:]  # Remove <SOS> token.
 
-				inputs, output_lens = inputs.to(device), output_lens.to(device)
+				inputs = inputs.to(device)
 				decoder_inputs, decoder_outputs = decoder_inputs.to(device), decoder_outputs.to(device)
 
 				model_outputs = model(inputs, decoder_inputs, is_train=True, device=device)
@@ -1610,11 +1633,14 @@ def recognize_word_1_eng():
 	total = 0
 	with torch.no_grad():
 		for images, labels, _ in test_dataloader:
-			images, labels = images.to(device), labels.to(device)
+			images = images.to(device)
+
 			predictions = model(images, device=device)
-			_, predictions = torch.max(predictions.data, 1)
-			total += labels.size(0)
+
+			_, predictions = torch.max(predictions, 1)
+			predictions = predictions.cpu().numpy()
 			correct += (predictions == labels).sum().item()
+			total += labels.size(0)
 
 	print('Accuracy of the network on the test images = {} %.'.format(100 * correct / total))
 
@@ -1623,9 +1649,12 @@ def recognize_word_1_eng():
 	class_total = list(0 for i in range(num_classes))
 	with torch.no_grad():
 		for images, labels, _ in test_dataloader:
-			images, labels = images.to(device), labels.to(device)
+			images = images.to(device)
+
 			predictions = model(images, device=device)
+
 			_, predictions = torch.max(predictions, 1)
+			predictions = predictions.cpu().numpy()
 			c = (predictions == labels).squeeze()
 			for i in range(len(labels)):
 				label = labels[i]
@@ -1685,10 +1714,11 @@ def recognize_word_2():
 	#--------------------
 	# Prepare data.
 
+	# When the fill value is the ID of a valid token.
 	FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
 	FILL_TOKEN = '<FILL>'
 	label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=FILL_VALUE)
-	#assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
+	assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
 	assert label_converter.encode([FILL_TOKEN])[1] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN])[1], FILL_VALUE)
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS])[1], label_converter.encode([label_converter.EOS])[1]
 	num_suffixes = 1
@@ -1699,15 +1729,9 @@ def recognize_word_2():
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
 
-	if False:
-		# Get some random training images.
-		dataiter = iter(train_dataloader)
-		images, labels, _ = dataiter.next()
-
-		# Print labels.
-		print('Labels: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels])))
-		# Show images.
-		show_image(torchvision.utils.make_grid(images))
+	# Visualize data.
+	#visualize_text_data(train_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
+	#visualize_text_data(test_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
 
 	#--------------------
 	# Define a model.
@@ -1758,8 +1782,9 @@ def recognize_word_2():
 		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
-			inputs, outputs, output_lens = inputs.to(device), outputs.to(device), output_lens.to(device)
 			outputs = outputs.long()
+
+			inputs, outputs, output_lens = inputs.to(device), outputs.to(device), output_lens.to(device)
 
 			model_outputs = model(inputs, outputs, output_lens, device=device)
 
@@ -1832,11 +1857,14 @@ def recognize_word_2():
 	total = 0
 	with torch.no_grad():
 		for images, labels, _ in test_dataloader:
-			images, labels = images.to(device), labels.to(device)
+			images = images.to(device)
+
 			predictions = model(images, device=device)
-			_, predictions = torch.max(predictions.data, 1)
-			total += labels.size(0)
+
+			_, predictions = torch.max(predictions, 1)
+			predictions = predictions.cpu().numpy()
 			correct += (predictions == labels).sum().item()
+			total += labels.size(0)
 
 	print('Accuracy of the network on the test images = {} %.'.format(100 * correct / total))
 
@@ -1845,9 +1873,12 @@ def recognize_word_2():
 	class_total = list(0 for i in range(num_classes))
 	with torch.no_grad():
 		for images, labels, _ in test_dataloader:
-			images, labels = images.to(device), labels.to(device)
+			images = images.to(device)
+
 			predictions = model(images, device=device)
+
 			_, predictions = torch.max(predictions, 1)
+			predictions = predictions.cpu().numpy()
 			c = (predictions == labels).squeeze()
 			for i in range(len(labels)):
 				label = labels[i]
@@ -1875,7 +1906,6 @@ def recognize_word_2_eng():
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	max_word_len = 5  # Max. word length.
-	num_fiducials = 20  # The number of fiducial points of TPS-STN.
 	input_channel = image_channel  # The number of input channel of feature extractor.
 	output_channel = 512  # The number of output channel of feature extractor.
 	hidden_size = 256  # The size of the LSTM hidden states.
@@ -1907,10 +1937,11 @@ def recognize_word_2_eng():
 	#--------------------
 	# Prepare data.
 
+	# When the fill value is the ID of a valid token.
 	FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
 	FILL_TOKEN = '<FILL>'
 	label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=FILL_VALUE)
-	#assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
+	assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
 	assert label_converter.encode([FILL_TOKEN])[1] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN])[1], FILL_VALUE)
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS])[1], label_converter.encode([label_converter.EOS])[1]
 	num_suffixes = 1
@@ -1921,15 +1952,9 @@ def recognize_word_2_eng():
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
 
-	if False:
-		# Get some random training images.
-		dataiter = iter(train_dataloader)
-		images, labels, _ = dataiter.next()
-
-		# Print labels.
-		print('Labels: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels])))
-		# Show images.
-		show_image(torchvision.utils.make_grid(images))
+	# Visualize data.
+	#visualize_text_data(train_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
+	#visualize_text_data(test_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
 
 	#--------------------
 	# Define a model.
@@ -1980,8 +2005,9 @@ def recognize_word_2_eng():
 		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
-			inputs, outputs, output_lens = inputs.to(device), outputs.to(device), output_lens.to(device)
 			outputs = outputs.long()
+
+			inputs, outputs, output_lens = inputs.to(device), outputs.to(device), output_lens.to(device)
 
 			model_outputs = model(inputs, outputs, output_lens, device=device)
 
@@ -2053,12 +2079,15 @@ def recognize_word_2_eng():
 	correct = 0
 	total = 0
 	with torch.no_grad():
-		for images, labels, _ in test_dataloader:
-			images, labels = images.to(device), labels.to(device)
-			predictions = model(images, device=device)
-			_, predictions = torch.max(predictions.data, 1)
-			total += labels.size(0)
+		for images, labels, label_lens in test_dataloader:
+			images, labels, label_lens = images.to(device), labels.to(device), label_lens.to(device)
+
+			predictions = model(images, labels, label_lens, device=device)
+
+			_, predictions = torch.max(predictions, 1)
+			predictions, labels = predictions.cpu().numpy(), labels.cpu().numpy()
 			correct += (predictions == labels).sum().item()
+			total += labels.size(0)
 
 	print('Accuracy of the network on the test images = {} %.'.format(100 * correct / total))
 
@@ -2067,9 +2096,12 @@ def recognize_word_2_eng():
 	class_total = list(0 for i in range(num_classes))
 	with torch.no_grad():
 		for images, labels, _ in test_dataloader:
-			images, labels = images.to(device), labels.to(device)
+			images = images.to(device)
+
 			predictions = model(images, device=device)
+
 			_, predictions = torch.max(predictions, 1)
+			predictions = predictions.cpu().numpy()
 			c = (predictions == labels).squeeze()
 			for i in range(len(labels)):
 				label = labels[i]
@@ -2128,10 +2160,11 @@ def recognize_word_3_eng():
 	#--------------------
 	# Prepare data.
 
+	# When the fill value is the ID of a valid token.
 	FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
 	FILL_TOKEN = '<FILL>'
 	label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=FILL_VALUE)
-	#assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
+	assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
 	assert label_converter.encode([FILL_TOKEN])[1] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN])[1], FILL_VALUE)
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS])[1], label_converter.encode([label_converter.EOS])[1]
 	num_suffixes = 1
@@ -2142,15 +2175,9 @@ def recognize_word_3_eng():
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
 
-	if False:
-		# Get some random training images.
-		dataiter = iter(train_dataloader)
-		images, labels, _ = dataiter.next()
-
-		# Print labels.
-		print('Labels: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels])))
-		# Show images.
-		show_image(torchvision.utils.make_grid(images))
+	# Visualize data.
+	#visualize_text_data(train_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
+	#visualize_text_data(test_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
 
 	#--------------------
 	# Define a model.
@@ -2159,7 +2186,7 @@ def recognize_word_3_eng():
 	sys_args = aster.config.get_args(sys.argv[1:])
 
 	import aster.model_builder
-	model = aster.model_builder.ModelBuilder(sys_args, arch=sys_args.arch, rec_num_classes=num_classes,
+	model = aster.model_builder.ModelBuilder(sys_args, arch=sys_args.arch, input_channel=image_channel, rec_num_classes=num_classes,
 		sDim=sys_args.decoder_sdim, attDim=sys_args.attDim, max_len_labels=max_word_len + label_converter.num_affixes,
 		eos=EOS_VALUE, STN_ON=sys_args.STN_ON)
 
@@ -2216,16 +2243,20 @@ def recognize_word_3_eng():
 			"""
 			# Construct outputs for one-step look-ahead.
 			decoder_outputs = outputs[:,1:]  # Remove <SOS> token.
+			decoder_output_lens = output_lens - 1
 
-			inputs, output_lens = inputs.to(device), output_lens.to(device)
+			#inputs, output_lens = inputs.to(device), output_lens.to(device)
 			#decoder_inputs, decoder_outputs = decoder_inputs.to(device), decoder_outputs.to(device)
-			decoder_outputs = decoder_outputs.to(device)
+			inputs = inputs.to(device)
+			decoder_outputs, decoder_output_lens = decoder_outputs.to(device), decoder_output_lens.to(device)
 
 			input_dict = dict()
 			input_dict['images'] = inputs
 			input_dict['rec_targets'] = decoder_outputs  # FIXME [check] >>
-			input_dict['rec_lengths'] = output_lens - 1  # FIXME [check] >>
+			input_dict['rec_lengths'] = decoder_output_lens  # FIXME [check] >>
+
 			output_dict = model(input_dict, device=device)
+
 			loss = output_dict['losses']['loss_rec']
 			return loss
 		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
@@ -2285,22 +2316,24 @@ def recognize_word_3_eng():
 		for images, labels, label_lens in test_dataloader:
 			# Construct outputs for one-step look-ahead.
 			decoder_labels = labels[:,1:]  # Remove <SOS> token.
+			decoder_label_lens = label_lens - 1
 
-			images, label_lens = images.to(device), label_lens.to(device)
-			decoder_labels = decoder_labels.to(device)
+			inputs = inputs.to(device)
+			decoder_labels, decoder_label_lens = decoder_labels.to(device), decoder_label_lens.to(device)
 
 			input_dict = dict()
-			input_dict['images'] = images.to(device)
+			input_dict['images'] = images
 			input_dict['rec_targets'] = decoder_labels  # FIXME [check] >>
-			input_dict['rec_lengths'] = label_lens - 1  # FIXME [check] >>
+			input_dict['rec_lengths'] = decoder_label_lens  # FIXME [check] >>
 
 			output_dict = model(input_dict, device=device)
-			#loss = output_dict['losses']['loss_rec']
-			predictions = output_dict['output']['pred_rec']  # [batch size, max label len].
-			prediction_scores = output_dict['output']['pred_rec_score']  # [batch size, max label len].
 
-			total += labels.size(0)
+			#loss = output_dict['losses']['loss_rec'].cpu().numpy()
+			predictions = output_dict['output']['pred_rec'].cpu().numpy()  # [batch size, max label len].
+			#prediction_scores = output_dict['output']['pred_rec_score'].cpu().numpy()  # [batch size, max label len].
+
 			correct += (predictions == labels).sum().item()
+			total += labels.size(0)
 
 	print('Accuracy of the network on the test images = {} %.'.format(100 * correct / total))
 
@@ -2309,9 +2342,12 @@ def recognize_word_3_eng():
 	class_total = list(0 for i in range(num_classes))
 	with torch.no_grad():
 		for images, labels, _ in test_dataloader:
-			images, labels = images.to(device), labels.to(device)
+			images = images.to(device)
+
 			predictions = model(images, device=device)
+
 			_, predictions = torch.max(predictions, 1)
+			predictions = predictions.cpu().numpy()
 			c = (predictions == labels).squeeze()
 			for i in range(len(labels)):
 				label = labels[i]
@@ -2386,15 +2422,16 @@ def recognize_word_using_mixup():
 		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), fill_value=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
 		assert label_converter.encode([BLANK_LABEL])[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL])[0])
 		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL])[0]
-		SOS_VALUE, FILL_VALUE = None, None
+		SOS_VALUE, EOS_VALUE = None, None
 		num_suffixes = 0
 	else:
+		# When the fill value is the ID of a valid token.
 		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
 		FILL_TOKEN = '<FILL>'
 		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=FILL_VALUE)
-		#assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
+		assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
 		assert label_converter.encode([FILL_TOKEN])[1] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN])[1], FILL_VALUE)
-		SOS_VALUE = label_converter.encode([label_converter.SOS])[1]
+		SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS])[1], label_converter.encode([label_converter.EOS])[1]
 		num_suffixes = 1
 
 	chars = charset  # Can make the number of each character different.
@@ -2403,22 +2440,16 @@ def recognize_word_using_mixup():
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
 
-	if False:
-		# Get some random training images.
-		dataiter = iter(train_dataloader)
-		images, labels, _ = dataiter.next()
-
-		# Print labels.
-		print('Labels: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels])))
-		# Show images.
-		show_image(torchvision.utils.make_grid(images))
+	# Visualize data.
+	#visualize_text_data(train_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
+	#visualize_text_data(test_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
 
 	#--------------------
 	# Define a model.
 
 	# FIXME [error] >> rare.model.Model_MixUp is not working.
 	import rare.model
-	model = rare.model.Model_MixUp(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, num_suffixes, SOS_VALUE, FILL_VALUE, transformer, feature_extracter, sequence_model, decoder)
+	model = rare.model.Model_MixUp(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, num_suffixes, SOS_VALUE, label_converter.fill_value, transformer, feature_extracter, sequence_model, decoder)
 
 	if True:
 		# Initialize model weights.
@@ -2558,11 +2589,14 @@ def recognize_word_using_mixup():
 	total = 0
 	with torch.no_grad():
 		for images, labels, _ in test_dataloader:
-			images, labels = images.to(device), labels.to(device)
+			images = images.to(device)
+
 			predictions = model(images, device=device)
-			_, predictions = torch.max(predictions.data, 1)
-			total += labels.size(0)
+
+			_, predictions = torch.max(predictions, 1)
+			predictions = predictions.cpu().numpy()
 			correct += (predictions == labels).sum().item()
+			total += labels.size(0)
 
 	print('Accuracy of the network on the test images = {} %.'.format(100 * correct / total))
 
@@ -2571,9 +2605,12 @@ def recognize_word_using_mixup():
 	class_total = list(0 for i in range(num_classes))
 	with torch.no_grad():
 		for images, labels, _ in test_dataloader:
-			images, labels = images.to(device), labels.to(device)
+			images = images.to(device)
+
 			predictions = model(images, device=device)
+
 			_, predictions = torch.max(predictions, 1)
+			predictions = predictions.cpu().numpy()
 			c = (predictions == labels).squeeze()
 			for i in range(len(labels)):
 				label = labels[i]

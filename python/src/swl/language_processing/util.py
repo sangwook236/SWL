@@ -7,10 +7,10 @@ import cv2
 
 class TokenConverter(object):
 	UNKNOWN = '<UNK>'  # Unknown token.
-	SOS = '<SOS>'  # All token strings may start with the Start-Of-String (SOS) token.
-	EOS = '<EOS>'  # All token strings may end with the End-Of-String (EOS) token.
-	#SOJ = '<SOJ>'  # All Hangeul jamo strings may start with the Start-Of-Jamo-String (SOJ) token.
-	#EOJ = '<EOJ>'  # All Hangeul jamo strings may end with the End-Of-Jamo-String (EOJ) token.
+	SOS = '<SOS>'  # All token sequences may start with the Start-Of-Sequence (SOS) token.
+	EOS = '<EOS>'  # All token sequences may end with the End-Of-Sequence (EOS) token.
+	#SOJ = '<SOJ>'  # All Hangeul jamo sequences may start with the Start-Of-Jamo-Sequence (SOJ) token.
+	#EOJ = '<EOJ>'  # All Hangeul jamo sequences may end with the End-Of-Jamo-Sequence (EOJ) token.
 
 	def __init__(self, tokens, prefixes=None, suffixes=None, fill_value=None):
 		"""
@@ -62,7 +62,7 @@ class TokenConverter(object):
 	def num_affixes(self):
 		return self._num_affixes
 
-	# Token string -> integer token sring.
+	# Token sequence -> integer token sequence.
 	def encode(self, tokens, *args, **kwargs):
 		def tok2int(tok):
 			try:
@@ -72,7 +72,7 @@ class TokenConverter(object):
 				return self.UNKNOWN_int
 		return self.decoration_functor([tok2int(tok) for tok in tokens])
 
-	# Integer token string -> token string.
+	# Integer token sequence -> token sequence.
 	def decode(self, integer_tokens, is_string=True, *args, **kwargs):
 		def int2tok(tok):
 			try:
