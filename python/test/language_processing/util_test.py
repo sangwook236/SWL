@@ -12,6 +12,95 @@ import matplotlib.pyplot as plt
 import swl.util.util as swl_util
 import swl.language_processing.util as swl_langproc_util
 
+def TokenConverter_test():
+	charset = string.digits
+	charset += string.ascii_uppercase
+	charset += string.ascii_lowercase
+
+	#--------------------
+	print('---------- Basic.')
+	converter = swl_langproc_util.TokenConverter(list(charset), use_sos=False, use_eos=False, prefixes=None, suffixes=None, fill_value=None)
+	print('Tokens = {}.'.format(converter.tokens))
+	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
+	print('Fill value = {}.'.format(converter.fill_value))
+
+	inputs = '123ABCxyz'
+	encoded = converter.encode(inputs)
+	print('Encoded tokens = {}.'.format(encoded))
+	decoded = converter.decode(encoded)
+	print('Decoded tokens = {}.'.format(decoded))
+	assert inputs == decoded
+
+	#--------------------
+	print('---------- SOS + EOS.')
+	converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, prefixes=None, suffixes=None, fill_value=None)
+	print('Tokens = {}.'.format(converter.tokens))
+	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
+	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.fill_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
+
+	inputs = '123ABCxyz'
+	encoded = converter.encode(inputs)
+	print('Encoded tokens = {}.'.format(encoded))
+	decoded = converter.decode(encoded)
+	print('Decoded tokens = {}.'.format(decoded))
+	assert inputs == decoded
+
+	# <EOS> exists in the middle of tokens.
+	inputs = list('123ABCxyz')
+	pos = 6
+	inputs2 = inputs[:pos] + [converter.EOS] + inputs[pos:]
+	encoded = converter.encode(inputs2)
+	print('Encoded tokens = {}.'.format(encoded))
+	decoded = converter.decode(encoded)
+	print('Decoded tokens = {}.'.format(decoded))
+	assert ''.join(inputs[:pos]) == decoded
+
+	# No <SOS> exists.
+	inputs = '123ABCxyz'
+	encoded = converter.encode(inputs)
+	encoded2 = encoded[1:]
+	print('Encoded tokens = {}.'.format(encoded2))
+	decoded = converter.decode(encoded2)
+	print('Decoded tokens = {}.'.format(decoded))
+	assert inputs == decoded
+
+	# No <EOS> exists.
+	inputs = '123ABCxyz'
+	encoded = converter.encode(inputs)
+	encoded2 = encoded[:-1]
+	print('Encoded tokens = {}.'.format(encoded2))
+	decoded = converter.decode(encoded2)
+	print('Decoded tokens = {}.'.format(decoded))
+	assert inputs == decoded
+
+	#--------------------
+	print('---------- SOS + EOS & fill value = SOS.')
+	converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, prefixes=None, suffixes=None, fill_value=swl_langproc_util.TokenConverter.SOS)
+	print('Tokens = {}.'.format(converter.tokens))
+	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
+	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.fill_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
+
+	inputs = '123ABCxyz'
+	encoded = converter.encode(inputs)
+	print('Encoded tokens = {}.'.format(encoded))
+	decoded = converter.decode(encoded)
+	print('Decoded tokens = {}.'.format(decoded))
+	assert inputs == decoded
+
+	#--------------------
+	print('---------- SOS + EOS + prefix + suffix.')
+	converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, prefixes=['<HEAD>'], suffixes=['<TAIL>'], fill_value=None)
+	print('Tokens = {}.'.format(converter.tokens))
+	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
+	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.fill_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
+
+	inputs = '123ABCxyz'
+	encoded = converter.encode(inputs)
+	print('Encoded tokens = {}.'.format(encoded))
+	decoded = converter.decode(encoded)
+	print('Decoded tokens = {}.'.format(decoded))
+	assert inputs == decoded
+
 def compute_simple_text_recognition_accuracy_test():
 	inferred_texts     = ['abc', 'df',  'ghijk', 'ab cde', 'fhijk lmno', 'pqrst uvwy', 'abc defg hijklmn opqr', 'abc deg hijklmn opqr', 'abc df hijklmn opqr', '',    'zyx']
 	ground_truth_texts = ['abc', 'def', 'gijk',  'ab cde', 'fghijk lmo', 'pqst uvwxy', 'abc defg hijklmn opqr', 'abc defg hiklmn opqr', 'abc defg hijklmn pr', 'xyz', '']
@@ -673,6 +762,8 @@ def transform_text_line_test():
 	cv2.destroyAllWindows()
 
 def main():
+	TokenConverter_test()
+
 	#compute_simple_text_recognition_accuracy_test()
 	#compute_string_distance_test()
 
@@ -680,7 +771,7 @@ def main():
 	#generate_text_image_and_mask_test()
 	#draw_text_on_image_test()  # Not so good.
 
-	generate_text_mask_and_distribution_test()
+	#generate_text_mask_and_distribution_test()
 
 	# NOTE [info] >> Bounding boxes of transform_text() and transform_texts() are different.
 	#	I don't know why.

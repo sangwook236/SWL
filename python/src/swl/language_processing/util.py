@@ -12,17 +12,21 @@ class TokenConverter(object):
 	#SOJ = '<SOJ>'  # All Hangeul jamo sequences may start with the Start-Of-Jamo-Sequence (SOJ) token.
 	#EOJ = '<EOJ>'  # All Hangeul jamo sequences may end with the End-Of-Jamo-Sequence (EOJ) token.
 
-	def __init__(self, tokens, prefixes=None, suffixes=None, fill_value=None):
+	def __init__(self, tokens, use_sos=False, use_eos=False, prefixes=None, suffixes=None, fill_value=None):
 		"""
 		Inputs:
-			tokens (list of tokens): Tokens to be regarded as individual units They can include special tokens such as <UNK>.
-			prefixes (list of tokens): Special tokens to be used as prefix such as <SOS> or <SOJ>.
-			suffixes (list of tokens): Special tokens to be used as suffix such as <EOS> or <EOJ>.
+			tokens (list of tokens): Tokens to be regarded as individual units.
+			use_sos (bool): Specifies whether <SOS> token is used or not.
+			use_eos (bool): Specifies whether <EOS> token is used or not.
+			prefixes (list of tokens): Special tokens to be used as prefix.
+			suffixes (list of tokens): Special tokens to be used as suffix.
 			fill_value (int, token, or None): A special value for a placeholder, which is not an actual token.
 		"""
 
 		if prefixes is None: prefixes = []
 		if suffixes is None: suffixes = []
+		if use_sos: prefixes = [self.SOS] + prefixes
+		if use_eos: suffixes += [self.EOS]
 		self._num_affixes = len(prefixes + suffixes)
 
 		extended_tokens = tokens + prefixes + suffixes + [self.UNKNOWN]
@@ -46,6 +50,18 @@ class TokenConverter(object):
 		self.auxiliary_tokens_int = [self._fill_value] + prefixes_int + suffixes_int
 		self.decoration_functor = lambda x: prefixes_int + x + suffixes_int
 
+		if use_eos:
+			EOS_int = extended_tokens.index(self.EOS)
+			def decode_with_eos(integer_tokens, is_string_output=True, *args, **kwargs):
+				try:
+					integer_tokens = integer_tokens[:integer_tokens.index(EOS_int)]
+				except ValueError:
+					pass
+				return self._decode(integer_tokens, is_string_output, *args, **kwargs)
+			self.decode = decode_with_eos
+		else:
+			self.decode = self._decode
+
 	@property
 	def num_tokens(self):
 		return len(self._tokens)
@@ -63,24 +79,37 @@ class TokenConverter(object):
 		return self._num_affixes
 
 	# Token sequence -> integer token sequence.
-	def encode(self, tokens, *args, **kwargs):
+	def encode(self, tokens, is_bare_output=False, *args, **kwargs):
+		"""
+		Inputs:
+			tokens (list of tokens): Tokens to encode.
+			is_bare_output (bool): Specifies whether encoded integer tokens without prefixes and suffixes are returned or not.
+		"""
 		def tok2int(tok):
 			try:
 				return self._tokens.index(tok)
 			except ValueError:
 				#print('[SWL] Error: Failed to encode a token, {} in {}.'.format(tok, tokens))
 				return self.UNKNOWN_int
-		return self.decoration_functor([tok2int(tok) for tok in tokens])
+		if is_bare_output:
+			return [tok2int(tok) for tok in tokens]
+		else:
+			return self.decoration_functor([tok2int(tok) for tok in tokens])
 
 	# Integer token sequence -> token sequence.
-	def decode(self, integer_tokens, is_string=True, *args, **kwargs):
+	def _decode(self, integer_tokens, is_string_output=True, *args, **kwargs):
+		"""
+		Inputs:
+			tokens (list of integer tokens): Integer tokens to decode.
+			is_string_output (bool): Specifies whether the decoded output is string or not.
+		"""
 		def int2tok(tok):
 			try:
 				return self._tokens[tok]
 			except IndexError:
 				#print('[SWL] Error: Failed to decode an integer token, {} in {}.'.format(tok, integer_tokens))
 				return self.UNKNOWN  # TODO [check] >> Is it correct?
-		if is_string:
+		if is_string_output:
 			return ''.join([int2tok(tok) for tok in integer_tokens if tok not in self.auxiliary_tokens_int])
 		else:
 			return [int2tok(tok) for tok in integer_tokens if tok not in self.auxiliary_tokens_int]

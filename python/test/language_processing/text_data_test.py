@@ -710,7 +710,7 @@ def SimpleWordDataset_test():
 	print('Start creating datasets...')
 	start_time = time.time()
 	label_converter = swl_langproc_util.TokenConverter(list(charset), fill_value=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=None)
 	train_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_train_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
 	test_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_test_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
@@ -792,7 +792,7 @@ def RandomWordDataset_test():
 	print('Start creating datasets...')
 	start_time = time.time()
 	label_converter = swl_langproc_util.TokenConverter(list(charset), fill_value=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=None)
 	chars = charset  # Can make the number of each character different.
 	train_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, max_word_len, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
 	test_dataset = text_data.RandomWordDataset(label_converter, chars, num_test_examples, image_channel, max_word_len, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
@@ -875,7 +875,7 @@ def FileBasedWordDataset_test():
 	print('Start creating datasets...')
 	start_time = time.time()
 	label_converter = swl_langproc_util.TokenConverter(list(charset), fill_value=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=None)
 
 	datasets = []
 	if True:
@@ -988,7 +988,7 @@ def SimpleTextLineDataset_test():
 	print('Start creating datasets...')
 	start_time = time.time()
 	label_converter = swl_langproc_util.TokenConverter(list(charset), fill_value=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), prefixes=[swl_langproc_util.TokenConverter.SOS], suffixes=[swl_langproc_util.TokenConverter.EOS], fill_value=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=None)
 	train_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_train_examples, image_height, image_width, image_channel, max_textline_len, font_list, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor, transform=train_transform, target_transform=train_target_transform)
 	test_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_test_examples, image_height, image_width, image_channel, max_textline_len, font_list, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
