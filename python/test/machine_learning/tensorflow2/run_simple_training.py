@@ -114,25 +114,14 @@ class MyRunner(object):
 	def __init__(self, logger):
 		self._logger = logger
 
-		# Create a dataset.
-		self._dataset = MyDataset(self._logger)
-		self._dataset.show_data_info(self._logger)
-
-		# Create an optimizer, a loss, and an accuracy.
-		self._loss_object = tf.keras.losses.SparseCategoricalCrossentropy()
-		self._optimizer = tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=False)
-
+		# Create losses and accuracies.
 		self._train_loss = tf.keras.metrics.Mean(name='train_loss')
 		self._train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
 
 		self._test_loss = tf.keras.metrics.Mean(name='test_loss')
 		self._test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
 
-	@property
-	def dataset(self):
-		return self._dataset
-
-	def train(self, model, output_dir_path, ckpt, ckpt_manager, batch_size, final_epoch, initial_epoch=0):
+	def train(self, model, criterion, optimizer, train_dataset, test_dataset, output_dir_path, ckpt, ckpt_manager, batch_size, final_epoch, initial_epoch=0):
 		if batch_size is None or batch_size <= 0:
 			raise ValueError('Invalid batch size: {}'.format(batch_size))
 
@@ -140,7 +129,7 @@ class MyRunner(object):
 		def train_step(model, inputs, outputs):
 			with tf.GradientTape() as tape:
 				predictions = model(inputs)
-				loss = self._loss_object(outputs, predictions)
+				loss = criterion(outputs, predictions)
 			variables = model.trainable_variables
 			gradients = tape.gradient(loss, variables)
 			"""
@@ -149,7 +138,7 @@ class MyRunner(object):
 			gradients = list(map(lambda grad: (tf.clip_by_norm(grad, clip_norm=max_gradient_norm)), gradients))
 			#gradients = list(map(lambda grad: (tf.clip_by_value(grad, clip_value_min=min_clip_val, clip_value_max=max_clip_val)), gradients))
 			"""
-			self._optimizer.apply_gradients(zip(gradients, variables))
+			optimizer.apply_gradients(zip(gradients, variables))
 
 			self._train_loss(loss)
 			self._train_accuracy(outputs, predictions)
@@ -157,14 +146,10 @@ class MyRunner(object):
 		@tf.function
 		def test_step(model, inputs, outputs):
 			predictions = model(inputs)
-			loss = self._loss_object(outputs, predictions)
+			loss = criterion(outputs, predictions)
 
 			self._test_loss(loss)
 			self._test_accuracy(outputs, predictions)
-
-		# Create a dataset.
-		train_dataset = tf.data.Dataset.from_tensor_slices(self._dataset.train_data).shuffle(batch_size).batch(batch_size, drop_remainder=False)
-		test_dataset = tf.data.Dataset.from_tensor_slices(self._dataset.test_data).batch(batch_size, drop_remainder=False)
 
 		history = {
 			'acc': list(),
@@ -241,14 +226,10 @@ class MyRunner(object):
 
 		return history
 
-	def test(self, model, batch_size, shuffle=False):
+	def test(self, model, dataset, batch_size, shuffle=False):
 		if batch_size is None or batch_size <= 0:
 			raise ValueError('Invalid batch size: {}'.format(batch_size))
 
-		# Create a dataset.
-		dataset = tf.data.Dataset.from_tensor_slices(self._dataset.test_data).batch(batch_size, drop_remainder=False)
-
-		#--------------------
 		self._logger.info('Start testing...')
 		inferences, ground_truths = list(), list()
 		start_time = time.time()
@@ -270,22 +251,19 @@ class MyRunner(object):
 			self._logger.warning('Invalid test results.')
 
 	def infer(self, model, inputs):
-		# A new probability model which does not need to be trained because it has no trainable parameter.
-		#model = tf.keras.Sequential([model, tf.keras.layers.Softmax()])
-
 		self._logger.info('Start inferring...')
 		start_time = time.time()
 		inferences = model(inputs)
 		self._logger.info('End inferring: {} secs.'.format(time.time() - start_time))
 		return inferences.numpy()
 
-	def load_model(self, checkpoint_dir_path, is_train=False, is_loaded=False):
+	def load_model(self, checkpoint_dir_path, optimizer, num_classes, is_train=False, is_loaded=False):
 		# Create a model.
-		model = MyModel(self._dataset.num_classes)
+		model = MyModel(num_classes)
 
 		# Create checkpoint objects.
 		#ckpt = tf.train.Checkpoint(net=model)  # Not good.
-		ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=self._optimizer, net=model)
+		ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=optimizer, net=model)
 		if is_train:
 			ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir_path, max_to_keep=5, keep_checkpoint_every_n_hours=2)
 		else:
@@ -450,7 +428,22 @@ def main():
 		checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
 
 	#--------------------
+	# Create datasets.
+	logger.info('Start creating datasets...')
+	start_time = time.time()
+	dataset = MyDataset(logger)
+
+	train_dataset = tf.data.Dataset.from_tensor_slices(dataset.train_data).shuffle(batch_size).batch(batch_size, drop_remainder=False)
+	test_dataset = tf.data.Dataset.from_tensor_slices(dataset.test_data).batch(batch_size, drop_remainder=False)
+	logger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
+
+	dataset.show_data_info(logger)
+
+	#--------------------
 	runner = MyRunner(logger)
+
+	# Create a trainer.
+	optimizer = tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=False)
 
 	if args.train:
 		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
@@ -459,29 +452,35 @@ def main():
 			os.makedirs(output_dir_path, exist_ok=True)
 
 		# Load a model.
-		model, ckpt, ckpt_manager = runner.load_model(checkpoint_dir_path, is_train=True, is_loaded=is_resumed)
-		if not model: return None
+		model, ckpt, ckpt_manager = runner.load_model(checkpoint_dir_path, optimizer, dataset.num_classes, is_train=True, is_loaded=is_resumed)
+		#if model: print('Model summary:\n{}.'.format(model))
 
-		history = runner.train(model, output_dir_path, ckpt, ckpt_manager, batch_size, final_epoch, initial_epoch)
+		if model:
+			# Create a criterion.
+			criterion = tf.keras.losses.SparseCategoricalCrossentropy()
 
-		if history:
-			#logger.info('Train history = {}.'.format(history))
-			swl_ml_util.display_train_history(history)
-			if os.path.exists(output_dir_path):
-				swl_ml_util.save_train_history(history, output_dir_path)
+			history = runner.train(model, criterion, optimizer, train_dataset, test_dataset, output_dir_path, ckpt, ckpt_manager, batch_size, final_epoch, initial_epoch)
+
+			if history:
+				#logger.info('Train history = {}.'.format(history))
+				swl_ml_util.display_train_history(history)
+				if os.path.exists(output_dir_path):
+					swl_ml_util.save_train_history(history, output_dir_path)
 
 	if args.test or args.infer:
 		if checkpoint_dir_path and os.path.exists(checkpoint_dir_path):
-			model, _, _ = runner.load_model(checkpoint_dir_path, is_train=False, is_loaded=True)
+			model, _, _ = runner.load_model(checkpoint_dir_path, optimizer, dataset.num_classes, is_train=False, is_loaded=True)
+
+			#if model:
+			#	# A new probability model which does not need to be trained because it has no trainable parameter.
+			#	#model = tf.keras.Sequential([model, tf.keras.layers.Softmax()])
 
 			if args.test and model:
-				runner.test(model, batch_size)
+				runner.test(model, test_dataset, batch_size)
 
 			if args.infer and model:
-				dataset = tf.data.Dataset.from_tensor_slices(runner.dataset.test_data).batch(batch_size, drop_remainder=False)
-
 				inferences = list()
-				for inputs, _ in dataset:
+				for inputs, _ in test_dataset:
 					inferences.append(runner.infer(model, inputs))
 
 				inferences = np.vstack(inferences)

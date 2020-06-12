@@ -14,16 +14,12 @@ import swl.machine_learning.util as swl_ml_util
 #--------------------------------------------------------------------
 
 class MyDataset(object):
-	def __init__(self, image_height, image_width, image_channel, num_classes, logger):
+	def __init__(self, image_height, image_width, image_channel, num_classes):
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 		self._num_classes = num_classes
 
-		#--------------------
 		# Load data.
-		logger.info('Start loading dataset...')
-		start_time = time.time()
 		self._train_images, self._train_labels, self._test_images, self._test_labels = MyDataset._load_data(self._image_height, self._image_width, self._image_channel, self._num_classes)
-		logger.info('End loading dataset: {} secs.'.format(time.time() - start_time))
 
 		self._num_train_examples = len(self._train_images)
 		if len(self._train_labels) != self._num_train_examples:
@@ -195,21 +191,11 @@ class MyRunner(object):
 	def __init__(self, logger):
 		self._logger = logger
 
-		# Create a dataset.
-		image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
-		num_classes = 10
-		self._dataset = MyDataset(image_height, image_width, image_channel, num_classes, self._logger)
-		self._dataset.show_data_info(self._logger)
-
-	@property
-	def dataset(self):
-		return self._dataset
-
-	def train(self, checkpoint_dir_path, output_dir_path, batch_size, final_epoch, initial_epoch=0, is_training_resumed=False):
+	def train(self, checkpoint_dir_path, dataset, output_dir_path, batch_size, final_epoch, initial_epoch=0, is_training_resumed=False):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(*self._dataset.shape, self._dataset.num_classes)
+			model = MyModel(*dataset.shape, dataset.num_classes)
 			input_ph, output_ph = model.placeholders
 
 			model_output = model.create_model(input_ph)
@@ -324,7 +310,7 @@ class MyRunner(object):
 				#--------------------
 				train_loss, train_acc, num_examples = 0.0, 0.0, 0
 				start_time = time.time()
-				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_train_batch_generator(batch_size, shuffle=True)):
+				for batch_step, (batch_data, num_batch_examples) in enumerate(dataset.create_train_batch_generator(batch_size, shuffle=True)):
 					_, batch_loss, batch_accuracy, summary = sess.run([train_op, loss, accuracy, merged_summary], feed_dict={input_ph: batch_data[0], output_ph: batch_data[1]})
 					train_loss += batch_loss * num_batch_examples
 					train_acc += batch_accuracy * num_batch_examples
@@ -343,7 +329,7 @@ class MyRunner(object):
 				#--------------------
 				val_loss, val_acc, num_examples = 0.0, 0.0, 0
 				start_time = time.time()
-				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_test_batch_generator(batch_size, shuffle=False)):
+				for batch_step, (batch_data, num_batch_examples) in enumerate(dataset.create_test_batch_generator(batch_size, shuffle=False)):
 					batch_loss, batch_accuracy, summary = sess.run([loss, accuracy, merged_summary], feed_dict={input_ph: batch_data[0], output_ph: batch_data[1]})
 					val_loss += batch_loss * num_batch_examples
 					val_acc += batch_accuracy * num_batch_examples
@@ -370,11 +356,11 @@ class MyRunner(object):
 
 			return history
 
-	def test(self, checkpoint_dir_path, batch_size, shuffle=False):
+	def test(self, checkpoint_dir_path, dataset, batch_size, shuffle=False):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(*self._dataset.shape, self._dataset.num_classes)
+			model = MyModel(*dataset.shape, dataset.num_classes)
 			input_ph, output_ph = model.placeholders
 
 			model_output = model.create_model(input_ph)
@@ -400,7 +386,7 @@ class MyRunner(object):
 			self._logger.info('Start testing...')
 			inferences, test_labels = list(), list()
 			start_time = time.time()
-			for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, shuffle=shuffle):
+			for batch_data, num_batch_examples in dataset.create_test_batch_generator(batch_size, shuffle=shuffle):
 				inferences.append(sess.run(model_output, feed_dict={input_ph: batch_data[0]}))
 				test_labels.append(batch_data[1])
 			self._logger.info('End testing: {} secs.'.format(time.time() - start_time))
@@ -409,10 +395,10 @@ class MyRunner(object):
 			if inferences is not None and test_labels is not None:
 				self._logger.info('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
-				if self._dataset.num_classes > 2:
+				if dataset.num_classes > 2:
 					inferences = np.argmax(inferences, -1)
 					ground_truths = np.argmax(test_labels, -1)
-				elif 2 == self._dataset.num_classes:
+				elif 2 == dataset.num_classes:
 					inferences = np.around(inferences)
 					ground_truths = test_labels
 				else:
@@ -423,11 +409,11 @@ class MyRunner(object):
 			else:
 				self._logger.warning('Invalid test results.')
 
-	def infer(self, checkpoint_dir_path, inputs, batch_size=None, shuffle=False):
+	def infer(self, checkpoint_dir_path, inputs, image_shape, num_classes, batch_size=None, shuffle=False):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(*self._dataset.shape, self._dataset.num_classes)
+			model = MyModel(*image_shape, num_classes)
 			input_ph, output_ph = model.placeholders
 
 			model_output = model.create_model(input_ph)
@@ -481,7 +467,7 @@ class MyRunner(object):
 			return inferences
 
 	# REF [site] >> https://github.com/InFoCusp/tf_cnnvis
-	def visualize_using_tf_cnnvis(self, checkpoint_dir_path, output_dir_path, images):
+	def visualize_using_tf_cnnvis(self, checkpoint_dir_path, output_dir_path, images, image_shape, num_classes):
 		# NOTE [info] >> Cannot assign a device for operation save/SaveV2: Could not satisfy explicit device specification '/device:GPU:1' because no supported kernel for GPU devices is available.
 		#	Errors occur in tf_cnnvis library when a GPU is assigned.
 		#device_name = '/device:GPU:0'
@@ -491,7 +477,7 @@ class MyRunner(object):
 		with graph.as_default():
 			with tf.device(device_name):
 				# Create a model.
-				model = MyModel(*self._dataset.shape, self._dataset.num_classes)
+				model = MyModel(*image_shape, num_classes)
 				input_ph, _ = model.placeholders
 
 				model.create_model(input_ph)
@@ -529,14 +515,14 @@ class MyRunner(object):
 			self._logger.info('End visualizing by deconvolution: {} secs, succeeded? = {}.'.format(time.time() - start_time, 'yes' if is_succeeded else 'no'))
 
 	# REF [file] >> ${SWDT_PYTHON_HOME}/rnd/test/machine_learning/saliency_test.py
-	def visualize_using_saliency(self, checkpoint_dir_path, output_dir_path, image):
+	def visualize_using_saliency(self, checkpoint_dir_path, output_dir_path, image, image_shape, num_classes):
 		import saliency
 		from matplotlib import pylab as plt
 
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(*self._dataset.shape, self._dataset.num_classes)
+			model = MyModel(*image_shape, num_classes)
 			input_ph, _ = model.placeholders
 
 			model_output = model.create_model(input_ph)
@@ -799,6 +785,18 @@ def main():
 		checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
 
 	#--------------------
+	# Create a dataset.
+	image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
+	num_classes = 10
+
+	logger.info('Start creating a dataset...')
+	start_time = time.time()
+	dataset = MyDataset(image_height, image_width, image_channel, num_classes)
+	logger.info('End creating a dataset: {} secs.'.format(time.time() - start_time))
+
+	dataset.show_data_info(logger)
+
+	#--------------------
 	runner = MyRunner(logger)
 
 	if args.train:
@@ -807,7 +805,7 @@ def main():
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
-		history = runner.train(checkpoint_dir_path, output_dir_path, batch_size, final_epoch, initial_epoch, is_resumed)
+		history = runner.train(checkpoint_dir_path, dataset, output_dir_path, batch_size, final_epoch, initial_epoch, is_resumed)
 
 		#logger.info('Train history = {}.'.format(history))
 		swl_ml_util.display_train_history(history)
@@ -817,21 +815,21 @@ def main():
 	if args.test or args.infer:
 		if checkpoint_dir_path and os.path.exists(checkpoint_dir_path):
 			if args.test:
-				runner.test(checkpoint_dir_path, batch_size)
+				runner.test(checkpoint_dir_path, dataset, batch_size)
 
 			if args.infer:
-				inf_images, _ = runner.dataset.test_data
+				inf_images, _ = dataset.test_data
 
-				inferences = runner.infer(checkpoint_dir_path, inf_images)
+				inferences = runner.infer(checkpoint_dir_path, inf_images, dataset.shape, dataset.num_classes)
 				if not inferences: return
 
 				inferences = np.vstack(inferences)
 				if inferences is not None:
 					logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
-					if runner.dataset.num_classes > 2:
+					if dataset.num_classes > 2:
 						inferences = np.argmax(inferences, -1)
-					elif 2 == runner.dataset.num_classes:
+					elif 2 == dataset.num_classes:
 						inferences = np.around(inferences)
 					else:
 						raise ValueError('Invalid number of classes')
@@ -848,9 +846,9 @@ def main():
 			if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 				os.makedirs(output_dir_path, exist_ok=True)
 
-			images, _ = runner.dataset.test_data
-			#runner.visualize_using_tf_cnnvis(checkpoint_dir_path, output_dir_path, images)
-			runner.visualize_using_saliency(checkpoint_dir_path, output_dir_path, images[0])
+			images, _ = dataset.test_data
+			#runner.visualize_using_tf_cnnvis(checkpoint_dir_path, output_dir_path, images, dataset.shape, dataset.num_classes)
+			runner.visualize_using_saliency(checkpoint_dir_path, output_dir_path, images[0], dataset.shape, dataset.num_classes)
 		else:
 			logger.error('Model directory, {} does not exist.'.format(checkpoint_dir_path))
 

@@ -36,6 +36,37 @@ class MyModel(torch.nn.Module):
 
 #--------------------------------------------------------------------
 
+def create_data(batch_size, logger, num_workers=1):
+	transform = torchvision.transforms.Compose([
+		torchvision.transforms.ToTensor(),
+		torchvision.transforms.Normalize((0.5,), (0.5,))
+	])
+
+	# Create datasets.
+	logger.info('Start loading datasets...')
+	start_time = time.time()
+	train_dataset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
+	test_dataset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
+	logger.info('End loading datasets: {} secs.'.format(time.time() - start_time))
+
+	# Create data loaders.
+	logger.info('Start loading data loaders...')
+	start_time = time.time()
+	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+	logger.info('End loading data loaders: {} secs.'.format(time.time() - start_time))
+
+	return train_dataloader, test_dataloader
+
+def show_data_info(dataloader, logger, mode='Train'):
+	data_iter = iter(dataloader)
+	images, labels = data_iter.next()
+	images, labels = images.numpy(), labels.numpy()
+	logger.info('{} image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, images.shape, images.dtype, np.min(images), np.max(images)))
+	logger.info('{} label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, labels.shape, labels.dtype, np.min(labels), np.max(labels)))
+
+#--------------------------------------------------------------------
+
 class MyRunner(object):
 	def __init__(self, logger):
 		self._logger = logger
@@ -116,9 +147,6 @@ class MyRunner(object):
 			self._logger.warning('Invalid test results.')
 
 	def infer(self, model, inputs, device='cpu'):
-		# A new probability model which does not need to be trained because it has no trainable parameter.
-		#model = torch.nn.Sequential(model, torch.nn.Softmax(dim=-1))
-
 		# Switch to evaluation mode.
 		model.eval()
 
@@ -155,35 +183,6 @@ class MyRunner(object):
 			self._logger.info('End saving a model: {} secs.'.format(time.time() - start_time))
 		except Exception as ex:
 			self._logger.error('Failed to save a model from {}: {}.'.format(model_filepath, ex))
-
-	def load_data(self, batch_size, num_workers=1):
-		transform = torchvision.transforms.Compose([
-			torchvision.transforms.ToTensor(),
-			torchvision.transforms.Normalize((0.5,), (0.5,))
-		])
-
-		# Create datasets.
-		self._logger.info('Start loading datasets...')
-		start_time = time.time()
-		train_dataset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
-		test_dataset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
-		self._logger.info('End loading datasets: {} secs.'.format(time.time() - start_time))
-
-		# Create data loaders.
-		self._logger.info('Start loading data loaders...')
-		start_time = time.time()
-		train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-		test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
-		self._logger.info('End loading data loaders: {} secs.'.format(time.time() - start_time))
-
-		return train_dataloader, test_dataloader
-
-	def show_data_info(self, dataloader, mode='Train'):
-		data_iter = iter(dataloader)
-		images, labels = data_iter.next()
-		images, labels = images.numpy(), labels.numpy()
-		self._logger.info('{} image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, images.shape, images.dtype, np.min(images), np.max(images)))
-		self._logger.info('{} label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, labels.shape, labels.dtype, np.min(labels), np.max(labels)))
 
 	def _train(self, model, criterion, optimizer, dataloader, log_print_freq, device):
 		# Switch to train mode.
@@ -265,8 +264,8 @@ class MyRunner(object):
 
 				# Show results.
 				if show:
-					self._logger.info('\tPrediction: {}.'.format(np.argmax(model_outputs.cpu().numpy(), axis=-1)))
 					self._logger.info('\tG/T:        {}.'.format(batch_outputs.cpu().numpy()))
+					self._logger.info('\tPrediction: {}.'.format(model_outputs.cpu().numpy()))
 					show = False
 		val_loss /= batch_step + 1
 		val_acc /= num_examples
@@ -422,12 +421,17 @@ def main():
 		model_filepath = os.path.join(output_dir_path, 'model.pth')
 
 	#--------------------
-	runner = MyRunner(logger)
+	# Create datasets.
+	logger.info('Start creating datasets...')
+	start_time = time.time()
+	train_dataloader, test_dataloader = create_data(batch_size, logger, num_workers=num_workers)
+	logger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
 
-	# Load datasets.
-	train_dataloader, test_dataloader = runner.load_data(batch_size, num_workers=num_workers)
-	runner.show_data_info(train_dataloader, 'Train')
-	runner.show_data_info(test_dataloader, 'Test')
+	show_data_info(train_dataloader, logger, 'Train')
+	show_data_info(test_dataloader, logger, 'Test')
+
+	#--------------------
+	runner = MyRunner(logger)
 
 	if args.train:
 		model_checkpoint_filepath = os.path.join(output_dir_path, 'model_ckpt.{epoch:04d}-{val_acc:.5f}.pth')
@@ -455,6 +459,7 @@ def main():
 					if 'weight' in name:
 						param.data.fill_(1)
 					continue
+		#if model: print('Model summary:\n{}.'.format(model))
 
 		if False:
 			# Filter model parameters only that require gradients.
@@ -469,16 +474,16 @@ def main():
 		else:
 			model_params = model.parameters()
 
-		# Create a trainer.
-		criterion = torch.nn.CrossEntropyLoss().to(device)
-		optimizer = torch.optim.SGD(model_params, lr=initial_learning_rate, momentum=momentum, weight_decay=weight_decay, nesterov=True)
-		scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
-
 		if model:
 			#if torch.cuda.device_count() > 1:
 			#	device_ids = [0, 1]
 			#	model = torch.nn.DataParallel(model, device_ids=device_ids)
 			model = model.to(device)
+
+			# Create a trainer.
+			criterion = torch.nn.CrossEntropyLoss().to(device)
+			optimizer = torch.optim.SGD(model_params, lr=initial_learning_rate, momentum=momentum, weight_decay=weight_decay, nesterov=True)
+			scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 
 			# Train a model.
 			best_model_filepath, history = runner.train(model, criterion, optimizer, scheduler, train_dataloader, test_dataloader, model_checkpoint_filepath, initial_epoch, final_epoch, device=device)
@@ -508,6 +513,9 @@ def main():
 			model = runner.load_model(model_filepath, model, device=device)
 
 			if model:
+				# A new probability model which does not need to be trained because it has no trainable parameter.
+				#model = torch.nn.Sequential(model, torch.nn.Softmax(dim=-1))
+
 				#if torch.cuda.device_count() > 1:
 				#	device_ids = [0, 1]
 				#	model = torch.nn.DataParallel(model, device_ids=device_ids)

@@ -23,16 +23,12 @@ tf.keras.utils.get_custom_objects().update({'swish': tf.keras.layers.Activation(
 
 # REF [class] >> MyDataset in ${SWL_PYTHON_HOME}/test/machine_learning/tensorflow/run_simple_training.py.
 class MyDataset(object):
-	def __init__(self, image_height, image_width, image_channel, num_classes, logger):
+	def __init__(self, image_height, image_width, image_channel, num_classes):
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 		self._num_classes = num_classes
 
-		#--------------------
 		# Load data.
-		logger.info('Start loading dataset...')
-		start_time = time.time()
 		self._train_images, self._train_labels, self._test_images, self._test_labels = MyDataset._load_data(self._image_height, self._image_width, self._image_channel, self._num_classes)
-		logger.info('End loading dataset: {} secs.'.format(time.time() - start_time))
 
 		self._num_train_examples = len(self._train_images)
 		if len(self._train_labels) != self._num_train_examples:
@@ -241,25 +237,8 @@ class MyRunner(object):
 		#tf.keras.backend.set_learning_phase(0)  # Sets the learning phase to 'test'.
 		#tf.keras.backend.set_learning_phase(1)  # Sets the learning phase to 'train'.
 
-		#--------------------
-		# Create a dataset.
-		image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
-		num_classes = 10
-		self._dataset = MyDataset(image_height, image_width, image_channel, num_classes, self._logger)
-		self._dataset.show_data_info(self._logger)
-
-	@property
-	def dataset(self):
-		return self._dataset
-
-	def train(self, model, model_checkpoint_filepath, output_dir_path, batch_size, final_epoch, initial_epoch=0):
-		# Create a trainer.
-		loss = tf.keras.losses.categorical_crossentropy
-		optimizer = tf.keras.optimizers.SGD(learning_rate=0.001, momentum=0.9, nesterov=True)
-		#optimizer = tf.keras.optimizers.RMSprop(learning_rate=0.001, rho=0.9, momentum=0.9, epsilon=1.0e-7, centered=False)
-		#optimizer = tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999, epsilon=None, amsgrad=False)  # Not good.
-
-		model.compile(loss=loss, optimizer=optimizer, metrics=['accuracy'])
+	def train(self, model, criterion, optimizer, dataset, model_checkpoint_filepath, output_dir_path, batch_size, final_epoch, initial_epoch=0):
+		model.compile(loss=criterion, optimizer=optimizer, metrics=['accuracy'])
 
 		def schedule_learning_rate(epoch, learning_rate):
 			if epoch < 10:
@@ -270,6 +249,7 @@ class MyRunner(object):
 				return 1.0e-4
 			else:
 				return 1.0e-4 * tf.math.exp(0.1 * (30 - epoch))
+
 		lr_schedule_callback = tf.keras.callbacks.LearningRateScheduler(schedule=schedule_learning_rate, verbose=0)
 		lr_reduce_callback = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10, verbose=0, mode='auto', min_delta=0.0001, cooldown=0, min_lr=0)
 		early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=0, mode='auto', baseline=None, restore_best_weights=False)
@@ -297,18 +277,18 @@ class MyRunner(object):
 		start_time = time.time()
 		if self._use_keras_data_sequence:
 			# Use Keras sequences.
-			train_images, train_labels = self._dataset.train_data
+			train_images, train_labels = dataset.train_data
 			train_sequence = MyDataSequence(train_images, train_labels, batch_size=batch_size, shuffle=True)
-			val_images, val_labels = self._dataset.test_data
+			val_images, val_labels = dataset.test_data
 			val_sequence = MyDataSequence(val_images, val_labels, batch_size=batch_size, shuffle=False)
-			history = model.fit_generator(train_sequence, epochs=num_epochs, steps_per_epoch=None if batch_size is None else math.ceil(self._dataset.train_data_length / batch_size), validation_data=val_sequence, validation_steps=math.ceil(self._dataset.test_data_length / batch_size), shuffle=True, initial_epoch=initial_epoch, class_weight=None, max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing, callbacks=callbacks)
+			history = model.fit_generator(train_sequence, epochs=num_epochs, steps_per_epoch=None if batch_size is None else math.ceil(dataset.train_data_length / batch_size), validation_data=val_sequence, validation_steps=math.ceil(dataset.test_data_length / batch_size), shuffle=True, initial_epoch=initial_epoch, class_weight=None, max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing, callbacks=callbacks)
 		elif self._use_generator:
 			# Use generators.
-			train_generator = self._dataset.create_train_batch_generator(batch_size, shuffle=True)
-			val_generator = self._dataset.create_test_batch_generator(batch_size, shuffle=False)
-			history = model.fit_generator(train_generator, epochs=num_epochs, steps_per_epoch=None if batch_size is None else math.ceil(self._dataset.train_data_length / batch_size), validation_data=val_generator, validation_steps=math.ceil(self._dataset.test_data_length / batch_size), shuffle=True, initial_epoch=initial_epoch, class_weight=None, max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing, callbacks=callbacks)
+			train_generator = dataset.create_train_batch_generator(batch_size, shuffle=True)
+			val_generator = dataset.create_test_batch_generator(batch_size, shuffle=False)
+			history = model.fit_generator(train_generator, epochs=num_epochs, steps_per_epoch=None if batch_size is None else math.ceil(dataset.train_data_length / batch_size), validation_data=val_generator, validation_steps=math.ceil(dataset.test_data_length / batch_size), shuffle=True, initial_epoch=initial_epoch, class_weight=None, max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing, callbacks=callbacks)
 		else:
-			train_images, train_labels = self._dataset.train_data
+			train_images, train_labels = dataset.train_data
 			history = model.fit(train_images, train_labels, batch_size=batch_size, epochs=num_epochs, validation_split=0.2, shuffle=True, initial_epoch=initial_epoch, class_weight=None, sample_weight=None, callbacks=callbacks)
 		self._logger.info('End training: {} secs.'.format(time.time() - start_time))
 
@@ -317,47 +297,47 @@ class MyRunner(object):
 		start_time = time.time()
 		if self._use_keras_data_sequence:
 			# Use a Keras sequence.
-			val_images, val_labels = self._dataset.test_data
+			val_images, val_labels = dataset.test_data
 			val_sequence = MyDataSequence(val_images, val_labels, batch_size=batch_size, shuffle=False)
-			score = model.evaluate_generator(val_sequence, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
+			score = model.evaluate_generator(val_sequence, steps=None if batch_size is None else math.ceil(dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
 		elif self._use_generator:
 			# Use a generator.
-			val_generator = self._dataset.create_test_batch_generator(batch_size, shuffle=False)
-			score = model.evaluate_generator(val_generator, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
+			val_generator = dataset.create_test_batch_generator(batch_size, shuffle=False)
+			score = model.evaluate_generator(val_generator, steps=None if batch_size is None else math.ceil(dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
 		else:
-			val_images, val_labels = self._dataset.test_data
+			val_images, val_labels = dataset.test_data
 			score = model.evaluate(val_images, val_labels, batch_size=batch_size, sample_weight=None)
 		self._logger.info('\tValidation: loss = {:.6f}, accuracy = {:.6f}.'.format(*score))
 		self._logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-		return model, history.history
+		return history.history
 
-	def test(self, model, batch_size=None, shuffle=False):
+	def test(self, model, dataset, batch_size=None, shuffle=False):
 		self._logger.info('Start testing...')
 		start_time = time.time()
 		if self._use_keras_data_sequence:
 			# Use a Keras sequence.
-			test_images, test_labels = self._dataset.test_data
+			test_images, test_labels = dataset.test_data
 			test_sequence = MyDataSequence(test_images, test_labels, batch_size=batch_size, shuffle=shuffle)
-			inferences = model.predict_generator(test_sequence, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
+			inferences = model.predict_generator(test_sequence, steps=None if batch_size is None else math.ceil(dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
 		elif self._use_generator:
 			# Use a generator.
-			test_generator = self._dataset.create_test_batch_generator(batch_size, shuffle=shuffle)
-			inferences = model.predict_generator(test_generator, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
+			test_generator = dataset.create_test_batch_generator(batch_size, shuffle=shuffle)
+			inferences = model.predict_generator(test_generator, steps=None if batch_size is None else math.ceil(dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
 			# TODO [implement] >> self._test_labels have to be generated.
-			test_labels = self._dataset.test_data[1]
+			test_labels = dataset.test_data[1]
 		else:
-			test_images, test_labels = self._dataset.test_data
+			test_images, test_labels = dataset.test_data
 			inferences = model.predict(test_images, batch_size=batch_size)
 		self._logger.info('End testing: {} secs.'.format(time.time() - start_time))
 
 		if inferences is not None and test_labels is not None:
 			self._logger.info('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
-			if self._dataset.num_classes > 2:
+			if dataset.num_classes > 2:
 				inferences = np.argmax(inferences, -1)
 				ground_truths = np.argmax(test_labels, -1)
-			elif 2 == self._dataset.num_classes:
+			elif 2 == dataset.num_classes:
 				inferences = np.around(inferences)
 				ground_truths = test_labels
 			else:
@@ -374,11 +354,11 @@ class MyRunner(object):
 		if self._use_keras_data_sequence:
 			# Use a Keras sequence.
 			test_sequence = MyDataSequence(inputs, None, batch_size=batch_size, shuffle=shuffle)
-			inferences = model.predict_generator(test_sequence, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
+			inferences = model.predict_generator(test_sequence, steps=None if batch_size is None else math.ceil(len(inputs) / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
 		elif self._use_generator:
 			# Use a generator.
 			test_generator = MyDataset.create_batch_generator(inputs, None, batch_size, shuffle=shuffle)
-			inferences = model.predict_generator(test_generator, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
+			inferences = model.predict_generator(test_generator, steps=None if batch_size is None else math.ceil(len(inputs) / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
 		else:
 			if shuffle:
 				np.random.shuffle(inputs)
@@ -553,6 +533,18 @@ def main():
 		#model_weight_filepath = os.path.join(output_dir_path, 'model_weights.hdf5')
 
 	#--------------------
+	# Create a dataset.
+	image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
+	num_classes = 10
+
+	logger.info('Start creating a dataset...')
+	start_time = time.time()
+	dataset = MyDataset(image_height, image_width, image_channel, num_classes)
+	logger.info('End creating a dataset: {} secs.'.format(time.time() - start_time))
+
+	dataset.show_data_info(logger)
+
+	#--------------------
 	runner = MyRunner(logger)
 
 	if args.train:
@@ -563,15 +555,20 @@ def main():
 		if is_resumed:
 			# Load a model.
 			model = runner.load_model(model_filepath)
-			if not model: return
 		else:
 			# Create a model.
-			model = MyModel.create_model(runner.dataset.shape, runner.dataset.num_classes)
-			#model.summary()
-
-		model, history = runner.train(model, model_checkpoint_filepath, output_dir_path, batch_size, final_epoch, initial_epoch)
+			model = MyModel.create_model(dataset.shape, dataset.num_classes)
+		#if model: print('Model summary:\n{}.'.format(model.summary()))
 
 		if model:
+			# Create a trainer.
+			criterion = tf.keras.losses.categorical_crossentropy
+			optimizer = tf.keras.optimizers.SGD(learning_rate=0.001, momentum=0.9, nesterov=True)
+			#optimizer = tf.keras.optimizers.RMSprop(learning_rate=0.001, rho=0.9, momentum=0.9, epsilon=1.0e-7, centered=False)
+			#optimizer = tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999, epsilon=None, amsgrad=False)  # Not good.
+
+			history = runner.train(model, criterion, optimizer, dataset, model_checkpoint_filepath, output_dir_path, batch_size, final_epoch, initial_epoch)
+
 			model_filepath = os.path.join(output_dir_path, 'best_model.hdf5')
 			logger.info('Start saving a model...')
 			start_time = time.time()
@@ -586,29 +583,29 @@ def main():
 			model.save(model_filepath)
 			logger.info('End saving a model to {}: {} secs.'.format(model_filepath, time.time() - start_time))
 
-		#logger.info('Train history = {}.'.format(history))
-		swl_ml_util.display_train_history(history)
-		if os.path.exists(output_dir_path):
-			swl_ml_util.save_train_history(history, output_dir_path)
+			#logger.info('Train history = {}.'.format(history))
+			swl_ml_util.display_train_history(history)
+			if os.path.exists(output_dir_path):
+				swl_ml_util.save_train_history(history, output_dir_path)
 
 	if args.test or args.infer:
 		if model_filepath and os.path.exists(model_filepath):
 			model = runner.load_model(model_filepath)
 
 			if args.test and model:
-				runner.test(model)
+				runner.test(model, dataset)
 
 			if args.infer and model:
-				inf_images, _ = runner.dataset.test_data
+				inf_images, _ = dataset.test_data
 
 				inferences = runner.infer(model, inf_images)
 
 				if inferences is not None:
 					logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
-					if runner.dataset.num_classes > 2:
+					if dataset.num_classes > 2:
 						inferences = np.argmax(inferences, -1)
-					elif 2 == runner.dataset.num_classes:
+					elif 2 == dataset.num_classes:
 						inferences = np.around(inferences)
 					else:
 						raise ValueError('Invalid number of classes')
