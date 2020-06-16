@@ -52,13 +52,8 @@ class TokenConverter(object):
 
 		if use_eos:
 			EOS_int = extended_tokens.index(self.EOS)
-			def decode_with_eos(integer_tokens, is_string_output=True, *args, **kwargs):
-				try:
-					integer_tokens = integer_tokens[:integer_tokens.index(EOS_int)]
-				except ValueError:
-					pass
-				return self._decode(integer_tokens, is_string_output, *args, **kwargs)
-			self.decode = decode_with_eos
+			#self.auxiliary_tokens_int.remove(self.EOS)  # TODO [decide] >>
+			self.decode = functools.partial(self._decode_with_eos, EOS_int=EOS_int)
 		else:
 			self.decode = self._decode
 
@@ -100,7 +95,7 @@ class TokenConverter(object):
 	def _decode(self, integer_tokens, is_string_output=True, *args, **kwargs):
 		"""
 		Inputs:
-			tokens (list of integer tokens): Integer tokens to decode.
+			integer_tokens (list of integer tokens): Integer tokens to decode.
 			is_string_output (bool): Specifies whether the decoded output is string or not.
 		"""
 		def int2tok(tok):
@@ -113,6 +108,44 @@ class TokenConverter(object):
 			return ''.join([int2tok(tok) for tok in integer_tokens if tok not in self.auxiliary_tokens_int])
 		else:
 			return [int2tok(tok) for tok in integer_tokens if tok not in self.auxiliary_tokens_int]
+
+	# Integer token sequence -> token sequence.
+	def _decode_with_eos(self, integer_tokens, is_string_output=True, EOS_int=None, *args, **kwargs):
+		"""
+		Inputs:
+			integer_tokens (list of integer tokens): Integer tokens to decode.
+			is_string_output (bool): Specifies whether the decoded output is string or not.
+		"""
+		def int2tok(tok):
+			try:
+				return self._tokens[tok]
+			except IndexError:
+				#print('[SWL] Error: Failed to decode an integer token, {} in {}.'.format(tok, integer_tokens))
+				return self.UNKNOWN  # TODO [check] >> Is it correct?
+		"""
+		try:
+			integer_tokens = integer_tokens[:integer_tokens.index(EOS_int)]  # NOTE [info] >> It is applied to list only.
+		except ValueError:
+			pass
+		return self._decode(integer_tokens, is_string_output, *args, **kwargs)
+		"""
+		tokens = list()
+		for tok in integer_tokens:
+			if tok == EOS_int: break
+			elif tok in self.auxiliary_tokens_int: continue
+			else: tokens.append(int2tok(tok))
+		return ''.join(tokens) if is_string_output else tokens
+		"""
+		def ff(tok):
+			if tok == EOS_int: raise StopIteration
+			elif tok in self.auxiliary_tokens_int: pass  # Error: return None.
+			else: return int2tok(tok)
+		try:
+			tokens = map(ff, integer_tokens)
+			#tokens = map(ff, filter(lambda tok: tok in self.auxiliary_tokens_int, integer_tokens))
+		except StopIteration:
+			pass
+		"""
 
 #--------------------------------------------------------------------
 
