@@ -58,12 +58,23 @@ def create_data(batch_size, logger, num_workers=1):
 
 	return train_dataloader, test_dataloader
 
-def show_data_info(dataloader, logger, mode='Train'):
+def show_data_info(dataloader, logger, visualize=True, mode='Train'):
 	data_iter = iter(dataloader)
 	images, labels = data_iter.next()
 	images, labels = images.numpy(), labels.numpy()
+
 	logger.info('{} image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, images.shape, images.dtype, np.min(images), np.max(images)))
 	logger.info('{} label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, labels.shape, labels.dtype, np.min(labels), np.max(labels)))
+
+	if visualize:
+		import cv2
+		images = images.transpose(0, 2, 3, 1).squeeze(axis=-1)
+		for idx, (img, lbl) in enumerate(zip(images, labels)):
+			print('Label = {}.'.format(lbl))
+			cv2.imshow('Image', img)
+			cv2.waitKey()
+			if idx >= 9: break
+		cv2.destroyAllWindows()
 
 #--------------------------------------------------------------------
 
@@ -427,8 +438,8 @@ def main():
 	train_dataloader, test_dataloader = create_data(batch_size, logger, num_workers=num_workers)
 	logger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
 
-	show_data_info(train_dataloader, logger, 'Train')
-	show_data_info(test_dataloader, logger, 'Test')
+	show_data_info(train_dataloader, logger, visualize=False, mode='Train')
+	show_data_info(test_dataloader, logger, visualize=False, mode='Test')
 
 	#--------------------
 	runner = MyRunner(logger)

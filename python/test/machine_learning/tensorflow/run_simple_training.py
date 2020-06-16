@@ -46,11 +46,27 @@ class MyDataset(object):
 	def create_test_batch_generator(self, batch_size, shuffle=False):
 		return MyDataset._create_batch_generator(self._test_images, self._test_labels, batch_size, shuffle, is_training=False)
 
-	def show_data_info(self, logger):
+	def show_data_info(self, logger, visualize=True):
 		logger.info('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_images.shape, self._train_images.dtype, np.min(self._train_images), np.max(self._train_images)))
 		logger.info('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_labels.shape, self._train_labels.dtype, np.min(self._train_labels), np.max(self._train_labels)))
 		logger.info('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
 		logger.info('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_labels.shape, self._test_labels.dtype, np.min(self._test_labels), np.max(self._test_labels)))
+
+		if visualize:
+			import cv2
+			def show_images(images, labels):
+				images = images.squeeze(axis=-1)
+				minval, maxval = np.min(images), np.max(images)
+				images = (images - minval) / (maxval - minval)
+				labels = np.argmax(labels, axis=-1)
+				for idx, (img, lbl) in enumerate(zip(images, labels)):
+					print('Label #{} = {}.'.format(idx, lbl))
+					cv2.imshow('Image', img)
+					cv2.waitKey()
+					if idx >= 9: break
+			show_images(self._train_images, self._train_labels)
+			show_images(self._test_images, self._test_labels)
+			cv2.destroyAllWindows()
 
 	@staticmethod
 	def _create_batch_generator(data1, data2, batch_size, shuffle, is_training=False):
@@ -794,7 +810,7 @@ def main():
 	dataset = MyDataset(image_height, image_width, image_channel, num_classes)
 	logger.info('End creating a dataset: {} secs.'.format(time.time() - start_time))
 
-	dataset.show_data_info(logger)
+	dataset.show_data_info(logger, visualize=False)
 
 	#--------------------
 	runner = MyRunner(logger)

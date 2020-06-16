@@ -49,11 +49,27 @@ class MyDataset(object):
 	def test_data(self):
 		return self._test_images, self._test_labels
 
-	def show_data_info(self):
+	def show_data_info(self, visualize=True):
 		print('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_images.shape, self._train_images.dtype, np.min(self._train_images), np.max(self._train_images)))
 		print('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_labels.shape, self._train_labels.dtype, np.min(self._train_labels), np.max(self._train_labels)))
 		print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
 		print('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_labels.shape, self._test_labels.dtype, np.min(self._test_labels), np.max(self._test_labels)))
+
+		if visualize:
+			import cv2
+			def show_images(images, labels):
+				images = images.squeeze(axis=-1)
+				minval, maxval = np.min(images), np.max(images)
+				images = (images - minval) / (maxval - minval)
+				labels = np.argmax(labels, axis=-1)
+				for idx, (img, lbl) in enumerate(zip(images, labels)):
+					print('Label #{} = {}.'.format(idx, lbl))
+					cv2.imshow('Image', img)
+					cv2.waitKey()
+					if idx >= 9: break
+			show_images(self._train_images, self._train_labels)
+			show_images(self._test_images, self._test_labels)
+			cv2.destroyAllWindows()
 
 	@staticmethod
 	def _preprocess(inputs, outputs, image_height, image_width, image_channel, num_classes):
@@ -165,7 +181,7 @@ class MyRunner(object):
 		image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
 		num_classes = 10
 		self._dataset = MyDataset(image_height, image_width, image_channel, num_classes)
-		self._dataset.show_data_info()
+		self._dataset.show_data_info(visualize=False)
 
 	def _create_tf_dataset(self, input_ph, output_ph, batch_size):
 		if not self._use_reinitializable_iterator:
@@ -190,7 +206,7 @@ class MyRunner(object):
 			input_elem, output_elem = iter.get_next()
 			return input_elem, output_elem, iter, train_init_op, val_init_op, test_init_op
 
-	def train(self, checkpoint_dir_path, batch_size, initial_epoch=0, final_epoch, is_training_resumed=False):
+	def train(self, checkpoint_dir_path, batch_size, initial_epoch, final_epoch, is_training_resumed=False):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
@@ -394,10 +410,10 @@ class MyRunner(object):
 			if inferences is not None:
 				print('\tTest: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
-				if self._num_classes > 2:
+				if self._dataset.num_classes > 2:
 					inferences = np.argmax(inferences, -1)
 					ground_truths = np.argmax(test_labels, -1)
-				elif 2 == self._num_classes:
+				elif 2 == self._dataset.num_classes:
 					inferences = np.around(inferences)
 					ground_truths = test_labels
 				else:
@@ -435,7 +451,7 @@ def main():
 		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
 			os.makedirs(checkpoint_dir_path, exist_ok=True)
 
-		history = runner.train(checkpoint_dir_path, batch_size, final_epoch, initial_epoch, is_resumed)
+		history = runner.train(checkpoint_dir_path, batch_size, initial_epoch, final_epoch, is_resumed)
 
 		#print('History =', history)
 		swl_ml_util.display_train_history(history)

@@ -39,11 +39,24 @@ class MyDataset(object):
 	def test_data(self):
 		return self._test_inputs, self._test_outputs
 
-	def show_data_info(self, logger):
+	def show_data_info(self, logger, visualize=True):
 		logger.info('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_inputs.shape, self._train_inputs.dtype, np.min(self._train_inputs), np.max(self._train_inputs)))
 		logger.info('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_outputs.shape, self._train_outputs.dtype, np.min(self._train_outputs), np.max(self._train_outputs)))
 		logger.info('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_inputs.shape, self._test_inputs.dtype, np.min(self._test_inputs), np.max(self._test_inputs)))
 		logger.info('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_outputs.shape, self._test_outputs.dtype, np.min(self._test_outputs), np.max(self._test_outputs)))
+
+		if visualize:
+			import cv2
+			def show_images(inputs, outputs):
+				inputs = inputs.squeeze(axis=-1)
+				for idx, (img, lbl) in enumerate(zip(inputs, outputs)):
+					print('Label #{} = {}.'.format(idx, lbl))
+					cv2.imshow('Image', img)
+					cv2.waitKey()
+					if idx >= 9: break
+			show_images(self._train_inputs, self._train_outputs)
+			show_images(self._test_inputs, self._test_outputs)
+			cv2.destroyAllWindows()
 
 	@staticmethod
 	def _preprocess(inputs, outputs, num_classes):
@@ -437,7 +450,7 @@ def main():
 	test_dataset = tf.data.Dataset.from_tensor_slices(dataset.test_data).batch(batch_size, drop_remainder=False)
 	logger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
 
-	dataset.show_data_info(logger)
+	dataset.show_data_info(logger, visualize=False)
 
 	#--------------------
 	runner = MyRunner(logger)
