@@ -476,7 +476,7 @@ def generate_simple_word_data(image_height, image_width, image_channel, max_word
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
-	print('Train label len: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
+	print('Train label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
 	data_iter = iter(test_dataloader)
@@ -484,7 +484,7 @@ def generate_simple_word_data(image_height, image_width, image_channel, max_word
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
-	print('Test label len: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
+	print('Test label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	#--------------------
 	# Visualize.
@@ -566,7 +566,7 @@ def generate_random_word_data(image_height, image_width, image_channel, max_word
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
-	print('Train label: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
+	print('Train label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
 	data_iter = iter(test_dataloader)
@@ -574,7 +574,7 @@ def generate_random_word_data(image_height, image_width, image_channel, max_word
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
-	print('Test label: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
+	print('Test label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	#--------------------
 	# Visualize.
@@ -683,7 +683,7 @@ def generate_file_based_word_data(image_height, image_width, image_channel, max_
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
-	print('Train label len: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
+	print('Train label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
 	data_iter = iter(test_dataloader)
@@ -691,7 +691,7 @@ def generate_file_based_word_data(image_height, image_width, image_channel, max_
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
-	print('Test label len: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
+	print('Test label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	#--------------------
 	# Visualize.
@@ -774,7 +774,7 @@ def generate_simple_text_line_data(image_height, image_width, image_channel, max
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
-	print('Train label len: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
+	print('Train label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
 	data_iter = iter(test_dataloader)
@@ -782,7 +782,7 @@ def generate_simple_text_line_data(image_height, image_width, image_channel, max
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
-	print('Test label len: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
+	print('Test label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	#--------------------
 	# Visualize.

@@ -3,6 +3,7 @@
 
 import sys
 sys.path.append('../../src')
+sys.path.append('./src')
 
 import os, random, functools, itertools, time
 import numpy as np
@@ -702,87 +703,129 @@ def show_image(img):
 	plt.imshow(np.transpose(npimg, (1, 2, 0)))
 	plt.show()
 
-def visualize_char_data(dataloader, label_converter):
+def show_char_data_info(dataloader, label_converter, visualize=True, mode='Train'):
 	dataiter = iter(dataloader)
 	images, labels = dataiter.next()
+	images_np, labels_np = images.numpy(), labels.numpy()
 
-	print('Labels: {}.'.format(' '.join(label_converter.decode(labels))))
-	show_image(torchvision.utils.make_grid(images))
+	print('{} image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, images_np.shape, images_np.dtype, np.min(images_np), np.max(images_np)))
+	print('{} label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, images_np.shape, images_np.dtype, np.min(images_np), np.max(images_np)))
 
-def visualize_text_data(dataloader, label_converter, SOS_VALUE=None, EOS_VALUE=None):
+	if visualize:
+		print('Labels: {}.'.format(' '.join(label_converter.decode(images_np))))
+		show_image(torchvision.utils.make_grid(images))
+
+def show_text_data_info(dataloader, label_converter, visualize=True, mode='Train'):
 	dataiter = iter(dataloader)
 	images, labels, label_lens = dataiter.next()
+	images_np, images_np, label_lens_np = images.numpy(), labels.numpy(), label_lens.numpy()
 
-	#print('Labels: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels])))
-	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.fill_value, SOS_VALUE, EOS_VALUE))
-	for idx, (lbl, ll) in enumerate(zip(labels, label_lens)):
-		print('Label #{} (len = {}): (str) {}, (int) {}.'.format(idx, ll.numpy(), label_converter.decode(lbl), lbl.numpy()))
-	show_image(torchvision.utils.make_grid(images))
+	print('{} image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, images_np.shape, images_np.dtype, np.min(images_np), np.max(images_np)))
+	print('{} label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, images_np.shape, images_np.dtype, np.min(images_np), np.max(images_np)))
+	print('{} label length: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, label_lens_np.shape, label_lens_np.dtype, np.min(label_lens_np), np.max(label_lens_np)))
 
-def show_char_prediction(model, dataloader, label_converter, device='cpu'):
-	dataiter = iter(dataloader)
-	images, labels = dataiter.next()
+	if visualize:
+		#print('Labels: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in images_np])))
+		for idx, (lbl, ll) in enumerate(zip(images_np, label_lens_np)):
+			print('Label #{} (len = {}): (str) {}, (int) {}.'.format(idx, ll, label_converter.decode(lbl), lbl))
+		show_image(torchvision.utils.make_grid(images))
 
-	# Show images.
-	#show_image(torchvision.utils.make_grid(images))
+def show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_per_character_accuracy=False):
+	#for i in range(num_classes):
+	#	print('Accuracy of {:5s} = {:2d} %.'.format(classes[i], 100 * correct_char_class_count[i] / total_char_class_count[i] if total_char_class_count[i] > 0 else -1))
+	accuracies = [100 * correct_char_class_count[i] / total_char_class_count[i] if total_char_class_count[i] > 0 else -1 for i in range(num_classes)]
+	#print('Accuracy: {}.'.format(accuracies))
+	hist, bin_edges = np.histogram(accuracies, bins=range(-1, 101), density=False)
+	print('Char accuracy histogram: {}.'.format(hist))
 
+	if show_per_character_accuracy:
+		valid_accuracies = [100 * correct_char_class_count[i] / total_char_class_count[i] for i in range(num_classes) if total_char_class_count[i] > 0]
+		print('Char accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
+		accuracy_threshold = 98
+		for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]):
+			if acc < accuracy_threshold:
+				print('\tChar = {}: accuracy = {}.'.format(classes[idx], acc))
+
+def evaluate_char_recognition_model(model, dataloader, label_converter, show_per_character_accuracy=False, device='cpu'):
+	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+
+	correct_char_count, total_char_count = 0, 0
+	correct_char_class_count, total_char_class_count = [0] * num_classes, [0] * num_classes
+	is_first = True
 	with torch.no_grad():
-		predictions = model(images.to(device))
-	_, predictions = torch.max(predictions, 1)
-	predictions = predictions.cpu().numpy()
+		for images, labels in dataloader:
+			predictions = model(images.to(device))
 
-	#print('G/T:        {}.'.format(' '.join(label_converter.decode(labels))))
-	#print('Prediction: {}.'.format(' '.join(label_converter.decode(predictions))))
-	for gt, pred in zip(label_converter.decode(labels), label_converter.decode(predictions)):
-		print('G/T - prediction: {}, {}.'.format(gt, pred))
+			_, predictions = torch.max(predictions, 1)
+			predictions = predictions.cpu().numpy()
+			gts = labels.numpy()
 
-def show_text_prediction(model, dataloader, label_converter, device='cpu'):
-	dataiter = iter(dataloader)
-	images, labels, _ = dataiter.next()
+			for gl, pl in zip(gts, predictions):
+				if gl == pl: correct_char_class_count[gl] += 1
+				total_char_class_count[gl] += 1
 
-	# Show images.
-	#show_image(torchvision.utils.make_grid(images))
+			correct_char_count += (predictions == gts).sum()
+			total_char_count += len(gts)
 
+			if is_first:
+				# Show images.
+				#show_image(torchvision.utils.make_grid(images))
+
+				#print('G/T:        {}.'.format(' '.join(label_converter.decode(gts))))
+				#print('Prediction: {}.'.format(' '.join(label_converter.decode(predictions))))
+				for gt, pred in zip(label_converter.decode(gts), label_converter.decode(predictions)):
+					print('G/T - prediction: {}, {}.'.format(gt, pred))
+
+				is_first = False
+
+	show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_per_character_accuracy)
+	print('Char accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
+
+def evaluate_text_recognition_model(inferer, dataloader, label_converter, show_per_character_accuracy=False, device='cpu'):
+	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+
+	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0, 0, 0
+	correct_char_class_count, total_char_class_count = [0] * num_classes, [0] * num_classes
+	is_first = True
 	with torch.no_grad():
-		predictions = model(images.to(device), device=device)
-	_, predictions = torch.max(predictions, 2)
-	predictions = predictions.cpu().numpy()
+		for images, labels, label_lens in dataloader:
+			gts, predictions = inferer(images, labels, label_lens, device)
 
-	#print('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels])))
-	#print('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in predictions])))
-	for gt, pred in zip(labels, predictions):
-		print('G/T - prediction: {}, {}.'.format(label_converter.decode(gt), label_converter.decode(pred)))
+			total_text_count += len(gts)
+			for gt, pred in zip(gts, predictions):
+				for gl, pl in zip(gt, pred):
+					if gl == pl: correct_char_class_count[gl] += 1
+					total_char_class_count[gl] += 1
 
-def show_text_prediction_for_aster(model, dataloader, label_converter, device='cpu'):
-	dataiter = iter(dataloader)
-	images, labels, label_lens = dataiter.next()
+				gt, pred = label_converter.decode(gt), label_converter.decode(pred)
 
-	# Show images.
-	#show_image(torchvision.utils.make_grid(images))
+				if gt == pred:
+					correct_text_count += 1
 
-	# Construct outputs for one-step look-ahead.
-	decoder_labels = labels[:,1:]  # Remove <SOS> token.
-	decoder_label_lens = label_lens - 1
+				pred_words, gt_words = pred.split(' '), gt.split(' ')
+				total_word_count += max(len(pred_words), len(gt_words))
+				#correct_word_count += len(list(filter(lambda x: x[0] == x[1], zip(pred_words, gt_words))))
+				correct_word_count += len(list(filter(lambda x: x[0].lower() == x[1].lower(), zip(pred_words, gt_words))))
 
-	images = images.to(device)
-	decoder_labels, decoder_label_lens = decoder_labels.to(device), decoder_label_lens.to(device)
+				total_char_count += max(len(pred), len(gt))
+				#correct_char_count += len(list(filter(lambda x: x[0] == x[1], zip(pred, gt))))
+				correct_char_count += len(list(filter(lambda x: x[0].lower() == x[1].lower(), zip(pred, gt))))
 
-	input_dict = dict()
-	input_dict['images'] = images
-	input_dict['rec_targets'] = decoder_labels  # FIXME [check] >>
-	input_dict['rec_lengths'] = decoder_label_lens  # FIXME [check] >>
+			if is_first:
+				# Show images.
+				#show_image(torchvision.utils.make_grid(images))
 
-	with torch.no_grad():
-		output_dict = model(input_dict, device=device)
+				#print('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in gts])))
+				#print('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in predictions])))
+				for gt, pred in zip(gts, predictions):
+					print('G/T - prediction: {}, {}.'.format(label_converter.decode(gt), label_converter.decode(pred)))
 
-	#loss = output_dict['losses']['loss_rec'].cpu().numpy()
-	predictions = output_dict['output']['pred_rec'].cpu().numpy()  # [batch size, max label len].
-	#prediction_scores = output_dict['output']['pred_rec_score'].cpu().numpy()  # [batch size, max label len].
+				is_first = False
 
-	#print('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in labels])))
-	#print('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in predictions])))
-	for gt, pred in zip(labels, predictions):
-		print('G/T - prediction: {}, {}.'.format(label_converter.decode(gt), label_converter.decode(pred)))
+	show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_per_character_accuracy)
+	print('Text accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
+	print('Word accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
+	print('Char accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 def recognize_character():
@@ -825,9 +868,9 @@ def recognize_character():
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
 
-	# Visualize data.
-	#visualize_char_data(train_dataloader, label_converter)
-	#visualize_char_data(test_dataloader, label_converter)
+	# Show data info.
+	show_char_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
+	show_char_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
 
 	#--------------------
 	# Define a convolutional neural network.
@@ -906,7 +949,7 @@ def recognize_character():
 			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			model.eval()
-			show_char_prediction(model, test_dataloader, label_converter, device)
+			evaluate_char_recognition_model(model, test_dataloader, label_converter, show_per_character_accuracy=False, device=device)
 
 			#scheduler.step()
 
@@ -921,52 +964,7 @@ def recognize_character():
 	# Evaluate the model.
 
 	model.eval()
-	#show_char_prediction(model, test_dataloader, label_converter, device)
-
-	correct = 0
-	total = 0
-	with torch.no_grad():
-		for images, labels in test_dataloader:
-			images = images.to(device)
-
-			predictions = model(images)
-
-			_, predictions = torch.max(predictions, 1)
-			predictions = predictions.cpu().numpy()
-			correct += (predictions == labels).sum().item()
-			total += labels.size(0)
-
-	print('Accuracy of the network on the test images = {} %.'.format(100 * correct / total))
-
-	# What are the classes that performed well, and the classes that did not perform well.
-	class_correct = list(0 for i in range(num_classes))
-	class_total = list(0 for i in range(num_classes))
-	with torch.no_grad():
-		for images, labels in test_dataloader:
-			images = images.to(device)
-
-			predictions = model(images)
-
-			_, predictions = torch.max(predictions, 1)
-			predictions = predictions.cpu().numpy()
-			c = (predictions == labels).squeeze()
-			for i in range(len(labels)):
-				label = labels[i]
-				class_correct[label] += c[i].item()
-				class_total[label] += 1
-
-	#for i in range(num_classes):
-	#	print('Accuracy of {:5s} = {:2d} %.'.format(classes[i], 100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1))
-	accuracies = [100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1 for i in range(num_classes)]
-	#print('Accuracy: {}.'.format(accuracies))
-	hist, bin_edges = np.histogram(accuracies, bins=range(-1, 101), density=False)
-	print('Accuracy frequency: {}.'.format(hist))
-	valid_accuracies = [100 * class_correct[i] / class_total[i] for i in range(num_classes) if class_total[i] > 0]
-	print('Accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
-	accuracy_threshold = 98
-	for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]):
-		if acc < accuracy_threshold:
-			print('\tChar = {}: accuracy = {}.'.format(classes[idx], acc))
+	evaluate_char_recognition_model(model, test_dataloader, label_converter, show_per_character_accuracy=True, device=device)
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 def recognize_character_using_mixup():
@@ -1012,9 +1010,9 @@ def recognize_character_using_mixup():
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
 
-	# Visualize data.
-	#visualize_char_data(train_dataloader, label_converter)
-	#visualize_char_data(test_dataloader, label_converter)
+	# Show data info.
+	show_char_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
+	show_char_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
 
 	#--------------------
 	# Define a convolutional neural network.
@@ -1094,7 +1092,7 @@ def recognize_character_using_mixup():
 			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			model.eval()
-			show_char_prediction(model, test_dataloader, label_converter, device)
+			evaluate_char_recognition_model(model, test_dataloader, label_converter, show_per_character_accuracy=False, device=device)
 
 			#scheduler.step()
 
@@ -1109,52 +1107,7 @@ def recognize_character_using_mixup():
 	# Evaluate the model.
 
 	model.eval()
-	#show_char_prediction(model, test_dataloader, label_converter, device)
-
-	correct = 0
-	total = 0
-	with torch.no_grad():
-		for images, labels in test_dataloader:
-			images = images.to(device)
-
-			predictions = model(images)
-
-			_, predictions = torch.max(predictions, 1)
-			predictions = predictions.cpu().numpy()
-			correct += (predictions == labels).sum().item()
-			total += labels.size(0)
-
-	print('Accuracy of the network on the test images = {} %.'.format(100 * correct / total))
-
-	# What are the classes that performed well, and the classes that did not perform well.
-	class_correct = list(0 for i in range(num_classes))
-	class_total = list(0 for i in range(num_classes))
-	with torch.no_grad():
-		for images, labels in test_dataloader:
-			images = images.to(device)
-
-			predictions = model(images)
-
-			_, predictions = torch.max(predictions, 1)
-			predictions = predictions.cpu().numpy()
-			c = (predictions == labels).squeeze()
-			for i in range(len(labels)):
-				label = labels[i]
-				class_correct[label] += c[i].item()
-				class_total[label] += 1
-
-	#for i in range(num_classes):
-	#	print('Accuracy of {:5s} = {:2d} %.'.format(classes[i], 100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1))
-	accuracies = [100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1 for i in range(num_classes)]
-	#print('Accuracy: {}.'.format(accuracies))
-	hist, bin_edges = np.histogram(accuracies, bins=range(-1, 101), density=False)
-	print('Accuracy frequency: {}.'.format(hist))
-	valid_accuracies = [100 * class_correct[i] / class_total[i] for i in range(num_classes) if class_total[i] > 0]
-	print('Accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
-	accuracy_threshold = 98
-	for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]):
-		if acc < accuracy_threshold:
-			print('\tChar = {}: accuracy = {}.'.format(classes[idx], acc))
+	evaluate_char_recognition_model(model, test_dataloader, label_converter, show_per_character_accuracy=True, device=device)
 
 def recognize_word_1():
 	# FIXME [check] >> Can image size be changed?
@@ -1174,8 +1127,14 @@ def recognize_word_1():
 	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
 	decoder = 'Attn'  # The type of decoder. {'CTC', 'Attn'}.
 
-	charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
-	font_list = construct_font(korean=True, english=False)
+	if True:
+		lang = 'kor'
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+		font_list = construct_font(korean=True, english=False)
+	else:
+		lang = 'eng'
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
+		font_list = construct_font(korean=False, english=True)
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	num_simple_examples, num_random_examples = int(1e4), int(1e4)
@@ -1195,268 +1154,9 @@ def recognize_word_1():
 	print('Device: {}.'.format(device))
 
 	if decoder == 'CTC':
-		model_filepath = './simple_word_recognition_rare1_ctc_w{}_ch{}.pth'.format(max_word_len, image_channel)
+		model_filepath = './simple_word_recognition_rare1_ctc_{}_w{}_ch{}.pth'.format(lang, max_word_len, image_channel)
 	else:
-		model_filepath = './simple_word_recognition_rare1_attn_w{}_ch{}.pth'.format(max_word_len, image_channel)
-	print('Model filepath: {}.'.format(model_filepath))
-
-	#--------------------
-	# Prepare data.
-
-	if decoder == 'CTC':
-		BLANK_LABEL = '<BLANK>'  # The BLANK label for CTC.
-		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), fill_value=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
-		assert label_converter.encode([BLANK_LABEL])[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL])[0])
-		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL])[0]
-		SOS_VALUE, EOS_VALUE = None, None
-		num_suffixes = 0
-	else:
-		# When the fill value is the ID of a valid token.
-		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
-		FILL_TOKEN = '<FILL>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
-		assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
-		assert label_converter.encode([FILL_TOKEN])[1] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN])[1], FILL_VALUE)
-		SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS])[1], label_converter.encode([label_converter.EOS])[1]
-		num_suffixes = 1
-
-	chars = charset  # Can make the number of each character different.
-	#train_dataloader, test_dataloader = create_word_data_loaders('simple_word', label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
-	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
-	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	print('#classes = {}.'.format(num_classes))
-
-	# Visualize data.
-	#visualize_text_data(train_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
-	#visualize_text_data(test_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
-
-	#--------------------
-	# Define a model.
-
-	import rare.model
-	model = rare.model.Model(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, num_suffixes, SOS_VALUE, label_converter.fill_value, transformer, feature_extracter, sequence_model, decoder)
-
-	if True:
-		# Initialize model weights.
-		for name, param in model.named_parameters():
-			if 'localization_fc2' in name:  # Exists in TPS_SpatialTransformerNetwork.
-				print(f'Skip {name} as it has already been initialized.')
-				continue
-			try:
-				if 'bias' in name:
-					torch.nn.init.constant_(param, 0.0)
-				elif 'weight' in name:
-					torch.nn.init.kaiming_normal_(param)
-			except Exception as ex:  # For batch normalization.
-				if 'weight' in name:
-					param.data.fill_(1)
-				continue
-	elif False:
-		# Load a model.
-		model = load_model(model_filepath, model, device=device)
-
-	model = model.to(device)
-
-	#--------------------
-	# Train the model.
-
-	if True:
-		if True:
-			# Filter model parameters only that require gradients.
-			#model_params = filter(lambda p: p.requires_grad, model.parameters())
-			model_params, num_model_params = [], 0
-			for p in filter(lambda p: p.requires_grad, model.parameters()):
-				model_params.append(p)
-				num_model_params += np.prod(p.size())
-			print('#trainable model parameters = {}.'.format(num_model_params))
-			#print('Trainable model parameters:')
-			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
-		else:
-			model_params = model.parameters()
-
-		# Define a loss function and optimizer.
-		if decoder == 'CTC':
-			criterion = torch.nn.CTCLoss(blank=BLANK_LABEL_INT, zero_infinity=True).to(device)  # The BLANK label.
-			def forward(batch, device):
-				inputs, outputs, output_lens = batch
-				inputs, outputs, output_lens = inputs.to(device), outputs.to(device), output_lens.to(device)
-				model_outputs = model(inputs, None, is_train=True, device=device).log_softmax(2)
-				N, T = model_outputs.shape[:2]
-				model_outputs = model_outputs.permute(1, 0, 2)  # (N, T, C) -> (T, N, C).
-				model_output_lens = torch.full([N], T, dtype=torch.int32, device=device)
-
-				# TODO [check] >> To avoid CTC loss issue, disable cuDNN for the computation of the CTC loss.
-				# https://github.com/jpuigcerver/PyLaia/issues/16
-				torch.backends.cudnn.enabled = False
-				cost = criterion(model_outputs, outputs, model_output_lens, output_lens)
-				torch.backends.cudnn.enabled = True
-				return cost
-		else:
-			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
-			def forward(batch, device):
-				inputs, outputs, output_lens = batch
-				outputs = outputs.long()
-
-				# Construct inputs for one-step look-ahead.
-				decoder_inputs = outputs.clone()
-				for idx, ll in enumerate(output_lens):
-					decoder_inputs[idx, ll-1] = label_converter.fill_value  # Remove <EOS> token.
-				decoder_inputs = decoder_inputs[:,:-1]
-				# Construct outputs for one-step look-ahead.
-				decoder_outputs = outputs[:,1:]  # Remove <SOS> token.
-
-				inputs, output_lens = inputs.to(device), output_lens.to(device)
-				decoder_inputs, decoder_outputs = decoder_inputs.to(device), decoder_outputs.to(device)
-
-				model_outputs = model(inputs, decoder_inputs, is_train=True, device=device)
-
-				# NOTE [info] >> All examples in a batch are concatenated together.
-				#	Can each example be handled individually?
-				return criterion(model_outputs.view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
-				"""
-				concat_model_outputs, concat_decoder_outputs = [], []
-				for mo, do, ll in zip(model_outputs, decoder_outputs, output_lens):
-					concat_model_outputs.append(mo[:ll-1])  # No <SOS> token.
-					concat_decoder_outputs.append(do[:ll-1])  # No <SOS> token.
-				concat_model_outputs, concat_decoder_outputs = torch.cat(concat_model_outputs, 0), torch.cat(concat_decoder_outputs, 0)
-				return criterion(concat_model_outputs, concat_decoder_outputs)
-				"""
-		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
-		optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
-		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
-		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
-
-		#--------------------
-		print('Start training...')
-		start_train_time = time.time()
-		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
-			model.train()
-
-			start_time = time.time()
-			running_loss = 0.0
-			for i, batch in enumerate(train_dataloader):
-				# Zero the parameter gradients.
-				optimizer.zero_grad()
-
-				# Forward + backward + optimize.
-				loss = forward(batch, device)
-				loss.backward()
-				torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
-				optimizer.step()
-
-				# Print statistics.
-				running_loss += loss.item()
-				if i % log_print_freq == (log_print_freq - 1):
-					print('[{}, {:5d}] loss = {:.3f}: {:.3f} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
-					running_loss = 0.0
-			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
-
-			model.eval()
-			show_text_prediction(model, test_dataloader, label_converter, device)
-
-			#scheduler.step()
-
-			# Save a checkpoint.
-			save_model(model_filepath, model)
-		print('End training: {} secs.'.format(time.time() - start_train_time))
-
-		# Save a model.
-		save_model(model_filepath, model)
-
-	#--------------------
-	# Evaluate the model.
-
-	model.eval()
-	#show_text_prediction(model, test_dataloader, label_converter, device)
-
-	# FIXME [fix] >> Computing accuracy here is wrong.
-	correct = 0
-	total = 0
-	with torch.no_grad():
-		for images, labels, _ in test_dataloader:
-			images = images.to(device)
-
-			predictions = model(images, device=device)
-
-			_, predictions = torch.max(predictions, 1)
-			predictions = predictions.cpu().numpy()
-			correct += (predictions == labels).sum().item()
-			total += labels.size(0)
-
-	print('Accuracy of the network on the test images = {} %.'.format(100 * correct / total))
-
-	# What are the classes that performed well, and the classes that did not perform well.
-	class_correct = list(0 for i in range(num_classes))
-	class_total = list(0 for i in range(num_classes))
-	with torch.no_grad():
-		for images, labels, _ in test_dataloader:
-			images = images.to(device)
-
-			predictions = model(images, device=device)
-
-			_, predictions = torch.max(predictions, 1)
-			predictions = predictions.cpu().numpy()
-			c = (predictions == labels).squeeze()
-			for i in range(len(labels)):
-				label = labels[i]
-				class_correct[label] += c[i].item()
-				class_total[label] += 1
-
-	#for i in range(num_classes):
-	#	print('Accuracy of {:5s} = {:2d} %.'.format(classes[i], 100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1))
-	accuracies = [100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1 for i in range(num_classes)]
-	#print('Accuracy: {}.'.format(accuracies))
-	hist, bin_edges = np.histogram(accuracies, bins=range(-1, 101), density=False)
-	print('Accuracy frequency: {}.'.format(hist))
-	valid_accuracies = [100 * class_correct[i] / class_total[i] for i in range(num_classes) if class_total[i] > 0]
-	print('Accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
-	accuracy_threshold = 98
-	for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]):
-		if acc < accuracy_threshold:
-			print('\tChar = {}: accuracy = {}.'.format(classes[idx], acc))
-
-def recognize_word_1_eng():
-	# FIXME [check] >> Can image size be changed?
-	#image_height, image_width, image_channel = 64, 640, 1
-	image_height, image_width, image_channel = 32, 100, 1
-	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
-	image_height_before_crop, image_width_before_crop = image_height, image_width
-
-	max_word_len = 5  # Max. word length.
-	num_fiducials = 20  # The number of fiducial points of TPS-STN.
-	input_channel = image_channel  # The number of input channel of feature extractor.
-	output_channel = 512  # The number of output channel of feature extractor.
-	hidden_size = 256  # The size of the LSTM hidden states.
-	max_gradient_norm = 5  # Gradient clipping value.
-	transformer = None  # The type of transformer. {None, 'TPS'}.
-	feature_extracter = 'VGG'  # The type of feature extracter. {'VGG', 'RCNN', 'ResNet'}.
-	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
-	decoder = 'Attn'  # The type of decoder. {'CTC', 'Attn'}.
-
-	charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
-	font_list = construct_font(korean=False, english=True)
-
-	num_train_examples, num_test_examples = int(1e6), int(1e4)
-	num_simple_examples, num_random_examples = int(1e4), int(1e4)
-	word_len_interval = (1, max_word_len)
-	font_size_interval = (10, 100)
-	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
-
-	train_test_ratio = 0.8
-	num_epochs = 20
-	batch_size = 64
-	shuffle = True
-	num_workers = 8
-	log_print_freq = 1000
-
-	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
-	print('Device: {}.'.format(device))
-
-	if decoder == 'CTC':
-		model_filepath = './simple_word_recognition_rare1_ctc_allparam_eng_w{}_ch{}.pth'.format(max_word_len, image_channel)
-	else:
-		model_filepath = './simple_word_recognition_rare1_attn_allparam_eng_w{}_ch{}.pth'.format(max_word_len, image_channel)
+		model_filepath = './simple_word_recognition_rare1_attn_{}_w{}_ch{}.pth'.format(lang, max_word_len, image_channel)
 	print('Model filepath: {}.'.format(model_filepath))
 
 	#--------------------
@@ -1476,22 +1176,23 @@ def recognize_word_1_eng():
 			FILL_TOKEN = '<FILL>'
 			label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
 			assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
-			assert label_converter.encode([FILL_TOKEN])[1] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN])[1], FILL_VALUE)
+			assert label_converter.encode([FILL_TOKEN], is_bare_output=True)[0] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN], is_bare_output=True)[0], FILL_VALUE)
 		else:
 			# When the fill value = the ID of <SOS> token.
 			label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=swl_langproc_util.TokenConverter.SOS)
-		SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS])[1], label_converter.encode([label_converter.EOS])[1]
+		SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 		num_suffixes = 1
 
 	chars = charset  # Can make the number of each character different.
-	train_dataloader, test_dataloader = create_word_data_loaders('random_word', label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
-	#train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
+	#train_dataloader, test_dataloader = create_word_data_loaders('simple_word', label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
+	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
+	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.fill_value, SOS_VALUE, EOS_VALUE))
 
-	# Visualize data.
-	#visualize_text_data(train_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
-	#visualize_text_data(test_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
+	# Show data info.
+	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
 
 	#--------------------
 	# Define a model.
@@ -1502,7 +1203,7 @@ def recognize_word_1_eng():
 	if True:
 		# Initialize model weights.
 		for name, param in model.named_parameters():
-			if 'localization_fc2' in name:  # Exists in TPS_SpatialTransformerNetwork.
+			if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
 				print(f'Skip {name} as it has already been initialized.')
 				continue
 			try:
@@ -1520,11 +1221,21 @@ def recognize_word_1_eng():
 
 	model = model.to(device)
 
+	class Inferer(object):
+		def __init__(self, model):
+			self.model = model
+
+		def __call__(self, inputs, outputs, output_lens, device):
+			model_outputs = model(inputs, None, is_train=False, device=device)
+
+			_, model_outputs = torch.max(model_outputs, 2)
+			return outputs.numpy(), model_outputs.cpu().numpy()
+
 	#--------------------
 	# Train the model.
 
 	if True:
-		if False:
+		if True:
 			# Filter model parameters only that require gradients.
 			#model_params = filter(lambda p: p.requires_grad, model.parameters())
 			model_params, num_model_params = [], 0
@@ -1543,7 +1254,9 @@ def recognize_word_1_eng():
 			def forward(batch, device):
 				inputs, outputs, output_lens = batch
 				inputs, outputs, output_lens = inputs.to(device), outputs.to(device), output_lens.to(device)
+
 				model_outputs = model(inputs, None, is_train=True, device=device).log_softmax(2)
+
 				N, T = model_outputs.shape[:2]
 				model_outputs = model_outputs.permute(1, 0, 2)  # (N, T, C) -> (T, N, C).
 				model_output_lens = torch.full([N], T, dtype=torch.int32, device=device)
@@ -1558,30 +1271,36 @@ def recognize_word_1_eng():
 			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
 			def forward(batch, device):
 				inputs, outputs, output_lens = batch
-				outputs[outputs == label_converter.fill_value] = SOS_VALUE  # Replace the fill value with <SOS> token.
 				outputs = outputs.long()
 
 				# Construct inputs for one-step look-ahead.
 				decoder_inputs = outputs[:,:-1]
 				# Construct outputs for one-step look-ahead.
 				decoder_outputs = outputs[:,1:]  # Remove <SOS> token.
+				decoder_output_lens = output_lens - 1
 
 				inputs = inputs.to(device)
-				decoder_inputs, decoder_outputs = decoder_inputs.to(device), decoder_outputs.to(device)
+				decoder_inputs = decoder_inputs.to(device)
+				decoder_outputs = decoder_outputs.to(device)
 
 				model_outputs = model(inputs, decoder_inputs, is_train=True, device=device)
 
+				# TODO [check] >> How to compute loss?
 				# NOTE [info] >> All examples in a batch are concatenated together.
 				#	Can each example be handled individually?
+				#return criterion(model_outputs.view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
+				"""
+				mask = torch.full(decoder_outputs.shape[:2], False, dtype=torch.bool)
+				for idx, ll in enumerate(decoder_output_lens):
+					mask[idx,:ll].fill_(True)
+				model_outputs[mask == False] = label_converter.fill_value
 				return criterion(model_outputs.view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
 				"""
 				concat_model_outputs, concat_decoder_outputs = [], []
-				for mo, do, ll in zip(model_outputs, decoder_outputs, output_lens):
-					concat_model_outputs.append(mo[:ll-1])  # No <SOS> token.
-					concat_decoder_outputs.append(do[:ll-1])  # No <SOS> token.
-				concat_model_outputs, concat_decoder_outputs = torch.cat(concat_model_outputs, 0), torch.cat(concat_decoder_outputs, 0)
-				return criterion(concat_model_outputs, concat_decoder_outputs)
-				"""
+				for mo, do, ll in zip(model_outputs, decoder_outputs, decoder_output_lens):
+					concat_model_outputs.append(mo[:ll])
+					concat_decoder_outputs.append(do[:ll])
+				return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
 		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
 		optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
 		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
@@ -1613,7 +1332,7 @@ def recognize_word_1_eng():
 			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			model.eval()
-			show_text_prediction(model, test_dataloader, label_converter, device)
+			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=False, device=device)
 
 			#scheduler.step()
 
@@ -1628,53 +1347,7 @@ def recognize_word_1_eng():
 	# Evaluate the model.
 
 	model.eval()
-	#show_text_prediction(model, test_dataloader, label_converter, device)
-
-	# FIXME [fix] >> Computing accuracy here is wrong.
-	correct = 0
-	total = 0
-	with torch.no_grad():
-		for images, labels, _ in test_dataloader:
-			images = images.to(device)
-
-			predictions = model(images, device=device)
-
-			_, predictions = torch.max(predictions, 1)
-			predictions = predictions.cpu().numpy()
-			correct += (predictions == labels).sum().item()
-			total += labels.size(0)
-
-	print('Accuracy of the network on the test images = {} %.'.format(100 * correct / total))
-
-	# What are the classes that performed well, and the classes that did not perform well.
-	class_correct = list(0 for i in range(num_classes))
-	class_total = list(0 for i in range(num_classes))
-	with torch.no_grad():
-		for images, labels, _ in test_dataloader:
-			images = images.to(device)
-
-			predictions = model(images, device=device)
-
-			_, predictions = torch.max(predictions, 1)
-			predictions = predictions.cpu().numpy()
-			c = (predictions == labels).squeeze()
-			for i in range(len(labels)):
-				label = labels[i]
-				class_correct[label] += c[i].item()
-				class_total[label] += 1
-
-	#for i in range(num_classes):
-	#	print('Accuracy of {:5s} = {:2d} %.'.format(classes[i], 100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1))
-	accuracies = [100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1 for i in range(num_classes)]
-	#print('Accuracy: {}.'.format(accuracies))
-	hist, bin_edges = np.histogram(accuracies, bins=range(-1, 101), density=False)
-	print('Accuracy frequency: {}.'.format(hist))
-	valid_accuracies = [100 * class_correct[i] / class_total[i] for i in range(num_classes) if class_total[i] > 0]
-	print('Accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
-	accuracy_threshold = 98
-	for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]):
-		if acc < accuracy_threshold:
-			print('\tChar = {}: accuracy = {}.'.format(classes[idx], acc))
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=True, device=device)
 
 def recognize_word_2():
 	# FIXME [check] >> Can image size be changed?
@@ -1684,14 +1357,16 @@ def recognize_word_2():
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	max_word_len = 25  # Max. word length.
-	num_fiducials = 20  # The number of fiducial points of TPS-STN.
-	input_channel = image_channel  # The number of input channel of feature extractor.
-	output_channel = 512  # The number of output channel of feature extractor.
-	hidden_size = 256  # The size of the LSTM hidden states.
 	max_gradient_norm = 5  # Gradient clipping value.
 
-	charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
-	font_list = construct_font(korean=True, english=False)
+	if True:
+		lang = 'kor'
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+		font_list = construct_font(korean=True, english=False)
+	else:
+		lang = 'eng'
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
+		font_list = construct_font(korean=False, english=True)
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	num_simple_examples, num_random_examples = int(1e4), int(1e4)
@@ -1710,19 +1385,23 @@ def recognize_word_2():
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
 	print('Device: {}.'.format(device))
 
-	model_filepath = './simple_word_recognition_rare2_attn_w{}_ch{}.pth'.format(max_word_len, image_channel)
+	model_filepath = './simple_word_recognition_rare2_attn_{}_w{}_ch{}.pth'.format(lang, max_word_len, image_channel)
 	print('Model filepath: {}.'.format(model_filepath))
 
 	#--------------------
 	# Prepare data.
 
-	# When the fill value is the ID of a valid token.
-	FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
-	FILL_TOKEN = '<FILL>'
-	label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
-	assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
-	assert label_converter.encode([FILL_TOKEN])[1] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN])[1], FILL_VALUE)
-	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS])[1], label_converter.encode([label_converter.EOS])[1]
+	if True:
+		# When the fill value is the ID of a valid token.
+		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
+		FILL_TOKEN = '<FILL>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
+		assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
+		assert label_converter.encode([FILL_TOKEN], is_bare_output=True)[0] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN], is_bare_output=True)[0], FILL_VALUE)
+	else:
+		# When the fill value = the ID of <SOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=swl_langproc_util.TokenConverter.SOS)
+	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
 	chars = charset  # Can make the number of each character different.
@@ -1730,10 +1409,11 @@ def recognize_word_2():
 	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
+	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.fill_value, SOS_VALUE, EOS_VALUE))
 
-	# Visualize data.
-	#visualize_text_data(train_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
-	#visualize_text_data(test_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
+	# Show data info.
+	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
 
 	#--------------------
 	# Define a model.
@@ -1745,9 +1425,9 @@ def recognize_word_2():
 	if True:
 		# Initialize model weights.
 		for name, param in model.named_parameters():
-			if 'localization_fc2' in name:  # Exists in TPS_SpatialTransformerNetwork.
-				print(f'Skip {name} as it has already been initialized.')
-				continue
+			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
+			#	print(f'Skip {name} as it has already been initialized.')
+			#	continue
 			try:
 				if 'bias' in name:
 					torch.nn.init.constant_(param, 0.0)
@@ -1762,6 +1442,16 @@ def recognize_word_2():
 		model = load_model(model_filepath, model, device=device)
 
 	model = model.to(device)
+
+	class Inferer(object):
+		def __init__(self, model):
+			self.model = model
+
+		def __call__(self, inputs, outputs, output_lens, device):
+			model_outputs = model(inputs.to(device), outputs.to(device), output_lens.to(device), device=device)
+
+			_, model_outputs = torch.max(model_outputs, 2)
+			return outputs.numpy(), model_outputs.cpu().numpy()
 
 	#--------------------
 	# Train the model.
@@ -1790,22 +1480,21 @@ def recognize_word_2():
 
 			model_outputs = model(inputs, outputs, output_lens, device=device)
 
+			# TODO [check] >> How to compute loss?
 			# NOTE [info] >> All examples in a batch are concatenated together.
 			#	Can each example be handled individually?
-			#return criterion(model_outputs.view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
+			#return criterion(model_outputs.view(-1, model_outputs.shape[-1]), outputs.contiguous().view(-1))
 			"""
 			concat_model_outputs, concat_decoder_outputs = [], []
-			for mo, do, ll in zip(model_outputs, decoder_outputs, output_lens):
+			for mo, do, ll in zip(model_outputs, outputs, output_lens):
 				concat_model_outputs.append(mo[:ll-1])  # No <SOS> token.
 				concat_decoder_outputs.append(do[:ll-1])  # No <SOS> token.
-			concat_model_outputs, concat_decoder_outputs = torch.cat(concat_model_outputs, 0), torch.cat(concat_decoder_outputs, 0)
-			return criterion(concat_model_outputs, concat_decoder_outputs)
+			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
 			"""
 			concat_outputs = []
 			for outp, ll in zip(outputs, output_lens):
 				concat_outputs.append(outp[:ll])
-			concat_outputs = torch.cat(concat_outputs, 0)
-			return criterion(model_outputs, concat_outputs)
+			return criterion(model_outputs, torch.cat(concat_outputs, 0).to(device))
 		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
 		optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
 		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
@@ -1837,7 +1526,7 @@ def recognize_word_2():
 			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			model.eval()
-			show_text_prediction(model, test_dataloader, label_converter, device)
+			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=False, device=device)
 
 			#scheduler.step()
 
@@ -1852,278 +1541,9 @@ def recognize_word_2():
 	# Evaluate the model.
 
 	model.eval()
-	#show_text_prediction(model, test_dataloader, label_converter, device)
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=True, device=device)
 
-	# FIXME [fix] >> Computing accuracy here is wrong.
-	correct = 0
-	total = 0
-	with torch.no_grad():
-		for images, labels, _ in test_dataloader:
-			images = images.to(device)
-
-			predictions = model(images, device=device)
-
-			_, predictions = torch.max(predictions, 1)
-			predictions = predictions.cpu().numpy()
-			correct += (predictions == labels).sum().item()
-			total += labels.size(0)
-
-	print('Accuracy of the network on the test images = {} %.'.format(100 * correct / total))
-
-	# What are the classes that performed well, and the classes that did not perform well.
-	class_correct = list(0 for i in range(num_classes))
-	class_total = list(0 for i in range(num_classes))
-	with torch.no_grad():
-		for images, labels, _ in test_dataloader:
-			images = images.to(device)
-
-			predictions = model(images, device=device)
-
-			_, predictions = torch.max(predictions, 1)
-			predictions = predictions.cpu().numpy()
-			c = (predictions == labels).squeeze()
-			for i in range(len(labels)):
-				label = labels[i]
-				class_correct[label] += c[i].item()
-				class_total[label] += 1
-
-	#for i in range(num_classes):
-	#	print('Accuracy of {:5s} = {:2d} %.'.format(classes[i], 100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1))
-	accuracies = [100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1 for i in range(num_classes)]
-	#print('Accuracy: {}.'.format(accuracies))
-	hist, bin_edges = np.histogram(accuracies, bins=range(-1, 101), density=False)
-	print('Accuracy frequency: {}.'.format(hist))
-	valid_accuracies = [100 * class_correct[i] / class_total[i] for i in range(num_classes) if class_total[i] > 0]
-	print('Accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
-	accuracy_threshold = 98
-	for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]):
-		if acc < accuracy_threshold:
-			print('\tChar = {}: accuracy = {}.'.format(classes[idx], acc))
-
-def recognize_word_2_eng():
-	# FIXME [check] >> Can image size be changed?
-	#image_height, image_width, image_channel = 64, 640, 1
-	image_height, image_width, image_channel = 32, 100, 1
-	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
-	image_height_before_crop, image_width_before_crop = image_height, image_width
-
-	max_word_len = 5  # Max. word length.
-	input_channel = image_channel  # The number of input channel of feature extractor.
-	output_channel = 512  # The number of output channel of feature extractor.
-	hidden_size = 256  # The size of the LSTM hidden states.
-	max_gradient_norm = 5  # Gradient clipping value.
-
-	charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
-	font_list = construct_font(korean=False, english=True)
-
-	num_train_examples, num_test_examples = int(1e6), int(1e4)
-	num_simple_examples, num_random_examples = int(1e4), int(1e4)
-	word_len_interval = (1, max_word_len)
-	font_size_interval = (10, 100)
-	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
-
-	train_test_ratio = 0.8
-	num_epochs = 20
-	batch_size = 64
-	shuffle = True
-	num_workers = 8
-	log_print_freq = 1000
-
-	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
-	print('Device: {}.'.format(device))
-
-	model_filepath = './simple_word_recognition_rare2_attn_allparam_eng_w{}_ch{}.pth'.format(max_word_len, image_channel)
-	print('Model filepath: {}.'.format(model_filepath))
-
-	#--------------------
-	# Prepare data.
-
-	# When the fill value is the ID of a valid token.
-	FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
-	FILL_TOKEN = '<FILL>'
-	label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
-	assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
-	assert label_converter.encode([FILL_TOKEN])[1] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN])[1], FILL_VALUE)
-	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS])[1], label_converter.encode([label_converter.EOS])[1]
-	num_suffixes = 1
-
-	chars = charset  # Can make the number of each character different.
-	train_dataloader, test_dataloader = create_word_data_loaders('random_word', label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
-	#train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
-	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	print('#classes = {}.'.format(num_classes))
-
-	# Visualize data.
-	#visualize_text_data(train_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
-	#visualize_text_data(test_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
-
-	#--------------------
-	# Define a model.
-
-	# FIXME [fix] >> Cannot infer using this model.
-	import rare.crnn_lang
-	model = rare.crnn_lang.CRNN(imgH=image_height, nc=image_channel, nclass=num_classes, nh=256)
-
-	if True:
-		# Initialize model weights.
-		for name, param in model.named_parameters():
-			if 'localization_fc2' in name:  # Exists in TPS_SpatialTransformerNetwork.
-				print(f'Skip {name} as it has already been initialized.')
-				continue
-			try:
-				if 'bias' in name:
-					torch.nn.init.constant_(param, 0.0)
-				elif 'weight' in name:
-					torch.nn.init.kaiming_normal_(param)
-			except Exception as ex:  # For batch normalization.
-				if 'weight' in name:
-					param.data.fill_(1)
-				continue
-	elif False:
-		# Load a model.
-		model = load_model(model_filepath, model, device=device)
-
-	model = model.to(device)
-
-	#--------------------
-	# Train the model.
-
-	if True:
-		if False:
-			# Filter model parameters only that require gradients.
-			#model_params = filter(lambda p: p.requires_grad, model.parameters())
-			model_params, num_model_params = [], 0
-			for p in filter(lambda p: p.requires_grad, model.parameters()):
-				model_params.append(p)
-				num_model_params += np.prod(p.size())
-			print('#trainable model parameters = {}.'.format(num_model_params))
-			#print('Trainable model parameters:')
-			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
-		else:
-			model_params = model.parameters()
-
-		# Define a loss function and optimizer.
-		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
-		def forward(batch, device):
-			inputs, outputs, output_lens = batch
-			outputs = outputs.long()
-
-			inputs, outputs, output_lens = inputs.to(device), outputs.to(device), output_lens.to(device)
-
-			model_outputs = model(inputs, outputs, output_lens, device=device)
-
-			# NOTE [info] >> All examples in a batch are concatenated together.
-			#	Can each example be handled individually?
-			#return criterion(model_outputs.view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
-			"""
-			concat_model_outputs, concat_decoder_outputs = [], []
-			for mo, do, ll in zip(model_outputs, decoder_outputs, output_lens):
-				concat_model_outputs.append(mo[:ll-1])  # No <SOS> token.
-				concat_decoder_outputs.append(do[:ll-1])  # No <SOS> token.
-			concat_model_outputs, concat_decoder_outputs = torch.cat(concat_model_outputs, 0), torch.cat(concat_decoder_outputs, 0)
-			return criterion(concat_model_outputs, concat_decoder_outputs)
-			"""
-			concat_outputs = []
-			for outp, ll in zip(outputs, output_lens):
-				concat_outputs.append(outp[:ll])
-			concat_outputs = torch.cat(concat_outputs, 0)
-			return criterion(model_outputs, concat_outputs)
-		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
-		optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
-		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
-		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
-
-		#--------------------
-		print('Start training...')
-		start_train_time = time.time()
-		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
-			model.train()
-
-			start_time = time.time()
-			running_loss = 0.0
-			for i, batch in enumerate(train_dataloader):
-				# Zero the parameter gradients.
-				optimizer.zero_grad()
-
-				# Forward + backward + optimize.
-				loss = forward(batch, device)
-				loss.backward()
-				torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
-				optimizer.step()
-
-				# Print statistics.
-				running_loss += loss.item()
-				if i % log_print_freq == (log_print_freq - 1):
-					print('[{}, {:5d}] loss = {:.3f}: {:.3f} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
-					running_loss = 0.0
-			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
-
-			#model.eval()
-			#show_text_prediction(model, test_dataloader, label_converter, device)
-
-			#scheduler.step()
-
-			# Save a checkpoint.
-			save_model(model_filepath, model)
-		print('End training: {} secs.'.format(time.time() - start_train_time))
-
-		# Save a model.
-		save_model(model_filepath, model)
-
-	#--------------------
-	# Evaluate the model.
-
-	model.eval()
-	#show_text_prediction(model, test_dataloader, label_converter, device)
-
-	# FIXME [fix] >> Computing accuracy here is wrong.
-	correct = 0
-	total = 0
-	with torch.no_grad():
-		for images, labels, label_lens in test_dataloader:
-			images, labels, label_lens = images.to(device), labels.to(device), label_lens.to(device)
-
-			predictions = model(images, labels, label_lens, device=device)
-
-			_, predictions = torch.max(predictions, 1)
-			predictions, labels = predictions.cpu().numpy(), labels.cpu().numpy()
-			correct += (predictions == labels).sum().item()
-			total += labels.size(0)
-
-	print('Accuracy of the network on the test images = {} %.'.format(100 * correct / total))
-
-	# What are the classes that performed well, and the classes that did not perform well.
-	class_correct = list(0 for i in range(num_classes))
-	class_total = list(0 for i in range(num_classes))
-	with torch.no_grad():
-		for images, labels, _ in test_dataloader:
-			images = images.to(device)
-
-			predictions = model(images, device=device)
-
-			_, predictions = torch.max(predictions, 1)
-			predictions = predictions.cpu().numpy()
-			c = (predictions == labels).squeeze()
-			for i in range(len(labels)):
-				label = labels[i]
-				class_correct[label] += c[i].item()
-				class_total[label] += 1
-
-	#for i in range(num_classes):
-	#	print('Accuracy of {:5s} = {:2d} %.'.format(classes[i], 100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1))
-	accuracies = [100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1 for i in range(num_classes)]
-	#print('Accuracy: {}.'.format(accuracies))
-	hist, bin_edges = np.histogram(accuracies, bins=range(-1, 101), density=False)
-	print('Accuracy frequency: {}.'.format(hist))
-	valid_accuracies = [100 * class_correct[i] / class_total[i] for i in range(num_classes) if class_total[i] > 0]
-	print('Accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
-	accuracy_threshold = 98
-	for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]):
-		if acc < accuracy_threshold:
-			print('\tChar = {}: accuracy = {}.'.format(classes[idx], acc))
-
-def recognize_word_3_eng():
+def recognize_word_3():
 	# FIXME [check] >> Can image size be changed?
 	#image_height, image_width, image_channel = 64, 640, 3
 	image_height, image_width, image_channel = 32, 100, 3
@@ -2131,13 +1551,16 @@ def recognize_word_3_eng():
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	max_word_len = 5  # Max. word length.
-	input_channel = image_channel  # The number of input channel of feature extractor.
-	output_channel = 512  # The number of output channel of feature extractor.
-	hidden_size = 256  # The size of the LSTM hidden states.
 	max_gradient_norm = 5  # Gradient clipping value.
 
-	charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
-	font_list = construct_font(korean=False, english=True)
+	if True:
+		lang = 'kor'
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+		font_list = construct_font(korean=True, english=False)
+	else:
+		lang = 'eng'
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
+		font_list = construct_font(korean=False, english=True)
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	num_simple_examples, num_random_examples = int(1e4), int(1e4)
@@ -2156,30 +1579,35 @@ def recognize_word_3_eng():
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
 	print('Device: {}.'.format(device))
 
-	model_filepath = './simple_word_recognition_aster1_attn_allparam_eng_w{}_ch{}.pth'.format(max_word_len, image_channel)
+	model_filepath = './simple_word_recognition_aster_allparam_noclip_nofill_{}_w{}_ch{}.pth'.format(lang, max_word_len, image_channel)
 	print('Model filepath: {}.'.format(model_filepath))
 
 	#--------------------
 	# Prepare data.
 
-	# When the fill value is the ID of a valid token.
-	FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
-	FILL_TOKEN = '<FILL>'
-	label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
-	assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
-	assert label_converter.encode([FILL_TOKEN])[1] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN])[1], FILL_VALUE)
-	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS])[1], label_converter.encode([label_converter.EOS])[1]
+	if False:
+		# When the fill value is the ID of a valid token.
+		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
+		FILL_TOKEN = '<FILL>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
+		assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
+		assert label_converter.encode([FILL_TOKEN], is_bare_output=True)[0] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN], is_bare_output=True)[0], FILL_VALUE)
+	else:
+		# When the fill value = the ID of <SOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=swl_langproc_util.TokenConverter.SOS)
+	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
 	chars = charset  # Can make the number of each character different.
-	train_dataloader, test_dataloader = create_word_data_loaders('random_word', label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
-	#train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
+	#train_dataloader, test_dataloader = create_word_data_loaders('simple_word', label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
+	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
+	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.fill_value, SOS_VALUE, EOS_VALUE))
 
-	# Visualize data.
-	#visualize_text_data(train_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
-	#visualize_text_data(test_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
+	# Show data info.
+	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
 
 	#--------------------
 	# Define a model.
@@ -2195,9 +1623,9 @@ def recognize_word_3_eng():
 	if True:
 		# Initialize model weights.
 		for name, param in model.named_parameters():
-			if 'localization_fc2' in name:  # Exists in TPS_SpatialTransformerNetwork.
-				print(f'Skip {name} as it has already been initialized.')
-				continue
+			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
+			#	print(f'Skip {name} as it has already been initialized.')
+			#	continue
 			try:
 				if 'bias' in name:
 					torch.nn.init.constant_(param, 0.0)
@@ -2212,6 +1640,31 @@ def recognize_word_3_eng():
 		model = load_model(model_filepath, model, device=device)
 
 	model = model.to(device)
+
+	class Inferer(object):
+		def __init__(self, model):
+			self.model = model
+
+		def __call__(self, inputs, outputs, output_lens, device):
+			# Construct outputs for one-step look-ahead.
+			decoder_outputs = outputs[:,1:]  # Remove <SOS> token.
+			decoder_output_lens = output_lens - 1
+
+			inputs = inputs.to(device)
+			decoder_outputs, decoder_output_lens = decoder_outputs.to(device), decoder_output_lens.to(device)
+
+			input_dict = dict()
+			input_dict['images'] = inputs
+			input_dict['rec_targets'] = decoder_outputs  # FIXME [check] >>
+			input_dict['rec_lengths'] = decoder_output_lens  # FIXME [check] >>
+
+			output_dict = model(input_dict, device=device)
+
+			#loss = output_dict['losses']['loss_rec']
+			predictions = output_dict['output']['pred_rec']  # [batch size, max label len].
+			#prediction_scores = output_dict['output']['pred_rec_score']  # [batch size, max label len].
+
+			return outputs.numpy(), predictions.cpu().numpy()
 
 	#--------------------
 	# Train the model.
@@ -2294,7 +1747,7 @@ def recognize_word_3_eng():
 			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			model.eval()
-			show_text_prediction_for_aster(model, test_dataloader, label_converter, device)
+			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=False, device=device)
 
 			scheduler.step()
 
@@ -2309,81 +1762,24 @@ def recognize_word_3_eng():
 	# Evaluate the model.
 
 	model.eval()
-	#show_text_prediction_for_aster(model, test_dataloader, label_converter, device)
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=True, device=device)
 
-	# FIXME [fix] >> Computing accuracy here is wrong.
-	correct = 0
-	total = 0
-	with torch.no_grad():
-		for images, labels, label_lens in test_dataloader:
-			# Construct outputs for one-step look-ahead.
-			decoder_labels = labels[:,1:]  # Remove <SOS> token.
-			decoder_label_lens = label_lens - 1
-
-			inputs = inputs.to(device)
-			decoder_labels, decoder_label_lens = decoder_labels.to(device), decoder_label_lens.to(device)
-
-			input_dict = dict()
-			input_dict['images'] = images
-			input_dict['rec_targets'] = decoder_labels  # FIXME [check] >>
-			input_dict['rec_lengths'] = decoder_label_lens  # FIXME [check] >>
-
-			output_dict = model(input_dict, device=device)
-
-			#loss = output_dict['losses']['loss_rec'].cpu().numpy()
-			predictions = output_dict['output']['pred_rec'].cpu().numpy()  # [batch size, max label len].
-			#prediction_scores = output_dict['output']['pred_rec_score'].cpu().numpy()  # [batch size, max label len].
-
-			correct += (predictions == labels).sum().item()
-			total += labels.size(0)
-
-	print('Accuracy of the network on the test images = {} %.'.format(100 * correct / total))
-
-	# What are the classes that performed well, and the classes that did not perform well.
-	class_correct = list(0 for i in range(num_classes))
-	class_total = list(0 for i in range(num_classes))
-	with torch.no_grad():
-		for images, labels, _ in test_dataloader:
-			images = images.to(device)
-
-			predictions = model(images, device=device)
-
-			_, predictions = torch.max(predictions, 1)
-			predictions = predictions.cpu().numpy()
-			c = (predictions == labels).squeeze()
-			for i in range(len(labels)):
-				label = labels[i]
-				class_correct[label] += c[i].item()
-				class_total[label] += 1
-
-	#for i in range(num_classes):
-	#	print('Accuracy of {:5s} = {:2d} %.'.format(classes[i], 100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1))
-	accuracies = [100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1 for i in range(num_classes)]
-	#print('Accuracy: {}.'.format(accuracies))
-	hist, bin_edges = np.histogram(accuracies, bins=range(-1, 101), density=False)
-	print('Accuracy frequency: {}.'.format(hist))
-	valid_accuracies = [100 * class_correct[i] / class_total[i] for i in range(num_classes) if class_total[i] > 0]
-	print('Accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
-	accuracy_threshold = 98
-	for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]):
-		if acc < accuracy_threshold:
-			print('\tChar = {}: accuracy = {}.'.format(classes[idx], acc))
-
-def build_opennmt_submodels(input_channel, num_classes):
+def build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size):
 	import onmt
 
 	bidirectional_encoder = True
+	embedding_dropout = 0.3
 	encoder_num_layers = 2
-	encoder_rnn_size = 500
+	encoder_rnn_size = encoder_rnn_size
 	encoder_dropout = 0.3
 	decoder_rnn_type = 'LSTM'
 	decoder_num_layers = 2
-	decoder_hidden_size = 500
+	decoder_hidden_size = decoder_hidden_size
 	decoder_dropout = 0.3
 
 	src_embeddings = None
 	tgt_embeddings = onmt.modules.Embeddings(
-		word_vec_size=80,
+		word_vec_size=word_vec_size,
 		word_vocab_size=num_classes,
 		word_padding_idx=1,
 		position_encoding=False,
@@ -2392,7 +1788,7 @@ def build_opennmt_submodels(input_channel, num_classes):
 		feat_vec_size=-1,
 		feat_padding_idx=[],
 		feat_vocab_sizes=[],
-		dropout=0,
+		dropout=embedding_dropout,
 		sparse=False,
 		fix_word_vecs=False
 	)
@@ -2416,7 +1812,7 @@ def build_opennmt_submodels(input_channel, num_classes):
 	)
 	return encoder, decoder, generator
 
-def recognize_word_4_eng():
+def recognize_word_4():
 	# FIXME [check] >> Can image size be changed?
 	#image_height, image_width, image_channel = 64, 640, 3
 	image_height, image_width, image_channel = 32, 100, 3
@@ -2424,10 +1820,16 @@ def recognize_word_4_eng():
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	max_word_len = 5  # Max. word length.
-	max_gradient_norm = 5  # Gradient clipping value.
+	max_gradient_norm = 20  # Gradient clipping value.
 
-	charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
-	font_list = construct_font(korean=False, english=True)
+	if True:
+		lang = 'kor'
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+		font_list = construct_font(korean=True, english=False)
+	else:
+		lang = 'eng'
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
+		font_list = construct_font(korean=False, english=True)
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	num_simple_examples, num_random_examples = int(1e4), int(1e4)
@@ -2446,45 +1848,50 @@ def recognize_word_4_eng():
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
 	print('Device: {}.'.format(device))
 
-	model_filepath = './simple_word_recognition_aster1_attn_allparam_eng_w{}_ch{}.pth'.format(max_word_len, image_channel)
+	model_filepath = './simple_word_recognition_onmt_allparam_noclip_nofill_{}_w{}_ch{}.pth'.format(lang, max_word_len, image_channel)
 	print('Model filepath: {}.'.format(model_filepath))
 
 	#--------------------
 	# Prepare data.
 
-	# When the fill value is the ID of a valid token.
-	FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
-	FILL_TOKEN = '<FILL>'
-	label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
-	assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
-	assert label_converter.encode([FILL_TOKEN])[1] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN])[1], FILL_VALUE)
-	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS])[1], label_converter.encode([label_converter.EOS])[1]
+	if False:
+		# When the fill value is the ID of a valid token.
+		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
+		FILL_TOKEN = '<FILL>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
+		assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
+		assert label_converter.encode([FILL_TOKEN], is_bare_output=True)[0] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN], is_bare_output=True)[0], FILL_VALUE)
+	else:
+		# When the fill value = the ID of <SOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=swl_langproc_util.TokenConverter.SOS)
+	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
 	chars = charset  # Can make the number of each character different.
-	train_dataloader, test_dataloader = create_word_data_loaders('random_word', label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
-	#train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
+	#train_dataloader, test_dataloader = create_word_data_loaders('simple_word', label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
+	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
+	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.fill_value, SOS_VALUE, EOS_VALUE))
 
-	# Visualize data.
-	#visualize_text_data(train_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
-	#visualize_text_data(test_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
+	# Show data info.
+	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
 
 	#--------------------
 	# Define a model.
 
 	import onmt
-	encoder, decoder, generator = build_opennmt_submodels(image_channel, num_classes)
+	encoder, decoder, generator = build_opennmt_submodels(image_channel, num_classes, word_vec_size=80, encoder_rnn_size=500, decoder_hidden_size=500)
 	model = onmt.models.NMTModel(encoder, decoder)
-	model.generator = generator
+	model.add_module('generator', generator)
 
 	if True:
 		# Initialize model weights.
 		for name, param in model.named_parameters():
-			if 'localization_fc2' in name:  # Exists in TPS_SpatialTransformerNetwork.
-				print(f'Skip {name} as it has already been initialized.')
-				continue
+			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
+			#	print(f'Skip {name} as it has already been initialized.')
+			#	continue
 			try:
 				if 'bias' in name:
 					torch.nn.init.constant_(param, 0.0)
@@ -2499,6 +1906,25 @@ def recognize_word_4_eng():
 		model = load_model(model_filepath, model, device=device)
 
 	model = model.to(device)
+
+	class Inferer(object):
+		def __init__(self, model):
+			self.model = model
+
+		def __call__(self, inputs, outputs, output_lens, device):
+			gts = outputs[:,1:]
+			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long() # [B, T, F] -> [T, B, F].
+
+			inputs = inputs.to(device)
+			outputs, output_lens = outputs.to(device), output_lens.to(device)
+
+			model_outputs = self.model(inputs, outputs, output_lens)
+			predictions = self.model.generator(model_outputs[0]).transpose(0, 1)  # [T, B, F] -> [B, T, F].
+
+			#attentions = model_outputs[1]['std']
+
+			_, predictions = torch.max(predictions, 2)
+			return gts.numpy(), predictions.cpu().numpy()
 
 	#--------------------
 	# Train the model.
@@ -2523,20 +1949,22 @@ def recognize_word_4_eng():
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
 
-			# One-hot encoding.
-			outputs_onehot = torch.LongTensor(outputs.shape[0], outputs.shape[1], num_classes)
-			outputs_onehot.zero_()
-			outputs_onehot.scatter_(2, outputs.view(outputs.shape[0], outputs.shape[1], -1), 1)
-			outputs_onehot = torch.transpose(outputs_onehot, 0, 1)  # [B, T, F] -> [T, B, F].
+			decoder_outputs = outputs[:,1:]
+			outputs.unsqueeze_(dim=-1)
+			outputs = torch.transpose(outputs, 0, 1)  # [B, T, F] -> [T, B, F].
 
 			inputs = inputs.to(device)
-			outputs_onehot, output_lens = outputs_onehot.to(device), output_lens.to(device)
+			outputs, output_lens = outputs.to(device), output_lens.to(device)
+			decoder_outputs = decoder_outputs.to(device)
 
-			model_outputs = model(inputs, outputs_onehot, output_lens)
+			model_output_tuple = model(inputs, outputs, output_lens)
+			model_outputs = model.generator(model_output_tuple[0]).transpose(0, 1)  # [T, B, F] -> [B, T, F].
+
+			#attentions = model_output_tuple[1]['std']
 
 			# NOTE [info] >> All examples in a batch are concatenated together.
 			#	Can each example be handled individually?
-			return criterion(model_outputs.view(-1, model_outputs.shape[-1]), outputs.contiguous().view(-1))
+			return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
 		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
 		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
 		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
@@ -2569,7 +1997,7 @@ def recognize_word_4_eng():
 			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			model.eval()
-			show_text_prediction_for_aster(model, test_dataloader, label_converter, device)
+			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=False, device=device)
 
 			scheduler.step()
 
@@ -2584,69 +2012,9 @@ def recognize_word_4_eng():
 	# Evaluate the model.
 
 	model.eval()
-	#show_text_prediction_for_aster(model, test_dataloader, label_converter, device)
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=True, device=device)
 
-	# FIXME [fix] >> Computing accuracy here is wrong.
-	correct = 0
-	total = 0
-	with torch.no_grad():
-		for images, labels, label_lens in test_dataloader:
-			# One-hot encoding.
-			labels_onehot = torch.LongTensor(labels.shape[0], labels.shape[1], num_classes)
-			labels_onehot.zero_()
-			labels_onehot.scatter_(2, labels.view(labels.shape[0], labels.shape[1], -1), 1)
-			labels_onehot = torch.transpose(labels_onehot, 0, 1)  # [B, T, F] -> [T, B, F].
-
-			images = images.to(device)
-			labels_onehot, label_lens = labels_onehot.to(device), label_lens.to(device)
-
-			predictions = model(images, labels_onehot, label_lens)
-
-			_, predictions = torch.max(predictions, 1)
-			predictions = predictions.cpu().numpy()
-			correct += (predictions == labels).sum().item()
-			total += labels.size(0)
-
-	print('Accuracy of the network on the test images = {} %.'.format(100 * correct / total))
-
-	# What are the classes that performed well, and the classes that did not perform well.
-	class_correct = list(0 for i in range(num_classes))
-	class_total = list(0 for i in range(num_classes))
-	with torch.no_grad():
-		for images, labels, label_lens in test_dataloader:
-			# One-hot encoding.
-			labels_onehot = torch.LongTensor(labels.shape[0], labels.shape[1], num_classes)
-			labels_onehot.zero_()
-			labels_onehot.scatter_(2, labels.view(labels.shape[0], labels.shape[1], -1), 1)
-			labels_onehot = torch.transpose(labels_onehot, 0, 1)  # [B, T, F] -> [T, B, F].
-
-			images = images.to(device)
-			labels_onehot, label_lens = labels_onehot.to(device), label_lens.to(device)
-
-			predictions = model(images, labels_onehot, label_lens)
-
-			_, predictions = torch.max(predictions, 1)
-			predictions = predictions.cpu().numpy()
-			c = (predictions == labels).squeeze()
-			for i in range(len(labels)):
-				label = labels[i]
-				class_correct[label] += c[i].item()
-				class_total[label] += 1
-
-	#for i in range(num_classes):
-	#	print('Accuracy of {:5s} = {:2d} %.'.format(classes[i], 100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1))
-	accuracies = [100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1 for i in range(num_classes)]
-	#print('Accuracy: {}.'.format(accuracies))
-	hist, bin_edges = np.histogram(accuracies, bins=range(-1, 101), density=False)
-	print('Accuracy frequency: {}.'.format(hist))
-	valid_accuracies = [100 * class_correct[i] / class_total[i] for i in range(num_classes) if class_total[i] > 0]
-	print('Accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
-	accuracy_threshold = 98
-	for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]):
-		if acc < accuracy_threshold:
-			print('\tChar = {}: accuracy = {}.'.format(classes[idx], acc))
-
-def recognize_word_5_eng():
+def recognize_word_5():
 	# FIXME [check] >> Can image size be changed?
 	#image_height, image_width, image_channel = 64, 640, 3
 	image_height, image_width, image_channel = 32, 100, 3
@@ -2654,10 +2022,16 @@ def recognize_word_5_eng():
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	max_word_len = 5  # Max. word length.
-	max_gradient_norm = 5  # Gradient clipping value.
+	max_gradient_norm = 20  # Gradient clipping value.
 
-	charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
-	font_list = construct_font(korean=False, english=True)
+	if True:
+		lang = 'kor'
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+		font_list = construct_font(korean=True, english=False)
+	else:
+		lang = 'eng'
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
+		font_list = construct_font(korean=False, english=True)
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	num_simple_examples, num_random_examples = int(1e4), int(1e4)
@@ -2676,46 +2050,69 @@ def recognize_word_5_eng():
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
 	print('Device: {}.'.format(device))
 
-	model_filepath = './simple_word_recognition_aster1_attn_allparam_eng_w{}_ch{}.pth'.format(max_word_len, image_channel)
+	model_filepath = './simple_word_recognition_aster+onmt_allparam_noclip_nofill_{}_w{}_ch{}.pth'.format(lang, max_word_len, image_channel)
 	print('Model filepath: {}.'.format(model_filepath))
 
 	#--------------------
 	# Prepare data.
 
-	# When the fill value is the ID of a valid token.
-	FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
-	FILL_TOKEN = '<FILL>'
-	label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
-	assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
-	assert label_converter.encode([FILL_TOKEN])[1] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN])[1], FILL_VALUE)
-	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS])[1], label_converter.encode([label_converter.EOS])[1]
+	if False:
+		# When the fill value is the ID of a valid token.
+		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
+		FILL_TOKEN = '<FILL>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
+		assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
+		assert label_converter.encode([FILL_TOKEN], is_bare_output=True)[0] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN], is_bare_output=True)[0], FILL_VALUE)
+	else:
+		# When the fill value = the ID of <SOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=swl_langproc_util.TokenConverter.SOS)
+	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
 	chars = charset  # Can make the number of each character different.
-	train_dataloader, test_dataloader = create_word_data_loaders('random_word', label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
-	#train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
+	#train_dataloader, test_dataloader = create_word_data_loaders('simple_word', label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
+	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
+	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.fill_value, SOS_VALUE, EOS_VALUE))
 
-	# Visualize data.
-	#visualize_text_data(train_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
-	#visualize_text_data(test_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
+	# Show data info.
+	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
 
 	#--------------------
 	# Define a model.
 
-	import aster.resnet_aster
-	encoder = aster.resnet_aster.ResNet_ASTER(with_lstm=False, in_channels=image_channel)
-	import onmt
-	_, decoder, generator = build_opennmt_submodels(image_channel, num_classes)
-	model = torch.nn.Sequential(encoder, decoder, generator)
+	class MyCompositeModel(torch.nn.Module):
+		def __init__(self, input_channel, num_classes, word_vec_size):
+			super().__init__()
+
+			import aster.resnet_aster
+			self.encoder = aster.resnet_aster.ResNet_ASTER(with_lstm=True, in_channels=input_channel)
+			import onmt
+			_, self.decoder, self.generator = build_opennmt_submodels(input_channel, num_classes, word_vec_size=80, encoder_rnn_size=512, decoder_hidden_size=512)
+
+		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
+		def forward(self, src, tgt, lengths, bptt=False, with_align=False):
+			# TODO [check] >> This function is not tested.
+			dec_in = tgt[:-1]  # Exclude last target from inputs.
+			enc_outputs, enc_hidden = self.encoder(src)
+			# TODO [check] >> Is it proper to use enc_outputs & enc_hidden?
+			enc_outputs = enc_outputs.transpose(0, 1)  # [B, T, F] -> [T, B, F].
+			if bptt is False:
+				self.decoder.init_state(src, enc_outputs, enc_hidden)
+			dec_outs, attns = self.decoder(dec_in, enc_outputs, memory_lengths=lengths, with_align=with_align)
+			outs = self.generator(dec_outs)
+			return outs, attns
+
+	model = MyCompositeModel(image_channel, num_classes, word_vec_size=80)
 
 	if True:
 		# Initialize model weights.
 		for name, param in model.named_parameters():
-			if 'localization_fc2' in name:  # Exists in TPS_SpatialTransformerNetwork.
-				print(f'Skip {name} as it has already been initialized.')
-				continue
+			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
+			#	print(f'Skip {name} as it has already been initialized.')
+			#	continue
 			try:
 				if 'bias' in name:
 					torch.nn.init.constant_(param, 0.0)
@@ -2730,6 +2127,25 @@ def recognize_word_5_eng():
 		model = load_model(model_filepath, model, device=device)
 
 	model = model.to(device)
+
+	class Inferer(object):
+		def __init__(self, model):
+			self.model = model
+
+		def __call__(self, inputs, outputs, output_lens, device):
+			gts = labels[:,1:]
+			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long() # [B, T, F] -> [T, B, F].
+
+			inputs = inputs.to(device)
+			outputs, output_lens = outputs.to(device), output_lens.to(device)
+
+			model_outputs = self.model(inputs, outputs, output_lens)
+
+			predictions = model_outputs[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+			#attentions = model_outputs[1]['std']
+
+			_, predictions = torch.max(predictions, 2)
+			return gts.numpy(), predictions.cpu().numpy()
 
 	#--------------------
 	# Train the model.
@@ -2754,20 +2170,22 @@ def recognize_word_5_eng():
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
 
-			# One-hot encoding.
-			outputs_onehot = torch.LongTensor(outputs.shape[0], outputs.shape[1], num_classes)
-			outputs_onehot.zero_()
-			outputs_onehot.scatter_(2, outputs.view(outputs.shape[0], outputs.shape[1], -1), 1)
-			outputs_onehot = torch.transpose(outputs_onehot, 0, 1)  # [B, T, F] -> [T, B, F].
+			decoder_outputs = outputs[:,1:]
+			outputs.unsqueeze_(dim=-1)
+			outputs = torch.transpose(outputs, 0, 1)  # [B, T, F] -> [T, B, F].
 
 			inputs = inputs.to(device)
-			outputs_onehot, output_lens = outputs_onehot.to(device), output_lens.to(device)
+			outputs, output_lens = outputs.to(device), output_lens.to(device)
+			decoder_outputs = decoder_outputs.to(device)
 
-			model_outputs = model(inputs, outputs_onehot, output_lens)
+			model_output_tuple = model(inputs, outputs, output_lens)
+			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+
+			#attentions = model_output_tuple[1]['std']
 
 			# NOTE [info] >> All examples in a batch are concatenated together.
 			#	Can each example be handled individually?
-			return criterion(model_outputs.view(-1, model_outputs.shape[-1]), outputs.contiguous().view(-1))
+			return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
 		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
 		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
 		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
@@ -2800,7 +2218,7 @@ def recognize_word_5_eng():
 			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			model.eval()
-			show_text_prediction_for_aster(model, test_dataloader, label_converter, device)
+			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=False, device=device)
 
 			scheduler.step()
 
@@ -2815,67 +2233,7 @@ def recognize_word_5_eng():
 	# Evaluate the model.
 
 	model.eval()
-	#show_text_prediction_for_aster(model, test_dataloader, label_converter, device)
-
-	# FIXME [fix] >> Computing accuracy here is wrong.
-	correct = 0
-	total = 0
-	with torch.no_grad():
-		for images, labels, label_lens in test_dataloader:
-			# One-hot encoding.
-			labels_onehot = torch.LongTensor(labels.shape[0], labels.shape[1], num_classes)
-			labels_onehot.zero_()
-			labels_onehot.scatter_(2, labels.view(labels.shape[0], labels.shape[1], -1), 1)
-			labels_onehot = torch.transpose(labels_onehot, 0, 1)  # [B, T, F] -> [T, B, F].
-
-			images = images.to(device)
-			labels_onehot, label_lens = labels_onehot.to(device), label_lens.to(device)
-
-			predictions = model(images, labels_onehot, label_lens)
-
-			_, predictions = torch.max(predictions, 1)
-			predictions = predictions.cpu().numpy()
-			correct += (predictions == labels).sum().item()
-			total += labels.size(0)
-
-	print('Accuracy of the network on the test images = {} %.'.format(100 * correct / total))
-
-	# What are the classes that performed well, and the classes that did not perform well.
-	class_correct = list(0 for i in range(num_classes))
-	class_total = list(0 for i in range(num_classes))
-	with torch.no_grad():
-		for images, labels, label_lens in test_dataloader:
-			# One-hot encoding.
-			labels_onehot = torch.LongTensor(labels.shape[0], labels.shape[1], num_classes)
-			labels_onehot.zero_()
-			labels_onehot.scatter_(2, labels.view(labels.shape[0], labels.shape[1], -1), 1)
-			labels_onehot = torch.transpose(labels_onehot, 0, 1)  # [B, T, F] -> [T, B, F].
-
-			images = images.to(device)
-			labels_onehot, label_lens = labels_onehot.to(device), label_lens.to(device)
-
-			predictions = model(images, labels_onehot, label_lens)
-
-			_, predictions = torch.max(predictions, 1)
-			predictions = predictions.cpu().numpy()
-			c = (predictions == labels).squeeze()
-			for i in range(len(labels)):
-				label = labels[i]
-				class_correct[label] += c[i].item()
-				class_total[label] += 1
-
-	#for i in range(num_classes):
-	#	print('Accuracy of {:5s} = {:2d} %.'.format(classes[i], 100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1))
-	accuracies = [100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1 for i in range(num_classes)]
-	#print('Accuracy: {}.'.format(accuracies))
-	hist, bin_edges = np.histogram(accuracies, bins=range(-1, 101), density=False)
-	print('Accuracy frequency: {}.'.format(hist))
-	valid_accuracies = [100 * class_correct[i] / class_total[i] for i in range(num_classes) if class_total[i] > 0]
-	print('Accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
-	accuracy_threshold = 98
-	for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]):
-		if acc < accuracy_threshold:
-			print('\tChar = {}: accuracy = {}.'.format(classes[idx], acc))
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=True, device=device)
 
 def recognize_word_using_mixup():
 	# FIXME [check] >> Can image size be changed?
@@ -2940,8 +2298,8 @@ def recognize_word_using_mixup():
 		FILL_TOKEN = '<FILL>'
 		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
 		assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
-		assert label_converter.encode([FILL_TOKEN])[1] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN])[1], FILL_VALUE)
-		SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS])[1], label_converter.encode([label_converter.EOS])[1]
+		assert label_converter.encode([FILL_TOKEN], is_bare_output=True)[0] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN], is_bare_output=True)[0], FILL_VALUE)
+		SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 		num_suffixes = 1
 
 	chars = charset  # Can make the number of each character different.
@@ -2949,10 +2307,11 @@ def recognize_word_using_mixup():
 	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
+	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.fill_value, SOS_VALUE, EOS_VALUE))
 
-	# Visualize data.
-	#visualize_text_data(train_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
-	#visualize_text_data(test_dataloader, label_converter, SOS_VALUE, EOS_VALUE)
+	# Show data info.
+	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
 
 	#--------------------
 	# Define a model.
@@ -2964,9 +2323,9 @@ def recognize_word_using_mixup():
 	if True:
 		# Initialize model weights.
 		for name, param in model.named_parameters():
-			if 'localization_fc2' in name:  # Exists in TPS_SpatialTransformerNetwork.
-				print(f'Skip {name} as it has already been initialized.')
-				continue
+			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
+			#	print(f'Skip {name} as it has already been initialized.')
+			#	continue
 			try:
 				if 'bias' in name:
 					torch.nn.init.constant_(param, 0.0)
@@ -2981,6 +2340,16 @@ def recognize_word_using_mixup():
 		model = load_model(model_filepath, model, device=device)
 
 	model = model.to(device)
+
+	class Inferer(object):
+		def __init__(self, model):
+			self.model = model
+
+		def __call__(self, inputs, outputs, output_lens, device):
+			model_outputs = model(inputs, None, is_train=False, device=device)
+
+			_, model_outputs = torch.max(model_outputs, 2)
+			return outputs.numpy(), model_outputs.cpu().numpy()
 
 	#--------------------
 	# Train the model.
@@ -3005,7 +2374,9 @@ def recognize_word_using_mixup():
 			def forward(batch, device):
 				inputs, outputs, output_lens = batch
 				inputs, outputs, output_lens = inputs.to(device), outputs.to(device), output_lens.to(device)
+
 				model_outputs = model(inputs, None, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, is_train=True, device=device).log_softmax(2)
+
 				N, T = model_outputs.shape[:2]
 				model_outputs = model_outputs.permute(1, 0, 2)  # (N, T, C) -> (T, N, C).
 				model_output_lens = torch.full([N], T, dtype=torch.int32, device=device)
@@ -3023,29 +2394,25 @@ def recognize_word_using_mixup():
 				outputs = outputs.long()
 
 				# Construct inputs for one-step look-ahead.
-				decoder_inputs = outputs.clone()
-				for idx, ll in enumerate(output_lens):
-					decoder_inputs[idx, ll-1] = label_converter.fill_value  # Remove <EOS> token.
-				decoder_inputs = decoder_inputs[:,:-1]
+				decoder_inputs = outputs[:,:-1]
 				# Construct outputs for one-step look-ahead.
 				decoder_outputs = outputs[:,1:]  # Remove <SOS> token.
+				decoder_output_lens = output_lens - 1
 
-				inputs, output_lens = inputs.to(device), output_lens.to(device)
-				decoder_inputs, decoder_outputs = decoder_inputs.to(device), decoder_outputs.to(device)
+				inputs = inputs.to(device)
+				decoder_inputs = decoder_inputs.to(device)
+				decoder_outputs = decoder_outputs.to(device)
 
 				model_outputs = model(inputs, decoder_inputs, is_train=True, device=device)
 
 				# NOTE [info] >> All examples in a batch are concatenated together.
 				#	Can each example be handled individually?
-				return criterion(model_outputs.view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
-				"""
+				#return criterion(model_outputs.view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
 				concat_model_outputs, concat_decoder_outputs = [], []
-				for mo, do, ll in zip(model_outputs, decoder_outputs, output_lens):
-					concat_model_outputs.append(mo[:ll-1])  # No <SOS> token.
-					concat_decoder_outputs.append(do[:ll-1])  # No <SOS> token.
-				concat_model_outputs, concat_decoder_outputs = torch.cat(concat_model_outputs, 0), torch.cat(concat_decoder_outputs, 0)
-				return criterion(concat_model_outputs, concat_decoder_outputs)
-				"""
+				for mo, do, ll in zip(model_outputs, decoder_outputs, decoder_output_lens):
+					concat_model_outputs.append(mo[:ll])
+					concat_decoder_outputs.append(do[:ll])
+				return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
 		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
 		optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
 		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
@@ -3077,7 +2444,7 @@ def recognize_word_using_mixup():
 			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			model.eval()
-			show_text_prediction(model, test_dataloader, label_converter, device)
+			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=False, device=device)
 
 			#scheduler.step()
 
@@ -3092,53 +2459,7 @@ def recognize_word_using_mixup():
 	# Evaluate the model.
 
 	model.eval()
-	#show_text_prediction(model, test_dataloader, label_converter, device)
-
-	# FIXME [fix] >> Computing accuracy here is wrong.
-	correct = 0
-	total = 0
-	with torch.no_grad():
-		for images, labels, _ in test_dataloader:
-			images = images.to(device)
-
-			predictions = model(images, device=device)
-
-			_, predictions = torch.max(predictions, 1)
-			predictions = predictions.cpu().numpy()
-			correct += (predictions == labels).sum().item()
-			total += labels.size(0)
-
-	print('Accuracy of the network on the test images = {} %.'.format(100 * correct / total))
-
-	# What are the classes that performed well, and the classes that did not perform well.
-	class_correct = list(0 for i in range(num_classes))
-	class_total = list(0 for i in range(num_classes))
-	with torch.no_grad():
-		for images, labels, _ in test_dataloader:
-			images = images.to(device)
-
-			predictions = model(images, device=device)
-
-			_, predictions = torch.max(predictions, 1)
-			predictions = predictions.cpu().numpy()
-			c = (predictions == labels).squeeze()
-			for i in range(len(labels)):
-				label = labels[i]
-				class_correct[label] += c[i].item()
-				class_total[label] += 1
-
-	#for i in range(num_classes):
-	#	print('Accuracy of {:5s} = {:2d} %.'.format(classes[i], 100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1))
-	accuracies = [100 * class_correct[i] / class_total[i] if class_total[i] > 0 else -1 for i in range(num_classes)]
-	#print('Accuracy: {}.'.format(accuracies))
-	hist, bin_edges = np.histogram(accuracies, bins=range(-1, 101), density=False)
-	print('Accuracy frequency: {}.'.format(hist))
-	valid_accuracies = [100 * class_correct[i] / class_total[i] for i in range(num_classes) if class_total[i] > 0]
-	print('Accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
-	accuracy_threshold = 98
-	for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]):
-		if acc < accuracy_threshold:
-			print('\tChar = {}: accuracy = {}.'.format(classes[idx], acc))
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=True, device=device)
 
 def recognize_text():
 	raise NotImplementedError
@@ -3393,12 +2714,10 @@ def main():
 
 	#--------------------
 	#recognize_word_1()  # Use RARE.
-	#recognize_word_1_eng()  # Use RARE.
 	#recognize_word_2()  # Use RARE.
-	#recognize_word_2_eng()   # Use RARE.
-	#recognize_word_3_eng()  # Use ASTER.
-	recognize_word_4_eng()  # Use OpenNMT.
-	#recognize_word_5_eng()  # Use ASTER (encoder) + OpenNMT (decoder).
+	#recognize_word_3()  # Use ASTER.
+	recognize_word_4()  # Use OpenNMT.
+	#recognize_word_5()  # Use ASTER (encoder) + OpenNMT (decoder).
 	#recognize_word_using_mixup()  # Use RARE. Not working.
 
 	# Recognize text using CRAFT (scene text detector) + word recognizer.

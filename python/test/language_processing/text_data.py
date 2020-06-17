@@ -341,7 +341,10 @@ class SimpleWordDataset(TextDatasetBase):
 		self.words = words
 		self.num_examples = num_examples
 		self.image_channel = image_channel
-		self.max_word_len = min(max_word_len, len(max(self.words, key=len))) if max_word_len else len(max(self.words, key=len))
+		#self.max_word_len = min(max_word_len, len(max(self.words, key=len))) if max_word_len else len(max(self.words, key=len))
+		self.max_word_len = max_word_len if max_word_len else len(max(self.words, key=len))
+		#assert self.max_word_len == max_word_len, 'Unmatched max. word length, {} != {}'.format(self.max_word_len, max_word_len)
+		self.max_word_len = max_word_len
 		self.fonts = fonts
 		self.font_size_interval = font_size_interval
 		self.transform = transform
@@ -398,7 +401,9 @@ class RandomWordDataset(TextDatasetBase):
 		self.chars = chars
 		self.num_examples = num_examples
 		self.image_channel = image_channel
-		self.max_word_len = min(max_word_len, word_len_interval[1]) if max_word_len else word_len_interval[1]
+		#self.max_word_len = min(max_word_len, word_len_interval[1]) if max_word_len else word_len_interval[1]
+		self.max_word_len = max_word_len if max_word_len else word_len_interval[1]
+		#assert self.max_word_len == max_word_len, 'Unmatched max. word length, {} != {}'.format(self.max_word_len, max_word_len)
 		self.word_len_interval = word_len_interval
 		self.fonts = fonts
 		self.font_size_interval = font_size_interval
