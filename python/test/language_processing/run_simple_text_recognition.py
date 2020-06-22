@@ -556,7 +556,7 @@ def create_word_data_loaders(dataset_type, label_converter, wordset, chars, num_
 		test_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_test_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
 	elif dataset_type == 'random_word':
 		train_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
-		test_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
+		test_dataset = text_data.RandomWordDataset(label_converter, chars, num_test_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
 	elif dataset_type == 'file_based_word':
 		if 'posix' == os.name:
 			data_base_dir_path = '/home/sangwook/work/dataset'
@@ -709,44 +709,44 @@ def show_char_data_info(dataloader, label_converter, visualize=True, mode='Train
 	images_np, labels_np = images.numpy(), labels.numpy()
 
 	print('{} image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, images_np.shape, images_np.dtype, np.min(images_np), np.max(images_np)))
-	print('{} label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, images_np.shape, images_np.dtype, np.min(images_np), np.max(images_np)))
+	print('{} label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, labels_np.shape, labels_np.dtype, np.min(labels_np), np.max(labels_np)))
 
 	if visualize:
-		print('Labels: {}.'.format(' '.join(label_converter.decode(images_np))))
+		print('Labels: {}.'.format(' '.join(label_converter.decode(labels_np))))
 		show_image(torchvision.utils.make_grid(images))
 
 def show_text_data_info(dataloader, label_converter, visualize=True, mode='Train'):
 	dataiter = iter(dataloader)
 	images, labels, label_lens = dataiter.next()
-	images_np, images_np, label_lens_np = images.numpy(), labels.numpy(), label_lens.numpy()
+	images_np, labels_np, label_lens_np = images.numpy(), labels.numpy(), label_lens.numpy()
 
 	print('{} image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, images_np.shape, images_np.dtype, np.min(images_np), np.max(images_np)))
-	print('{} label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, images_np.shape, images_np.dtype, np.min(images_np), np.max(images_np)))
+	print('{} label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, labels_np.shape, labels_np.dtype, np.min(labels_np), np.max(labels_np)))
 	print('{} label length: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, label_lens_np.shape, label_lens_np.dtype, np.min(label_lens_np), np.max(label_lens_np)))
 
 	if visualize:
 		#print('Labels: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in images_np])))
-		for idx, (lbl, ll) in enumerate(zip(images_np, label_lens_np)):
+		for idx, (lbl, ll) in enumerate(zip(labels_np, label_lens_np)):
 			print('Label #{} (len = {}): (str) {}, (int) {}.'.format(idx, ll, label_converter.decode(lbl), lbl))
 		show_image(torchvision.utils.make_grid(images))
 
-def show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_per_character_accuracy=False):
+def show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char=False):
 	#for i in range(num_classes):
 	#	print('Accuracy of {:5s} = {:2d} %.'.format(classes[i], 100 * correct_char_class_count[i] / total_char_class_count[i] if total_char_class_count[i] > 0 else -1))
 	accuracies = [100 * correct_char_class_count[i] / total_char_class_count[i] if total_char_class_count[i] > 0 else -1 for i in range(num_classes)]
 	#print('Accuracy: {}.'.format(accuracies))
 	hist, bin_edges = np.histogram(accuracies, bins=range(-1, 101), density=False)
-	print('Char accuracy histogram: {}.'.format(hist))
+	#hist, bin_edges = np.histogram(accuracies, bins=range(0, 101), density=False)
+	#print('Per-character accuracy histogram: {}.'.format({bb: hh for bb, hh in zip(bin_edges, hist)}))
+	print('Per-character accuracy histogram: {}.'.format({bb: hh for bb, hh in zip(bin_edges, hist) if hh > 0}))
 
-	if show_per_character_accuracy:
+	if show_acc_per_char:
 		valid_accuracies = [100 * correct_char_class_count[i] / total_char_class_count[i] for i in range(num_classes) if total_char_class_count[i] > 0]
-		print('Char accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
-		accuracy_threshold = 98
-		for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]):
-			if acc < accuracy_threshold:
-				print('\tChar = {}: accuracy = {}.'.format(classes[idx], acc))
+		print('Per-character accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
+		acc_thresh = 98
+		print('Per-character accuracy (< {}) = {}.'.format(acc_thresh, {classes[idx]: acc for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]) if acc < acc_thresh}))
 
-def evaluate_char_recognition_model(model, dataloader, label_converter, show_per_character_accuracy=False, device='cpu'):
+def evaluate_char_recognition_model(model, dataloader, label_converter, show_acc_per_char=False, device='cpu'):
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 
 	correct_char_count, total_char_count = 0, 0
@@ -773,15 +773,16 @@ def evaluate_char_recognition_model(model, dataloader, label_converter, show_per
 
 				#print('G/T:        {}.'.format(' '.join(label_converter.decode(gts))))
 				#print('Prediction: {}.'.format(' '.join(label_converter.decode(predictions))))
-				for gt, pred in zip(label_converter.decode(gts), label_converter.decode(predictions)):
-					print('G/T - prediction: {}, {}.'.format(gt, pred))
+				#for gt, pred in zip(label_converter.decode(gts), label_converter.decode(predictions)):
+				#	print('G/T - prediction: {}, {}.'.format(gt, pred))
+				print('G/T - prediction:\n{}.'.format([(gt, pred) for gt, pred in zip(label_converter.decode(gts), label_converter.decode(predictions))]))
 
 				is_first = False
 
-	show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_per_character_accuracy)
+	show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char)
 	print('Char accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
 
-def evaluate_text_recognition_model(inferer, dataloader, label_converter, show_per_character_accuracy=False, device='cpu'):
+def evaluate_text_recognition_model(inferer, dataloader, label_converter, show_acc_per_char=False, device='cpu'):
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 
 	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0, 0, 0
@@ -817,12 +818,13 @@ def evaluate_text_recognition_model(inferer, dataloader, label_converter, show_p
 
 				#print('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in gts])))
 				#print('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in predictions])))
-				for gt, pred in zip(gts, predictions):
-					print('G/T - prediction: {}, {}.'.format(label_converter.decode(gt), label_converter.decode(pred)))
+				#for gt, pred in zip(gts, predictions):
+				#	print('G/T - prediction: {}, {}.'.format(label_converter.decode(gt), label_converter.decode(pred)))
+				print('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(gts, predictions)]))
 
 				is_first = False
 
-	show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_per_character_accuracy)
+	show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char)
 	print('Text accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
 	print('Word accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
 	print('Char accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
@@ -833,11 +835,10 @@ def recognize_character():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	max_gradient_norm = 5  # Gradient clipping value.
+
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
-
-	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
-	font_list = construct_font(korean=True, english=False)
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
 	num_simple_char_examples_per_class, num_noisy_examples_per_class = 300, 300
@@ -852,12 +853,28 @@ def recognize_character():
 	num_workers = 8
 	log_print_freq = 1000
 
+	is_model_initialized = True
+	is_model_loaded = False
+	is_all_model_params_optimized = True
+	lang = 'kor'  # {'kor', 'eng'}.
+
 	gpu = 0
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
 	print('Device: {}.'.format(device))
 
-	model_filepath = './simple_char_recognition_ch{}.pth'.format(image_channel)
+	gradclip_nogradclip = 'nogradclip'
+	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
+	model_filepath = './simple_char_recognition_{}_{}_{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, lang, image_channel)
 	print('Model filepath: {}.'.format(model_filepath))
+
+	if lang == 'kor':
+		charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
+		font_list = construct_font(korean=True, english=False)
+	elif lang == 'eng':
+		charset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False)
+		font_list = construct_font(korean=False, english=True)
+	else:
+		raise ValueError('Invalid language, {}'.format(lang))
 
 	#--------------------
 	# Prepare data.
@@ -878,7 +895,7 @@ def recognize_character():
 	import rare.model_char
 	model = rare.model_char.create_model(model_name, input_channel, output_channel, num_classes)
 
-	if False:
+	if is_model_initialized:
 		# Initialize model weights.
 		for name, param in model.named_parameters():
 			#if 'initialized_variable_name' in name:
@@ -893,7 +910,7 @@ def recognize_character():
 				if 'weight' in name:
 					param.data.fill_(1)
 				continue
-	elif False:
+	if is_model_loaded:
 		# Load a model.
 		model = load_model(model_filepath, model, device=device)
 
@@ -903,7 +920,9 @@ def recognize_character():
 	# Train the model.
 
 	if True:
-		if False:
+		if is_all_model_params_optimized:
+			model_params = model.parameters()
+		else:
 			# Filter model parameters only that require gradients.
 			#model_params = filter(lambda p: p.requires_grad, model.parameters())
 			model_params, num_model_params = [], 0
@@ -913,8 +932,6 @@ def recognize_character():
 			print('#trainable model parameters = {}.'.format(num_model_params))
 			#print('Trainable model parameters:')
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
-		else:
-			model_params = model.parameters()
 
 		# Define a loss function and optimizer.
 		criterion = torch.nn.CrossEntropyLoss().to(device)
@@ -939,6 +956,7 @@ def recognize_character():
 				model_outputs = model(inputs)
 				loss = criterion(model_outputs, outputs)
 				loss.backward()
+				#torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
 				optimizer.step()
 
 				# Print statistics.
@@ -949,7 +967,7 @@ def recognize_character():
 			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			model.eval()
-			evaluate_char_recognition_model(model, test_dataloader, label_converter, show_per_character_accuracy=False, device=device)
+			evaluate_char_recognition_model(model, test_dataloader, label_converter, show_acc_per_char=False, device=device)
 
 			#scheduler.step()
 
@@ -964,7 +982,7 @@ def recognize_character():
 	# Evaluate the model.
 
 	model.eval()
-	evaluate_char_recognition_model(model, test_dataloader, label_converter, show_per_character_accuracy=True, device=device)
+	evaluate_char_recognition_model(model, test_dataloader, label_converter, show_acc_per_char=True, device=device)
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 def recognize_character_using_mixup():
@@ -972,11 +990,10 @@ def recognize_character_using_mixup():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	max_gradient_norm = 5  # Gradient clipping value.
+
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
-
-	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
-	font_list = construct_font(korean=True, english=False)
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
 	num_simple_char_examples_per_class, num_noisy_examples_per_class = 300, 300
@@ -994,12 +1011,28 @@ def recognize_character_using_mixup():
 	mixup_input, mixup_hidden, mixup_alpha = True, True, 2.0
 	cutout, cutout_size = True, 4
 
+	is_model_initialized = True
+	is_model_loaded = False
+	is_all_model_params_optimized = True
+	lang = 'kor'  # {'kor', 'eng'}.
+
 	gpu = 0
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
 	print('Device: {}.'.format(device))
 
-	model_filepath = './simple_char_recognition_mixup_ch{}.pth'.format(image_channel)
+	gradclip_nogradclip = 'nogradclip'
+	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
+	model_filepath = './simple_char_recognition_mixup_{}_{}_{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, lang, image_channel)
 	print('Model filepath: {}.'.format(model_filepath))
+
+	if lang == 'kor':
+		charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
+		font_list = construct_font(korean=True, english=False)
+	elif lang == 'eng':
+		charset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False)
+		font_list = construct_font(korean=False, english=True)
+	else:
+		raise ValueError('Invalid language, {}'.format(lang))
 
 	#--------------------
 	# Prepare data.
@@ -1021,7 +1054,7 @@ def recognize_character_using_mixup():
 	import rare.model_char
 	model = rare.model_char.create_mixup_model(model_name, input_channel, output_channel, num_classes)
 
-	if False:
+	if is_model_initialized:
 		# Initialize model weights.
 		for name, param in model.named_parameters():
 			#if 'initialized_variable_name' in name:
@@ -1036,7 +1069,7 @@ def recognize_character_using_mixup():
 				if 'weight' in name:
 					param.data.fill_(1)
 				continue
-	elif False:
+	if is_model_loaded:
 		# Load a model.
 		model = load_model(model_filepath, model, device=device)
 
@@ -1046,7 +1079,9 @@ def recognize_character_using_mixup():
 	# Train the model.
 
 	if True:
-		if False:
+		if is_all_model_params_optimized:
+			model_params = model.parameters()
+		else:
 			# Filter model parameters only that require gradients.
 			#model_params = filter(lambda p: p.requires_grad, model.parameters())
 			model_params, num_model_params = [], 0
@@ -1056,8 +1091,6 @@ def recognize_character_using_mixup():
 			print('#trainable model parameters = {}.'.format(num_model_params))
 			#print('Trainable model parameters:')
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
-		else:
-			model_params = model.parameters()
 
 		# Define a loss function and optimizer.
 		criterion = torch.nn.CrossEntropyLoss().to(device)
@@ -1082,6 +1115,7 @@ def recognize_character_using_mixup():
 				model_outputs, outputs = model(inputs, outputs, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, device)
 				loss = criterion(model_outputs, torch.argmax(outputs, dim=1))
 				loss.backward()
+				#torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
 				optimizer.step()
 
 				# Print statistics.
@@ -1092,7 +1126,7 @@ def recognize_character_using_mixup():
 			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			model.eval()
-			evaluate_char_recognition_model(model, test_dataloader, label_converter, show_per_character_accuracy=False, device=device)
+			evaluate_char_recognition_model(model, test_dataloader, label_converter, show_acc_per_char=False, device=device)
 
 			#scheduler.step()
 
@@ -1107,7 +1141,7 @@ def recognize_character_using_mixup():
 	# Evaluate the model.
 
 	model.eval()
-	evaluate_char_recognition_model(model, test_dataloader, label_converter, show_per_character_accuracy=True, device=device)
+	evaluate_char_recognition_model(model, test_dataloader, label_converter, show_acc_per_char=True, device=device)
 
 def recognize_word_1():
 	# FIXME [check] >> Can image size be changed?
@@ -1116,28 +1150,20 @@ def recognize_word_1():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	max_word_len = 25  # Max. word length.
+	max_word_len = 5  # Max. word length.
 	num_fiducials = 20  # The number of fiducial points of TPS-STN.
 	input_channel = image_channel  # The number of input channel of feature extractor.
 	output_channel = 512  # The number of output channel of feature extractor.
-	hidden_size = 256  # The size of the LSTM hidden states.
+	hidden_size = 512  # The size of the LSTM hidden states.
 	max_gradient_norm = 5  # Gradient clipping value.
 	transformer = 'TPS'  # The type of transformer. {None, 'TPS'}.
-	feature_extracter = 'VGG'  # The type of feature extracter. {'VGG', 'RCNN', 'ResNet'}.
+	feature_extractor = 'VGG'  # The type of feature extractor. {'VGG', 'RCNN', 'ResNet'}.
 	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
 	decoder = 'Attn'  # The type of decoder. {'CTC', 'Attn'}.
 
-	if True:
-		lang = 'kor'
-		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
-	else:
-		lang = 'eng'
-		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
-
-	num_train_examples, num_test_examples = int(1e6), int(1e4)
-	num_simple_examples, num_random_examples = int(1e4), int(1e4)
+	# File-based words: 504,279.
+	num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
+	num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed words.
 	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
@@ -1149,15 +1175,33 @@ def recognize_word_1():
 	num_workers = 8
 	log_print_freq = 1000
 
+	is_model_initialized = True
+	is_model_loaded = False
+	is_all_model_params_optimized = True
+	is_individual_fill_value_used = False
+	lang = 'kor'  # {'kor', 'eng'}.
+
 	gpu = 0
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
 	print('Device: {}.'.format(device))
 
+	gradclip_nogradclip = 'gradclip'
+	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
+	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
 	if decoder == 'CTC':
-		model_filepath = './simple_word_recognition_rare1_ctc_{}_w{}_ch{}.pth'.format(lang, max_word_len, image_channel)
+		model_filepath = './simple_word_recognition_rare1_ctc_{}_{}_{}_{}_w{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, fill_nofill, lang, max_word_len, image_channel)
 	else:
-		model_filepath = './simple_word_recognition_rare1_attn_{}_w{}_ch{}.pth'.format(lang, max_word_len, image_channel)
+		model_filepath = './simple_word_recognition_rare1_attn_{}_{}_{}_{}_w{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, fill_nofill, lang, max_word_len, image_channel)
 	print('Model filepath: {}.'.format(model_filepath))
+
+	if lang == 'kor':
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+		font_list = construct_font(korean=True, english=False)
+	elif lang == 'eng':
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
+		font_list = construct_font(korean=False, english=True)
+	else:
+		raise ValueError('Invalid language, {}'.format(lang))
 
 	#--------------------
 	# Prepare data.
@@ -1165,12 +1209,12 @@ def recognize_word_1():
 	if decoder == 'CTC':
 		BLANK_LABEL = '<BLANK>'  # The BLANK label for CTC.
 		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), fill_value=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
-		assert label_converter.encode([BLANK_LABEL])[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL])[0])
-		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL])[0]
+		assert label_converter.encode([BLANK_LABEL], is_bare_output=True)[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL], is_bare_output=True)[0])
+		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL], is_bare_output=True)[0]
 		SOS_VALUE, EOS_VALUE = None, None
 		num_suffixes = 0
 	else:
-		if True:
+		if is_individual_fill_value_used:
 			# When the fill value is the ID of a valid token.
 			FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
 			FILL_TOKEN = '<FILL>'
@@ -1195,12 +1239,23 @@ def recognize_word_1():
 	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
 
 	#--------------------
-	# Define a model.
+	class Inferer(object):
+		def __init__(self, model):
+			self.model = model
+
+		def __call__(self, inputs, outputs, output_lens, device):
+			model_outputs = model(inputs.to(device), None, is_train=False, device=device)
+
+			_, model_outputs = torch.max(model_outputs, 2)
+			return outputs.numpy(), model_outputs.cpu().numpy()
+
+	#--------------------
+	# Build a model.
 
 	import rare.model
-	model = rare.model.Model(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, num_suffixes, SOS_VALUE, label_converter.fill_value, transformer, feature_extracter, sequence_model, decoder)
+	model = rare.model.Model(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, num_suffixes, SOS_VALUE, label_converter.fill_value, transformer, feature_extractor, sequence_model, decoder)
 
-	if True:
+	if is_model_initialized:
 		# Initialize model weights.
 		for name, param in model.named_parameters():
 			if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
@@ -1215,27 +1270,19 @@ def recognize_word_1():
 				if 'weight' in name:
 					param.data.fill_(1)
 				continue
-	elif False:
+	if is_model_loaded:
 		# Load a model.
 		model = load_model(model_filepath, model, device=device)
 
 	model = model.to(device)
 
-	class Inferer(object):
-		def __init__(self, model):
-			self.model = model
-
-		def __call__(self, inputs, outputs, output_lens, device):
-			model_outputs = model(inputs, None, is_train=False, device=device)
-
-			_, model_outputs = torch.max(model_outputs, 2)
-			return outputs.numpy(), model_outputs.cpu().numpy()
-
 	#--------------------
 	# Train the model.
 
 	if True:
-		if True:
+		if is_all_model_params_optimized:
+			model_params = model.parameters()
+		else:
 			# Filter model parameters only that require gradients.
 			#model_params = filter(lambda p: p.requires_grad, model.parameters())
 			model_params, num_model_params = [], 0
@@ -1245,8 +1292,6 @@ def recognize_word_1():
 			print('#trainable model parameters = {}.'.format(num_model_params))
 			#print('Trainable model parameters:')
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
-		else:
-			model_params = model.parameters()
 
 		# Define a loss function and optimizer.
 		if decoder == 'CTC':
@@ -1332,7 +1377,7 @@ def recognize_word_1():
 			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			model.eval()
-			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=False, device=device)
+			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=False, device=device)
 
 			#scheduler.step()
 
@@ -1347,7 +1392,7 @@ def recognize_word_1():
 	# Evaluate the model.
 
 	model.eval()
-	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=True, device=device)
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=True, device=device)
 
 def recognize_word_2():
 	# FIXME [check] >> Can image size be changed?
@@ -1356,20 +1401,13 @@ def recognize_word_2():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	max_word_len = 25  # Max. word length.
+	max_word_len = 5  # Max. word length.
+	hidden_size = 256
 	max_gradient_norm = 5  # Gradient clipping value.
 
-	if True:
-		lang = 'kor'
-		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
-	else:
-		lang = 'eng'
-		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
-
-	num_train_examples, num_test_examples = int(1e6), int(1e4)
-	num_simple_examples, num_random_examples = int(1e4), int(1e4)
+	# File-based words: 504,279.
+	num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
+	num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed words.
 	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
@@ -1381,17 +1419,35 @@ def recognize_word_2():
 	num_workers = 8
 	log_print_freq = 1000
 
+	is_model_initialized = True
+	is_model_loaded = False
+	is_all_model_params_optimized = True
+	is_individual_fill_value_used = False
+	lang = 'kor'  # {'kor', 'eng'}.
+
 	gpu = 0
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
 	print('Device: {}.'.format(device))
 
-	model_filepath = './simple_word_recognition_rare2_attn_{}_w{}_ch{}.pth'.format(lang, max_word_len, image_channel)
+	gradclip_nogradclip = 'gradclip'
+	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
+	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
+	model_filepath = './simple_word_recognition_rare2_attn_{}_{}_{}_{}_w{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, fill_nofill, lang, max_word_len, image_channel)
 	print('Model filepath: {}.'.format(model_filepath))
+
+	if lang == 'kor':
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+		font_list = construct_font(korean=True, english=False)
+	elif lang == 'eng':
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
+		font_list = construct_font(korean=False, english=True)
+	else:
+		raise ValueError('Invalid language, {}'.format(lang))
 
 	#--------------------
 	# Prepare data.
 
-	if True:
+	if is_individual_fill_value_used:
 		# When the fill value is the ID of a valid token.
 		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
 		FILL_TOKEN = '<FILL>'
@@ -1416,13 +1472,31 @@ def recognize_word_2():
 	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
 
 	#--------------------
-	# Define a model.
+	class Inferer(object):
+		def __init__(self, model):
+			self.model = model
+
+		def __call__(self, inputs, outputs, output_lens, device):
+			model_outputs = model(inputs.to(device), outputs.long().to(device), output_lens.to(device), device=device)
+
+			_, model_outputs = torch.max(model_outputs, 1)
+			model_outputs = model_outputs.cpu().numpy()
+			separated_model_outputs = np.zeros(outputs.shape, model_outputs.dtype)
+			start_idx = 0
+			for idx, ll in enumerate(output_lens):
+				end_idx = start_idx + ll
+				separated_model_outputs[idx,:ll] = model_outputs[start_idx:end_idx]
+				start_idx = end_idx
+			return outputs.numpy(), separated_model_outputs
+
+	#--------------------
+	# Build a model.
 
 	# FIXME [fix] >> Cannot infer using this model.
 	import rare.crnn_lang
-	model = rare.crnn_lang.CRNN(imgH=image_height, nc=image_channel, nclass=num_classes, nh=256)
+	model = rare.crnn_lang.CRNN(imgH=image_height, nc=image_channel, nclass=num_classes, nh=hidden_size, n_rnn=2, num_embeddings=256, leakyRelu=False)
 
-	if True:
+	if is_model_initialized:
 		# Initialize model weights.
 		for name, param in model.named_parameters():
 			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
@@ -1437,27 +1511,19 @@ def recognize_word_2():
 				if 'weight' in name:
 					param.data.fill_(1)
 				continue
-	elif False:
+	if is_model_loaded:
 		# Load a model.
 		model = load_model(model_filepath, model, device=device)
 
 	model = model.to(device)
 
-	class Inferer(object):
-		def __init__(self, model):
-			self.model = model
-
-		def __call__(self, inputs, outputs, output_lens, device):
-			model_outputs = model(inputs.to(device), outputs.to(device), output_lens.to(device), device=device)
-
-			_, model_outputs = torch.max(model_outputs, 2)
-			return outputs.numpy(), model_outputs.cpu().numpy()
-
 	#--------------------
 	# Train the model.
 
 	if True:
-		if True:
+		if is_all_model_params_optimized:
+			model_params = model.parameters()
+		else:
 			# Filter model parameters only that require gradients.
 			#model_params = filter(lambda p: p.requires_grad, model.parameters())
 			model_params, num_model_params = [], 0
@@ -1467,16 +1533,12 @@ def recognize_word_2():
 			print('#trainable model parameters = {}.'.format(num_model_params))
 			#print('Trainable model parameters:')
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
-		else:
-			model_params = model.parameters()
 
 		# Define a loss function and optimizer.
 		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
-			outputs = outputs.long()
-
-			inputs, outputs, output_lens = inputs.to(device), outputs.to(device), output_lens.to(device)
+			inputs, outputs, output_lens = inputs.to(device), outputs.long().to(device), output_lens.to(device)
 
 			model_outputs = model(inputs, outputs, output_lens, device=device)
 
@@ -1526,7 +1588,7 @@ def recognize_word_2():
 			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			model.eval()
-			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=False, device=device)
+			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=False, device=device)
 
 			#scheduler.step()
 
@@ -1541,7 +1603,7 @@ def recognize_word_2():
 	# Evaluate the model.
 
 	model.eval()
-	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=True, device=device)
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=True, device=device)
 
 def recognize_word_3():
 	# FIXME [check] >> Can image size be changed?
@@ -1553,17 +1615,9 @@ def recognize_word_3():
 	max_word_len = 5  # Max. word length.
 	max_gradient_norm = 5  # Gradient clipping value.
 
-	if True:
-		lang = 'kor'
-		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
-	else:
-		lang = 'eng'
-		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
-
-	num_train_examples, num_test_examples = int(1e6), int(1e4)
-	num_simple_examples, num_random_examples = int(1e4), int(1e4)
+	# File-based words: 504,279.
+	num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
+	num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed words.
 	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
@@ -1575,17 +1629,35 @@ def recognize_word_3():
 	num_workers = 8
 	log_print_freq = 1000
 
+	is_model_initialized = True
+	is_model_loaded = False
+	is_all_model_params_optimized = True
+	is_individual_fill_value_used = False
+	lang = 'kor'  # {'kor', 'eng'}.
+
 	gpu = 0
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
 	print('Device: {}.'.format(device))
 
-	model_filepath = './simple_word_recognition_aster_allparam_noclip_nofill_{}_w{}_ch{}.pth'.format(lang, max_word_len, image_channel)
+	gradclip_nogradclip = 'nogradclip'
+	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
+	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
+	model_filepath = './simple_word_recognition_aster_{}_{}_{}_{}_w{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, fill_nofill, lang, max_word_len, image_channel)
 	print('Model filepath: {}.'.format(model_filepath))
+
+	if lang == 'kor':
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+		font_list = construct_font(korean=True, english=False)
+	elif lang == 'eng':
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
+		font_list = construct_font(korean=False, english=True)
+	else:
+		raise ValueError('Invalid language, {}'.format(lang))
 
 	#--------------------
 	# Prepare data.
 
-	if False:
+	if is_individual_fill_value_used:
 		# When the fill value is the ID of a valid token.
 		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
 		FILL_TOKEN = '<FILL>'
@@ -1610,37 +1682,6 @@ def recognize_word_3():
 	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
 
 	#--------------------
-	# Define a model.
-
-	import aster.config
-	sys_args = aster.config.get_args(sys.argv[1:])
-
-	import aster.model_builder
-	model = aster.model_builder.ModelBuilder(sys_args, arch=sys_args.arch, input_channel=image_channel, rec_num_classes=num_classes,
-		sDim=sys_args.decoder_sdim, attDim=sys_args.attDim, max_len_labels=max_word_len + label_converter.num_affixes,
-		eos=EOS_VALUE, STN_ON=sys_args.STN_ON)
-
-	if True:
-		# Initialize model weights.
-		for name, param in model.named_parameters():
-			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
-			#	print(f'Skip {name} as it has already been initialized.')
-			#	continue
-			try:
-				if 'bias' in name:
-					torch.nn.init.constant_(param, 0.0)
-				elif 'weight' in name:
-					torch.nn.init.kaiming_normal_(param)
-			except Exception as ex:  # For batch normalization.
-				if 'weight' in name:
-					param.data.fill_(1)
-				continue
-	elif False:
-		# Load a model.
-		model = load_model(model_filepath, model, device=device)
-
-	model = model.to(device)
-
 	class Inferer(object):
 		def __init__(self, model):
 			self.model = model
@@ -1667,10 +1708,45 @@ def recognize_word_3():
 			return outputs.numpy(), predictions.cpu().numpy()
 
 	#--------------------
+	# Build a model.
+
+	import aster.config
+	sys_args = aster.config.get_args(sys.argv[1:])
+	sys_args.with_lstm = True
+
+	import aster.model_builder
+	model = aster.model_builder.ModelBuilder(sys_args, arch=sys_args.arch, input_channel=image_channel, rec_num_classes=num_classes,
+		sDim=sys_args.decoder_sdim, attDim=sys_args.attDim, max_len_labels=max_word_len + label_converter.num_affixes,
+		eos=EOS_VALUE, STN_ON=sys_args.STN_ON)
+
+	if is_model_initialized:
+		# Initialize model weights.
+		for name, param in model.named_parameters():
+			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
+			#	print(f'Skip {name} as it has already been initialized.')
+			#	continue
+			try:
+				if 'bias' in name:
+					torch.nn.init.constant_(param, 0.0)
+				elif 'weight' in name:
+					torch.nn.init.kaiming_normal_(param)
+			except Exception as ex:  # For batch normalization.
+				if 'weight' in name:
+					param.data.fill_(1)
+				continue
+	if is_model_loaded:
+		# Load a model.
+		model = load_model(model_filepath, model, device=device)
+
+	model = model.to(device)
+
+	#--------------------
 	# Train the model.
 
 	if True:
-		if False:
+		if is_all_model_params_optimized:
+			model_params = model.parameters()
+		else:
 			# Filter model parameters only that require gradients.
 			#model_params = filter(lambda p: p.requires_grad, model.parameters())
 			model_params, num_model_params = [], 0
@@ -1680,8 +1756,6 @@ def recognize_word_3():
 			print('#trainable model parameters = {}.'.format(num_model_params))
 			#print('Trainable model parameters:')
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
-		else:
-			model_params = model.parameters()
 
 		# Define a loss function and optimizer.
 		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
@@ -1747,7 +1821,7 @@ def recognize_word_3():
 			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			model.eval()
-			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=False, device=device)
+			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=False, device=device)
 
 			scheduler.step()
 
@@ -1762,7 +1836,7 @@ def recognize_word_3():
 	# Evaluate the model.
 
 	model.eval()
-	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=True, device=device)
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=True, device=device)
 
 def build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size):
 	import onmt
@@ -1822,17 +1896,9 @@ def recognize_word_4():
 	max_word_len = 5  # Max. word length.
 	max_gradient_norm = 20  # Gradient clipping value.
 
-	if True:
-		lang = 'kor'
-		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
-	else:
-		lang = 'eng'
-		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
-
-	num_train_examples, num_test_examples = int(1e6), int(1e4)
-	num_simple_examples, num_random_examples = int(1e4), int(1e4)
+	# File-based words: 504,279.
+	num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
+	num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed words.
 	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
@@ -1844,17 +1910,35 @@ def recognize_word_4():
 	num_workers = 8
 	log_print_freq = 1000
 
+	is_model_initialized = True
+	is_model_loaded = False
+	is_all_model_params_optimized = True
+	is_individual_fill_value_used = False
+	lang = 'kor'  # {'kor', 'eng'}.
+
 	gpu = 0
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
 	print('Device: {}.'.format(device))
 
-	model_filepath = './simple_word_recognition_onmt_allparam_noclip_nofill_{}_w{}_ch{}.pth'.format(lang, max_word_len, image_channel)
+	gradclip_nogradclip = 'nogradclip'
+	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
+	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
+	model_filepath = './simple_word_recognition_onmt_{}_{}_{}_{}_w{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, fill_nofill, lang, max_word_len, image_channel)
 	print('Model filepath: {}.'.format(model_filepath))
+
+	if lang == 'kor':
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+		font_list = construct_font(korean=True, english=False)
+	elif lang == 'eng':
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
+		font_list = construct_font(korean=False, english=True)
+	else:
+		raise ValueError('Invalid language, {}'.format(lang))
 
 	#--------------------
 	# Prepare data.
 
-	if False:
+	if is_individual_fill_value_used:
 		# When the fill value is the ID of a valid token.
 		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
 		FILL_TOKEN = '<FILL>'
@@ -1879,34 +1963,6 @@ def recognize_word_4():
 	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
 
 	#--------------------
-	# Define a model.
-
-	import onmt
-	encoder, decoder, generator = build_opennmt_submodels(image_channel, num_classes, word_vec_size=80, encoder_rnn_size=500, decoder_hidden_size=500)
-	model = onmt.models.NMTModel(encoder, decoder)
-	model.add_module('generator', generator)
-
-	if True:
-		# Initialize model weights.
-		for name, param in model.named_parameters():
-			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
-			#	print(f'Skip {name} as it has already been initialized.')
-			#	continue
-			try:
-				if 'bias' in name:
-					torch.nn.init.constant_(param, 0.0)
-				elif 'weight' in name:
-					torch.nn.init.kaiming_normal_(param)
-			except Exception as ex:  # For batch normalization.
-				if 'weight' in name:
-					param.data.fill_(1)
-				continue
-	elif False:
-		# Load a model.
-		model = load_model(model_filepath, model, device=device)
-
-	model = model.to(device)
-
 	class Inferer(object):
 		def __init__(self, model):
 			self.model = model
@@ -1927,10 +1983,42 @@ def recognize_word_4():
 			return gts.numpy(), predictions.cpu().numpy()
 
 	#--------------------
+	# Build a model.
+
+	import onmt
+	encoder, decoder, generator = build_opennmt_submodels(image_channel, num_classes, word_vec_size=80, encoder_rnn_size=500, decoder_hidden_size=500)
+	model = onmt.models.NMTModel(encoder, decoder)
+	model.add_module('generator', generator)
+
+	if is_model_initialized:
+		# Initialize model weights.
+		for name, param in model.named_parameters():
+			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
+			#	print(f'Skip {name} as it has already been initialized.')
+			#	continue
+			try:
+				if 'bias' in name:
+					torch.nn.init.constant_(param, 0.0)
+				elif 'weight' in name:
+					torch.nn.init.kaiming_normal_(param)
+			except Exception as ex:  # For batch normalization.
+				if 'weight' in name:
+					param.data.fill_(1)
+				continue
+	if is_model_loaded:
+		# Load a model.
+		model = load_model(model_filepath, model, device=device)
+
+	model = model.to(device)
+	model.generator = model.generator.to(device)
+
+	#--------------------
 	# Train the model.
 
 	if True:
-		if False:
+		if is_all_model_params_optimized:
+			model_params = model.parameters()
+		else:
 			# Filter model parameters only that require gradients.
 			#model_params = filter(lambda p: p.requires_grad, model.parameters())
 			model_params, num_model_params = [], 0
@@ -1940,8 +2028,6 @@ def recognize_word_4():
 			print('#trainable model parameters = {}.'.format(num_model_params))
 			#print('Trainable model parameters:')
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
-		else:
-			model_params = model.parameters()
 
 		# Define a loss function and optimizer.
 		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
@@ -1997,7 +2083,7 @@ def recognize_word_4():
 			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			model.eval()
-			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=False, device=device)
+			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=False, device=device)
 
 			scheduler.step()
 
@@ -2012,7 +2098,7 @@ def recognize_word_4():
 	# Evaluate the model.
 
 	model.eval()
-	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=True, device=device)
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=True, device=device)
 
 def recognize_word_5():
 	# FIXME [check] >> Can image size be changed?
@@ -2024,17 +2110,9 @@ def recognize_word_5():
 	max_word_len = 5  # Max. word length.
 	max_gradient_norm = 20  # Gradient clipping value.
 
-	if True:
-		lang = 'kor'
-		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
-	else:
-		lang = 'eng'
-		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
-
-	num_train_examples, num_test_examples = int(1e6), int(1e4)
-	num_simple_examples, num_random_examples = int(1e4), int(1e4)
+	# File-based words: 504,279.
+	num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
+	num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed words.
 	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
@@ -2046,17 +2124,35 @@ def recognize_word_5():
 	num_workers = 8
 	log_print_freq = 1000
 
+	is_model_initialized = True
+	is_model_loaded = False
+	is_all_model_params_optimized = True
+	is_individual_fill_value_used = False
+	lang = 'kor'  # {'kor', 'eng'}.
+
 	gpu = 0
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
 	print('Device: {}.'.format(device))
 
-	model_filepath = './simple_word_recognition_aster+onmt_allparam_noclip_nofill_{}_w{}_ch{}.pth'.format(lang, max_word_len, image_channel)
+	gradclip_nogradclip = 'nogradclip'
+	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
+	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
+	model_filepath = './simple_word_recognition_aster+onmt_{}_{}_{}_{}_w{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, fill_nofill, lang, max_word_len, image_channel)
 	print('Model filepath: {}.'.format(model_filepath))
+
+	if lang == 'kor':
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+		font_list = construct_font(korean=True, english=False)
+	elif lang == 'eng':
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
+		font_list = construct_font(korean=False, english=True)
+	else:
+		raise ValueError('Invalid language, {}'.format(lang))
 
 	#--------------------
 	# Prepare data.
 
-	if False:
+	if is_individual_fill_value_used:
 		# When the fill value is the ID of a valid token.
 		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
 		FILL_TOKEN = '<FILL>'
@@ -2081,59 +2177,34 @@ def recognize_word_5():
 	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
 
 	#--------------------
-	# Define a model.
-
 	class MyCompositeModel(torch.nn.Module):
-		def __init__(self, input_channel, num_classes, word_vec_size):
+		def __init__(self, input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size):
 			super().__init__()
 
 			import aster.resnet_aster
 			self.encoder = aster.resnet_aster.ResNet_ASTER(with_lstm=True, in_channels=input_channel)
-			import onmt
-			_, self.decoder, self.generator = build_opennmt_submodels(input_channel, num_classes, word_vec_size=80, encoder_rnn_size=512, decoder_hidden_size=512)
+			_, self.decoder, self.generator = build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size)
 
 		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
 		def forward(self, src, tgt, lengths, bptt=False, with_align=False):
-			# TODO [check] >> This function is not tested.
 			dec_in = tgt[:-1]  # Exclude last target from inputs.
-			enc_outputs, enc_hidden = self.encoder(src)
-			# TODO [check] >> Is it proper to use enc_outputs & enc_hidden?
+
+			enc_outputs, enc_hiddens = self.encoder(src)
 			enc_outputs = enc_outputs.transpose(0, 1)  # [B, T, F] -> [T, B, F].
+
+			# TODO [check] >> Is it proper to use enc_outputs & enc_hiddens?
 			if bptt is False:
-				self.decoder.init_state(src, enc_outputs, enc_hidden)
+				self.decoder.init_state(src, enc_outputs, enc_hiddens)
 			dec_outs, attns = self.decoder(dec_in, enc_outputs, memory_lengths=lengths, with_align=with_align)
 			outs = self.generator(dec_outs)
 			return outs, attns
-
-	model = MyCompositeModel(image_channel, num_classes, word_vec_size=80)
-
-	if True:
-		# Initialize model weights.
-		for name, param in model.named_parameters():
-			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
-			#	print(f'Skip {name} as it has already been initialized.')
-			#	continue
-			try:
-				if 'bias' in name:
-					torch.nn.init.constant_(param, 0.0)
-				elif 'weight' in name:
-					torch.nn.init.kaiming_normal_(param)
-			except Exception as ex:  # For batch normalization.
-				if 'weight' in name:
-					param.data.fill_(1)
-				continue
-	elif False:
-		# Load a model.
-		model = load_model(model_filepath, model, device=device)
-
-	model = model.to(device)
 
 	class Inferer(object):
 		def __init__(self, model):
 			self.model = model
 
 		def __call__(self, inputs, outputs, output_lens, device):
-			gts = labels[:,1:]
+			gts = outputs[:,1:]
 			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long() # [B, T, F] -> [T, B, F].
 
 			inputs = inputs.to(device)
@@ -2148,10 +2219,38 @@ def recognize_word_5():
 			return gts.numpy(), predictions.cpu().numpy()
 
 	#--------------------
+	# Build a model.
+
+	model = MyCompositeModel(image_channel, num_classes, word_vec_size=80, encoder_rnn_size=512, decoder_hidden_size=512)
+
+	if is_model_initialized:
+		# Initialize model weights.
+		for name, param in model.named_parameters():
+			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
+			#	print(f'Skip {name} as it has already been initialized.')
+			#	continue
+			try:
+				if 'bias' in name:
+					torch.nn.init.constant_(param, 0.0)
+				elif 'weight' in name:
+					torch.nn.init.kaiming_normal_(param)
+			except Exception as ex:  # For batch normalization.
+				if 'weight' in name:
+					param.data.fill_(1)
+				continue
+	if is_model_loaded:
+		# Load a model.
+		model = load_model(model_filepath, model, device=device)
+
+	model = model.to(device)
+
+	#--------------------
 	# Train the model.
 
 	if True:
-		if False:
+		if is_all_model_params_optimized:
+			model_params = model.parameters()
+		else:
 			# Filter model parameters only that require gradients.
 			#model_params = filter(lambda p: p.requires_grad, model.parameters())
 			model_params, num_model_params = [], 0
@@ -2161,8 +2260,6 @@ def recognize_word_5():
 			print('#trainable model parameters = {}.'.format(num_model_params))
 			#print('Trainable model parameters:')
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
-		else:
-			model_params = model.parameters()
 
 		# Define a loss function and optimizer.
 		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
@@ -2218,7 +2315,7 @@ def recognize_word_5():
 			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			model.eval()
-			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=False, device=device)
+			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=False, device=device)
 
 			scheduler.step()
 
@@ -2233,7 +2330,564 @@ def recognize_word_5():
 	# Evaluate the model.
 
 	model.eval()
-	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=True, device=device)
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=True, device=device)
+
+def recognize_word_6():
+	# FIXME [check] >> Can image size be changed?
+	#image_height, image_width, image_channel = 64, 640, 3
+	image_height, image_width, image_channel = 32, 100, 3
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
+	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	max_word_len = 5  # Max. word length.
+	max_gradient_norm = 20  # Gradient clipping value.
+
+	# File-based words: 504,279.
+	num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
+	num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed words.
+	word_len_interval = (1, max_word_len)
+	font_size_interval = (10, 100)
+	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
+
+	train_test_ratio = 0.8
+	num_epochs = 20
+	batch_size = 64
+	shuffle = True
+	num_workers = 8
+	log_print_freq = 1000
+
+	is_model_initialized = True
+	is_model_loaded = False
+	is_all_model_params_optimized = True
+	is_individual_fill_value_used = False
+	lang = 'kor'  # {'kor', 'eng'}.
+
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device: {}.'.format(device))
+
+	gradclip_nogradclip = 'nogradclip'
+	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
+	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
+	model_filepath = './simple_word_recognition_rare1+onmt_{}_{}_{}_{}_w{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, fill_nofill, lang, max_word_len, image_channel)
+	print('Model filepath: {}.'.format(model_filepath))
+
+	if lang == 'kor':
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+		font_list = construct_font(korean=True, english=False)
+	elif lang == 'eng':
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
+		font_list = construct_font(korean=False, english=True)
+	else:
+		raise ValueError('Invalid language, {}'.format(lang))
+
+	#--------------------
+	# Prepare data.
+
+	if is_individual_fill_value_used:
+		# When the fill value is the ID of a valid token.
+		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
+		FILL_TOKEN = '<FILL>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
+		assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
+		assert label_converter.encode([FILL_TOKEN], is_bare_output=True)[0] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN], is_bare_output=True)[0], FILL_VALUE)
+	else:
+		# When the fill value = the ID of <SOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=swl_langproc_util.TokenConverter.SOS)
+	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
+	num_suffixes = 1
+
+	chars = charset  # Can make the number of each character different.
+	#train_dataloader, test_dataloader = create_word_data_loaders('simple_word', label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
+	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
+	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+	print('#classes = {}.'.format(num_classes))
+	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.fill_value, SOS_VALUE, EOS_VALUE))
+
+	# Show data info.
+	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+
+	#--------------------
+	class MyCompositeModel(torch.nn.Module):
+		def __init__(self, image_height, image_width, input_channel, num_classes, max_text_len, word_vec_size, encoder_rnn_size, decoder_hidden_size):
+			super().__init__()
+
+			self.encoder = self._create_encoder(image_height, image_width, input_channel, max_text_len, encoder_rnn_size // 2)
+			_, self.decoder, self.generator = build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size)
+
+		def _create_encoder(self, image_height, image_width, input_channel, max_text_len, hidden_size):
+			from rare.modules.transformation import TPS_SpatialTransformerNetwork
+			from rare.modules.feature_extraction import VGG_FeatureExtractor, RCNN_FeatureExtractor, ResNet_FeatureExtractor
+			from rare.modules.feature_extraction import VGG_FeatureExtractor_MixUp, RCNN_FeatureExtractor_MixUp, ResNet_FeatureExtractor_MixUp
+			from rare.modules.sequence_modeling import BidirectionalLSTM
+
+			num_fiducials = 20  # The number of fiducial points of TPS-STN.
+			#input_channel = image_channel  # The number of input channel of feature extractor.
+			output_channel = 512  # The number of output channel of feature extractor.
+			transformer = None  # The type of transformer. {None, 'TPS'}.
+			feature_extractor = 'VGG'  # The type of feature extractor. {'VGG', 'RCNN', 'ResNet'}.
+			sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
+
+			self.max_text_len = max_text_len
+
+			# Transformer.
+			if transformer == 'TPS':
+				self.transformer = TPS_SpatialTransformerNetwork(F=num_fiducials, I_size=(image_height, image_width), I_r_size=(image_height, image_width), I_channel_num=input_channel)
+			else:
+				print('No transformer specified.')
+				self.transformer = None
+
+			# Feature extraction.
+			if feature_extractor == 'VGG':
+				self.feature_extractor = VGG_FeatureExtractor(input_channel, output_channel)
+			elif feature_extractor == 'RCNN':
+				self.feature_extractor = RCNN_FeatureExtractor(input_channel, output_channel)
+			elif feature_extractor == 'ResNet':
+				self.feature_extractor = ResNet_FeatureExtractor(input_channel, output_channel)
+			else:
+				raise ValueError("The argument, feature_extractor has to be one of 'VGG', 'RCNN', or 'ResNet': {}".format(feature_extractor))
+			feature_extractor_output_size = output_channel  # int(image_height / 16 - 1) * output_channel.
+			self.avg_pool = torch.nn.AdaptiveAvgPool2d((None, 1))  # Transform final (image_height / 16 - 1) -> 1.
+
+			# Sequence model.
+			if sequence_model == 'BiLSTM':
+				#self.sequence_model = torch.nn.Sequential(
+				#	BidirectionalLSTM(feature_extractor_output_size, hidden_size, hidden_size, batch_first=True),
+				#	BidirectionalLSTM(hidden_size, hidden_size, hidden_size, batch_first=True)
+				#)
+				self.sequence_rnn = torch.nn.LSTM(feature_extractor_output_size, hidden_size, num_layers=2, bidirectional=True, batch_first=True)
+				self.sequence_projector = torch.nn.Linear(hidden_size * 2, hidden_size * 2)
+			else:
+				print('No sequence model specified.')
+				self.sequence_model = None
+
+		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
+		def forward(self, src, tgt, lengths, bptt=False, with_align=False):
+			# Transform.
+			if self.transformer: src = self.transformer(src, device)  # [b, c, h, w].
+
+			# Extract feature.
+			visual_feature = self.feature_extractor(src)  # [b, c_out, h/32, w/4-1].
+			visual_feature = self.avg_pool(visual_feature.permute(0, 3, 1, 2))  # [b, w/4-1, c_out, 1].
+			#visual_feature = visual_feature.permute(0, 3, 1, 2)  # [b, w/4-1, c_out, h/32].
+			assert visual_feature.shape[3] == 1
+			visual_feature = visual_feature.squeeze(3)  # [b, w/4-1, c_out].
+			#visual_feature = visual_feature.reshape(visual_feature.shape[0], visual_feature.shape[1], -1)  # [b, w/4-1, c_out * h/32].
+
+			# When batch is not in the first order.
+			#visual_feature = visual_feature.transpose(0, 1)  # [w/4-1, b, c_out * h/32].
+
+			# Sequence model.
+			# TODO [check] >> The hidden size is too small?
+			#enc_outputs, enc_hiddens = self.sequence_model((visual_feature, None))  # [b, w/4-1, #directions * hidden size] or [w/4-1, b, #directions * hidden size], ([#directions, b, hidden size], [#directions, b, hidden size]).
+			enc_outputs, enc_hiddens = self.sequence_rnn(visual_feature)  # [b, w/4-1, #directions * hidden size], ([#layers * #directions, b, hidden size], [#layers * #directions, b, hidden size]).
+			enc_outputs = self.sequence_projector(enc_outputs)  # [b, w/4-1, hidden size].
+			enc_outputs = enc_outputs.transpose(0, 1)  # [w/4-1, b, hidden size]
+
+			dec_in = tgt[:-1]  # Exclude last target from inputs.
+
+			# TODO [check] >> Is it proper to use enc_outputs & enc_hiddens?
+			if bptt is False:
+				self.decoder.init_state(src, enc_outputs, enc_hiddens)
+			dec_outs, attns = self.decoder(dec_in, enc_outputs, memory_lengths=lengths, with_align=with_align)
+			outs = self.generator(dec_outs)
+			return outs, attns
+
+	class Inferer(object):
+		def __init__(self, model):
+			self.model = model
+
+		def __call__(self, inputs, outputs, output_lens, device):
+			gts = outputs[:,1:]
+			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long() # [B, T, F] -> [T, B, F].
+
+			inputs = inputs.to(device)
+			outputs, output_lens = outputs.to(device), output_lens.to(device)
+
+			model_outputs = self.model(inputs, outputs, output_lens)
+
+			predictions = model_outputs[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+			#attentions = model_outputs[1]['std']
+
+			_, predictions = torch.max(predictions, 2)
+			return gts.numpy(), predictions.cpu().numpy()
+
+	#--------------------
+	# Build a model.
+
+	model = MyCompositeModel(image_height, image_width, image_channel, num_classes, max_word_len, word_vec_size=80, encoder_rnn_size=512, decoder_hidden_size=512)
+
+	if is_model_initialized:
+		# Initialize model weights.
+		for name, param in model.named_parameters():
+			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
+			#	print(f'Skip {name} as it has already been initialized.')
+			#	continue
+			try:
+				if 'bias' in name:
+					torch.nn.init.constant_(param, 0.0)
+				elif 'weight' in name:
+					torch.nn.init.kaiming_normal_(param)
+			except Exception as ex:  # For batch normalization.
+				if 'weight' in name:
+					param.data.fill_(1)
+				continue
+	if is_model_loaded:
+		# Load a model.
+		model = load_model(model_filepath, model, device=device)
+
+	model = model.to(device)
+
+	#--------------------
+	# Train the model.
+
+	if True:
+		if is_all_model_params_optimized:
+			model_params = model.parameters()
+		else:
+			# Filter model parameters only that require gradients.
+			#model_params = filter(lambda p: p.requires_grad, model.parameters())
+			model_params, num_model_params = [], 0
+			for p in filter(lambda p: p.requires_grad, model.parameters()):
+				model_params.append(p)
+				num_model_params += np.prod(p.size())
+			print('#trainable model parameters = {}.'.format(num_model_params))
+			#print('Trainable model parameters:')
+			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+
+		# Define a loss function and optimizer.
+		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
+		def forward(batch, device):
+			inputs, outputs, output_lens = batch
+			outputs = outputs.long()
+
+			decoder_outputs = outputs[:,1:]
+			outputs.unsqueeze_(dim=-1)
+			outputs = torch.transpose(outputs, 0, 1)  # [B, T, F] -> [T, B, F].
+
+			inputs = inputs.to(device)
+			outputs, output_lens = outputs.to(device), output_lens.to(device)
+			decoder_outputs = decoder_outputs.to(device)
+
+			model_output_tuple = model(inputs, outputs, output_lens)
+			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+
+			#attentions = model_output_tuple[1]['std']
+
+			# NOTE [info] >> All examples in a batch are concatenated together.
+			#	Can each example be handled individually?
+			return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
+		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
+		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
+		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
+		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+		scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
+
+		#--------------------
+		print('Start training...')
+		start_train_time = time.time()
+		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
+			model.train()
+
+			start_time = time.time()
+			running_loss = 0.0
+			for i, batch in enumerate(train_dataloader):
+				# Zero the parameter gradients.
+				optimizer.zero_grad()
+
+				# Forward + backward + optimize.
+				loss = forward(batch, device)
+				loss.backward()
+				#torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
+				optimizer.step()
+
+				# Print statistics.
+				running_loss += loss.item()
+				if i % log_print_freq == (log_print_freq - 1):
+					print('[{}, {:5d}] loss = {:.3f}: {:.3f} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
+					running_loss = 0.0
+			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
+
+			model.eval()
+			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=False, device=device)
+
+			scheduler.step()
+
+			# Save a checkpoint.
+			save_model(model_filepath, model)
+		print('End training: {} secs.'.format(time.time() - start_train_time))
+
+		# Save a model.
+		save_model(model_filepath, model)
+
+	#--------------------
+	# Evaluate the model.
+
+	model.eval()
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=True, device=device)
+
+def recognize_word_7():
+	# FIXME [check] >> Can image size be changed?
+	#image_height, image_width, image_channel = 64, 640, 3
+	image_height, image_width, image_channel = 32, 100, 3
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
+	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	max_word_len = 5  # Max. word length.
+	max_gradient_norm = 20  # Gradient clipping value.
+
+	# File-based words: 504,279.
+	num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
+	num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed words.
+	word_len_interval = (1, max_word_len)
+	font_size_interval = (10, 100)
+	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
+
+	train_test_ratio = 0.8
+	num_epochs = 20
+	batch_size = 64
+	shuffle = True
+	num_workers = 8
+	log_print_freq = 1000
+
+	is_model_initialized = True
+	is_model_loaded = False
+	is_all_model_params_optimized = True
+	is_individual_fill_value_used = False
+	lang = 'kor'  # {'kor', 'eng'}.
+
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device: {}.'.format(device))
+
+	gradclip_nogradclip = 'nogradclip'
+	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
+	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
+	model_filepath = './simple_word_recognition_rare2+onmt_{}_{}_{}_{}_w{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, fill_nofill, lang, max_word_len, image_channel)
+	print('Model filepath: {}.'.format(model_filepath))
+
+	if lang == 'kor':
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+		font_list = construct_font(korean=True, english=False)
+	elif lang == 'eng':
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
+		font_list = construct_font(korean=False, english=True)
+	else:
+		raise ValueError('Invalid language, {}'.format(lang))
+
+	#--------------------
+	# Prepare data.
+
+	if is_individual_fill_value_used:
+		# When the fill value is the ID of a valid token.
+		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
+		FILL_TOKEN = '<FILL>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
+		assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
+		assert label_converter.encode([FILL_TOKEN], is_bare_output=True)[0] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN], is_bare_output=True)[0], FILL_VALUE)
+	else:
+		# When the fill value = the ID of <SOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=swl_langproc_util.TokenConverter.SOS)
+	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
+	num_suffixes = 1
+
+	chars = charset  # Can make the number of each character different.
+	#train_dataloader, test_dataloader = create_word_data_loaders('simple_word', label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
+	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
+	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+	print('#classes = {}.'.format(num_classes))
+	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.fill_value, SOS_VALUE, EOS_VALUE))
+
+	# Show data info.
+	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+
+	#--------------------
+	class MyCompositeModel(torch.nn.Module):
+		def __init__(self, image_height, image_width, input_channel, num_classes, max_text_len, word_vec_size, encoder_rnn_size, decoder_hidden_size):
+			super().__init__()
+
+			self.encoder = self._create_encoder(image_height, image_width, input_channel, max_text_len, encoder_rnn_size // 2)
+			_, self.decoder, self.generator = build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size)
+
+		def _create_encoder(self, image_height, image_width, input_channel, max_text_len, hidden_size):
+			assert image_height % 16 == 0, 'image_height has to be a multiple of 16'
+
+			# This implementation assumes that input size is 32 x 100.
+			self.cnn = torch.nn.Sequential(
+				torch.nn.Conv2d(image_channel, 64, 3, 1, 1), torch.nn.ReLU(True), torch.nn.MaxPool2d(2, 2),  # 64x16x50.
+				torch.nn.Conv2d(64, 128, 3, 1, 1), torch.nn.ReLU(True), torch.nn.MaxPool2d(2, 2),  # 128x8x25.
+				torch.nn.Conv2d(128, 256, 3, 1, 1), torch.nn.BatchNorm2d(256), torch.nn.ReLU(True),  # 256x8x25.
+				torch.nn.Conv2d(256, 256, 3, 1, 1), torch.nn.ReLU(True), torch.nn.MaxPool2d((2,2), (2,1), (0,1)),  # 256x4x25.
+				torch.nn.Conv2d(256, 512, 3, 1, 1), torch.nn.BatchNorm2d(512), torch.nn.ReLU(True),  # 512x4x25.
+				torch.nn.Conv2d(512, 512, 3, 1, 1), torch.nn.ReLU(True), torch.nn.MaxPool2d((2,2), (2,1), (0,1)),  # 512x2x25.
+				torch.nn.Conv2d(512, 512, 2, 1, 0), torch.nn.BatchNorm2d(512), torch.nn.ReLU(True)  # 512x1x25.
+			)
+			#import rare.crnn_lang
+			#self.rnn = torch.nn.Sequential(
+			#	rare.crnn_lang.BidirectionalLSTM(512, hidden_size, hidden_size),
+			#	rare.crnn_lang.BidirectionalLSTM(hidden_size, hidden_size, hidden_size)
+			#)
+			self.sequence_rnn = torch.nn.LSTM(512, hidden_size, num_layers=2, bidirectional=True, batch_first=False)
+			self.sequence_projector = torch.nn.Linear(hidden_size * 2, hidden_size * 2)
+
+		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
+		def forward(self, src, tgt, lengths, bptt=False, with_align=False):
+			# Conv features.
+			conv = self.cnn(src)  # [b, c_out, h/32, w/4].
+			b, c, h, w = conv.size()
+			assert h == 1, 'the height of conv must be 1'
+			conv = conv.squeeze(2)  # [b, c_out, w/4].
+			#conv = conv.reshape(b, -1, w)  # [b, c_out * h/32, w/4].
+			conv = conv.permute(2, 0, 1)  # [w/4, b, c_out * h/32].
+
+			# RNN features.
+			#enc_outputs, enc_hiddens = self.rnn((conv, None))  # [w/4, b, hidden size], ([#directions, b, hidden size], [#directions, b, hidden size]).
+			enc_outputs, enc_hiddens = self.sequence_rnn(conv)  # [w/4, b, #directions * hidden size], ([#layers * #directions, b, hidden size], [#layers * #directions, b, hidden size]).
+			enc_outputs = self.sequence_projector(enc_outputs)  # [w/4, b, hidden size].
+
+			dec_in = tgt[:-1]  # Exclude last target from inputs.
+
+			# TODO [check] >> Is it proper to use enc_outputs & enc_hiddens?
+			if bptt is False:
+				self.decoder.init_state(src, enc_outputs, enc_hiddens)
+			dec_outs, attns = self.decoder(dec_in, enc_outputs, memory_lengths=lengths, with_align=with_align)
+			outs = self.generator(dec_outs)
+			return outs, attns
+
+	class Inferer(object):
+		def __init__(self, model):
+			self.model = model
+
+		def __call__(self, inputs, outputs, output_lens, device):
+			gts = outputs[:,1:]
+			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long() # [B, T, F] -> [T, B, F].
+
+			inputs = inputs.to(device)
+			outputs, output_lens = outputs.to(device), output_lens.to(device)
+
+			model_outputs = self.model(inputs, outputs, output_lens)
+
+			predictions = model_outputs[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+			#attentions = model_outputs[1]['std']
+
+			_, predictions = torch.max(predictions, 2)
+			return gts.numpy(), predictions.cpu().numpy()
+
+	#--------------------
+	# Build a model.
+
+	model = MyCompositeModel(image_height, image_width, image_channel, num_classes, max_word_len, word_vec_size=80, encoder_rnn_size=512, decoder_hidden_size=512)
+
+	if is_model_initialized:
+		# Initialize model weights.
+		for name, param in model.named_parameters():
+			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
+			#	print(f'Skip {name} as it has already been initialized.')
+			#	continue
+			try:
+				if 'bias' in name:
+					torch.nn.init.constant_(param, 0.0)
+				elif 'weight' in name:
+					torch.nn.init.kaiming_normal_(param)
+			except Exception as ex:  # For batch normalization.
+				if 'weight' in name:
+					param.data.fill_(1)
+				continue
+	if is_model_loaded:
+		# Load a model.
+		model = load_model(model_filepath, model, device=device)
+
+	model = model.to(device)
+
+	#--------------------
+	# Train the model.
+
+	if True:
+		if is_all_model_params_optimized:
+			model_params = model.parameters()
+		else:
+			# Filter model parameters only that require gradients.
+			#model_params = filter(lambda p: p.requires_grad, model.parameters())
+			model_params, num_model_params = [], 0
+			for p in filter(lambda p: p.requires_grad, model.parameters()):
+				model_params.append(p)
+				num_model_params += np.prod(p.size())
+			print('#trainable model parameters = {}.'.format(num_model_params))
+			#print('Trainable model parameters:')
+			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+
+		# Define a loss function and optimizer.
+		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
+		def forward(batch, device):
+			inputs, outputs, output_lens = batch
+			outputs = outputs.long()
+
+			decoder_outputs = outputs[:,1:]
+			outputs.unsqueeze_(dim=-1)
+			outputs = torch.transpose(outputs, 0, 1)  # [B, T, F] -> [T, B, F].
+
+			inputs = inputs.to(device)
+			outputs, output_lens = outputs.to(device), output_lens.to(device)
+			decoder_outputs = decoder_outputs.to(device)
+
+			model_output_tuple = model(inputs, outputs, output_lens)
+			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+
+			#attentions = model_output_tuple[1]['std']
+
+			# NOTE [info] >> All examples in a batch are concatenated together.
+			#	Can each example be handled individually?
+			return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
+		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
+		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
+		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
+		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+		scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
+
+		#--------------------
+		print('Start training...')
+		start_train_time = time.time()
+		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
+			model.train()
+
+			start_time = time.time()
+			running_loss = 0.0
+			for i, batch in enumerate(train_dataloader):
+				# Zero the parameter gradients.
+				optimizer.zero_grad()
+
+				# Forward + backward + optimize.
+				loss = forward(batch, device)
+				loss.backward()
+				#torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
+				optimizer.step()
+
+				# Print statistics.
+				running_loss += loss.item()
+				if i % log_print_freq == (log_print_freq - 1):
+					print('[{}, {:5d}] loss = {:.3f}: {:.3f} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
+					running_loss = 0.0
+			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
+
+			model.eval()
+			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=False, device=device)
+
+			scheduler.step()
+
+			# Save a checkpoint.
+			save_model(model_filepath, model)
+		print('End training: {} secs.'.format(time.time() - start_train_time))
+
+		# Save a model.
+		save_model(model_filepath, model)
+
+	#--------------------
+	# Evaluate the model.
+
+	model.eval()
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=True, device=device)
 
 def recognize_word_using_mixup():
 	# FIXME [check] >> Can image size be changed?
@@ -2249,15 +2903,13 @@ def recognize_word_using_mixup():
 	hidden_size = 256  # The size of the LSTM hidden states.
 	max_gradient_norm = 5  # Gradient clipping value.
 	transformer = 'TPS'  # The type of transformer. {None, 'TPS'}.
-	feature_extracter = 'VGG'  # The type of feature extracter. {'VGG', 'RCNN', 'ResNet'}.
+	feature_extractor = 'VGG'  # The type of feature extractor. {'VGG', 'RCNN', 'ResNet'}.
 	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
 	decoder = 'Attn'  # The type of decoder. {'CTC', 'Attn'}.
 
-	charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
-	font_list = construct_font(korean=True, english=False)
-
-	num_train_examples, num_test_examples = int(1e6), int(1e4)
-	num_simple_examples, num_random_examples = int(1e4), int(1e4)
+	# File-based words: 504,279.
+	num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
+	num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed words.
 	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
@@ -2272,15 +2924,33 @@ def recognize_word_using_mixup():
 	mixup_input, mixup_hidden, mixup_alpha = True, True, 2.0
 	cutout, cutout_size = True, 4
 
+	is_model_initialized = True
+	is_model_loaded = False
+	is_all_model_params_optimized = True
+	is_individual_fill_value_used = False
+	lang = 'kor'  # {'kor', 'eng'}.
+
 	gpu = 0
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
 	print('Device: {}.'.format(device))
 
+	gradclip_nogradclip = 'gradclip'
+	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
+	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
 	if decoder == 'CTC':
-		model_filepath = './simple_word_recognition_mixup_rare1_ctc_w{}_ch{}.pth'.format(max_word_len, image_channel)
+		model_filepath = './simple_word_recognition_mixup_rare1_ctc_{}_{}_{}_{}_w{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, fill_nofill, lang, max_word_len, image_channel)
 	else:
-		model_filepath = './simple_word_recognition_mixup_rare1_attn_w{}_ch{}.pth'.format(max_word_len, image_channel)
+		model_filepath = './simple_word_recognition_mixup_rare1_attn_{}_{}_{}_{}_w{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, fill_nofill, lang, max_word_len, image_channel)
 	print('Model filepath: {}.'.format(model_filepath))
+
+	if lang == 'kor':
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+		font_list = construct_font(korean=True, english=False)
+	elif lang == 'eng':
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
+		font_list = construct_font(korean=False, english=True)
+	else:
+		raise ValueError('Invalid language, {}'.format(lang))
 
 	#--------------------
 	# Prepare data.
@@ -2288,17 +2958,21 @@ def recognize_word_using_mixup():
 	if decoder == 'CTC':
 		BLANK_LABEL = '<BLANK>'  # The BLANK label for CTC.
 		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), fill_value=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
-		assert label_converter.encode([BLANK_LABEL])[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL])[0])
-		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL])[0]
+		assert label_converter.encode([BLANK_LABEL], is_bare_output=True)[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL], is_bare_output=True)[0])
+		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL], is_bare_output=True)[0]
 		SOS_VALUE, EOS_VALUE = None, None
 		num_suffixes = 0
 	else:
-		# When the fill value is the ID of a valid token.
-		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
-		FILL_TOKEN = '<FILL>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
-		assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
-		assert label_converter.encode([FILL_TOKEN], is_bare_output=True)[0] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN], is_bare_output=True)[0], FILL_VALUE)
+		if is_individual_fill_value_used:
+			# When the fill value is the ID of a valid token.
+			FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
+			FILL_TOKEN = '<FILL>'
+			label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
+			assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
+			assert label_converter.encode([FILL_TOKEN], is_bare_output=True)[0] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN], is_bare_output=True)[0], FILL_VALUE)
+		else:
+			# When the fill value = the ID of <SOS> token.
+			label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=swl_langproc_util.TokenConverter.SOS)
 		SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 		num_suffixes = 1
 
@@ -2314,13 +2988,24 @@ def recognize_word_using_mixup():
 	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
 
 	#--------------------
-	# Define a model.
+	class Inferer(object):
+		def __init__(self, model):
+			self.model = model
+
+		def __call__(self, inputs, outputs, output_lens, device):
+			model_outputs = model(inputs, None, is_train=False, device=device)
+
+			_, model_outputs = torch.max(model_outputs, 2)
+			return outputs.numpy(), model_outputs.cpu().numpy()
+
+	#--------------------
+	# Build a model.
 
 	# FIXME [error] >> rare.model.Model_MixUp is not working.
 	import rare.model
-	model = rare.model.Model_MixUp(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, num_suffixes, SOS_VALUE, label_converter.fill_value, transformer, feature_extracter, sequence_model, decoder)
+	model = rare.model.Model_MixUp(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, num_suffixes, SOS_VALUE, label_converter.fill_value, transformer, feature_extractor, sequence_model, decoder)
 
-	if True:
+	if is_model_initialized:
 		# Initialize model weights.
 		for name, param in model.named_parameters():
 			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
@@ -2335,27 +3020,19 @@ def recognize_word_using_mixup():
 				if 'weight' in name:
 					param.data.fill_(1)
 				continue
-	elif False:
+	if is_model_loaded:
 		# Load a model.
 		model = load_model(model_filepath, model, device=device)
 
 	model = model.to(device)
 
-	class Inferer(object):
-		def __init__(self, model):
-			self.model = model
-
-		def __call__(self, inputs, outputs, output_lens, device):
-			model_outputs = model(inputs, None, is_train=False, device=device)
-
-			_, model_outputs = torch.max(model_outputs, 2)
-			return outputs.numpy(), model_outputs.cpu().numpy()
-
 	#--------------------
 	# Train the model.
 
 	if True:
-		if True:
+		if is_all_model_params_optimized:
+			model_params = model.parameters()
+		else:
 			# Filter model parameters only that require gradients.
 			#model_params = filter(lambda p: p.requires_grad, model.parameters())
 			model_params, num_model_params = [], 0
@@ -2365,8 +3042,6 @@ def recognize_word_using_mixup():
 			print('#trainable model parameters = {}.'.format(num_model_params))
 			#print('Trainable model parameters:')
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
-		else:
-			model_params = model.parameters()
 
 		# Define a loss function and optimizer.
 		if decoder == 'CTC':
@@ -2444,7 +3119,7 @@ def recognize_word_using_mixup():
 			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 			model.eval()
-			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=False, device=device)
+			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=False, device=device)
 
 			#scheduler.step()
 
@@ -2459,7 +3134,7 @@ def recognize_word_using_mixup():
 	# Evaluate the model.
 
 	model.eval()
-	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_per_character_accuracy=True, device=device)
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=True, device=device)
 
 def recognize_text():
 	raise NotImplementedError
@@ -2474,11 +3149,11 @@ def recognize_text_using_craft_and_character_recognizer():
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
 
-	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
-
 	gpu = 0
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
 	print('Device: {}.'.format(device))
+
+	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
 
 	# For CRAFT.
 	craft_trained_model_filepath = './craft/craft_mlt_25k.pth'
@@ -2496,10 +3171,10 @@ def recognize_text_using_craft_and_character_recognizer():
 
 	output_dir_path = './char_recog_results'
 
+	#--------------------
 	label_converter = swl_langproc_util.TokenConverter(list(charset))
 	num_classes = label_converter.num_tokens
 
-	#--------------------
 	print('Start loading CRAFT...')
 	start_time = time.time()
 	craft_net, craft_refine_net = test_utils.load_craft(craft_trained_model_filepath, craft_refiner_model_filepath, craft_refine, craft_cuda)
@@ -2597,15 +3272,15 @@ def recognize_text_using_craft_and_word_recognizer():
 	hidden_size = 256  # The size of the LSTM hidden states.
 	max_gradient_norm = 5  # Gradient clipping value.
 	transformer = 'TPS'  # The type of transformer. {None, 'TPS'}.
-	feature_extracter = 'VGG'  # The type of feature extracter. {'VGG', 'RCNN', 'ResNet'}.
+	feature_extractor = 'VGG'  # The type of feature extractor. {'VGG', 'RCNN', 'ResNet'}.
 	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
 	decoder = 'Attn'  # The type of decoder. {'CTC', 'Attn'}.
-
-	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
 
 	gpu = 0
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
 	print('Device: {}.'.format(device))
+
+	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
 
 	# For CRAFT.
 	craft_trained_model_filepath = './craft/craft_mlt_25k.pth'
@@ -2623,10 +3298,10 @@ def recognize_text_using_craft_and_word_recognizer():
 
 	output_dir_path = './word_recog_results'
 
+	#--------------------
 	label_converter = swl_langproc_util.TokenConverter(list(charset))
 	num_classes = label_converter.num_tokens
 
-	#--------------------
 	print('Start loading CRAFT...')
 	start_time = time.time()
 	craft_net, craft_refine_net = test_utils.load_craft(craft_trained_model_filepath, craft_refiner_model_filepath, craft_refine, craft_cuda)
@@ -2635,7 +3310,7 @@ def recognize_text_using_craft_and_word_recognizer():
 	print('Start loading word recognizer...')
 	start_time = time.time()
 	import rare.model
-	recognizer = rare.model.Model(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, num_suffixes, SOS_VALUE, label_converter.fill_value, transformer, feature_extracter, sequence_model, decoder)
+	recognizer = rare.model.Model(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, num_suffixes, SOS_VALUE, label_converter.fill_value, transformer, feature_extractor, sequence_model, decoder)
 
 	recognizer = load_model(recognizer_model_filepath, recognizer, device=device)
 	recognizer = recognizer.to(device)
@@ -2713,12 +3388,14 @@ def main():
 	#recognize_text_using_craft_and_character_recognizer()
 
 	#--------------------
-	#recognize_word_1()  # Use RARE.
-	#recognize_word_2()  # Use RARE.
+	#recognize_word_1()  # Use RARE #1.
+	#recognize_word_2()  # Use RARE #2.
 	#recognize_word_3()  # Use ASTER.
-	recognize_word_4()  # Use OpenNMT.
+	#recognize_word_4()  # Use OpenNMT.
 	#recognize_word_5()  # Use ASTER (encoder) + OpenNMT (decoder).
-	#recognize_word_using_mixup()  # Use RARE. Not working.
+	recognize_word_6()  # Use RARE #1 (encoder) + OpenNMT (decoder).
+	#recognize_word_7()  # Use RARE #2 (encoder) + OpenNMT (decoder).
+	#recognize_word_using_mixup()  # Use RARE #1. Not working.
 
 	# Recognize text using CRAFT (scene text detector) + word recognizer.
 	#recognize_text_using_craft_and_word_recognizer()  # Not yet implemented.

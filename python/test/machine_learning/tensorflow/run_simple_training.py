@@ -210,7 +210,7 @@ class MyRunner(object):
 	def train(self, checkpoint_dir_path, dataset, output_dir_path, batch_size, final_epoch, initial_epoch=0, is_training_resumed=False):
 		graph = tf.Graph()
 		with graph.as_default():
-			# Create a model.
+			# Build a model.
 			model = MyModel(*dataset.shape, dataset.num_classes)
 			input_ph, output_ph = model.placeholders
 
@@ -375,7 +375,7 @@ class MyRunner(object):
 	def test(self, checkpoint_dir_path, dataset, batch_size, shuffle=False):
 		graph = tf.Graph()
 		with graph.as_default():
-			# Create a model.
+			# Build a model.
 			model = MyModel(*dataset.shape, dataset.num_classes)
 			input_ph, output_ph = model.placeholders
 
@@ -428,7 +428,7 @@ class MyRunner(object):
 	def infer(self, checkpoint_dir_path, inputs, image_shape, num_classes, batch_size=None, shuffle=False):
 		graph = tf.Graph()
 		with graph.as_default():
-			# Create a model.
+			# Build a model.
 			model = MyModel(*image_shape, num_classes)
 			input_ph, output_ph = model.placeholders
 
@@ -492,7 +492,7 @@ class MyRunner(object):
 		graph = tf.Graph()
 		with graph.as_default():
 			with tf.device(device_name):
-				# Create a model.
+				# Build a model.
 				model = MyModel(*image_shape, num_classes)
 				input_ph, _ = model.placeholders
 
@@ -537,7 +537,7 @@ class MyRunner(object):
 
 		graph = tf.Graph()
 		with graph.as_default():
-			# Create a model.
+			# Build a model.
 			model = MyModel(*image_shape, num_classes)
 			input_ph, _ = model.placeholders
 

@@ -271,7 +271,7 @@ class MyRunner(object):
 		return inferences.numpy()
 
 	def load_model(self, checkpoint_dir_path, optimizer, num_classes, is_train=False, is_loaded=False):
-		# Create a model.
+		# Build a model.
 		model = MyModel(num_classes)
 
 		# Create checkpoint objects.

@@ -562,7 +562,7 @@ def main():
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
-		# Create a model.
+		# Build a model.
 		model = MyModel()
 
 		# TODO [check] >> Is this position right?
@@ -641,7 +641,7 @@ def main():
 
 	if args.test or args.infer:
 		if model_filepath and os.path.exists(model_filepath):
-			# Create a model.
+			# Build a model.
 			model = MyModel()
 			# Load a model.
 			model, _, _, _ = runner.load_model(model_filepath, model, None, device=device)

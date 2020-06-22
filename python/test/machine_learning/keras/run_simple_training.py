@@ -572,7 +572,7 @@ def main():
 			# Load a model.
 			model = runner.load_model(model_filepath)
 		else:
-			# Create a model.
+			# Build a model.
 			model = MyModel.create_model(dataset.shape, dataset.num_classes)
 		#if model: print('Model summary:\n{}.'.format(model.summary()))
 
