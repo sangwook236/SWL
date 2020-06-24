@@ -79,7 +79,9 @@ def create_char_augmenter():
 	from imgaug import augmenters as iaa
 
 	augmenter = iaa.Sequential([
-		iaa.Grayscale(alpha=(0.0, 1.0)),
+		iaa.Sometimes(0.25,
+			iaa.Grayscale(alpha=(0.0, 1.0)),  # Requires RGB images.
+		),
 		#iaa.Sometimes(0.5, iaa.OneOf([
 		#	iaa.Crop(px=(0, 100)),  # Crop images from each side by 0 to 16px (randomly chosen).
 		#	iaa.Crop(percent=(0, 0.1)),  # Crop images by 0-10% of their height/width.
@@ -137,7 +139,9 @@ def create_word_augmenter():
 	from imgaug import augmenters as iaa
 
 	augmenter = iaa.Sequential([
-		iaa.Grayscale(alpha=(0.0, 1.0)),
+		iaa.Sometimes(0.25,
+			iaa.Grayscale(alpha=(0.0, 1.0)),  # Requires RGB images.
+		),
 		#iaa.Sometimes(0.5, iaa.OneOf([
 		#	iaa.Crop(px=(0, 100)),  # Crop images from each side by 0 to 16px (randomly chosen).
 		#	iaa.Crop(percent=(0, 0.1)),  # Crop images by 0-10% of their height/width.
@@ -195,7 +199,9 @@ def create_text_line_augmenter():
 	from imgaug import augmenters as iaa
 
 	augmenter = iaa.Sequential([
-		iaa.Grayscale(alpha=(0.0, 1.0)),
+		iaa.Sometimes(0.25,
+			iaa.Grayscale(alpha=(0.0, 1.0)),  # Requires RGB images.
+		),
 		#iaa.Sometimes(0.5, iaa.OneOf([
 		#	iaa.Crop(px=(0, 100)),  # Crop images from each side by 0 to 16px (randomly chosen).
 		#	iaa.Crop(percent=(0, 0.1)),  # Crop images by 0-10% of their height/width.
@@ -732,7 +738,7 @@ def SimpleWordDataset_test():
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
-	print('Train label len: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
+	print('Train label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
 	data_iter = iter(test_dataloader)
@@ -740,7 +746,7 @@ def SimpleWordDataset_test():
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
-	print('Test label len: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
+	print('Test label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	#--------------------
 	# Visualize.
@@ -926,7 +932,7 @@ def FileBasedWordDataset_test():
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
-	print('Train label len: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
+	print('Train label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
 	data_iter = iter(test_dataloader)
@@ -934,7 +940,7 @@ def FileBasedWordDataset_test():
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
-	print('Test label len: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
+	print('Test label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	#--------------------
 	# Visualize.
@@ -1010,7 +1016,7 @@ def SimpleTextLineDataset_test():
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
-	print('Train label len: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
+	print('Train label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
 	data_iter = iter(test_dataloader)
@@ -1018,7 +1024,7 @@ def SimpleTextLineDataset_test():
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
-	print('Test label len: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
+	print('Test label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	#--------------------
 	# Visualize.

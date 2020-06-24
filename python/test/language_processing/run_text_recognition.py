@@ -750,7 +750,7 @@ def show_per_char_accuracy(correct_char_class_count, total_char_class_count, cla
 		valid_accuracies = [100 * correct_char_class_count[i] / total_char_class_count[i] for i in range(num_classes) if total_char_class_count[i] > 0]
 		print('Per-character accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
 		acc_thresh = 98
-		print('Per-character accuracy (< {}) = {}.'.format(acc_thresh, {classes[idx]: acc for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]) if acc < acc_thresh}))
+		print('Per-character accuracy (< {}) = {}.'.format(acc_thresh, {classes[idx]: round(acc, 2) for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]) if acc < acc_thresh}))
 
 def evaluate_char_recognition_model(model, dataloader, label_converter, show_acc_per_char=False, device='cpu'):
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
@@ -864,10 +864,6 @@ def recognize_character():
 	is_all_model_params_optimized = True
 	lang = 'kor'  # {'kor', 'eng'}.
 
-	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
-	print('Device: {}.'.format(device))
-
 	gradclip_nogradclip = 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	model_filepath = './simple_char_recognition_{}_{}_{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, lang, image_channel)
@@ -883,6 +879,10 @@ def recognize_character():
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device: {}.'.format(device))
 
 	#--------------------
 	# Prepare data.
@@ -1024,10 +1024,6 @@ def recognize_character_using_mixup():
 	is_all_model_params_optimized = True
 	lang = 'kor'  # {'kor', 'eng'}.
 
-	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
-	print('Device: {}.'.format(device))
-
 	gradclip_nogradclip = 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	model_filepath = './simple_char_recognition_mixup_{}_{}_{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, lang, image_channel)
@@ -1043,6 +1039,10 @@ def recognize_character_using_mixup():
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device: {}.'.format(device))
 
 	#--------------------
 	# Prepare data.
@@ -1191,10 +1191,6 @@ def recognize_word_by_rare1():
 	is_individual_fill_value_used = False
 	lang = 'kor'  # {'kor', 'eng'}.
 
-	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
-	print('Device: {}.'.format(device))
-
 	gradclip_nogradclip = 'gradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
@@ -1214,6 +1210,10 @@ def recognize_word_by_rare1():
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device: {}.'.format(device))
 
 	#--------------------
 	# Prepare data.
@@ -1437,10 +1437,6 @@ def recognize_word_by_rare2():
 	is_individual_fill_value_used = False
 	lang = 'kor'  # {'kor', 'eng'}.
 
-	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
-	print('Device: {}.'.format(device))
-
 	gradclip_nogradclip = 'gradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
@@ -1457,6 +1453,10 @@ def recognize_word_by_rare2():
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device: {}.'.format(device))
 
 	#--------------------
 	# Prepare data.
@@ -1649,10 +1649,6 @@ def recognize_word_by_aster():
 	is_individual_fill_value_used = False
 	lang = 'kor'  # {'kor', 'eng'}.
 
-	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
-	print('Device: {}.'.format(device))
-
 	gradclip_nogradclip = 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
@@ -1669,6 +1665,10 @@ def recognize_word_by_aster():
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device: {}.'.format(device))
 
 	#--------------------
 	# Prepare data.
@@ -1932,10 +1932,6 @@ def recognize_word_by_opennmt():
 	is_individual_fill_value_used = False
 	lang = 'kor'  # {'kor', 'eng'}.
 
-	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
-	print('Device: {}.'.format(device))
-
 	gradclip_nogradclip = 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
@@ -1952,6 +1948,10 @@ def recognize_word_by_opennmt():
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device: {}.'.format(device))
 
 	#--------------------
 	# Prepare data.
@@ -2148,10 +2148,6 @@ def recognize_word_by_rare1_and_opennmt():
 	is_individual_fill_value_used = False
 	lang = 'kor'  # {'kor', 'eng'}.
 
-	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
-	print('Device: {}.'.format(device))
-
 	gradclip_nogradclip = 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
@@ -2168,6 +2164,10 @@ def recognize_word_by_rare1_and_opennmt():
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device: {}.'.format(device))
 
 	#--------------------
 	# Prepare data.
@@ -2445,10 +2445,6 @@ def recognize_word_by_rare2_and_opennmt():
 	is_individual_fill_value_used = False
 	lang = 'kor'  # {'kor', 'eng'}.
 
-	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
-	print('Device: {}.'.format(device))
-
 	gradclip_nogradclip = 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
@@ -2465,6 +2461,10 @@ def recognize_word_by_rare2_and_opennmt():
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device: {}.'.format(device))
 
 	#--------------------
 	# Prepare data.
@@ -2709,10 +2709,6 @@ def recognize_word_by_aster_and_opennmt():
 	is_individual_fill_value_used = False
 	lang = 'kor'  # {'kor', 'eng'}.
 
-	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
-	print('Device: {}.'.format(device))
-
 	gradclip_nogradclip = 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
@@ -2729,6 +2725,10 @@ def recognize_word_by_aster_and_opennmt():
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device: {}.'.format(device))
 
 	#--------------------
 	# Prepare data.
@@ -2954,10 +2954,6 @@ def recognize_word_using_mixup():
 	is_individual_fill_value_used = False
 	lang = 'kor'  # {'kor', 'eng'}.
 
-	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
-	print('Device: {}.'.format(device))
-
 	gradclip_nogradclip = 'gradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
@@ -2977,6 +2973,10 @@ def recognize_word_using_mixup():
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device: {}.'.format(device))
 
 	#--------------------
 	# Prepare data.
@@ -3175,11 +3175,11 @@ def recognize_text_using_craft_and_character_recognizer():
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
 
+	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
+
 	gpu = 0
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
 	print('Device: {}.'.format(device))
-
-	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
 
 	# For CRAFT.
 	craft_trained_model_filepath = './craft/craft_mlt_25k.pth'
@@ -3302,11 +3302,11 @@ def recognize_text_using_craft_and_word_recognizer():
 	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
 	decoder = 'Attn'  # The type of decoder. {'CTC', 'Attn'}.
 
+	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
+
 	gpu = 0
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
 	print('Device: {}.'.format(device))
-
-	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
 
 	# For CRAFT.
 	craft_trained_model_filepath = './craft/craft_mlt_25k.pth'

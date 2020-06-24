@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-import nltk
-from nltk.corpus import treebank, reuters
-from nltk import bigrams, trigrams
-from collections import Counter, defaultdict
 import numpy as np
 import pandas as pd
 from tensorflow.keras.models import Sequential
@@ -13,62 +9,6 @@ from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from sklearn.model_selection import train_test_split
-
-# REF [site] >> https://medium.com/analytics-vidhya/a-comprehensive-guide-to-build-your-own-language-model-in-python-5141b3917d6d
-def n_gram_language_model_example():
-	nltk.download('punkt')
-	#nltk.download('averaged_perceptron_tagger')
-	#nltk.download('maxent_ne_chunker')
-	#nltk.download('words')
-	nltk.download('reuters')
-
-	# Create a placeholder for model.
-	model = defaultdict(lambda: defaultdict(lambda: 0))
-
-	# Count frequency of co-occurance  .
-	for sentence in reuters.sents():
-		for w1, w2, w3 in trigrams(sentence, pad_right=True, pad_left=True):
-			model[(w1, w2)][w3] += 1
-
-	# Transform the counts to probabilities.
-	for w1_w2 in model:
-		total_count = float(sum(model[w1_w2].values()))
-		for w3 in model[w1_w2]:
-			model[w1_w2][w3] /= total_count
-
-	#--------------------
-	# Predict the next word.
-
-	# Words which start with two simple words, 'today the'.
-	print("model['today', 'the'] =", dict(model['today', 'the']))
-
-	# Words which start with two simple words, 'the price'.
-	print("model['the', 'price'] =", dict(model['the', 'price']))
-
-	#--------------------
-	# Generate a random piece of text using our n-gram model.
-
-	# Starting words.
-	text = ['today', 'the']
-	sentence_finished = False
-
-	import random
-	while not sentence_finished:
-		# Select a random probability threshold.
-		r = random.random()
-		accumulator = 0.0
-
-		for word in model[tuple(text[-2:])].keys():
-			accumulator += model[tuple(text[-2:])][word]
-			# Select words that are above the probability threshold.
-			if accumulator >= r:
-				text.append(word)
-				break
-
-		if text[-2:] == [None, None]:
-			sentence_finished = True
-
-	print ('Generated text =', ' '.join([t for t in text if t]))
 
 # REF [site] >> https://medium.com/analytics-vidhya/a-comprehensive-guide-to-build-your-own-language-model-in-python-5141b3917d6d
 def simple_neural_language_model_example():
@@ -187,11 +127,13 @@ def simple_neural_language_model_example():
 	print('Generated sequence =', generate_seq(model, mapping, 30, inp.lower(), 15))
 
 def main():
-	#n_gram_language_model_example()
+	#n-gram language model.
+	#	REF [file] >> ${SWDT_PYTHON_HOME}/rnd/test/language_processing/nltk_test.py
+
 	simple_neural_language_model_example()
 
 	# Transformer.
-	#	REF [file] >> transformer_test.py
+	#	REF [file] >> ${SWDT_PYTHON_HOME}/rnd/test/language_processing/transformer_test.py
 
 #--------------------------------------------------------------------
 
