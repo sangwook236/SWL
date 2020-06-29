@@ -756,9 +756,8 @@ def train_char_recognition_model(model, forward_functor, train_dataloader, test_
 	best_measure = 0.0
 	best_model_filepath = None
 	for epoch in range(num_epochs):  # Loop over the dataset multiple times.
-		model.train()
-
 		start_time = time.time()
+		model.train()
 		running_loss = 0.0
 		for idx, batch in enumerate(train_dataloader):
 			# Zero the parameter gradients.
@@ -777,18 +776,20 @@ def train_char_recognition_model(model, forward_functor, train_dataloader, test_
 				running_loss = 0.0
 		print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
+		print('Start evaluating...')
+		start_time = time.time()
 		model.eval()
-		acc = evaluate_char_recognition_model(model, test_dataloader, label_converter, show_acc_per_char=False, device=device)
+		acc = evaluate_char_recognition_model(model, test_dataloader, label_converter, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False, device=device)
+		print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 		if scheduler: scheduler.step()
 
 		if acc >= best_measure:
-			model_fpath = model_filepath_format.format('_epoch{}'.format(epoch))
+			ckpt_fpath = model_filepath_format.format('_acc{:.4f}_epoch{}'.format(acc, epoch))
 			# Save a checkpoint.
-			save_model(model_fpath, model)
-			print('Saved a model to {}.'.format(model_fpath))
+			save_model(ckpt_fpath, model)
 			best_measure = acc
-			best_model_filepath = model_fpath
+			best_model_filepath = ckpt_fpath
 
 	return model, best_model_filepath
 
@@ -796,9 +797,8 @@ def train_text_recognition_model(model, inferer, forward_functor, train_dataload
 	best_measure = 0.0
 	best_model_filepath = None
 	for epoch in range(num_epochs):  # Loop over the dataset multiple times.
-		model.train()
-
 		start_time = time.time()
+		model.train()
 		running_loss = 0.0
 		for idx, batch in enumerate(train_dataloader):
 			# Zero the parameter gradients.
@@ -817,26 +817,34 @@ def train_text_recognition_model(model, inferer, forward_functor, train_dataload
 				running_loss = 0.0
 		print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
+		print('Start evaluating...')
+		start_time = time.time()
 		model.eval()
-		acc = evaluate_text_recognition_model(inferer, test_dataloader, label_converter, show_acc_per_char=False, device=device)
+		acc = evaluate_text_recognition_model(inferer, test_dataloader, label_converter, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False, device=device)
+		print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 		if scheduler: scheduler.step()
 
 		if acc >= best_measure:
-			model_fpath = model_filepath_format.format('_epoch{}'.format(epoch))
+			ckpt_fpath = model_filepath_format.format('_acc{:.4f}_epoch{}'.format(acc, epoch))
 			# Save a checkpoint.
-			save_model(model_fpath, model)
-			print('Saved a model to {}.'.format(model_fpath))
+			save_model(ckpt_fpath, model)
 			best_measure = acc
-			best_model_filepath = model_fpath
+			best_model_filepath = ckpt_fpath
 
 	return model, best_model_filepath
 
-def evaluate_char_recognition_model(model, dataloader, label_converter, show_acc_per_char=False, device='cpu'):
+def evaluate_char_recognition_model(model, dataloader, label_converter, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False, device='cpu'):
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+
+	error_cases_dir_path = './char_error_cases'
+	if is_error_cases_saved:
+		os.makedirs(error_cases_dir_path, exist_ok=True)
 
 	correct_char_count, total_char_count = 0, 0
 	correct_char_class_count, total_char_class_count = [0] * num_classes, [0] * num_classes
+	error_cases = list()
+	error_idx = 0
 	is_first = True
 	with torch.no_grad():
 		for images, labels in dataloader:
@@ -850,55 +858,95 @@ def evaluate_char_recognition_model(model, dataloader, label_converter, show_acc
 				if gl == pl: correct_char_class_count[gl] += 1
 				total_char_class_count[gl] += 1
 
-			correct_char_count += (predictions == gts).sum()
-			total_char_count += len(gts)
+			gts, predictions = label_converter.decode(gts), label_converter.decode(predictions)
+
+			total_char_count += max(len(gts), len(predictions))
+			if is_case_sensitive:
+				#correct_char_count += (gts == predictions).sum()
+				correct_char_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gts, predictions))))
+			else:
+				correct_char_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gts.lower(), predictions.lower()))))
+
+			if is_error_cases_saved:
+				for img, gt, pred in zip(images.numpy(), gts, predictions):
+					if img.ndim == 3: img = img.transpose(1, 2, 0)
+					#minval, maxval = np.min(img), np.max(img)
+					minval, maxval = -1, 1
+					img = np.round((img - minval) * 255 / (maxval - minval)).astype(np.uint8)
+					cv2.imwrite(os.path.join(error_cases_dir_path, 'image_{}.png'.format(error_idx)), img)
+					error_cases.append((gt, pred))
+					error_idx += 1
 
 			if is_first:
 				# Show images.
 				#show_image(torchvision.utils.make_grid(images))
 
-				#print('G/T:        {}.'.format(' '.join(label_converter.decode(gts))))
-				#print('Prediction: {}.'.format(' '.join(label_converter.decode(predictions))))
-				#for gt, pred in zip(label_converter.decode(gts), label_converter.decode(predictions)):
+				#print('G/T:        {}.'.format(' '.join(gts)))
+				#print('Prediction: {}.'.format(' '.join(predictions)))
+				#for gt, pred in zip(gts, predictions):
 				#	print('G/T - prediction: {}, {}.'.format(gt, pred))
-				print('G/T - prediction:\n{}.'.format([(gt, pred) for gt, pred in zip(label_converter.decode(gts), label_converter.decode(predictions))]))
+				print('G/T - prediction:\n{}.'.format([(gt, pred) for gt, pred in zip(gts, predictions)]))
 
 				is_first = False
+
+	if is_error_cases_saved:
+		err_fpath = os.path.join(error_cases_dir_path, 'error_cases.txt')
+		try:
+			with open(err_fpath, 'w', encoding='UTF8') as fd:
+				for idx, (gt, pred) in enumerate(error_cases):
+					fd.write('{}: {}\t{}\n'.format(idx, gt, pred))
+		except FileNotFoundError as ex:
+			print('File not found: {}.'.format(err_fpath))
+		except UnicodeDecodeError as ex:
+			print('Unicode decode error: {}.'.format(err_fpath))
 
 	show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char)
 	print('Char accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
 
 	return correct_char_count / total_char_count
 
-def evaluate_text_recognition_model(inferer, dataloader, label_converter, show_acc_per_char=False, device='cpu'):
+def evaluate_text_recognition_model(inferer, dataloader, label_converter, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False, device='cpu'):
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+
+	error_cases_dir_path = './text_error_cases'
+	if is_error_cases_saved:
+		os.makedirs(error_cases_dir_path, exist_ok=True)
 
 	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0, 0, 0
 	correct_char_class_count, total_char_class_count = [0] * num_classes, [0] * num_classes
+	error_cases = list()
+	error_idx = 0
 	is_first = True
 	with torch.no_grad():
 		for images, labels, label_lens in dataloader:
 			gts, predictions = inferer(images, labels, label_lens, device)
 
 			total_text_count += len(gts)
-			for gt, pred in zip(gts, predictions):
+			for img, gt, pred in zip(images, gts, predictions):
 				for gl, pl in zip(gt, pred):
 					if gl == pl: correct_char_class_count[gl] += 1
 					total_char_class_count[gl] += 1
 
 				gt, pred = label_converter.decode(gt), label_converter.decode(pred)
+				if not is_case_sensitive:
+					gt, pred = gt.lower(), pred.lower()
 
 				if gt == pred:
 					correct_text_count += 1
+					if img.ndim == 3: img = img.cpu().numpy().transpose(1, 2, 0)
+					#minval, maxval = np.min(img), np.max(img)
+					minval, maxval = -1, 1
+					img = np.round((img - minval) * 255 / (maxval - minval)).astype(np.uint8)
+					cv2.imwrite(os.path.join(error_cases_dir_path, 'image_{}.png'.format(error_idx)), img)
+					error_cases.append((gt, pred))
+					error_idx += 1
 
-				pred_words, gt_words = pred.split(' '), gt.split(' ')
-				total_word_count += max(len(pred_words), len(gt_words))
-				#correct_word_count += len(list(filter(lambda x: x[0] == x[1], zip(pred_words, gt_words))))
-				correct_word_count += len(list(filter(lambda x: x[0].lower() == x[1].lower(), zip(pred_words, gt_words))))
+				gt_words, pred_words = gt.split(' '), pred.split(' ')
+				total_word_count += max(len(gt_words), len(pred_words))
+				correct_word_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gt_words, pred_words))))
 
-				total_char_count += max(len(pred), len(gt))
-				#correct_char_count += len(list(filter(lambda x: x[0] == x[1], zip(pred, gt))))
-				correct_char_count += len(list(filter(lambda x: x[0].lower() == x[1].lower(), zip(pred, gt))))
+				total_char_count += max(len(gt), len(pred))
+				correct_char_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gt, pred))))
 
 			if is_first:
 				# Show images.
@@ -911,6 +959,17 @@ def evaluate_text_recognition_model(inferer, dataloader, label_converter, show_a
 				print('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(gts, predictions)]))
 
 				is_first = False
+
+	if is_error_cases_saved:
+		err_fpath = os.path.join(error_cases_dir_path, 'error_cases.txt')
+		try:
+			with open(err_fpath, 'w', encoding='UTF8') as fd:
+				for idx, (gt, pred) in enumerate(error_cases):
+					fd.write('{}: {}\t{}\n'.format(idx, gt, pred))
+		except FileNotFoundError as ex:
+			print('File not found: {}.'.format(err_fpath))
+		except UnicodeDecodeError as ex:
+			print('Unicode decode error: {}.'.format(err_fpath))
 
 	show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char)
 	print('Text accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
@@ -932,8 +991,8 @@ def recognize_character():
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
 
-	num_train_examples_per_class, num_test_examples_per_class = 500, 50
-	num_simple_char_examples_per_class, num_noisy_examples_per_class = 300, 300
+	num_train_examples_per_class, num_test_examples_per_class = 500, 50  # For simple and noisy chars.
+	num_simple_char_examples_per_class, num_noisy_examples_per_class = 300, 300  # For mixed chars.
 	font_size_interval = (10, 100)
 	char_clipping_ratio_interval = (0.8, 1.25)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
@@ -1031,6 +1090,7 @@ def recognize_character():
 
 		# Define a loss function and optimizer.
 		criterion = torch.nn.CrossEntropyLoss().to(device)
+		#criterion = torch.nn.NLLLoss(reduction='sum').to(device)
 		optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = None
@@ -1044,9 +1104,9 @@ def recognize_character():
 
 		#--------------------
 		print('Start training...')
-		start_train_time = time.time()
+		start_time = time.time()
 		model, best_model_filepath = train_char_recognition_model(model, forward, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, label_converter, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-		print('End training: {} secs.'.format(time.time() - start_train_time))
+		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
 		if best_model_filepath:
@@ -1060,13 +1120,15 @@ def recognize_character():
 			if model:
 				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 				save_model(model_filepath, model)
-				print('Saved the final trained model to {}.'.format(model_filepath))
 
 	#--------------------
 	# Evaluate the model.
 
+	print('Start evaluating...')
+	start_time = time.time()
 	model.eval()
-	evaluate_char_recognition_model(model, test_dataloader, label_converter, show_acc_per_char=True, device=device)
+	evaluate_char_recognition_model(model, test_dataloader, label_converter, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 def recognize_character_using_mixup():
@@ -1081,8 +1143,8 @@ def recognize_character_using_mixup():
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
 
-	num_train_examples_per_class, num_test_examples_per_class = 500, 50
-	num_simple_char_examples_per_class, num_noisy_examples_per_class = 300, 300
+	num_train_examples_per_class, num_test_examples_per_class = 500, 50  # For simple and noisy chars.
+	num_simple_char_examples_per_class, num_noisy_examples_per_class = 300, 300  # For mixed chars.
 	font_size_interval = (10, 100)
 	char_clipping_ratio_interval = (0.8, 1.25)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
@@ -1184,6 +1246,7 @@ def recognize_character_using_mixup():
 
 		# Define a loss function and optimizer.
 		criterion = torch.nn.CrossEntropyLoss().to(device)
+		#criterion = torch.nn.NLLLoss(reduction='sum').to(device)
 		optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = None
@@ -1197,9 +1260,9 @@ def recognize_character_using_mixup():
 
 		#--------------------
 		print('Start training...')
-		start_train_time = time.time()
+		start_time = time.time()
 		model, best_model_filepath = train_char_recognition_model(model, forward, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, label_converter, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-		print('End training: {} secs.'.format(time.time() - start_train_time))
+		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
 		if best_model_filepath:
@@ -1213,13 +1276,15 @@ def recognize_character_using_mixup():
 			if model:
 				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 				save_model(model_filepath, model)
-				print('Saved the final trained model to {}.'.format(model_filepath))
 
 	#--------------------
 	# Evaluate the model.
 
+	print('Start evaluating...')
+	start_time = time.time()
 	model.eval()
-	evaluate_char_recognition_model(model, test_dataloader, label_converter, show_acc_per_char=True, device=device)
+	evaluate_char_recognition_model(model, test_dataloader, label_converter, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def recognize_word_by_rare1():
 	#image_height, image_width, image_channel = 32, 100, 3
@@ -1401,6 +1466,7 @@ def recognize_word_by_rare1():
 				return cost
 		else:
 			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
+			#criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
 			def forward(batch, device):
 				inputs, outputs, output_lens = batch
 				outputs = outputs.long()
@@ -1441,9 +1507,9 @@ def recognize_word_by_rare1():
 
 		#--------------------
 		print('Start training...')
-		start_train_time = time.time()
+		start_time = time.time()
 		model, best_model_filepath = train_text_recognition_model(model, Inferer(model), forward, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, label_converter, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-		print('End training: {} secs.'.format(time.time() - start_train_time))
+		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
 		if best_model_filepath:
@@ -1457,13 +1523,15 @@ def recognize_word_by_rare1():
 			if model:
 				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 				save_model(model_filepath, model)
-				print('Saved the final trained model to {}.'.format(model_filepath))
 
 	#--------------------
 	# Evaluate the model.
 
+	print('Start evaluating...')
+	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=True, device=device)
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def recognize_word_by_rare2():
 	#image_height, image_width, image_channel = 32, 100, 3
@@ -1615,6 +1683,7 @@ def recognize_word_by_rare2():
 
 		# Define a loss function and optimizer.
 		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
+		#criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 			inputs, outputs, output_lens = inputs.to(device), outputs.long().to(device), output_lens.to(device)
@@ -1644,9 +1713,9 @@ def recognize_word_by_rare2():
 
 		#--------------------
 		print('Start training...')
-		start_train_time = time.time()
+		start_time = time.time()
 		model, best_model_filepath = train_text_recognition_model(model, Inferer(model), forward, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, label_converter, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-		print('End training: {} secs.'.format(time.time() - start_train_time))
+		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
 		if best_model_filepath:
@@ -1660,13 +1729,15 @@ def recognize_word_by_rare2():
 			if model:
 				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 				save_model(model_filepath, model)
-				print('Saved the final trained model to {}.'.format(model_filepath))
 
 	#--------------------
 	# Evaluate the model.
 
+	print('Start evaluating...')
+	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=True, device=device)
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def recognize_word_by_aster():
 	#image_height, image_width, image_channel = 32, 100, 3
@@ -1831,7 +1902,8 @@ def recognize_word_by_aster():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define a loss function and optimizer.
-		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
+		#criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
+		#criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
@@ -1870,9 +1942,9 @@ def recognize_word_by_aster():
 
 		#--------------------
 		print('Start training...')
-		start_train_time = time.time()
+		start_time = time.time()
 		model, best_model_filepath = train_text_recognition_model(model, Inferer(model), forward, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, label_converter, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-		print('End training: {} secs.'.format(time.time() - start_train_time))
+		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
 		if best_model_filepath:
@@ -1886,13 +1958,15 @@ def recognize_word_by_aster():
 			if model:
 				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 				save_model(model_filepath, model)
-				print('Saved the final trained model to {}.'.format(model_filepath))
 
 	#--------------------
 	# Evaluate the model.
 
+	print('Start evaluating...')
+	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=True, device=device)
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size):
 	import onmt
@@ -2099,6 +2173,7 @@ def recognize_word_by_opennmt():
 
 		# Define a loss function and optimizer.
 		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
+		#criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
@@ -2127,9 +2202,9 @@ def recognize_word_by_opennmt():
 
 		#--------------------
 		print('Start training...')
-		start_train_time = time.time()
+		start_time = time.time()
 		model, best_model_filepath = train_text_recognition_model(model, Inferer(model), forward, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, label_converter, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-		print('End training: {} secs.'.format(time.time() - start_train_time))
+		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
 		if best_model_filepath:
@@ -2143,13 +2218,15 @@ def recognize_word_by_opennmt():
 			if model:
 				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 				save_model(model_filepath, model)
-				print('Saved the final trained model to {}.'.format(model_filepath))
 
 	#--------------------
 	# Evaluate the model.
 
+	print('Start evaluating...')
+	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=True, device=device)
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def recognize_word_by_rare1_and_opennmt():
 	#image_height, image_width, image_channel = 32, 100, 3
@@ -2389,6 +2466,7 @@ def recognize_word_by_rare1_and_opennmt():
 
 		# Define a loss function and optimizer.
 		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
+		#criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
@@ -2417,9 +2495,9 @@ def recognize_word_by_rare1_and_opennmt():
 
 		#--------------------
 		print('Start training...')
-		start_train_time = time.time()
+		start_time = time.time()
 		model, best_model_filepath = train_text_recognition_model(model, Inferer(model), forward, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, label_converter, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-		print('End training: {} secs.'.format(time.time() - start_train_time))
+		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
 		if best_model_filepath:
@@ -2433,13 +2511,15 @@ def recognize_word_by_rare1_and_opennmt():
 			if model:
 				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 				save_model(model_filepath, model)
-				print('Saved the final trained model to {}.'.format(model_filepath))
 
 	#--------------------
 	# Evaluate the model.
 
+	print('Start evaluating...')
+	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=True, device=device)
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def recognize_word_by_rare2_and_opennmt():
 	#image_height, image_width, image_channel = 32, 100, 3
@@ -2647,6 +2727,7 @@ def recognize_word_by_rare2_and_opennmt():
 
 		# Define a loss function and optimizer.
 		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
+		#criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
@@ -2675,9 +2756,9 @@ def recognize_word_by_rare2_and_opennmt():
 
 		#--------------------
 		print('Start training...')
-		start_train_time = time.time()
+		start_time = time.time()
 		model, best_model_filepath = train_text_recognition_model(model, Inferer(model), forward, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, label_converter, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-		print('End training: {} secs.'.format(time.time() - start_train_time))
+		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
 		if best_model_filepath:
@@ -2691,13 +2772,15 @@ def recognize_word_by_rare2_and_opennmt():
 			if model:
 				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 				save_model(model_filepath, model)
-				print('Saved the final trained model to {}.'.format(model_filepath))
 
 	#--------------------
 	# Evaluate the model.
 
+	print('Start evaluating...')
+	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=True, device=device)
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def recognize_word_by_aster_and_opennmt():
 	#image_height, image_width, image_channel = 32, 100, 3
@@ -2874,6 +2957,7 @@ def recognize_word_by_aster_and_opennmt():
 
 		# Define a loss function and optimizer.
 		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
+		#criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
@@ -2902,9 +2986,9 @@ def recognize_word_by_aster_and_opennmt():
 
 		#--------------------
 		print('Start training...')
-		start_train_time = time.time()
+		start_time = time.time()
 		model, best_model_filepath = train_text_recognition_model(model, Inferer(model), forward, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, label_converter, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-		print('End training: {} secs.'.format(time.time() - start_train_time))
+		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
 		if best_model_filepath:
@@ -2918,13 +3002,15 @@ def recognize_word_by_aster_and_opennmt():
 			if model:
 				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 				save_model(model_filepath, model)
-				print('Saved the final trained model to {}.'.format(model_filepath))
 
 	#--------------------
 	# Evaluate the model.
 
+	print('Start evaluating...')
+	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=True, device=device)
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def recognize_word_using_mixup():
 	# FIXME [check] >> Can image size be changed?
@@ -3107,6 +3193,7 @@ def recognize_word_using_mixup():
 				return cost
 		else:
 			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
+			#criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
 			def forward(batch, device):
 				inputs, outputs, output_lens = batch
 				outputs = outputs.long()
@@ -3139,9 +3226,9 @@ def recognize_word_using_mixup():
 
 		#--------------------
 		print('Start training...')
-		start_train_time = time.time()
+		start_time = time.time()
 		model, best_model_filepath = train_text_recognition_model(model, Inferer(model), forward, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, label_converter, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-		print('End training: {} secs.'.format(time.time() - start_train_time))
+		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
 		if best_model_filepath:
@@ -3155,13 +3242,15 @@ def recognize_word_using_mixup():
 			if model:
 				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 				save_model(model_filepath, model)
-				print('Saved the final trained model to {}.'.format(model_filepath))
 
 	#--------------------
 	# Evaluate the model.
 
+	print('Start evaluating...')
+	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=True, device=device)
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def recognize_text():
 	raise NotImplementedError
