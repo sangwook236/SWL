@@ -5,7 +5,7 @@ import sys
 sys.path.append('../../src')
 sys.path.append('./src')
 
-import os, random, functools, itertools, time
+import os, random, functools, itertools, shutil, datetime, time
 import numpy as np
 import torch
 import torchvision
@@ -737,9 +737,9 @@ def show_text_data_info(dataloader, label_converter, visualize=True, mode='Train
 		show_image(torchvision.utils.make_grid(images))
 
 def show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char=False):
-	#for i in range(num_classes):
-	#	print('Accuracy of {:5s} = {:2d} %.'.format(classes[i], 100 * correct_char_class_count[i] / total_char_class_count[i] if total_char_class_count[i] > 0 else -1))
-	accuracies = [100 * correct_char_class_count[i] / total_char_class_count[i] if total_char_class_count[i] > 0 else -1 for i in range(num_classes)]
+	#for idx in range(num_classes):
+	#	print('Accuracy of {:5s} = {:2d} %.'.format(classes[idx], 100 * correct_char_class_count[idx] / total_char_class_count[idx] if total_char_class_count[idx] > 0 else -1))
+	accuracies = [100 * correct_char_class_count[idx] / total_char_class_count[idx] if total_char_class_count[idx] > 0 else -1 for idx in range(num_classes)]
 	#print('Accuracy: {}.'.format(accuracies))
 	hist, bin_edges = np.histogram(accuracies, bins=range(-1, 101), density=False)
 	#hist, bin_edges = np.histogram(accuracies, bins=range(0, 101), density=False)
@@ -747,10 +747,90 @@ def show_per_char_accuracy(correct_char_class_count, total_char_class_count, cla
 	print('Per-character accuracy histogram: {}.'.format({bb: hh for bb, hh in zip(bin_edges, hist) if hh > 0}))
 
 	if show_acc_per_char:
-		valid_accuracies = [100 * correct_char_class_count[i] / total_char_class_count[i] for i in range(num_classes) if total_char_class_count[i] > 0]
+		valid_accuracies = [100 * correct_char_class_count[idx] / total_char_class_count[idx] for idx in range(num_classes) if total_char_class_count[idx] > 0]
 		print('Per-character accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
 		acc_thresh = 98
 		print('Per-character accuracy (< {}) = {}.'.format(acc_thresh, {classes[idx]: round(acc, 2) for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]) if acc < acc_thresh}))
+
+def train_char_recognition_model(model, forward_functor, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, label_converter, model_filepath_format, scheduler=None, max_gradient_norm=None, model_params=None, device='cpu'):
+	best_measure = 0.0
+	best_model_filepath = None
+	for epoch in range(num_epochs):  # Loop over the dataset multiple times.
+		model.train()
+
+		start_time = time.time()
+		running_loss = 0.0
+		for idx, batch in enumerate(train_dataloader):
+			# Zero the parameter gradients.
+			optimizer.zero_grad()
+
+			# Forward + backward + optimize.
+			loss = forward_functor(batch, device)
+			loss.backward()
+			if max_gradient_norm: torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
+			optimizer.step()
+
+			# Print statistics.
+			running_loss += loss.item()
+			if idx % log_print_freq == (log_print_freq - 1):
+				print('[{}, {:5d}] loss = {:.3f}: {:.3f} secs.'.format(epoch + 1, idx + 1, running_loss / log_print_freq, time.time() - start_time))
+				running_loss = 0.0
+		print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
+
+		model.eval()
+		acc = evaluate_char_recognition_model(model, test_dataloader, label_converter, show_acc_per_char=False, device=device)
+
+		if scheduler: scheduler.step()
+
+		if acc >= best_measure:
+			model_fpath = model_filepath_format.format('_epoch{}'.format(epoch))
+			# Save a checkpoint.
+			save_model(model_fpath, model)
+			print('Saved a model to {}.'.format(model_fpath))
+			best_measure = acc
+			best_model_filepath = model_fpath
+
+	return model, best_model_filepath
+
+def train_text_recognition_model(model, inferer, forward_functor, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, label_converter, model_filepath_format, scheduler=None, max_gradient_norm=None, model_params=None, device='cpu'):
+	best_measure = 0.0
+	best_model_filepath = None
+	for epoch in range(num_epochs):  # Loop over the dataset multiple times.
+		model.train()
+
+		start_time = time.time()
+		running_loss = 0.0
+		for idx, batch in enumerate(train_dataloader):
+			# Zero the parameter gradients.
+			optimizer.zero_grad()
+
+			# Forward + backward + optimize.
+			loss = forward_functor(batch, device)
+			loss.backward()
+			if max_gradient_norm: torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
+			optimizer.step()
+
+			# Print statistics.
+			running_loss += loss.item()
+			if idx % log_print_freq == (log_print_freq - 1):
+				print('[{}, {:5d}] loss = {:.3f}: {:.3f} secs.'.format(epoch + 1, idx + 1, running_loss / log_print_freq, time.time() - start_time))
+				running_loss = 0.0
+		print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
+
+		model.eval()
+		acc = evaluate_text_recognition_model(inferer, test_dataloader, label_converter, show_acc_per_char=False, device=device)
+
+		if scheduler: scheduler.step()
+
+		if acc >= best_measure:
+			model_fpath = model_filepath_format.format('_epoch{}'.format(epoch))
+			# Save a checkpoint.
+			save_model(model_fpath, model)
+			print('Saved a model to {}.'.format(model_fpath))
+			best_measure = acc
+			best_model_filepath = model_fpath
+
+	return model, best_model_filepath
 
 def evaluate_char_recognition_model(model, dataloader, label_converter, show_acc_per_char=False, device='cpu'):
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
@@ -787,6 +867,8 @@ def evaluate_char_recognition_model(model, dataloader, label_converter, show_acc
 
 	show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char)
 	print('Char accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
+
+	return correct_char_count / total_char_count
 
 def evaluate_text_recognition_model(inferer, dataloader, label_converter, show_acc_per_char=False, device='cpu'):
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
@@ -835,13 +917,17 @@ def evaluate_text_recognition_model(inferer, dataloader, label_converter, show_a
 	print('Word accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
 	print('Char accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
 
+	return correct_char_count / total_char_count
+
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 def recognize_character():
 	image_height, image_width, image_channel = 64, 64, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	max_gradient_norm = 5  # Gradient clipping value.
+	lang = 'kor'  # {'kor', 'eng'}.
+	#max_gradient_norm = 5  # Gradient clipping value.
+	max_gradient_norm = None
 
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
@@ -859,17 +945,19 @@ def recognize_character():
 	num_workers = 8
 	log_print_freq = 1000
 
-	is_model_initialized = True
+	is_trained = True
 	is_model_loaded = False
+	is_model_initialized = True
 	is_all_model_params_optimized = True
-	lang = 'kor'  # {'kor', 'eng'}.
 
-	gradclip_nogradclip = 'nogradclip'
+	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	model_filepath = './simple_char_recognition_{}_{}_{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, lang, image_channel)
-	print('Model filepath: {}.'.format(model_filepath))
+	model_filepath_base = './char_recognition_{}_{}_{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, lang, image_height, image_width, image_channel)
+	model_filepath_format = model_filepath_base + '{}.pth'
+	print('Model filepath: {}.'.format(model_filepath_format.format('')))
 	if is_model_loaded:
-		model_filepath_to_load = None  # TODO [change] >>
+		model_filepath_to_load = None
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
 		charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
@@ -927,7 +1015,7 @@ def recognize_character():
 	#--------------------
 	# Train the model.
 
-	if True:
+	if is_trained:
 		if is_all_model_params_optimized:
 			model_params = model.parameters()
 		else:
@@ -945,46 +1033,34 @@ def recognize_character():
 		criterion = torch.nn.CrossEntropyLoss().to(device)
 		optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+		scheduler = None
+
+		def forward(batch, device):
+			inputs, outputs = batch
+			inputs, outputs = inputs.to(device), outputs.to(device)
+
+			model_outputs = model(inputs)
+			return criterion(model_outputs, outputs)
 
 		#--------------------
 		print('Start training...')
 		start_train_time = time.time()
-		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
-			model.train()
-
-			start_time = time.time()
-			running_loss = 0.0
-			for i, (inputs, outputs) in enumerate(train_dataloader):
-				inputs, outputs = inputs.to(device), outputs.to(device)
-
-				# Zero the parameter gradients.
-				optimizer.zero_grad()
-
-				# Forward + backward + optimize.
-				model_outputs = model(inputs)
-				loss = criterion(model_outputs, outputs)
-				loss.backward()
-				#torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
-				optimizer.step()
-
-				# Print statistics.
-				running_loss += loss.item()
-				if i % log_print_freq == (log_print_freq - 1):
-					print('[{}, {:5d}] loss = {:.3f}: {:.3f} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
-					running_loss = 0.0
-			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
-
-			model.eval()
-			evaluate_char_recognition_model(model, test_dataloader, label_converter, show_acc_per_char=False, device=device)
-
-			#scheduler.step()
-
-			# Save a checkpoint.
-			save_model(model_filepath, model)
+		model, best_model_filepath = train_char_recognition_model(model, forward, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, label_converter, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_train_time))
 
 		# Save a model.
-		save_model(model_filepath, model)
+		if best_model_filepath:
+			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			try:
+				shutil.copyfile(best_model_filepath, model_filepath)
+				print('Copied the best trained model to {}.'.format(model_filepath))
+			except (FileNotFoundError, PermissionError) as ex:
+				print('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+		else:
+			if model:
+				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+				save_model(model_filepath, model)
+				print('Saved the final trained model to {}.'.format(model_filepath))
 
 	#--------------------
 	# Evaluate the model.
@@ -998,7 +1074,9 @@ def recognize_character_using_mixup():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	max_gradient_norm = 5  # Gradient clipping value.
+	lang = 'kor'  # {'kor', 'eng'}.
+	#max_gradient_norm = 5  # Gradient clipping value.
+	max_gradient_norm = None
 
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
@@ -1019,17 +1097,19 @@ def recognize_character_using_mixup():
 	mixup_input, mixup_hidden, mixup_alpha = True, True, 2.0
 	cutout, cutout_size = True, 4
 
-	is_model_initialized = True
+	is_trained = True
 	is_model_loaded = False
+	is_model_initialized = True
 	is_all_model_params_optimized = True
-	lang = 'kor'  # {'kor', 'eng'}.
 
-	gradclip_nogradclip = 'nogradclip'
+	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	model_filepath = './simple_char_recognition_mixup_{}_{}_{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, lang, image_channel)
-	print('Model filepath: {}.'.format(model_filepath))
+	model_filepath_base = './char_recognition_mixup_{}_{}_{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, lang, image_height, image_width, image_channel)
+	model_filepath_format = model_filepath_base + '{}.pth'
+	print('Model filepath: {}.'.format(model_filepath_format.format('')))
 	if is_model_loaded:
-		model_filepath_to_load = None  # TODO [change] >>
+		model_filepath_to_load = None
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
 		charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
@@ -1088,7 +1168,7 @@ def recognize_character_using_mixup():
 	#--------------------
 	# Train the model.
 
-	if True:
+	if is_trained:
 		if is_all_model_params_optimized:
 			model_params = model.parameters()
 		else:
@@ -1106,46 +1186,34 @@ def recognize_character_using_mixup():
 		criterion = torch.nn.CrossEntropyLoss().to(device)
 		optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+		scheduler = None
+
+		def forward(batch, device):
+			inputs, outputs = batch
+			inputs, outputs = inputs.to(device), outputs.to(device)
+
+			model_outputs, outputs = model(inputs, outputs, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, device)
+			return criterion(model_outputs, torch.argmax(outputs, dim=1))
 
 		#--------------------
 		print('Start training...')
 		start_train_time = time.time()
-		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
-			model.train()
-
-			start_time = time.time()
-			running_loss = 0.0
-			for i, (inputs, outputs) in enumerate(train_dataloader):
-				inputs, outputs = inputs.to(device), outputs.to(device)
-
-				# Zero the parameter gradients.
-				optimizer.zero_grad()
-
-				# Forward + backward + optimize.
-				model_outputs, outputs = model(inputs, outputs, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, device)
-				loss = criterion(model_outputs, torch.argmax(outputs, dim=1))
-				loss.backward()
-				#torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
-				optimizer.step()
-
-				# Print statistics.
-				running_loss += loss.item()
-				if i % log_print_freq == (log_print_freq - 1):
-					print('[{}, {:5d}] loss = {:.3f}: {:.3f} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
-					running_loss = 0.0
-			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
-
-			model.eval()
-			evaluate_char_recognition_model(model, test_dataloader, label_converter, show_acc_per_char=False, device=device)
-
-			#scheduler.step()
-
-			# Save a checkpoint.
-			save_model(model_filepath, model)
+		model, best_model_filepath = train_char_recognition_model(model, forward, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, label_converter, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_train_time))
 
 		# Save a model.
-		save_model(model_filepath, model)
+		if best_model_filepath:
+			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			try:
+				shutil.copyfile(best_model_filepath, model_filepath)
+				print('Copied the best trained model to {}.'.format(model_filepath))
+			except (FileNotFoundError, PermissionError) as ex:
+				print('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+		else:
+			if model:
+				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+				save_model(model_filepath, model)
+				print('Saved the final trained model to {}.'.format(model_filepath))
 
 	#--------------------
 	# Evaluate the model.
@@ -1154,17 +1222,21 @@ def recognize_character_using_mixup():
 	evaluate_char_recognition_model(model, test_dataloader, label_converter, show_acc_per_char=True, device=device)
 
 def recognize_word_by_rare1():
-	# FIXME [check] >> Can image size be changed?
-	#image_height, image_width, image_channel = 64, 640, 3
-	image_height, image_width, image_channel = 32, 100, 3
+	#image_height, image_width, image_channel = 32, 100, 3
+	image_height, image_width, image_channel = 64, 640, 3
+	#image_height, image_width, image_channel = 64, 1280, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	lang = 'kor'  # {'kor', 'eng'}.
 	max_word_len = 5  # Max. word length.
 	num_fiducials = 20  # The number of fiducial points of TPS-STN.
 	input_channel = image_channel  # The number of input channel of feature extractor.
 	output_channel = 512  # The number of output channel of feature extractor.
-	hidden_size = 512  # The size of the LSTM hidden states.
+	if lang == 'kor':
+		hidden_size = 1024  # The size of the LSTM hidden states.
+	else:
+		hidden_size = 512  # The size of the LSTM hidden states.
 	max_gradient_norm = 5  # Gradient clipping value.
 	transformer = 'TPS'  # The type of transformer. {None, 'TPS'}.
 	feature_extractor = 'VGG'  # The type of feature extractor. {'VGG', 'RCNN', 'ResNet'}.
@@ -1185,22 +1257,24 @@ def recognize_word_by_rare1():
 	num_workers = 8
 	log_print_freq = 1000
 
-	is_model_initialized = True
+	is_trained = True
 	is_model_loaded = False
+	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_individual_fill_value_used = False
-	lang = 'kor'  # {'kor', 'eng'}.
+	is_individual_pad_value_used = False
 
-	gradclip_nogradclip = 'gradclip'
+	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
+	pad_nopad = 'pad' if is_individual_pad_value_used else 'nopad'
 	if decoder == 'CTC':
-		model_filepath = './word_recognition_rare1_ctc_{}_{}_{}_{}_w{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, fill_nofill, lang, max_word_len, image_channel)
+		model_filepath_base = './word_recognition_rare1_ctc_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	else:
-		model_filepath = './word_recognition_rare1_attn_{}_{}_{}_{}_w{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, fill_nofill, lang, max_word_len, image_channel)
-	print('Model filepath: {}.'.format(model_filepath))
+		model_filepath_base = './word_recognition_rare1_attn_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	model_filepath_format = model_filepath_base + '{}.pth'
+	print('Model filepath: {}.'.format(model_filepath_format.format('')))
 	if is_model_loaded:
-		model_filepath_to_load = None  # TODO [change] >>
+		model_filepath_to_load = None
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
@@ -1220,22 +1294,22 @@ def recognize_word_by_rare1():
 
 	if decoder == 'CTC':
 		BLANK_LABEL = '<BLANK>'  # The BLANK label for CTC.
-		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), fill_value=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
+		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), pad_value=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
 		assert label_converter.encode([BLANK_LABEL], is_bare_output=True)[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL], is_bare_output=True)[0])
 		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL], is_bare_output=True)[0]
 		SOS_VALUE, EOS_VALUE = None, None
 		num_suffixes = 0
 	else:
-		if is_individual_fill_value_used:
-			# When the fill value is the ID of a valid token.
-			FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
-			FILL_TOKEN = '<FILL>'
-			label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
-			assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
-			assert label_converter.encode([FILL_TOKEN], is_bare_output=True)[0] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN], is_bare_output=True)[0], FILL_VALUE)
+		if is_individual_pad_value_used:
+			# When the pad value is the ID of a valid token.
+			PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
+			PAD_TOKEN = '<PAD>'
+			label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+			assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
+			assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
 		else:
-			# When the fill value = the ID of <SOS> token.
-			label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=swl_langproc_util.TokenConverter.SOS)
+			# When the pad value = the ID of <SOS> token.
+			label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
 		SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 		num_suffixes = 1
 
@@ -1244,7 +1318,7 @@ def recognize_word_by_rare1():
 	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
-	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.fill_value, SOS_VALUE, EOS_VALUE))
+	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_value, SOS_VALUE, EOS_VALUE))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
@@ -1265,8 +1339,9 @@ def recognize_word_by_rare1():
 	# Build a model.
 
 	import rare.model
-	model = rare.model.Model(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, num_suffixes, SOS_VALUE, label_converter.fill_value, transformer, feature_extractor, sequence_model, decoder)
+	model = rare.model.Model(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, num_suffixes, SOS_VALUE, label_converter.pad_value, transformer, feature_extractor, sequence_model, decoder)
 
+	is_trained = True
 	if is_model_initialized:
 		# Initialize model weights.
 		for name, param in model.named_parameters():
@@ -1291,7 +1366,7 @@ def recognize_word_by_rare1():
 	#--------------------
 	# Train the model.
 
-	if True:
+	if is_trained:
 		if is_all_model_params_optimized:
 			model_params = model.parameters()
 		else:
@@ -1325,7 +1400,7 @@ def recognize_word_by_rare1():
 				torch.backends.cudnn.enabled = True
 				return cost
 		else:
-			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
+			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
 			def forward(batch, device):
 				inputs, outputs, output_lens = batch
 				outputs = outputs.long()
@@ -1350,7 +1425,7 @@ def recognize_word_by_rare1():
 				mask = torch.full(decoder_outputs.shape[:2], False, dtype=torch.bool)
 				for idx, ll in enumerate(decoder_output_lens):
 					mask[idx,:ll].fill_(True)
-				model_outputs[mask == False] = label_converter.fill_value
+				model_outputs[mask == False] = label_converter.pad_value
 				return criterion(model_outputs.view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
 				"""
 				concat_model_outputs, concat_decoder_outputs = [], []
@@ -1362,43 +1437,27 @@ def recognize_word_by_rare1():
 		optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
 		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+		scheduler = None
 
 		#--------------------
 		print('Start training...')
 		start_train_time = time.time()
-		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
-			model.train()
-
-			start_time = time.time()
-			running_loss = 0.0
-			for i, batch in enumerate(train_dataloader):
-				# Zero the parameter gradients.
-				optimizer.zero_grad()
-
-				# Forward + backward + optimize.
-				loss = forward(batch, device)
-				loss.backward()
-				torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
-				optimizer.step()
-
-				# Print statistics.
-				running_loss += loss.item()
-				if i % log_print_freq == (log_print_freq - 1):
-					print('[{}, {:5d}] loss = {:.3f}: {:.3f} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
-					running_loss = 0.0
-			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
-
-			model.eval()
-			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=False, device=device)
-
-			#scheduler.step()
-
-			# Save a checkpoint.
-			save_model(model_filepath, model)
+		model, best_model_filepath = train_text_recognition_model(model, Inferer(model), forward, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, label_converter, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_train_time))
 
 		# Save a model.
-		save_model(model_filepath, model)
+		if best_model_filepath:
+			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			try:
+				shutil.copyfile(best_model_filepath, model_filepath)
+				print('Copied the best trained model to {}.'.format(model_filepath))
+			except (FileNotFoundError, PermissionError) as ex:
+				print('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+		else:
+			if model:
+				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+				save_model(model_filepath, model)
+				print('Saved the final trained model to {}.'.format(model_filepath))
 
 	#--------------------
 	# Evaluate the model.
@@ -1407,14 +1466,18 @@ def recognize_word_by_rare1():
 	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=True, device=device)
 
 def recognize_word_by_rare2():
-	# FIXME [check] >> Can image size be changed?
-	#image_height, image_width, image_channel = 64, 640, 3
-	image_height, image_width, image_channel = 32, 100, 3
+	#image_height, image_width, image_channel = 32, 100, 3
+	image_height, image_width, image_channel = 64, 640, 3
+	#image_height, image_width, image_channel = 64, 1280, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	lang = 'kor'  # {'kor', 'eng'}.
 	max_word_len = 5  # Max. word length.
-	hidden_size = 256
+	if lang == 'kor':
+		hidden_size = 512  # The size of the LSTM hidden states.
+	else:
+		hidden_size = 256  # The size of the LSTM hidden states.
 	max_gradient_norm = 5  # Gradient clipping value.
 
 	# File-based words: 504,279.
@@ -1431,19 +1494,21 @@ def recognize_word_by_rare2():
 	num_workers = 8
 	log_print_freq = 1000
 
-	is_model_initialized = True
+	is_trained = True
 	is_model_loaded = False
+	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_individual_fill_value_used = False
-	lang = 'kor'  # {'kor', 'eng'}.
+	is_individual_pad_value_used = False
 
-	gradclip_nogradclip = 'gradclip'
+	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
-	model_filepath = './word_recognition_rare2_attn_{}_{}_{}_{}_w{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, fill_nofill, lang, max_word_len, image_channel)
-	print('Model filepath: {}.'.format(model_filepath))
+	pad_nopad = 'pad' if is_individual_pad_value_used else 'nopad'
+	model_filepath_base = './word_recognition_rare2_attn_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	model_filepath_format = model_filepath_base + '{}.pth'
+	print('Model filepath: {}.'.format(model_filepath_format.format('')))
 	if is_model_loaded:
-		model_filepath_to_load = None  # TODO [change] >>
+		model_filepath_to_load = None
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
@@ -1461,16 +1526,16 @@ def recognize_word_by_rare2():
 	#--------------------
 	# Prepare data.
 
-	if is_individual_fill_value_used:
-		# When the fill value is the ID of a valid token.
-		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
-		FILL_TOKEN = '<FILL>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
-		assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
-		assert label_converter.encode([FILL_TOKEN], is_bare_output=True)[0] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN], is_bare_output=True)[0], FILL_VALUE)
+	if is_individual_pad_value_used:
+		# When the pad value is the ID of a valid token.
+		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
+		PAD_TOKEN = '<PAD>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
+		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
 	else:
-		# When the fill value = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=swl_langproc_util.TokenConverter.SOS)
+		# When the pad value = the ID of <SOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
@@ -1479,7 +1544,7 @@ def recognize_word_by_rare2():
 	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
-	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.fill_value, SOS_VALUE, EOS_VALUE))
+	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_value, SOS_VALUE, EOS_VALUE))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
@@ -1534,7 +1599,7 @@ def recognize_word_by_rare2():
 	#--------------------
 	# Train the model.
 
-	if True:
+	if is_trained:
 		if is_all_model_params_optimized:
 			model_params = model.parameters()
 		else:
@@ -1549,7 +1614,7 @@ def recognize_word_by_rare2():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define a loss function and optimizer.
-		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
+		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 			inputs, outputs, output_lens = inputs.to(device), outputs.long().to(device), output_lens.to(device)
@@ -1575,43 +1640,27 @@ def recognize_word_by_rare2():
 		optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
 		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+		scheduler = None
 
 		#--------------------
 		print('Start training...')
 		start_train_time = time.time()
-		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
-			model.train()
-
-			start_time = time.time()
-			running_loss = 0.0
-			for i, batch in enumerate(train_dataloader):
-				# Zero the parameter gradients.
-				optimizer.zero_grad()
-
-				# Forward + backward + optimize.
-				loss = forward(batch, device)
-				loss.backward()
-				torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
-				optimizer.step()
-
-				# Print statistics.
-				running_loss += loss.item()
-				if i % log_print_freq == (log_print_freq - 1):
-					print('[{}, {:5d}] loss = {:.3f}: {:.3f} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
-					running_loss = 0.0
-			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
-
-			model.eval()
-			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=False, device=device)
-
-			#scheduler.step()
-
-			# Save a checkpoint.
-			save_model(model_filepath, model)
+		model, best_model_filepath = train_text_recognition_model(model, Inferer(model), forward, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, label_converter, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_train_time))
 
 		# Save a model.
-		save_model(model_filepath, model)
+		if best_model_filepath:
+			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			try:
+				shutil.copyfile(best_model_filepath, model_filepath)
+				print('Copied the best trained model to {}.'.format(model_filepath))
+			except (FileNotFoundError, PermissionError) as ex:
+				print('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+		else:
+			if model:
+				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+				save_model(model_filepath, model)
+				print('Saved the final trained model to {}.'.format(model_filepath))
 
 	#--------------------
 	# Evaluate the model.
@@ -1620,14 +1669,20 @@ def recognize_word_by_rare2():
 	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=True, device=device)
 
 def recognize_word_by_aster():
-	# FIXME [check] >> Can image size be changed?
-	#image_height, image_width, image_channel = 64, 640, 3
-	image_height, image_width, image_channel = 32, 100, 3
+	#image_height, image_width, image_channel = 32, 100, 3
+	image_height, image_width, image_channel = 64, 640, 3
+	#image_height, image_width, image_channel = 64, 1280, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	lang = 'kor'  # {'kor', 'eng'}.
 	max_word_len = 5  # Max. word length.
-	max_gradient_norm = 5  # Gradient clipping value.
+	if lang == 'kor':
+		hidden_size = 512  # The size of the LSTM hidden states.
+	else:
+		hidden_size = 256  # The size of the LSTM hidden states.
+	#max_gradient_norm = 5  # Gradient clipping value.
+	max_gradient_norm = None
 
 	# File-based words: 504,279.
 	num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
@@ -1643,19 +1698,21 @@ def recognize_word_by_aster():
 	num_workers = 8
 	log_print_freq = 1000
 
-	is_model_initialized = True
+	is_trained = True
 	is_model_loaded = False
+	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_individual_fill_value_used = False
-	lang = 'kor'  # {'kor', 'eng'}.
+	is_individual_pad_value_used = False
 
-	gradclip_nogradclip = 'nogradclip'
+	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
-	model_filepath = './word_recognition_aster_{}_{}_{}_{}_w{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, fill_nofill, lang, max_word_len, image_channel)
-	print('Model filepath: {}.'.format(model_filepath))
+	pad_nopad = 'pad' if is_individual_pad_value_used else 'nopad'
+	model_filepath_base = './word_recognition_aster_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	model_filepath_format = model_filepath_base + '{}.pth'
+	print('Model filepath: {}.'.format(model_filepath_format.format('')))
 	if is_model_loaded:
-		model_filepath_to_load = None  # TODO [change] >>
+		model_filepath_to_load = None
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
@@ -1673,16 +1730,16 @@ def recognize_word_by_aster():
 	#--------------------
 	# Prepare data.
 
-	if is_individual_fill_value_used:
-		# When the fill value is the ID of a valid token.
-		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
-		FILL_TOKEN = '<FILL>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
-		assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
-		assert label_converter.encode([FILL_TOKEN], is_bare_output=True)[0] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN], is_bare_output=True)[0], FILL_VALUE)
+	if is_individual_pad_value_used:
+		# When the pad value is the ID of a valid token.
+		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
+		PAD_TOKEN = '<PAD>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
+		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
 	else:
-		# When the fill value = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=swl_langproc_util.TokenConverter.SOS)
+		# When the pad value = the ID of <SOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
@@ -1691,7 +1748,7 @@ def recognize_word_by_aster():
 	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
-	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.fill_value, SOS_VALUE, EOS_VALUE))
+	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_value, SOS_VALUE, EOS_VALUE))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
@@ -1731,7 +1788,7 @@ def recognize_word_by_aster():
 	sys_args.with_lstm = True
 
 	import aster.model_builder
-	model = aster.model_builder.ModelBuilder(sys_args, arch=sys_args.arch, input_channel=image_channel, rec_num_classes=num_classes,
+	model = aster.model_builder.ModelBuilder(sys_args, arch=sys_args.arch, input_height=image_height, input_channel=image_channel, hidden_size=hidden_size, rec_num_classes=num_classes,
 		sDim=sys_args.decoder_sdim, attDim=sys_args.attDim, max_len_labels=max_word_len + label_converter.num_affixes,
 		eos=EOS_VALUE, STN_ON=sys_args.STN_ON)
 
@@ -1759,7 +1816,7 @@ def recognize_word_by_aster():
 	#--------------------
 	# Train the model.
 
-	if True:
+	if is_trained:
 		if is_all_model_params_optimized:
 			model_params = model.parameters()
 		else:
@@ -1774,7 +1831,7 @@ def recognize_word_by_aster():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define a loss function and optimizer.
-		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
+		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
@@ -1783,7 +1840,7 @@ def recognize_word_by_aster():
 			"""
 			decoder_inputs = outputs.clone()
 			for idx, ll in enumerate(output_lens):
-				decoder_inputs[idx, ll-1] = label_converter.fill_value  # Remove <EOS> token.
+				decoder_inputs[idx, ll-1] = label_converter.pad_value  # Remove <EOS> token.
 			decoder_inputs = decoder_inputs[:,:-1]
 			"""
 			# Construct outputs for one-step look-ahead.
@@ -1814,39 +1871,22 @@ def recognize_word_by_aster():
 		#--------------------
 		print('Start training...')
 		start_train_time = time.time()
-		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
-			model.train()
-
-			start_time = time.time()
-			running_loss = 0.0
-			for i, batch in enumerate(train_dataloader):
-				# Zero the parameter gradients.
-				optimizer.zero_grad()
-
-				# Forward + backward + optimize.
-				loss = forward(batch, device)
-				loss.backward()
-				#torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
-				optimizer.step()
-
-				# Print statistics.
-				running_loss += loss.item()
-				if i % log_print_freq == (log_print_freq - 1):
-					print('[{}, {:5d}] loss = {:.3f}: {:.3f} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
-					running_loss = 0.0
-			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
-
-			model.eval()
-			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=False, device=device)
-
-			scheduler.step()
-
-			# Save a checkpoint.
-			save_model(model_filepath, model)
+		model, best_model_filepath = train_text_recognition_model(model, Inferer(model), forward, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, label_converter, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_train_time))
 
 		# Save a model.
-		save_model(model_filepath, model)
+		if best_model_filepath:
+			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			try:
+				shutil.copyfile(best_model_filepath, model_filepath)
+				print('Copied the best trained model to {}.'.format(model_filepath))
+			except (FileNotFoundError, PermissionError) as ex:
+				print('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+		else:
+			if model:
+				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+				save_model(model_filepath, model)
+				print('Saved the final trained model to {}.'.format(model_filepath))
 
 	#--------------------
 	# Evaluate the model.
@@ -1903,14 +1943,22 @@ def build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_r
 	return encoder, decoder, generator
 
 def recognize_word_by_opennmt():
-	# FIXME [check] >> Can image size be changed?
-	#image_height, image_width, image_channel = 64, 640, 3
-	image_height, image_width, image_channel = 32, 100, 3
+	#image_height, image_width, image_channel = 32, 100, 3
+	image_height, image_width, image_channel = 64, 640, 3
+	#image_height, image_width, image_channel = 64, 1280, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	lang = 'kor'  # {'kor', 'eng'}.
 	max_word_len = 5  # Max. word length.
-	max_gradient_norm = 20  # Gradient clipping value.
+	if lang == 'kor':
+		word_vec_size = 80
+		encoder_rnn_size, decoder_hidden_size = 1024, 1024
+	else:
+		word_vec_size = 80
+		encoder_rnn_size, decoder_hidden_size = 512, 512
+	#max_gradient_norm = 20  # Gradient clipping value.
+	max_gradient_norm = None
 
 	# File-based words: 504,279.
 	num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
@@ -1926,19 +1974,21 @@ def recognize_word_by_opennmt():
 	num_workers = 8
 	log_print_freq = 1000
 
-	is_model_initialized = True
+	is_trained = True
 	is_model_loaded = False
+	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_individual_fill_value_used = False
-	lang = 'kor'  # {'kor', 'eng'}.
+	is_individual_pad_value_used = False
 
-	gradclip_nogradclip = 'nogradclip'
+	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
-	model_filepath = './word_recognition_onmt_{}_{}_{}_{}_w{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, fill_nofill, lang, max_word_len, image_channel)
-	print('Model filepath: {}.'.format(model_filepath))
+	pad_nopad = 'pad' if is_individual_pad_value_used else 'nopad'
+	model_filepath_base = './word_recognition_onmt_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	model_filepath_format = model_filepath_base + '{}.pth'
+	print('Model filepath: {}.'.format(model_filepath_format.format('')))
 	if is_model_loaded:
-		model_filepath_to_load = None  # TODO [change] >>
+		model_filepath_to_load = None
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
@@ -1956,16 +2006,16 @@ def recognize_word_by_opennmt():
 	#--------------------
 	# Prepare data.
 
-	if is_individual_fill_value_used:
-		# When the fill value is the ID of a valid token.
-		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
-		FILL_TOKEN = '<FILL>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
-		assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
-		assert label_converter.encode([FILL_TOKEN], is_bare_output=True)[0] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN], is_bare_output=True)[0], FILL_VALUE)
+	if is_individual_pad_value_used:
+		# When the pad value is the ID of a valid token.
+		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
+		PAD_TOKEN = '<PAD>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
+		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
 	else:
-		# When the fill value = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=swl_langproc_util.TokenConverter.SOS)
+		# When the pad value = the ID of <SOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
@@ -1974,7 +2024,7 @@ def recognize_word_by_opennmt():
 	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
-	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.fill_value, SOS_VALUE, EOS_VALUE))
+	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_value, SOS_VALUE, EOS_VALUE))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
@@ -2004,7 +2054,7 @@ def recognize_word_by_opennmt():
 	# Build a model.
 
 	import onmt
-	encoder, decoder, generator = build_opennmt_submodels(image_channel, num_classes, word_vec_size=80, encoder_rnn_size=500, decoder_hidden_size=500)
+	encoder, decoder, generator = build_opennmt_submodels(image_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size)
 	model = onmt.models.NMTModel(encoder, decoder)
 	model.add_module('generator', generator)
 
@@ -2033,7 +2083,7 @@ def recognize_word_by_opennmt():
 	#--------------------
 	# Train the model.
 
-	if True:
+	if is_trained:
 		if is_all_model_params_optimized:
 			model_params = model.parameters()
 		else:
@@ -2048,7 +2098,7 @@ def recognize_word_by_opennmt():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define a loss function and optimizer.
-		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
+		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
@@ -2078,39 +2128,22 @@ def recognize_word_by_opennmt():
 		#--------------------
 		print('Start training...')
 		start_train_time = time.time()
-		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
-			model.train()
-
-			start_time = time.time()
-			running_loss = 0.0
-			for i, batch in enumerate(train_dataloader):
-				# Zero the parameter gradients.
-				optimizer.zero_grad()
-
-				# Forward + backward + optimize.
-				loss = forward(batch, device)
-				loss.backward()
-				#torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
-				optimizer.step()
-
-				# Print statistics.
-				running_loss += loss.item()
-				if i % log_print_freq == (log_print_freq - 1):
-					print('[{}, {:5d}] loss = {:.3f}: {:.3f} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
-					running_loss = 0.0
-			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
-
-			model.eval()
-			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=False, device=device)
-
-			scheduler.step()
-
-			# Save a checkpoint.
-			save_model(model_filepath, model)
+		model, best_model_filepath = train_text_recognition_model(model, Inferer(model), forward, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, label_converter, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_train_time))
 
 		# Save a model.
-		save_model(model_filepath, model)
+		if best_model_filepath:
+			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			try:
+				shutil.copyfile(best_model_filepath, model_filepath)
+				print('Copied the best trained model to {}.'.format(model_filepath))
+			except (FileNotFoundError, PermissionError) as ex:
+				print('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+		else:
+			if model:
+				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+				save_model(model_filepath, model)
+				print('Saved the final trained model to {}.'.format(model_filepath))
 
 	#--------------------
 	# Evaluate the model.
@@ -2119,14 +2152,22 @@ def recognize_word_by_opennmt():
 	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=True, device=device)
 
 def recognize_word_by_rare1_and_opennmt():
-	# FIXME [check] >> Can image size be changed?
-	#image_height, image_width, image_channel = 64, 640, 3
-	image_height, image_width, image_channel = 32, 100, 3
+	#image_height, image_width, image_channel = 32, 100, 3
+	image_height, image_width, image_channel = 64, 640, 3
+	#image_height, image_width, image_channel = 64, 1280, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	lang = 'kor'  # {'kor', 'eng'}.
 	max_word_len = 5  # Max. word length.
-	max_gradient_norm = 20  # Gradient clipping value.
+	if lang == 'kor':
+		word_vec_size = 80
+		encoder_rnn_size, decoder_hidden_size = 1024, 1024
+	else:
+		word_vec_size = 80
+		encoder_rnn_size, decoder_hidden_size = 512, 512
+	#max_gradient_norm = 20  # Gradient clipping value.
+	max_gradient_norm = None
 
 	# File-based words: 504,279.
 	num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
@@ -2142,19 +2183,21 @@ def recognize_word_by_rare1_and_opennmt():
 	num_workers = 8
 	log_print_freq = 1000
 
-	is_model_initialized = True
+	is_trained = True
 	is_model_loaded = False
+	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_individual_fill_value_used = False
-	lang = 'kor'  # {'kor', 'eng'}.
+	is_individual_pad_value_used = False
 
-	gradclip_nogradclip = 'nogradclip'
+	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
-	model_filepath = './word_recognition_rare1+onmt_{}_{}_{}_{}_w{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, fill_nofill, lang, max_word_len, image_channel)
-	print('Model filepath: {}.'.format(model_filepath))
+	pad_nopad = 'pad' if is_individual_pad_value_used else 'nopad'
+	model_filepath_base = './word_recognition_rare1+onmt_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	model_filepath_format = model_filepath_base + '{}.pth'
+	print('Model filepath: {}.'.format(model_filepath_format.format('')))
 	if is_model_loaded:
-		model_filepath_to_load = None  # TODO [change] >>
+		model_filepath_to_load = None
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
@@ -2172,16 +2215,16 @@ def recognize_word_by_rare1_and_opennmt():
 	#--------------------
 	# Prepare data.
 
-	if is_individual_fill_value_used:
-		# When the fill value is the ID of a valid token.
-		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
-		FILL_TOKEN = '<FILL>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
-		assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
-		assert label_converter.encode([FILL_TOKEN], is_bare_output=True)[0] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN], is_bare_output=True)[0], FILL_VALUE)
+	if is_individual_pad_value_used:
+		# When the pad value is the ID of a valid token.
+		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
+		PAD_TOKEN = '<PAD>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
+		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
 	else:
-		# When the fill value = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=swl_langproc_util.TokenConverter.SOS)
+		# When the pad value = the ID of <SOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
@@ -2190,7 +2233,7 @@ def recognize_word_by_rare1_and_opennmt():
 	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
-	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.fill_value, SOS_VALUE, EOS_VALUE))
+	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_value, SOS_VALUE, EOS_VALUE))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
@@ -2304,7 +2347,7 @@ def recognize_word_by_rare1_and_opennmt():
 	#--------------------
 	# Build a model.
 
-	model = MyCompositeModel(image_height, image_width, image_channel, num_classes, max_word_len, word_vec_size=80, encoder_rnn_size=512, decoder_hidden_size=512)
+	model = MyCompositeModel(image_height, image_width, image_channel, num_classes, max_word_len, word_vec_size, encoder_rnn_size, decoder_hidden_size)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -2330,7 +2373,7 @@ def recognize_word_by_rare1_and_opennmt():
 	#--------------------
 	# Train the model.
 
-	if True:
+	if is_trained:
 		if is_all_model_params_optimized:
 			model_params = model.parameters()
 		else:
@@ -2345,7 +2388,7 @@ def recognize_word_by_rare1_and_opennmt():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define a loss function and optimizer.
-		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
+		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
@@ -2375,39 +2418,22 @@ def recognize_word_by_rare1_and_opennmt():
 		#--------------------
 		print('Start training...')
 		start_train_time = time.time()
-		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
-			model.train()
-
-			start_time = time.time()
-			running_loss = 0.0
-			for i, batch in enumerate(train_dataloader):
-				# Zero the parameter gradients.
-				optimizer.zero_grad()
-
-				# Forward + backward + optimize.
-				loss = forward(batch, device)
-				loss.backward()
-				#torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
-				optimizer.step()
-
-				# Print statistics.
-				running_loss += loss.item()
-				if i % log_print_freq == (log_print_freq - 1):
-					print('[{}, {:5d}] loss = {:.3f}: {:.3f} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
-					running_loss = 0.0
-			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
-
-			model.eval()
-			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=False, device=device)
-
-			scheduler.step()
-
-			# Save a checkpoint.
-			save_model(model_filepath, model)
+		model, best_model_filepath = train_text_recognition_model(model, Inferer(model), forward, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, label_converter, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_train_time))
 
 		# Save a model.
-		save_model(model_filepath, model)
+		if best_model_filepath:
+			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			try:
+				shutil.copyfile(best_model_filepath, model_filepath)
+				print('Copied the best trained model to {}.'.format(model_filepath))
+			except (FileNotFoundError, PermissionError) as ex:
+				print('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+		else:
+			if model:
+				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+				save_model(model_filepath, model)
+				print('Saved the final trained model to {}.'.format(model_filepath))
 
 	#--------------------
 	# Evaluate the model.
@@ -2416,14 +2442,22 @@ def recognize_word_by_rare1_and_opennmt():
 	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=True, device=device)
 
 def recognize_word_by_rare2_and_opennmt():
-	# FIXME [check] >> Can image size be changed?
-	#image_height, image_width, image_channel = 64, 640, 3
-	image_height, image_width, image_channel = 32, 100, 3
+	#image_height, image_width, image_channel = 32, 100, 3
+	image_height, image_width, image_channel = 64, 640, 3
+	#image_height, image_width, image_channel = 64, 1280, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	lang = 'kor'  # {'kor', 'eng'}.
 	max_word_len = 5  # Max. word length.
-	max_gradient_norm = 20  # Gradient clipping value.
+	if lang == 'kor':
+		word_vec_size = 80
+		encoder_rnn_size, decoder_hidden_size = 1024, 1024
+	else:
+		word_vec_size = 80
+		encoder_rnn_size, decoder_hidden_size = 512, 512
+	#max_gradient_norm = 20  # Gradient clipping value.
+	max_gradient_norm = None
 
 	# File-based words: 504,279.
 	num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
@@ -2439,19 +2473,21 @@ def recognize_word_by_rare2_and_opennmt():
 	num_workers = 8
 	log_print_freq = 1000
 
-	is_model_initialized = True
+	is_trained = True
 	is_model_loaded = False
+	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_individual_fill_value_used = False
-	lang = 'kor'  # {'kor', 'eng'}.
+	is_individual_pad_value_used = False
 
-	gradclip_nogradclip = 'nogradclip'
+	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
-	model_filepath = './word_recognition_rare2+onmt_{}_{}_{}_{}_w{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, fill_nofill, lang, max_word_len, image_channel)
-	print('Model filepath: {}.'.format(model_filepath))
+	pad_nopad = 'pad' if is_individual_pad_value_used else 'nopad'
+	model_filepath_base = './word_recognition_rare2+onmt_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	model_filepath_format = model_filepath_base + '{}.pth'
+	print('Model filepath: {}.'.format(model_filepath_format.format('')))
 	if is_model_loaded:
-		model_filepath_to_load = None  # TODO [change] >>
+		model_filepath_to_load = None
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
@@ -2469,16 +2505,16 @@ def recognize_word_by_rare2_and_opennmt():
 	#--------------------
 	# Prepare data.
 
-	if is_individual_fill_value_used:
-		# When the fill value is the ID of a valid token.
-		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
-		FILL_TOKEN = '<FILL>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
-		assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
-		assert label_converter.encode([FILL_TOKEN], is_bare_output=True)[0] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN], is_bare_output=True)[0], FILL_VALUE)
+	if is_individual_pad_value_used:
+		# When the pad value is the ID of a valid token.
+		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
+		PAD_TOKEN = '<PAD>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
+		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
 	else:
-		# When the fill value = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=swl_langproc_util.TokenConverter.SOS)
+		# When the pad value = the ID of <SOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
@@ -2487,7 +2523,7 @@ def recognize_word_by_rare2_and_opennmt():
 	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
-	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.fill_value, SOS_VALUE, EOS_VALUE))
+	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_value, SOS_VALUE, EOS_VALUE))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
@@ -2504,38 +2540,39 @@ def recognize_word_by_rare2_and_opennmt():
 		def _create_encoder(self, image_height, image_width, input_channel, max_text_len, hidden_size):
 			assert image_height % 16 == 0, 'image_height has to be a multiple of 16'
 
-			# This implementation assumes that input size is 32 x 100.
+			# This implementation assumes that input size is h x w.
 			self.cnn = torch.nn.Sequential(
-				torch.nn.Conv2d(image_channel, 64, 3, 1, 1), torch.nn.ReLU(True), torch.nn.MaxPool2d(2, 2),  # 64x16x50.
-				torch.nn.Conv2d(64, 128, 3, 1, 1), torch.nn.ReLU(True), torch.nn.MaxPool2d(2, 2),  # 128x8x25.
-				torch.nn.Conv2d(128, 256, 3, 1, 1), torch.nn.BatchNorm2d(256), torch.nn.ReLU(True),  # 256x8x25.
-				torch.nn.Conv2d(256, 256, 3, 1, 1), torch.nn.ReLU(True), torch.nn.MaxPool2d((2,2), (2,1), (0,1)),  # 256x4x25.
-				torch.nn.Conv2d(256, 512, 3, 1, 1), torch.nn.BatchNorm2d(512), torch.nn.ReLU(True),  # 512x4x25.
-				torch.nn.Conv2d(512, 512, 3, 1, 1), torch.nn.ReLU(True), torch.nn.MaxPool2d((2,2), (2,1), (0,1)),  # 512x2x25.
-				torch.nn.Conv2d(512, 512, 2, 1, 0), torch.nn.BatchNorm2d(512), torch.nn.ReLU(True)  # 512x1x25.
+				torch.nn.Conv2d(image_channel, 64, 3, 1, 1), torch.nn.ReLU(True), torch.nn.MaxPool2d(2, 2),  # 64 x h/2 x w/2.
+				torch.nn.Conv2d(64, 128, 3, 1, 1), torch.nn.ReLU(True), torch.nn.MaxPool2d(2, 2),  # 128 x h/4 x w/4.
+				torch.nn.Conv2d(128, 256, 3, 1, 1), torch.nn.BatchNorm2d(256), torch.nn.ReLU(True),  # 256 x h/4 x w/4.
+				torch.nn.Conv2d(256, 256, 3, 1, 1), torch.nn.ReLU(True), torch.nn.MaxPool2d((2, 2), (2, 1), (0, 1)),  # 256 x h/8 x w/4+1.
+				torch.nn.Conv2d(256, 512, 3, 1, 1), torch.nn.BatchNorm2d(512), torch.nn.ReLU(True),  # 512 x h/8 x w/4+1.
+				torch.nn.Conv2d(512, 512, 3, 1, 1), torch.nn.ReLU(True), torch.nn.MaxPool2d((2, 2), (2, 1), (0, 1)),  # 512 x h/16 x w/4+2.
+				torch.nn.Conv2d(512, 512, 2, 1, 0), torch.nn.BatchNorm2d(512), torch.nn.ReLU(True)  # 512 x h/16-1 x w/4+1.
 			)
+			num_features = (image_height // 16 - 1) * 512
 			#import rare.crnn_lang
 			#self.rnn = torch.nn.Sequential(
-			#	rare.crnn_lang.BidirectionalLSTM(512, hidden_size, hidden_size),
+			#	rare.crnn_lang.BidirectionalLSTM(num_features, hidden_size, hidden_size),
 			#	rare.crnn_lang.BidirectionalLSTM(hidden_size, hidden_size, hidden_size)
 			#)
-			self.sequence_rnn = torch.nn.LSTM(512, hidden_size, num_layers=2, bidirectional=True, batch_first=False)
+			self.sequence_rnn = torch.nn.LSTM(num_features, hidden_size, num_layers=2, bidirectional=True, batch_first=False)
 			self.sequence_projector = torch.nn.Linear(hidden_size * 2, hidden_size * 2)
 
 		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
 		def forward(self, src, tgt, lengths, bptt=False, with_align=False):
 			# Conv features.
-			conv = self.cnn(src)  # [b, c_out, h/32, w/4].
+			conv = self.cnn(src)  # [b, c_out, h/16-1, w/4+1].
 			b, c, h, w = conv.size()
-			assert h == 1, 'the height of conv must be 1'
-			conv = conv.squeeze(2)  # [b, c_out, w/4].
-			#conv = conv.reshape(b, -1, w)  # [b, c_out * h/32, w/4].
-			conv = conv.permute(2, 0, 1)  # [w/4, b, c_out * h/32].
+			#assert h == 1, 'The height of conv must be 1'
+			#conv = conv.squeeze(2)  # [b, c_out, w/4+1].
+			conv = conv.reshape(b, -1, w)  # [b, c_out * h/16-1, w/4+1].
+			conv = conv.permute(2, 0, 1)  # [w/4+1, b, c_out * h/16-1].
 
 			# RNN features.
-			#enc_outputs, enc_hiddens = self.rnn((conv, None))  # [w/4, b, hidden size], ([#directions, b, hidden size], [#directions, b, hidden size]).
-			enc_outputs, enc_hiddens = self.sequence_rnn(conv)  # [w/4, b, #directions * hidden size], ([#layers * #directions, b, hidden size], [#layers * #directions, b, hidden size]).
-			enc_outputs = self.sequence_projector(enc_outputs)  # [w/4, b, hidden size].
+			#enc_outputs, enc_hiddens = self.rnn((conv, None))  # [w/4+1, b, hidden size], ([#directions, b, hidden size], [#directions, b, hidden size]).
+			enc_outputs, enc_hiddens = self.sequence_rnn(conv)  # [w/4+1, b, #directions * hidden size], ([#layers * #directions, b, hidden size], [#layers * #directions, b, hidden size]).
+			enc_outputs = self.sequence_projector(enc_outputs)  # [w/4+1, b, hidden size].
 
 			dec_in = tgt[:-1]  # Exclude last target from inputs.
 
@@ -2568,7 +2605,7 @@ def recognize_word_by_rare2_and_opennmt():
 	#--------------------
 	# Build a model.
 
-	model = MyCompositeModel(image_height, image_width, image_channel, num_classes, max_word_len, word_vec_size=80, encoder_rnn_size=512, decoder_hidden_size=512)
+	model = MyCompositeModel(image_height, image_width, image_channel, num_classes, max_word_len, word_vec_size, encoder_rnn_size, decoder_hidden_size)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -2594,7 +2631,7 @@ def recognize_word_by_rare2_and_opennmt():
 	#--------------------
 	# Train the model.
 
-	if True:
+	if is_trained:
 		if is_all_model_params_optimized:
 			model_params = model.parameters()
 		else:
@@ -2609,7 +2646,7 @@ def recognize_word_by_rare2_and_opennmt():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define a loss function and optimizer.
-		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
+		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
@@ -2639,39 +2676,22 @@ def recognize_word_by_rare2_and_opennmt():
 		#--------------------
 		print('Start training...')
 		start_train_time = time.time()
-		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
-			model.train()
-
-			start_time = time.time()
-			running_loss = 0.0
-			for i, batch in enumerate(train_dataloader):
-				# Zero the parameter gradients.
-				optimizer.zero_grad()
-
-				# Forward + backward + optimize.
-				loss = forward(batch, device)
-				loss.backward()
-				#torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
-				optimizer.step()
-
-				# Print statistics.
-				running_loss += loss.item()
-				if i % log_print_freq == (log_print_freq - 1):
-					print('[{}, {:5d}] loss = {:.3f}: {:.3f} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
-					running_loss = 0.0
-			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
-
-			model.eval()
-			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=False, device=device)
-
-			scheduler.step()
-
-			# Save a checkpoint.
-			save_model(model_filepath, model)
+		model, best_model_filepath = train_text_recognition_model(model, Inferer(model), forward, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, label_converter, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_train_time))
 
 		# Save a model.
-		save_model(model_filepath, model)
+		if best_model_filepath:
+			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			try:
+				shutil.copyfile(best_model_filepath, model_filepath)
+				print('Copied the best trained model to {}.'.format(model_filepath))
+			except (FileNotFoundError, PermissionError) as ex:
+				print('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+		else:
+			if model:
+				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+				save_model(model_filepath, model)
+				print('Saved the final trained model to {}.'.format(model_filepath))
 
 	#--------------------
 	# Evaluate the model.
@@ -2680,14 +2700,22 @@ def recognize_word_by_rare2_and_opennmt():
 	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=True, device=device)
 
 def recognize_word_by_aster_and_opennmt():
-	# FIXME [check] >> Can image size be changed?
-	#image_height, image_width, image_channel = 64, 640, 3
-	image_height, image_width, image_channel = 32, 100, 3
+	#image_height, image_width, image_channel = 32, 100, 3
+	image_height, image_width, image_channel = 64, 640, 3
+	#image_height, image_width, image_channel = 64, 1280, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	lang = 'kor'  # {'kor', 'eng'}.
 	max_word_len = 5  # Max. word length.
-	max_gradient_norm = 20  # Gradient clipping value.
+	if lang == 'kor':
+		word_vec_size = 80
+		encoder_rnn_size, decoder_hidden_size = 1024, 1024
+	else:
+		word_vec_size = 80
+		encoder_rnn_size, decoder_hidden_size = 512, 512
+	#max_gradient_norm = 20  # Gradient clipping value.
+	max_gradient_norm = None
 
 	# File-based words: 504,279.
 	num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
@@ -2703,19 +2731,21 @@ def recognize_word_by_aster_and_opennmt():
 	num_workers = 8
 	log_print_freq = 1000
 
-	is_model_initialized = True
+	is_trained = True
 	is_model_loaded = False
+	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_individual_fill_value_used = False
-	lang = 'kor'  # {'kor', 'eng'}.
+	is_individual_pad_value_used = False
 
-	gradclip_nogradclip = 'nogradclip'
+	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
-	model_filepath = './word_recognition_aster+onmt_{}_{}_{}_{}_w{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, fill_nofill, lang, max_word_len, image_channel)
-	print('Model filepath: {}.'.format(model_filepath))
+	pad_nopad = 'pad' if is_individual_pad_value_used else 'nopad'
+	model_filepath_base = './word_recognition_aster+onmt_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	model_filepath_format = model_filepath_base + '{}.pth'
+	print('Model filepath: {}.'.format(model_filepath_format.format('')))
 	if is_model_loaded:
-		model_filepath_to_load = None  # TODO [change] >>
+		model_filepath_to_load = None
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
@@ -2733,16 +2763,16 @@ def recognize_word_by_aster_and_opennmt():
 	#--------------------
 	# Prepare data.
 
-	if is_individual_fill_value_used:
-		# When the fill value is the ID of a valid token.
-		FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
-		FILL_TOKEN = '<FILL>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
-		assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
-		assert label_converter.encode([FILL_TOKEN], is_bare_output=True)[0] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN], is_bare_output=True)[0], FILL_VALUE)
+	if is_individual_pad_value_used:
+		# When the pad value is the ID of a valid token.
+		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
+		PAD_TOKEN = '<PAD>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
+		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
 	else:
-		# When the fill value = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=swl_langproc_util.TokenConverter.SOS)
+		# When the pad value = the ID of <SOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
@@ -2751,7 +2781,7 @@ def recognize_word_by_aster_and_opennmt():
 	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
-	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.fill_value, SOS_VALUE, EOS_VALUE))
+	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_value, SOS_VALUE, EOS_VALUE))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
@@ -2763,7 +2793,7 @@ def recognize_word_by_aster_and_opennmt():
 			super().__init__()
 
 			import aster.resnet_aster
-			self.encoder = aster.resnet_aster.ResNet_ASTER(with_lstm=True, in_channels=input_channel)
+			self.encoder = aster.resnet_aster.ResNet_ASTER(with_lstm=True, in_height=image_height, in_channels=input_channel, hidden_size=encoder_rnn_size // 2)
 			_, self.decoder, self.generator = build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size)
 
 		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
@@ -2802,7 +2832,7 @@ def recognize_word_by_aster_and_opennmt():
 	#--------------------
 	# Build a model.
 
-	model = MyCompositeModel(image_channel, num_classes, word_vec_size=80, encoder_rnn_size=512, decoder_hidden_size=512)
+	model = MyCompositeModel(image_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -2828,7 +2858,7 @@ def recognize_word_by_aster_and_opennmt():
 	#--------------------
 	# Train the model.
 
-	if True:
+	if is_trained:
 		if is_all_model_params_optimized:
 			model_params = model.parameters()
 		else:
@@ -2843,7 +2873,7 @@ def recognize_word_by_aster_and_opennmt():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define a loss function and optimizer.
-		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
+		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
@@ -2873,39 +2903,22 @@ def recognize_word_by_aster_and_opennmt():
 		#--------------------
 		print('Start training...')
 		start_train_time = time.time()
-		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
-			model.train()
-
-			start_time = time.time()
-			running_loss = 0.0
-			for i, batch in enumerate(train_dataloader):
-				# Zero the parameter gradients.
-				optimizer.zero_grad()
-
-				# Forward + backward + optimize.
-				loss = forward(batch, device)
-				loss.backward()
-				#torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
-				optimizer.step()
-
-				# Print statistics.
-				running_loss += loss.item()
-				if i % log_print_freq == (log_print_freq - 1):
-					print('[{}, {:5d}] loss = {:.3f}: {:.3f} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
-					running_loss = 0.0
-			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
-
-			model.eval()
-			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=False, device=device)
-
-			scheduler.step()
-
-			# Save a checkpoint.
-			save_model(model_filepath, model)
+		model, best_model_filepath = train_text_recognition_model(model, Inferer(model), forward, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, label_converter, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_train_time))
 
 		# Save a model.
-		save_model(model_filepath, model)
+		if best_model_filepath:
+			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			try:
+				shutil.copyfile(best_model_filepath, model_filepath)
+				print('Copied the best trained model to {}.'.format(model_filepath))
+			except (FileNotFoundError, PermissionError) as ex:
+				print('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+		else:
+			if model:
+				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+				save_model(model_filepath, model)
+				print('Saved the final trained model to {}.'.format(model_filepath))
 
 	#--------------------
 	# Evaluate the model.
@@ -2915,11 +2928,13 @@ def recognize_word_by_aster_and_opennmt():
 
 def recognize_word_using_mixup():
 	# FIXME [check] >> Can image size be changed?
-	#image_height, image_width, image_channel = 64, 640, 3
 	image_height, image_width, image_channel = 32, 100, 3
+	#image_height, image_width, image_channel = 64, 640, 3
+	#image_height, image_width, image_channel = 64, 1280, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	lang = 'kor'  # {'kor', 'eng'}.
 	max_word_len = 25  # Max. word length.
 	num_fiducials = 20  # The number of fiducial points of TPS-STN.
 	input_channel = image_channel  # The number of input channel of feature extractor.
@@ -2948,22 +2963,24 @@ def recognize_word_using_mixup():
 	mixup_input, mixup_hidden, mixup_alpha = True, True, 2.0
 	cutout, cutout_size = True, 4
 
-	is_model_initialized = True
+	is_trained = True
 	is_model_loaded = False
+	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_individual_fill_value_used = False
-	lang = 'kor'  # {'kor', 'eng'}.
+	is_individual_pad_value_used = False
 
-	gradclip_nogradclip = 'gradclip'
+	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	fill_nofill = 'fill' if is_individual_fill_value_used else 'nofill'
+	pad_nopad = 'pad' if is_individual_pad_value_used else 'nopad'
 	if decoder == 'CTC':
-		model_filepath = './word_recognition_mixup_rare1_ctc_{}_{}_{}_{}_w{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, fill_nofill, lang, max_word_len, image_channel)
+		model_filepath_base = './word_recognition_mixup_rare1_ctc_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	else:
-		model_filepath = './word_recognition_mixup_rare1_attn_{}_{}_{}_{}_w{}_ch{}.pth'.format(gradclip_nogradclip, allparams_gradparams, fill_nofill, lang, max_word_len, image_channel)
-	print('Model filepath: {}.'.format(model_filepath))
+		model_filepath_base = './word_recognition_mixup_rare1_attn_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	model_filepath_format = model_filepath_base + '{}.pth'
+	print('Model filepath: {}.'.format(model_filepath_format.format('')))
 	if is_model_loaded:
-		model_filepath_to_load = None  # TODO [change] >>
+		model_filepath_to_load = None
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
@@ -2983,22 +3000,22 @@ def recognize_word_using_mixup():
 
 	if decoder == 'CTC':
 		BLANK_LABEL = '<BLANK>'  # The BLANK label for CTC.
-		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), fill_value=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
+		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), pad_value=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
 		assert label_converter.encode([BLANK_LABEL], is_bare_output=True)[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL], is_bare_output=True)[0])
 		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL], is_bare_output=True)[0]
 		SOS_VALUE, EOS_VALUE = None, None
 		num_suffixes = 0
 	else:
-		if is_individual_fill_value_used:
-			# When the fill value is the ID of a valid token.
-			FILL_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the fill value the ID of a valid token.
-			FILL_TOKEN = '<FILL>'
-			label_converter = swl_langproc_util.TokenConverter(list(charset) + [FILL_TOKEN], use_sos=True, use_eos=True, fill_value=FILL_VALUE)
-			assert label_converter.fill_value == FILL_VALUE, '{} != {}'.format(label_converter.fill_value, FILL_VALUE)
-			assert label_converter.encode([FILL_TOKEN], is_bare_output=True)[0] == FILL_VALUE, '{} != {}'.format(label_converter.encode([FILL_TOKEN], is_bare_output=True)[0], FILL_VALUE)
+		if is_individual_pad_value_used:
+			# When the pad value is the ID of a valid token.
+			PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
+			PAD_TOKEN = '<PAD>'
+			label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+			assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
+			assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
 		else:
-			# When the fill value = the ID of <SOS> token.
-			label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=swl_langproc_util.TokenConverter.SOS)
+			# When the pad value = the ID of <SOS> token.
+			label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
 		SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 		num_suffixes = 1
 
@@ -3007,7 +3024,7 @@ def recognize_word_using_mixup():
 	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
-	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.fill_value, SOS_VALUE, EOS_VALUE))
+	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_value, SOS_VALUE, EOS_VALUE))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
@@ -3029,7 +3046,7 @@ def recognize_word_using_mixup():
 
 	# FIXME [error] >> rare.model.Model_MixUp is not working.
 	import rare.model
-	model = rare.model.Model_MixUp(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, num_suffixes, SOS_VALUE, label_converter.fill_value, transformer, feature_extractor, sequence_model, decoder)
+	model = rare.model.Model_MixUp(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, num_suffixes, SOS_VALUE, label_converter.pad_value, transformer, feature_extractor, sequence_model, decoder)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3055,7 +3072,7 @@ def recognize_word_using_mixup():
 	#--------------------
 	# Train the model.
 
-	if True:
+	if is_trained:
 		if is_all_model_params_optimized:
 			model_params = model.parameters()
 		else:
@@ -3089,7 +3106,7 @@ def recognize_word_using_mixup():
 				torch.backends.cudnn.enabled = True
 				return cost
 		else:
-			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.fill_value).to(device)  # Ignore the fill value.
+			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
 			def forward(batch, device):
 				inputs, outputs, output_lens = batch
 				outputs = outputs.long()
@@ -3118,43 +3135,27 @@ def recognize_word_using_mixup():
 		optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
 		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+		scheduler = None
 
 		#--------------------
 		print('Start training...')
 		start_train_time = time.time()
-		for epoch in range(num_epochs):  # Loop over the dataset multiple times.
-			model.train()
-
-			start_time = time.time()
-			running_loss = 0.0
-			for i, batch in enumerate(train_dataloader):
-				# Zero the parameter gradients.
-				optimizer.zero_grad()
-
-				# Forward + backward + optimize.
-				loss = forward(batch, device)
-				loss.backward()
-				torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
-				optimizer.step()
-
-				# Print statistics.
-				running_loss += loss.item()
-				if i % log_print_freq == (log_print_freq - 1):
-					print('[{}, {:5d}] loss = {:.3f}: {:.3f} secs.'.format(epoch + 1, i + 1, running_loss / log_print_freq, time.time() - start_time))
-					running_loss = 0.0
-			print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
-
-			model.eval()
-			evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, show_acc_per_char=False, device=device)
-
-			#scheduler.step()
-
-			# Save a checkpoint.
-			save_model(model_filepath, model)
+		model, best_model_filepath = train_text_recognition_model(model, Inferer(model), forward, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, label_converter, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_train_time))
 
 		# Save a model.
-		save_model(model_filepath, model)
+		if best_model_filepath:
+			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			try:
+				shutil.copyfile(best_model_filepath, model_filepath)
+				print('Copied the best trained model to {}.'.format(model_filepath))
+			except (FileNotFoundError, PermissionError) as ex:
+				print('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+		else:
+			if model:
+				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+				save_model(model_filepath, model)
+				print('Saved the final trained model to {}.'.format(model_filepath))
 
 	#--------------------
 	# Evaluate the model.
@@ -3188,8 +3189,8 @@ def recognize_text_using_craft_and_character_recognizer():
 	craft_cuda = gpu >= 0  # Use cuda for inference.
 
 	# For char recognizer.
-	#recognizer_model_filepath = './craft/simple_char_recognition.pth'
-	recognizer_model_filepath = './craft/simple_char_recognition_mixup.pth'
+	#recognizer_model_filepath = './craft/char_recognition.pth'
+	recognizer_model_filepath = './craft/char_recognition_mixup.pth'
 
 	#image_filepath = './craft/images/I3.jpg'
 	image_filepath = './craft/images/book_1.png'
@@ -3336,7 +3337,7 @@ def recognize_text_using_craft_and_word_recognizer():
 	print('Start loading word recognizer...')
 	start_time = time.time()
 	import rare.model
-	recognizer = rare.model.Model(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, num_suffixes, SOS_VALUE, label_converter.fill_value, transformer, feature_extractor, sequence_model, decoder)
+	recognizer = rare.model.Model(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, num_suffixes, SOS_VALUE, label_converter.pad_value, transformer, feature_extractor, sequence_model, decoder)
 
 	recognizer = load_model(recognizer_model_filepath, recognizer, device=device)
 	recognizer = recognizer.to(device)
@@ -3370,13 +3371,13 @@ def recognize_text_using_craft_and_word_recognizer():
 
 		word_images = []
 		rgb = image.copy()
-		for i, bbox in enumerate(bboxes):
+		for idx, bbox in enumerate(bboxes):
 			(x1, y1), (x2, y2) = np.min(bbox, axis=0), np.max(bbox, axis=0)
 			x1, y1, x2, y2 = round(float(x1)), round(float(y1)), round(float(x2)), round(float(y2))
 			img = image[y1:y2+1,x1:x2+1]
 			word_images.append(img)
 
-			cv2.imwrite(os.path.join(output_dir_path, 'word_{}.png'.format(i)), img)
+			cv2.imwrite(os.path.join(output_dir_path, 'word_{}.png'.format(idx)), img)
 
 			cv2.rectangle(rgb, (x1, y1), (x2, y2), (random.randint(128, 255), random.randint(128, 255), random.randint(128, 255)), 1, cv2.LINE_4)
 		cv2.imwrite(os.path.join(output_dir_path, 'word_bbox.png'), rgb)
@@ -3414,9 +3415,9 @@ def main():
 	#recognize_text_using_craft_and_character_recognizer()
 
 	#--------------------
-	#recognize_word_by_rare1()  # Use RARE #1.
-	#recognize_word_by_rare2()  # Use RARE #2.
-	#recognize_word_by_aster()  # Use ASTER.
+	#recognize_word_by_rare1()  # Use RARE #1. NOTE [info] >> Failed to train.
+	#recognize_word_by_rare2()  # Use RARE #2. NOTE [info] >> Failed to train.
+	#recognize_word_by_aster()  # Use ASTER. NOTE [info] >> Hard to train.
 	#recognize_word_by_opennmt()  # Use OpenNMT.
 	recognize_word_by_rare1_and_opennmt()  # Use RARE #1 (encoder) + OpenNMT (decoder).
 	#recognize_word_by_rare2_and_opennmt()  # Use RARE #2 (encoder) + OpenNMT (decoder).
@@ -3427,7 +3428,7 @@ def main():
 	#recognize_text_using_craft_and_word_recognizer()  # Not yet implemented.
 
 	#--------------------
-	#recognize_text()  # Use RARE. Not yet implemented.
+	#recognize_text()  # Not yet implemented.
 
 #--------------------------------------------------------------------
 
