@@ -5,7 +5,7 @@ import cv2
 
 #--------------------------------------------------------------------
 
-class AiHubDataset(torch.utils.data.Dataset):
+class AiHubPrintedTextDataset(torch.utils.data.Dataset):
 	def __init__(self, label_converter, json_filepath, data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_image_used=True, transform=None, target_transform=None):
 		super().__init__()
 
@@ -37,7 +37,7 @@ class AiHubDataset(torch.utils.data.Dataset):
 			except IOError as ex:
 				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
 				image = None
-		target = [self.label_converter.fill_value] * (self.max_label_len + self.label_converter.num_affixes)
+		target = [self.label_converter.pad_value] * (self.max_label_len + self.label_converter.num_affixes)
 		label_ext_int = self.labels_int[idx]  # Decorated/undecorated integer label.
 		target_len = len(label_ext_int)
 		target[:target_len] = label_ext_int

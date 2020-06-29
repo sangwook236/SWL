@@ -585,7 +585,7 @@ def main():
 
 			history = runner.train(model, criterion, optimizer, dataset, model_checkpoint_filepath, output_dir_path, batch_size, final_epoch, initial_epoch)
 
-			model_filepath = os.path.join(output_dir_path, 'best_model.hdf5')
+			model_filepath = os.path.join(output_dir_path, 'best_model_{}.hdf5'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 			logger.info('Start saving a model...')
 			start_time = time.time()
 			"""

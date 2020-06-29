@@ -12,7 +12,7 @@ class TokenConverter(object):
 	#SOJ = '<SOJ>'  # All Hangeul jamo sequences may start with the Start-Of-Jamo-Sequence (SOJ) token.
 	#EOJ = '<EOJ>'  # All Hangeul jamo sequences may end with the End-Of-Jamo-Sequence (EOJ) token.
 
-	def __init__(self, tokens, use_sos=False, use_eos=False, prefixes=None, suffixes=None, fill_value=None):
+	def __init__(self, tokens, use_sos=False, use_eos=False, prefixes=None, suffixes=None, pad_value=None):
 		"""
 		Inputs:
 			tokens (list of tokens): Tokens to be regarded as individual units.
@@ -20,7 +20,7 @@ class TokenConverter(object):
 			use_eos (bool): Specifies whether <EOS> token is used or not.
 			prefixes (list of tokens): Special tokens to be used as prefix.
 			suffixes (list of tokens): Special tokens to be used as suffix.
-			fill_value (int, token, or None): A special value for a placeholder, which is not an actual token.
+			pad_value (int, token, or None): A special value for a padding, which may be not an actual token.
 		"""
 
 		if prefixes is None: prefixes = []
@@ -36,18 +36,18 @@ class TokenConverter(object):
 		self.UNKNOWN_int = extended_tokens.index(self.UNKNOWN)
 		prefixes_int, suffixes_int = [extended_tokens.index(tok) for tok in prefixes], [extended_tokens.index(tok) for tok in suffixes]
 
-		default_fill_value = -1 #len(extended_tokens)
-		if fill_value is None:
-			self._fill_value = default_fill_value
-		elif isinstance(fill_value, int):
-			self._fill_value = fill_value
+		default_pad_value = -1 #len(extended_tokens)
+		if pad_value is None:
+			self._pad_value = default_pad_value
+		elif isinstance(pad_value, int):
+			self._pad_value = pad_value
 		else:
 			try:
-				self._fill_value = extended_tokens.index(fill_value)
+				self._pad_value = extended_tokens.index(pad_value)
 			except ValueError:
-				self._fill_value = default_fill_value
+				self._pad_value = default_pad_value
 
-		self.auxiliary_tokens_int = [self._fill_value] + prefixes_int + suffixes_int
+		self.auxiliary_tokens_int = [self._pad_value] + prefixes_int + suffixes_int
 		self.decoration_functor = lambda x: prefixes_int + x + suffixes_int
 
 		if use_eos:
@@ -66,8 +66,8 @@ class TokenConverter(object):
 		return self._tokens
 
 	@property
-	def fill_value(self):
-		return self._fill_value
+	def pad_value(self):
+		return self._pad_value
 
 	@property
 	def num_affixes(self):

@@ -623,8 +623,8 @@ def main():
 			best_model_filepath, history = runner.train(model, criterion, optimizer, scheduler, train_dataloader, test_dataloader, model_checkpoint_filepath, output_dir_path, initial_epoch, final_epoch, recorder, device=device)
 
 			# Save a model.
-			model_filepath = os.path.join(output_dir_path, 'best_model.pth')
 			if best_model_filepath:
+				model_filepath = os.path.join(output_dir_path, 'best_model_{}.pth'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 				try:
 					shutil.copyfile(best_model_filepath, model_filepath)
 					logger.info('Copied the best trained model to {}.'.format(model_filepath))
@@ -632,6 +632,7 @@ def main():
 					logger.error('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 					model_filepath = None
 			else:
+				model_filepath = os.path.join(output_dir_path, 'final_model_{}.pth'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 				runner.save_model(model_filepath, model, optimizer, recorder, final_epoch)
 
 			#logger.info('Train history = {}.'.format(history))

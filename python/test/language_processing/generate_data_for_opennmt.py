@@ -373,13 +373,13 @@ class MySubsetDataset(torch.utils.data.Dataset):
 	def __len__(self):
 		return len(self.subset)
 
-def visualize_data_with_length(dataloader, num_data=10):
+def visualize_data_with_length(dataloader, label_converter, num_data=10):
 	data_iter = iter(dataloader)
 	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	images = images.transpose(0, 2, 3, 1)
 	for idx, (img, lbl, l) in enumerate(zip(images, labels, label_lens)):
-		print('Label (len={}): {} (int), {} (str).'.format(l, [ll for ll in lbl if ll != label_converter.fill_value], label_converter.decode(lbl)))
+		print('Label (len={}): {} (int), {} (str).'.format(l, [ll for ll in lbl if ll != label_converter.pad_value], label_converter.decode(lbl)))
 		cv2.imshow('Image', img)
 		cv2.waitKey(0)
 		if idx >= (num_data - 1): break
@@ -453,8 +453,8 @@ def generate_simple_word_data(image_height, image_width, image_channel, max_word
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	label_converter = swl_langproc_util.TokenConverter(list(charset), fill_value=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=None)
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
 	train_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_train_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
 	test_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_test_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
@@ -488,8 +488,8 @@ def generate_simple_word_data(image_height, image_width, image_channel, max_word
 
 	#--------------------
 	# Visualize.
-	#visualize_data_with_length(train_dataloader, num_data=10)
-	#visualize_data_with_length(test_dataloader, num_data=10)
+	#visualize_data_with_length(train_dataloader, label_converter, num_data=10)
+	#visualize_data_with_length(test_dataloader, label_converter, num_data=10)
 
 	# Save data and images.
 	print('Start saving data and images for OpenNMT...')
@@ -542,8 +542,8 @@ def generate_random_word_data(image_height, image_width, image_channel, max_word
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	label_converter = swl_langproc_util.TokenConverter(list(charset), fill_value=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=None)
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
 	chars = charset  # Can make the number of each character different.
 	train_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, max_word_len, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
 	test_dataset = text_data.RandomWordDataset(label_converter, chars, num_test_examples, image_channel, max_word_len, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
@@ -578,8 +578,8 @@ def generate_random_word_data(image_height, image_width, image_channel, max_word
 
 	#--------------------
 	# Visualize.
-	#visualize_data_with_length(train_dataloader, num_data=10)
-	#visualize_data_with_length(test_dataloader, num_data=10)
+	#visualize_data_with_length(train_dataloader, label_converter, num_data=10)
+	#visualize_data_with_length(test_dataloader, label_converter, num_data=10)
 
 	# Save data and images.
 	print('Start saving data and images for OpenNMT...')
@@ -631,8 +631,8 @@ def generate_file_based_word_data(image_height, image_width, image_channel, max_
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	label_converter = swl_langproc_util.TokenConverter(list(charset), fill_value=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=None)
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
 
 	datasets = []
 	if True:
@@ -695,8 +695,8 @@ def generate_file_based_word_data(image_height, image_width, image_channel, max_
 
 	#--------------------
 	# Visualize.
-	#visualize_data_with_length(train_dataloader, num_data=10)
-	#visualize_data_with_length(test_dataloader, num_data=10)
+	#visualize_data_with_length(train_dataloader, label_converter, num_data=10)
+	#visualize_data_with_length(test_dataloader, label_converter, num_data=10)
 
 	# Save data and images.
 	print('Start saving data and images for OpenNMT...')
@@ -751,8 +751,8 @@ def generate_simple_text_line_data(image_height, image_width, image_channel, max
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	label_converter = swl_langproc_util.TokenConverter(list(charset), fill_value=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=None)
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
 	train_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_train_examples, image_height, image_width, image_channel, max_textline_len, font_list, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor, transform=train_transform, target_transform=train_target_transform)
 	test_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_test_examples, image_height, image_width, image_channel, max_textline_len, font_list, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
@@ -786,8 +786,8 @@ def generate_simple_text_line_data(image_height, image_width, image_channel, max
 
 	#--------------------
 	# Visualize.
-	#visualize_data_with_length(train_dataloader, num_data=10)
-	#visualize_data_with_length(test_dataloader, num_data=10)
+	#visualize_data_with_length(train_dataloader, label_converter, num_data=10)
+	#visualize_data_with_length(test_dataloader, label_converter, num_data=10)
 
 	# Save data and images.
 	print('Start saving data and images for OpenNMT...')

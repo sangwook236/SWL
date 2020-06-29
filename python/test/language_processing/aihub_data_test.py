@@ -13,7 +13,7 @@ import swl.language_processing.util as swl_langproc_util
 import text_generation_util as tg_util
 import aihub_data
 
-def aihub_data_loading_test():
+def aihub_printed_text_data_loading_test():
 	import json
 
 	if 'posix' == os.name:
@@ -117,7 +117,7 @@ def visualize_data_with_length(dataloader, label_converter, num_data=10):
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	images = images.transpose(0, 2, 3, 1)
 	for idx, (img, lbl, l) in enumerate(zip(images, labels, label_lens)):
-		print('Label (len={}): {} (int), {} (str).'.format(l, [ll for ll in lbl if ll != label_converter.fill_value], label_converter.decode(lbl)))
+		print('Label (len={}): {} (int), {} (str).'.format(l, [ll for ll in lbl if ll != label_converter.pad_value], label_converter.decode(lbl)))
 		cv2.imshow('Image', img)
 		cv2.waitKey(0)
 		if idx >= (num_data - 1): break
@@ -199,7 +199,7 @@ class MySubsetDataset(torch.utils.data.Dataset):
 		return len(self.subset)
 
 # REF [function] >> SimpleWordDataset_test() in test_data_test.py.
-def AiHubDataset_test():
+def AiHubPrintedTextDataset_test():
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
@@ -244,9 +244,9 @@ def AiHubDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	label_converter = swl_langproc_util.TokenConverter(list(charset), fill_value=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, fill_value=None)
-	dataset = aihub_data.AiHubDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_image_used)
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
+	dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_image_used)
 
 	num_examples = len(dataset)
 	num_train_examples = int(num_examples * train_test_ratio)
@@ -289,9 +289,9 @@ def AiHubDataset_test():
 	visualize_data_with_length(test_dataloader, label_converter, num_data=10)
 
 def main():
-	#aihub_data_loading_test()
+	#aihub_printed_text_data_loading_test()
 
-	AiHubDataset_test()
+	AiHubPrintedTextDataset_test()
 
 #--------------------------------------------------------------------
 

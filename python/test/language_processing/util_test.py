@@ -19,10 +19,10 @@ def TokenConverter_test():
 
 	#--------------------
 	print('---------- Basic.')
-	converter = swl_langproc_util.TokenConverter(list(charset), use_sos=False, use_eos=False, prefixes=None, suffixes=None, fill_value=None)
+	converter = swl_langproc_util.TokenConverter(list(charset), use_sos=False, use_eos=False, prefixes=None, suffixes=None, pad_value=None)
 	print('Tokens = {}.'.format(converter.tokens))
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
-	print('Fill value = {}.'.format(converter.fill_value))
+	print('Pad value = {}.'.format(converter.pad_value))
 
 	inputs = '123ABCxyz'
 	encoded = converter.encode(inputs)
@@ -33,10 +33,10 @@ def TokenConverter_test():
 
 	#--------------------
 	print('---------- SOS + EOS.')
-	converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, prefixes=None, suffixes=None, fill_value=None)
+	converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, prefixes=None, suffixes=None, pad_value=None)
 	print('Tokens = {}.'.format(converter.tokens))
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
-	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.fill_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
+	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
 
 	inputs = '123ABCxyz'
 	encoded = converter.encode(inputs)
@@ -74,11 +74,11 @@ def TokenConverter_test():
 	assert inputs == decoded
 
 	#--------------------
-	print('---------- SOS + EOS & fill value = SOS.')
-	converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, prefixes=None, suffixes=None, fill_value=swl_langproc_util.TokenConverter.SOS)
+	print('---------- SOS + EOS & pad value = SOS.')
+	converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, prefixes=None, suffixes=None, pad_value=swl_langproc_util.TokenConverter.SOS)
 	print('Tokens = {}.'.format(converter.tokens))
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
-	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.fill_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
+	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
 
 	inputs = '123ABCxyz'
 	encoded = converter.encode(inputs)
@@ -89,10 +89,10 @@ def TokenConverter_test():
 
 	#--------------------
 	print('---------- SOS + EOS + prefix + suffix.')
-	converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, prefixes=['<HEAD>'], suffixes=['<TAIL>'], fill_value=None)
+	converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, prefixes=['<HEAD>'], suffixes=['<TAIL>'], pad_value=None)
 	print('Tokens = {}.'.format(converter.tokens))
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
-	print('Fill value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.fill_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
+	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
 
 	inputs = '123ABCxyz'
 	encoded = converter.encode(inputs)
