@@ -408,7 +408,7 @@ def SimpleCharacterDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
+	charset = tg_util.construct_charset(hangeul_jamo=False, space=False)
 	font_list = construct_font(korean=True, english=False)
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
@@ -487,7 +487,7 @@ def NoisyCharacterDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
+	charset = tg_util.construct_charset(hangeul_jamo=False, space=False)
 	font_list = construct_font(korean=True, english=False)
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
@@ -567,7 +567,7 @@ def FileBasedCharacterDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
+	charset = tg_util.construct_charset(hangeul_jamo=False, space=False)
 
 	train_test_ratio = 0.8
 	batch_size = 64
@@ -677,7 +677,7 @@ def SimpleWordDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+	charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=True, english=True)
 	font_list = construct_font(korean=True, english=False)
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
@@ -758,7 +758,7 @@ def RandomWordDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
+	charset = tg_util.construct_charset(hangeul_jamo=False, space=False)
 	font_list = construct_font(korean=True, english=False)
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
@@ -841,7 +841,7 @@ def FileBasedWordDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
+	charset = tg_util.construct_charset(hangeul_jamo=False, space=False)
 
 	max_word_len = 30
 	train_test_ratio = 0.8
@@ -952,7 +952,7 @@ def SimpleTextLineDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=True), tg_util.construct_word_set(korean=True, english=True)
+	charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=True), tg_util.construct_word_set(korean=True, english=True)
 	font_list = construct_font(korean=True, english=False)
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)

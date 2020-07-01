@@ -785,7 +785,7 @@ def train_char_recognition_model(model, forward_functor, train_dataloader, test_
 		if scheduler: scheduler.step()
 
 		if acc >= best_measure:
-			ckpt_fpath = model_filepath_format.format('_acc{:.4f}_epoch{}'.format(acc, epoch))
+			ckpt_fpath = model_filepath_format.format('_acc{:.4f}_epoch{}'.format(acc, epoch + 1))
 			# Save a checkpoint.
 			save_model(ckpt_fpath, model)
 			best_measure = acc
@@ -826,7 +826,7 @@ def train_text_recognition_model(model, inferer, forward_functor, train_dataload
 		if scheduler: scheduler.step()
 
 		if acc >= best_measure:
-			ckpt_fpath = model_filepath_format.format('_acc{:.4f}_epoch{}'.format(acc, epoch))
+			ckpt_fpath = model_filepath_format.format('_acc{:.4f}_epoch{}'.format(acc, epoch + 1))
 			# Save a checkpoint.
 			save_model(ckpt_fpath, model)
 			best_measure = acc
@@ -1019,10 +1019,10 @@ def recognize_character():
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
-		charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
+		charset = tg_util.construct_charset(hangeul_jamo=False, space=False)
 		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
-		charset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False)
+		charset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=False)
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
@@ -1091,7 +1091,7 @@ def recognize_character():
 		# Define a loss function and optimizer.
 		criterion = torch.nn.CrossEntropyLoss().to(device)
 		#criterion = torch.nn.NLLLoss(reduction='sum').to(device)
-		optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
+		optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = None
 
@@ -1174,10 +1174,10 @@ def recognize_character_using_mixup():
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
-		charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
+		charset = tg_util.construct_charset(hangeul_jamo=False, space=False)
 		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
-		charset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False)
+		charset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=False)
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
@@ -1247,7 +1247,7 @@ def recognize_character_using_mixup():
 		# Define a loss function and optimizer.
 		criterion = torch.nn.CrossEntropyLoss().to(device)
 		#criterion = torch.nn.NLLLoss(reduction='sum').to(device)
-		optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
+		optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = None
 
@@ -1342,10 +1342,10 @@ def recognize_word_by_rare1():
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
-		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=True, english=True)
 		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
-		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=False, english=True)
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
@@ -1378,7 +1378,7 @@ def recognize_word_by_rare1():
 		SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 		num_suffixes = 1
 
-	chars = charset  # Can make the number of each character different.
+	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	#train_dataloader, test_dataloader = create_word_data_loaders('simple_word', label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
@@ -1499,9 +1499,10 @@ def recognize_word_by_rare1():
 					concat_model_outputs.append(mo[:ll])
 					concat_decoder_outputs.append(do[:ll])
 				return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
-		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
-		optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
-		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
+		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+		optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
+		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = None
 
@@ -1579,10 +1580,10 @@ def recognize_word_by_rare2():
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
-		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=True, english=True)
 		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
-		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=False, english=True)
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
@@ -1607,7 +1608,7 @@ def recognize_word_by_rare2():
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
-	chars = charset  # Can make the number of each character different.
+	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	#train_dataloader, test_dataloader = create_word_data_loaders('simple_word', label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
@@ -1705,9 +1706,10 @@ def recognize_word_by_rare2():
 			for outp, ll in zip(outputs, output_lens):
 				concat_outputs.append(outp[:ll])
 			return criterion(model_outputs, torch.cat(concat_outputs, 0).to(device))
-		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
-		optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
-		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
+		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+		optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
+		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = None
 
@@ -1786,10 +1788,10 @@ def recognize_word_by_aster():
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
-		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=True, english=True)
 		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
-		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=False, english=True)
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
@@ -1814,7 +1816,7 @@ def recognize_word_by_aster():
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
-	chars = charset  # Can make the number of each character different.
+	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	#train_dataloader, test_dataloader = create_word_data_loaders('simple_word', label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
@@ -1933,10 +1935,11 @@ def recognize_word_by_aster():
 
 			loss = output_dict['losses']['loss_rec']
 			return loss
-		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
-		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
-		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
+		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
 		optimizer = torch.optim.Adadelta(model_params, lr=sys_args.lr, weight_decay=sys_args.weight_decay)
+		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
 
@@ -2065,10 +2068,10 @@ def recognize_word_by_opennmt():
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
-		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=True, english=True)
 		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
-		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=False, english=True)
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
@@ -2093,7 +2096,7 @@ def recognize_word_by_opennmt():
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
-	chars = charset  # Can make the number of each character different.
+	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	#train_dataloader, test_dataloader = create_word_data_loaders('simple_word', label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
@@ -2194,9 +2197,10 @@ def recognize_word_by_opennmt():
 			# NOTE [info] >> All examples in a batch are concatenated together.
 			#	Can each example be handled individually?
 			return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
-		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
-		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
+		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
+		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
 
@@ -2277,10 +2281,10 @@ def recognize_word_by_rare1_and_opennmt():
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
-		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=True, english=True)
 		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
-		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=False, english=True)
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
@@ -2305,7 +2309,7 @@ def recognize_word_by_rare1_and_opennmt():
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
-	chars = charset  # Can make the number of each character different.
+	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	#train_dataloader, test_dataloader = create_word_data_loaders('simple_word', label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
@@ -2487,9 +2491,10 @@ def recognize_word_by_rare1_and_opennmt():
 			# NOTE [info] >> All examples in a batch are concatenated together.
 			#	Can each example be handled individually?
 			return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
-		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
-		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
+		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
+		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
 
@@ -2530,6 +2535,7 @@ def recognize_word_by_rare2_and_opennmt():
 
 	lang = 'kor'  # {'kor', 'eng'}.
 	max_word_len = 5  # Max. word length.
+	num_fiducials = 20  # The number of fiducial points of TPS-STN.
 	if lang == 'kor':
 		word_vec_size = 80
 		encoder_rnn_size, decoder_hidden_size = 1024, 1024
@@ -2570,10 +2576,10 @@ def recognize_word_by_rare2_and_opennmt():
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
-		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=True, english=True)
 		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
-		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=False, english=True)
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
@@ -2598,7 +2604,7 @@ def recognize_word_by_rare2_and_opennmt():
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
-	chars = charset  # Can make the number of each character different.
+	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	#train_dataloader, test_dataloader = create_word_data_loaders('simple_word', label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
@@ -2611,8 +2617,14 @@ def recognize_word_by_rare2_and_opennmt():
 
 	#--------------------
 	class MyCompositeModel(torch.nn.Module):
-		def __init__(self, image_height, image_width, input_channel, num_classes, max_text_len, word_vec_size, encoder_rnn_size, decoder_hidden_size):
+		def __init__(self, image_height, image_width, input_channel, num_classes, num_fiducials, max_text_len, word_vec_size, encoder_rnn_size, decoder_hidden_size):
 			super().__init__()
+
+			if num_fiducials:
+				import rare.modules.transformation
+				self.transformer = rare.modules.transformation.TPS_SpatialTransformerNetwork(F=num_fiducials, I_size=(image_height, image_width), I_r_size=(image_height, image_width), I_channel_num=input_channel)
+			else:
+				self.transformer = None
 
 			self.encoder = self._create_encoder(image_height, image_width, input_channel, max_text_len, encoder_rnn_size // 2)
 			_, self.decoder, self.generator = build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size)
@@ -2641,6 +2653,8 @@ def recognize_word_by_rare2_and_opennmt():
 
 		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
 		def forward(self, src, tgt, lengths, bptt=False, with_align=False):
+			if self.transformer: src = self.transformer(src, device)  # [B, C, H, W].
+
 			# Conv features.
 			conv = self.cnn(src)  # [b, c_out, h/16-1, w/4+1].
 			b, c, h, w = conv.size()
@@ -2685,14 +2699,14 @@ def recognize_word_by_rare2_and_opennmt():
 	#--------------------
 	# Build a model.
 
-	model = MyCompositeModel(image_height, image_width, image_channel, num_classes, max_word_len, word_vec_size, encoder_rnn_size, decoder_hidden_size)
+	model = MyCompositeModel(image_height, image_width, image_channel, num_classes, num_fiducials, max_word_len, word_vec_size, encoder_rnn_size, decoder_hidden_size)
 
 	if is_model_initialized:
 		# Initialize model weights.
 		for name, param in model.named_parameters():
-			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
-			#	print(f'Skip {name} as it has already been initialized.')
-			#	continue
+			if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
+				print(f'Skip {name} as it has already been initialized.')
+				continue
 			try:
 				if 'bias' in name:
 					torch.nn.init.constant_(param, 0.0)
@@ -2748,9 +2762,10 @@ def recognize_word_by_rare2_and_opennmt():
 			# NOTE [info] >> All examples in a batch are concatenated together.
 			#	Can each example be handled individually?
 			return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
-		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
-		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
+		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
+		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
 
@@ -2791,6 +2806,7 @@ def recognize_word_by_aster_and_opennmt():
 
 	lang = 'kor'  # {'kor', 'eng'}.
 	max_word_len = 5  # Max. word length.
+	num_fiducials = 20  # The number of fiducial points of TPS-STN.
 	if lang == 'kor':
 		word_vec_size = 80
 		encoder_rnn_size, decoder_hidden_size = 1024, 1024
@@ -2831,10 +2847,10 @@ def recognize_word_by_aster_and_opennmt():
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
-		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=True, english=True)
 		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
-		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=False, english=True)
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
@@ -2859,7 +2875,7 @@ def recognize_word_by_aster_and_opennmt():
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
-	chars = charset  # Can make the number of each character different.
+	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	#train_dataloader, test_dataloader = create_word_data_loaders('simple_word', label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
@@ -2872,8 +2888,14 @@ def recognize_word_by_aster_and_opennmt():
 
 	#--------------------
 	class MyCompositeModel(torch.nn.Module):
-		def __init__(self, input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size):
+		def __init__(self, image_height, image_width, input_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size):
 			super().__init__()
+
+			if num_fiducials:
+				import rare.modules.transformation
+				self.transformer = rare.modules.transformation.TPS_SpatialTransformerNetwork(F=num_fiducials, I_size=(image_height, image_width), I_r_size=(image_height, image_width), I_channel_num=input_channel)
+			else:
+				self.transformer = None
 
 			import aster.resnet_aster
 			self.encoder = aster.resnet_aster.ResNet_ASTER(with_lstm=True, in_height=image_height, in_channels=input_channel, hidden_size=encoder_rnn_size // 2)
@@ -2882,6 +2904,8 @@ def recognize_word_by_aster_and_opennmt():
 		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
 		def forward(self, src, tgt, lengths, bptt=False, with_align=False):
 			dec_in = tgt[:-1]  # Exclude last target from inputs.
+
+			if self.transformer: src = self.transformer(src, device)  # [B, C, H, W].
 
 			enc_outputs, enc_hiddens = self.encoder(src)
 			enc_outputs = enc_outputs.transpose(0, 1)  # [B, T, F] -> [T, B, F].
@@ -2915,14 +2939,14 @@ def recognize_word_by_aster_and_opennmt():
 	#--------------------
 	# Build a model.
 
-	model = MyCompositeModel(image_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size)
+	model = MyCompositeModel(image_height, image_width, image_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size)
 
 	if is_model_initialized:
 		# Initialize model weights.
 		for name, param in model.named_parameters():
-			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
-			#	print(f'Skip {name} as it has already been initialized.')
-			#	continue
+			if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
+				print(f'Skip {name} as it has already been initialized.')
+				continue
 			try:
 				if 'bias' in name:
 					torch.nn.init.constant_(param, 0.0)
@@ -2978,9 +3002,10 @@ def recognize_word_by_aster_and_opennmt():
 			# NOTE [info] >> All examples in a batch are concatenated together.
 			#	Can each example be handled individually?
 			return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
-		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
-		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
+		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
+		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
 
@@ -3069,10 +3094,10 @@ def recognize_word_using_mixup():
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
-		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=True, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=True, english=True)
 		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
-		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, whitespace=False), tg_util.construct_word_set(korean=False, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=False, english=True)
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
@@ -3105,7 +3130,7 @@ def recognize_word_using_mixup():
 		SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 		num_suffixes = 1
 
-	chars = charset  # Can make the number of each character different.
+	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	#train_dataloader, test_dataloader = create_word_data_loaders('simple_word', label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, max_word_len, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, font_list, font_size_interval, word_len_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
@@ -3218,9 +3243,10 @@ def recognize_word_using_mixup():
 					concat_model_outputs.append(mo[:ll])
 					concat_decoder_outputs.append(do[:ll])
 				return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
-		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9)
-		optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999))
-		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8)
+		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+		optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
+		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = None
 
@@ -3265,7 +3291,7 @@ def recognize_text_using_craft_and_character_recognizer():
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
 
-	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
+	charset = tg_util.construct_charset(hangeul_jamo=False, space=False)
 
 	gpu = 0
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
@@ -3392,7 +3418,7 @@ def recognize_text_using_craft_and_word_recognizer():
 	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
 	decoder = 'Attn'  # The type of decoder. {'CTC', 'Attn'}.
 
-	charset = tg_util.construct_charset(hangeul_jamo=False, whitespace=False)
+	charset = tg_util.construct_charset(hangeul_jamo=False, space=False)
 
 	gpu = 0
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
@@ -3508,9 +3534,9 @@ def main():
 	#recognize_word_by_rare2()  # Use RARE #2. NOTE [info] >> Failed to train.
 	#recognize_word_by_aster()  # Use ASTER. NOTE [info] >> Hard to train.
 	#recognize_word_by_opennmt()  # Use OpenNMT.
-	recognize_word_by_rare1_and_opennmt()  # Use RARE #1 (encoder) + OpenNMT (decoder).
+	#recognize_word_by_rare1_and_opennmt()  # Use RARE #1 (encoder) + OpenNMT (decoder).
 	#recognize_word_by_rare2_and_opennmt()  # Use RARE #2 (encoder) + OpenNMT (decoder).
-	#recognize_word_by_aster_and_opennmt()  # Use ASTER (encoder) + OpenNMT (decoder).
+	recognize_word_by_aster_and_opennmt()  # Use ASTER (encoder) + OpenNMT (decoder).
 	#recognize_word_using_mixup()  # Use RARE #1. Not working.
 
 	# Recognize text using CRAFT (scene text detector) + word recognizer.
