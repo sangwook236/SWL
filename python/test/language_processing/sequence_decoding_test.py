@@ -5,7 +5,7 @@ import sys
 sys.path.append('../../src')
 sys.path.append('./src')
 
-import os
+import os, time
 import numpy as np
 import editdistance
 
@@ -15,7 +15,7 @@ def ibm_top_k_decoding_test():
 
 # REF [site] >> https://github.com/githubharald/CTCWordBeamSearch
 def word_beam_search_test():
-	import ctc_word_beam_search.WordBeamSearch, ctc_word_beam_search.Metrics
+	import ctc_word_beam_search.WordBeamSearch, ctc_word_beam_search.LanguageModel, ctc_word_beam_search.Metrics
 
 	beamWidth = 10
 	useNGrams = True
@@ -34,6 +34,8 @@ def word_beam_search_test():
 
 	#--------------------
 	# Create a language model.
+	print('Start creating a language model...')
+	start_time = time.time()
 	try:
 		with open(corpus_filepath, 'r', encoding='utf8') as fd:
 			langModel = ctc_word_beam_search.LanguageModel.LanguageModel(fd.read(), chars, wordChars)
@@ -43,11 +45,12 @@ def word_beam_search_test():
 	except UnicodeDecodeError as ex:
 		print('Unicode decode error: {}.'.format(corpus_filepath))
 		raise
+	print('End creating a language model: {} secs.'.format(time.time() - start_time))
 
+	#--------------------
 	# Metrics calculates CER and WER for dataset.
 	metric = ctc_word_beam_search.Metrics.Metrics(langModel.getWordChars())
 
-	#--------------------
 	def softmax(mat):
 		# mat: [time steps, #classes].
 		maxT, _ = mat.shape
@@ -84,7 +87,11 @@ def word_beam_search_test():
 			continue
 
 		# Decode matrix.
+		print('Start decoding by word beam search...')
+		start_time = time.time()
 		decoded = ctc_word_beam_search.WordBeamSearch.wordBeamSearch(mat, beamWidth, langModel, useNGrams)
+		print('End decoding by word beam search: {} secs.'.format(time.time() - start_time))
+
 		print('Sample: {}.'.format(idx + 1))
 		print('Decoded: {}.'.format(decoded))
 		print('G/T:     {}.'.format(gt))

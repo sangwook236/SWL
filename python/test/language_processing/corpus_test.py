@@ -5,7 +5,42 @@ import sys
 sys.path.append('../../src')
 sys.path.append('./src')
 
-import os
+import os, time
+
+# REF [site] >> https://github.com/konlpy/sejong-sanitizer
+# REF [text] >> sejong_corpus_usage_guide.txt
+def sejong_sanitizer_test():
+	corpus_dir_path = '../../data/language_processing/sejong_corpus'
+
+	corpus_filepaths = [
+		#corpus_dir_path + '/colloquial_word_to_morph.txt',
+		corpus_dir_path + '/colloquial_word_to_morphpos.txt',
+		#corpus_dir_path + '/written_word_to_morph.txt',
+		corpus_dir_path + '/written_word_to_morphpos.txt'
+	]
+
+	print('Start loading Sejong corpus...')
+	start_time = time.time()
+	lines = list()
+	for fpath in corpus_filepaths:
+		try:
+			with open(fpath, 'r', encoding='utf8') as fd:
+				lines.extend(fd.read().splitlines())  # A list of strings.
+		except FileNotFoundError as ex:
+			print('File not found: {}.'.format(fpath))
+			raise
+		except UnicodeDecodeError as ex:
+			print('Unicode decode error: {}.'.format(fpath))
+			raise
+	print('End loading Sejong corpus: {} secs.'.format(time.time() - start_time))
+
+	words = list()
+	for line in lines:
+		pos = line.find('\t')
+		words.append(line[:pos])
+	del lines
+
+	print('#words = {}.'.format(len(words)))
 
 # REF [site] >> https://github.com/lovit/sejong_corpus_cleaner
 # REF [text] >> sejong_corpus_usage_guide.txt
@@ -99,7 +134,8 @@ def sejong_corpus_cleaner_test():
 	counter = sejong_corpus_cleaner.make_counter(sents, convert_lr=True, xsv_as_root=True)
 
 def main():
-	sejong_corpus_cleaner_test()
+	sejong_sanitizer_test()
+	#sejong_corpus_cleaner_test()
 
 #--------------------------------------------------------------------
 
