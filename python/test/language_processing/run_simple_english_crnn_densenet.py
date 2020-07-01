@@ -534,7 +534,7 @@ class MyRunner(object):
 				system_font_dir_path = 'C:/Windows/Fonts'
 				font_base_dir_path = 'D:/work/font'
 			#font_dir_path = font_base_dir_path + '/eng'
-			font_dir_path = font_base_dir_path + '/receipt_eng'
+			font_dir_path = font_base_dir_path + '/eng_receipt'
 
 			font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 			font_list = tg_util.generate_font_list(font_filepaths)

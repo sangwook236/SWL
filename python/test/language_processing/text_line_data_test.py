@@ -525,7 +525,7 @@ def RunTimeCorruptedTextLinePairDataset_test():
 
 	if False:
 		font_dir_path = font_base_dir_path + '/kor'
-		#font_dir_path = font_base_dir_path + '/receipt_kor'
+		#font_dir_path = font_base_dir_path + '/kor_receipt'
 
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		font_list = tg_util.generate_hangeul_font_list(font_filepaths)
@@ -559,7 +559,7 @@ def RunTimeCorruptedTextLinePairDataset_test():
 
 	if False:
 		font_dir_path = font_base_dir_path + '/eng'
-		#font_dir_path = font_base_dir_path + '/receipt_eng'
+		#font_dir_path = font_base_dir_path + '/eng_receipt'
 
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		font_list = tg_util.generate_font_list(font_filepaths)
@@ -594,8 +594,8 @@ def RunTimeCorruptedTextLinePairDataset_test():
 	if True:
 		#font_dir_path = font_base_dir_path + '/eng'
 		font_dir_path = font_base_dir_path + '/kor'
-		#font_dir_path = font_base_dir_path + '/receipt_eng'
-		#font_dir_path = font_base_dir_path + '/receipt_kor'
+		#font_dir_path = font_base_dir_path + '/eng_receipt'
+		#font_dir_path = font_base_dir_path + '/kor_receipt'
 
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		#font_list = tg_util.generate_font_list(font_filepaths)
@@ -659,7 +659,7 @@ def RunTimeSuperResolvedTextLinePairDataset_test():
 
 	if False:
 		font_dir_path = font_base_dir_path + '/kor'
-		#font_dir_path = font_base_dir_path + '/receipt_kor'
+		#font_dir_path = font_base_dir_path + '/kor_receipt'
 
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		font_list = tg_util.generate_hangeul_font_list(font_filepaths)
@@ -695,7 +695,7 @@ def RunTimeSuperResolvedTextLinePairDataset_test():
 
 	if False:
 		font_dir_path = font_base_dir_path + '/eng'
-		#font_dir_path = font_base_dir_path + '/receipt_eng'
+		#font_dir_path = font_base_dir_path + '/eng_receipt'
 
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		font_list = tg_util.generate_font_list(font_filepaths)
@@ -732,8 +732,8 @@ def RunTimeSuperResolvedTextLinePairDataset_test():
 	if True:
 		#font_dir_path = font_base_dir_path + '/eng'
 		font_dir_path = font_base_dir_path + '/kor'
-		#font_dir_path = font_base_dir_path + '/receipt_eng'
-		#font_dir_path = font_base_dir_path + '/receipt_kor'
+		#font_dir_path = font_base_dir_path + '/eng_receipt'
+		#font_dir_path = font_base_dir_path + '/kor_receipt'
 
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		#font_list = tg_util.generate_font_list(font_filepaths)

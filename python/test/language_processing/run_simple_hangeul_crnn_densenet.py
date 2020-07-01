@@ -619,7 +619,7 @@ class MyRunner(object):
 				system_font_dir_path = 'C:/Windows/Fonts'
 				font_base_dir_path = 'D:/work/font'
 			font_dir_path = font_base_dir_path + '/kor'
-			#font_dir_path = font_base_dir_path + '/receipt_kor'
+			#font_dir_path = font_base_dir_path + '/kor_receipt'
 
 			font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 			font_list = tg_util.generate_hangeul_font_list(font_filepaths)

@@ -125,8 +125,8 @@ def main():
 		font_base_dir_path = 'D:/work/font'
 	#font_dir_path = font_base_dir_path + '/eng'
 	#font_dir_path = font_base_dir_path + '/kor'
-	#font_dir_path = font_base_dir_path + '/receipt_eng'
-	font_dir_path = font_base_dir_path + '/receipt_kor'
+	#font_dir_path = font_base_dir_path + '/eng_receipt'
+	font_dir_path = font_base_dir_path + '/kor_receipt'
 
 	#font_display_test(font_dir_path)
 
