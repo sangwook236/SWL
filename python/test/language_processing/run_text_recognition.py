@@ -29,6 +29,7 @@ def load_model(model_filepath, model, device='cpu'):
 	print('Loaded a model from {}.'.format(model_filepath))
 	return model
 
+# REF [function] >> construct_font() in font_test.py.
 def construct_font(korean=True, english=True):
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
@@ -854,28 +855,28 @@ def evaluate_char_recognition_model(model, dataloader, label_converter, is_case_
 			predictions = predictions.cpu().numpy()
 			gts = labels.numpy()
 
+			if images.ndim == 4: images = images.transpose(0, 2, 3, 1)
+			#minval, maxval = np.min(images), np.max(images)
+			minval, maxval = -1, 1
+			images = np.round((images - minval) * 255 / (maxval - minval)).astype(np.uint8)
+
 			for gl, pl in zip(gts, predictions):
 				if gl == pl: correct_char_class_count[gl] += 1
 				total_char_class_count[gl] += 1
 
 			gts, predictions = label_converter.decode(gts), label_converter.decode(predictions)
+			gts_case, predictions_case = (gts, predictions) if is_case_sensitive else (gts.lower(), predictions.lower())
 
 			total_char_count += max(len(gts), len(predictions))
-			if is_case_sensitive:
-				#correct_char_count += (gts == predictions).sum()
-				correct_char_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gts, predictions))))
-			else:
-				correct_char_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gts.lower(), predictions.lower()))))
+			#correct_char_count += (gts_case == predictions_case).sum()
+			correct_char_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gts_case, predictions_case))))
 
 			if is_error_cases_saved:
-				for img, gt, pred in zip(images.numpy(), gts, predictions):
-					if img.ndim == 3: img = img.transpose(1, 2, 0)
-					#minval, maxval = np.min(img), np.max(img)
-					minval, maxval = -1, 1
-					img = np.round((img - minval) * 255 / (maxval - minval)).astype(np.uint8)
-					cv2.imwrite(os.path.join(error_cases_dir_path, 'image_{}.png'.format(error_idx)), img)
-					error_cases.append((gt, pred))
-					error_idx += 1
+				for img, gt, pred, gt_case, pred_case in zip(images.numpy(), gts, predictions, gts_case, predictions_case):
+					if gt_case != pred_case:
+						cv2.imwrite(os.path.join(error_cases_dir_path, 'image_{}.png'.format(error_idx)), img)
+						error_cases.append((gt, pred))
+						error_idx += 1
 
 			if is_first:
 				# Show images.
@@ -921,6 +922,11 @@ def evaluate_text_recognition_model(inferer, dataloader, label_converter, is_cas
 		for images, labels, label_lens in dataloader:
 			gts, predictions = inferer(images, labels, label_lens, device)
 
+			if images.ndim == 4: images = images.numpy().transpose(0, 2, 3, 1)
+			#minval, maxval = np.min(images), np.max(images)
+			minval, maxval = -1, 1
+			images = np.round((images - minval) * 255 / (maxval - minval)).astype(np.uint8)
+
 			total_text_count += len(gts)
 			for img, gt, pred in zip(images, gts, predictions):
 				for gl, pl in zip(gt, pred):
@@ -928,25 +934,21 @@ def evaluate_text_recognition_model(inferer, dataloader, label_converter, is_cas
 					total_char_class_count[gl] += 1
 
 				gt, pred = label_converter.decode(gt), label_converter.decode(pred)
-				if not is_case_sensitive:
-					gt, pred = gt.lower(), pred.lower()
+				gt_case, pred_case = (gt, pred) if is_case_sensitive else (gt.lower(), pred.lower())
 
-				if gt == pred:
+				if gt_case == pred_case:
 					correct_text_count += 1
-					if img.ndim == 3: img = img.cpu().numpy().transpose(1, 2, 0)
-					#minval, maxval = np.min(img), np.max(img)
-					minval, maxval = -1, 1
-					img = np.round((img - minval) * 255 / (maxval - minval)).astype(np.uint8)
+				else:
 					cv2.imwrite(os.path.join(error_cases_dir_path, 'image_{}.png'.format(error_idx)), img)
 					error_cases.append((gt, pred))
 					error_idx += 1
 
-				gt_words, pred_words = gt.split(' '), pred.split(' ')
+				gt_words, pred_words = gt_case.split(' '), pred_case.split(' ')
 				total_word_count += max(len(gt_words), len(pred_words))
 				correct_word_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gt_words, pred_words))))
 
 				total_char_count += max(len(gt), len(pred))
-				correct_char_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gt, pred))))
+				correct_char_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gt_case, pred_case))))
 
 			if is_first:
 				# Show images.
@@ -1019,10 +1021,10 @@ def recognize_character():
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
-		charset = tg_util.construct_charset(hangeul_jamo=False, space=False)
+		charset = tg_util.construct_charset(hangeul_jamo=False, space=True)
 		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
-		charset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=False)
+		charset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=True)
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
@@ -1174,10 +1176,10 @@ def recognize_character_using_mixup():
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
-		charset = tg_util.construct_charset(hangeul_jamo=False, space=False)
+		charset = tg_util.construct_charset(hangeul_jamo=False, space=True)
 		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
-		charset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=False)
+		charset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=True)
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
@@ -1342,10 +1344,10 @@ def recognize_word_by_rare1():
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
-		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=True, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=True), tg_util.construct_word_set(korean=True, english=True)
 		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
-		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=False, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=True), tg_util.construct_word_set(korean=False, english=True)
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
@@ -1580,10 +1582,10 @@ def recognize_word_by_rare2():
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
-		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=True, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=True), tg_util.construct_word_set(korean=True, english=True)
 		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
-		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=False, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=True), tg_util.construct_word_set(korean=False, english=True)
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
@@ -1788,10 +1790,10 @@ def recognize_word_by_aster():
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
-		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=True, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=True), tg_util.construct_word_set(korean=True, english=True)
 		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
-		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=False, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=True), tg_util.construct_word_set(korean=False, english=True)
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
@@ -2068,10 +2070,10 @@ def recognize_word_by_opennmt():
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
-		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=True, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=True), tg_util.construct_word_set(korean=True, english=True)
 		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
-		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=False, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=True), tg_util.construct_word_set(korean=False, english=True)
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
@@ -2281,10 +2283,10 @@ def recognize_word_by_rare1_and_opennmt():
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
-		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=True, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=True), tg_util.construct_word_set(korean=True, english=True)
 		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
-		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=False, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=True), tg_util.construct_word_set(korean=False, english=True)
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
@@ -2535,7 +2537,8 @@ def recognize_word_by_rare2_and_opennmt():
 
 	lang = 'kor'  # {'kor', 'eng'}.
 	max_word_len = 5  # Max. word length.
-	num_fiducials = 20  # The number of fiducial points of TPS-STN.
+	#num_fiducials = 20  # The number of fiducial points of TPS-STN.
+	num_fiducials = None
 	if lang == 'kor':
 		word_vec_size = 80
 		encoder_rnn_size, decoder_hidden_size = 1024, 1024
@@ -2576,10 +2579,10 @@ def recognize_word_by_rare2_and_opennmt():
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
-		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=True, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=True), tg_util.construct_word_set(korean=True, english=True)
 		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
-		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=False, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=True), tg_util.construct_word_set(korean=False, english=True)
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
@@ -2806,7 +2809,8 @@ def recognize_word_by_aster_and_opennmt():
 
 	lang = 'kor'  # {'kor', 'eng'}.
 	max_word_len = 5  # Max. word length.
-	num_fiducials = 20  # The number of fiducial points of TPS-STN.
+	#num_fiducials = 20  # The number of fiducial points of TPS-STN.
+	num_fiducials = None
 	if lang == 'kor':
 		word_vec_size = 80
 		encoder_rnn_size, decoder_hidden_size = 1024, 1024
@@ -2847,10 +2851,10 @@ def recognize_word_by_aster_and_opennmt():
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
-		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=True, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=True), tg_util.construct_word_set(korean=True, english=True)
 		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
-		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=False, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=True), tg_util.construct_word_set(korean=False, english=True)
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
@@ -3094,10 +3098,10 @@ def recognize_word_using_mixup():
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
-		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=True, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=True), tg_util.construct_word_set(korean=True, english=True)
 		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
-		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=False, english=True)
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=True), tg_util.construct_word_set(korean=False, english=True)
 		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
@@ -3278,6 +3282,196 @@ def recognize_word_using_mixup():
 	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
+def evaluate_aster_and_opennmt_word_recognizer():
+	#image_height, image_width, image_channel = 32, 100, 3
+	image_height, image_width, image_channel = 64, 640, 3
+	#image_height, image_width, image_channel = 64, 1280, 3
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
+	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	lang = 'kor'  # {'kor', 'eng'}.
+	max_word_len = 5  # Max. word length.
+	#num_fiducials = 20  # The number of fiducial points of TPS-STN.
+	num_fiducials = None
+	if lang == 'kor':
+		word_vec_size = 80
+		encoder_rnn_size, decoder_hidden_size = 1024, 1024
+	else:
+		word_vec_size = 80
+		encoder_rnn_size, decoder_hidden_size = 512, 512
+	#max_gradient_norm = 20  # Gradient clipping value.
+	max_gradient_norm = None
+
+	# File-based words: 504,279.
+	num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
+	num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed words.
+	word_len_interval = (1, max_word_len)
+	font_size_interval = (10, 100)
+	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
+
+	train_test_ratio = 0.8
+	num_epochs = 20
+	batch_size = 64
+	shuffle = True
+	num_workers = 8
+	log_print_freq = 1000
+
+	is_trained = False
+	is_model_loaded = True
+	is_model_initialized = True
+	is_all_model_params_optimized = True
+	is_individual_pad_value_used = False
+
+	if is_model_loaded:
+		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_nll_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.9203_epoch3.pth'
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
+
+	if lang == 'kor':
+		charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=True), tg_util.construct_word_set(korean=True, english=True)
+		font_list = construct_font(korean=True, english=False)
+	elif lang == 'eng':
+		charset, wordset = tg_util.construct_charset(hangeul=False, hangeul_jamo=False, space=True), tg_util.construct_word_set(korean=False, english=True)
+		font_list = construct_font(korean=False, english=True)
+	else:
+		raise ValueError('Invalid language, {}'.format(lang))
+
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device: {}.'.format(device))
+
+	#--------------------
+	# Prepare data.
+
+	if is_individual_pad_value_used:
+		# When the pad value is the ID of a valid token.
+		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
+		PAD_TOKEN = '<PAD>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
+		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
+	else:
+		# When the pad value = the ID of <SOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
+	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
+	num_suffixes = 1
+
+	import aihub_data
+
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+
+	aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
+	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
+
+	image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
+	max_label_len = 10
+	is_image_used = False
+
+	test_transform = torchvision.transforms.Compose([
+		ResizeImage(image_height, image_width),
+		#torchvision.transforms.Resize((image_height, image_width)),
+		#torchvision.transforms.CenterCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	])
+	test_target_transform = ToIntTensor()
+
+	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_image_used, transform=test_transform, target_transform=test_target_transform)
+	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+	print('#classes = {}.'.format(num_classes))
+	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_value, SOS_VALUE, EOS_VALUE))
+
+	# Show data info.
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+
+	#--------------------
+	class MyCompositeModel(torch.nn.Module):
+		def __init__(self, image_height, image_width, input_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size):
+			super().__init__()
+
+			if num_fiducials:
+				import rare.modules.transformation
+				self.transformer = rare.modules.transformation.TPS_SpatialTransformerNetwork(F=num_fiducials, I_size=(image_height, image_width), I_r_size=(image_height, image_width), I_channel_num=input_channel)
+			else:
+				self.transformer = None
+
+			import aster.resnet_aster
+			self.encoder = aster.resnet_aster.ResNet_ASTER(with_lstm=True, in_height=image_height, in_channels=input_channel, hidden_size=encoder_rnn_size // 2)
+			_, self.decoder, self.generator = build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size)
+
+		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
+		def forward(self, src, tgt, lengths, bptt=False, with_align=False):
+			dec_in = tgt[:-1]  # Exclude last target from inputs.
+
+			if self.transformer: src = self.transformer(src, device)  # [B, C, H, W].
+
+			enc_outputs, enc_hiddens = self.encoder(src)
+			enc_outputs = enc_outputs.transpose(0, 1)  # [B, T, F] -> [T, B, F].
+
+			# TODO [check] >> Is it proper to use enc_outputs & enc_hiddens?
+			if bptt is False:
+				self.decoder.init_state(src, enc_outputs, enc_hiddens)
+			dec_outs, attns = self.decoder(dec_in, enc_outputs, memory_lengths=lengths, with_align=with_align)
+			outs = self.generator(dec_outs)
+			return outs, attns
+
+	class Inferer(object):
+		def __init__(self, model):
+			self.model = model
+
+		def __call__(self, inputs, outputs, output_lens, device):
+			gts = outputs[:,1:]
+			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long() # [B, T, F] -> [T, B, F].
+
+			inputs = inputs.to(device)
+			outputs, output_lens = outputs.to(device), output_lens.to(device)
+
+			model_outputs = self.model(inputs, outputs, output_lens)
+
+			predictions = model_outputs[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+			#attentions = model_outputs[1]['std']
+
+			_, predictions = torch.max(predictions, 2)
+			return gts.numpy(), predictions.cpu().numpy()
+
+	#--------------------
+	# Build a model.
+
+	model = MyCompositeModel(image_height, image_width, image_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size)
+
+	if is_model_initialized:
+		# Initialize model weights.
+		for name, param in model.named_parameters():
+			if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
+				print(f'Skip {name} as it has already been initialized.')
+				continue
+			try:
+				if 'bias' in name:
+					torch.nn.init.constant_(param, 0.0)
+				elif 'weight' in name:
+					torch.nn.init.kaiming_normal_(param)
+			except Exception as ex:  # For batch normalization.
+				if 'weight' in name:
+					param.data.fill_(1)
+				continue
+	if is_model_loaded:
+		# Load a model.
+		model = load_model(model_filepath_to_load, model, device=device)
+
+	model = model.to(device)
+
+	#--------------------
+	# Evaluate the model.
+
+	print('Start evaluating...')
+	start_time = time.time()
+	model.eval()
+	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=True, device=device)
+	print('End evaluating: {} secs.'.format(time.time() - start_time))
+
 def recognize_text():
 	raise NotImplementedError
 
@@ -3291,7 +3485,7 @@ def recognize_text_using_craft_and_character_recognizer():
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
 
-	charset = tg_util.construct_charset(hangeul_jamo=False, space=False)
+	charset = tg_util.construct_charset(hangeul_jamo=False, space=True)
 
 	gpu = 0
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
@@ -3418,7 +3612,7 @@ def recognize_text_using_craft_and_word_recognizer():
 	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
 	decoder = 'Attn'  # The type of decoder. {'CTC', 'Attn'}.
 
-	charset = tg_util.construct_charset(hangeul_jamo=False, space=False)
+	charset = tg_util.construct_charset(hangeul_jamo=False, space=True)
 
 	gpu = 0
 	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
@@ -3538,6 +3732,8 @@ def main():
 	#recognize_word_by_rare2_and_opennmt()  # Use RARE #2 (encoder) + OpenNMT (decoder).
 	recognize_word_by_aster_and_opennmt()  # Use ASTER (encoder) + OpenNMT (decoder).
 	#recognize_word_using_mixup()  # Use RARE #1. Not working.
+
+	evaluate_aster_and_opennmt_word_recognizer()
 
 	# Recognize text using CRAFT (scene text detector) + word recognizer.
 	#recognize_text_using_craft_and_word_recognizer()  # Not yet implemented.
