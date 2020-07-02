@@ -20,11 +20,13 @@ def construct_font(korean=True, english=True):
 		system_font_dir_path = 'C:/Windows/Fonts'
 		font_base_dir_path = 'D:/work/font'
 
-	font_dir_paths = []
+	font_dir_paths = list()
 	if korean:
+		#font_dir_paths.append(font_base_dir_path + '/kor_small')
 		font_dir_paths.append(font_base_dir_path + '/kor_large')
 		#font_dir_paths.append(font_base_dir_path + '/kor_receipt')
 	if english:
+		#font_dir_paths.append(font_base_dir_path + '/eng_small')
 		font_dir_paths.append(font_base_dir_path + '/eng_large')
 		#font_dir_paths.append(font_base_dir_path + '/eng_receipt')
 

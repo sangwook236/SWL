@@ -23,6 +23,10 @@ class TextLineDatasetBase(abc.ABC):
 		self._default_value = default_value
 
 	@property
+	def labels(self):
+		return self._labels
+
+	@property
 	def num_classes(self):
 		return self._num_classes
 

@@ -982,15 +982,12 @@ class MyRunner(object):
 
 #--------------------------------------------------------------------
 
-def check_data(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio, batch_size):
-	runner = MyRunner(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio)
-	default_value = -1
-
+def check_data(dataset, batch_size, default_value=-1):
 	train_examples_per_epoch, test_examples_per_epoch = None, None
 	train_steps_per_epoch = None if train_examples_per_epoch is None else math.ceil(train_examples_per_epoch / batch_size)
 	test_steps_per_epoch = None if test_examples_per_epoch is None else math.ceil(test_examples_per_epoch / batch_size)
 
-	generator = runner.dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=False)
+	generator = dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=False)
 	for batch_step, (batch_data, num_batch_examples) in enumerate(generator):
 		#batch_images (np.array), batch_labels_str (a list of strings), batch_labels_int (a list of sequences) = batch_data
 
@@ -1006,7 +1003,7 @@ def check_data(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio,
 		if batch_size != len(batch_data[1]) or batch_size != len(batch_data[2]):
 			print('Invalid label size: {0} != {1} or {0} != {2}.'.format(batch_size, len(batch_data[1]), len(batch_data[1])))
 
-		batch_data2_decoded = map(lambda x: runner.dataset.decode_label(x), batch_data[2])
+		batch_data2_decoded = map(lambda x: dataset.decode_label(x), batch_data[2])
 		for idx, (lbl, lbl_int, lbl_int_decoded) in enumerate(zip(batch_data[1], batch_data[2], batch_data2_decoded)):
 			if len(lbl) != len(lbl_int_decoded):
 				print('Unmatched label length: {} != {}.'.format(lbl, lbl_int))
@@ -1027,8 +1024,8 @@ def check_data(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio,
 
 		break
 
-	#generator = runner.dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=False)
-	runner.dataset.visualize(generator, num_examples=10)
+	#generator = dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=False)
+	dataset.visualize(generator, num_examples=10)
 
 #--------------------------------------------------------------------
 
@@ -1059,12 +1056,13 @@ def main():
 		data_dir_path = None
 
 	#--------------------
+	runner = MyRunner(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio)
+
 	if False:
 		print('[SWL] Info: Start checking data...')
 		start_time = time.time()
-		check_data(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio, batch_size)
+		check_data(runner.dataset, batch_size, default_value=-1)
 		print('[SWL] Info: End checking data: {} secs.'.format(time.time() - start_time))
-		return
 
 	#--------------------
 	checkpoint_dir_path, output_dir_path = None, None
@@ -1086,8 +1084,6 @@ def main():
 		inference_dir_path = os.path.join(output_dir_path, 'inference')
 
 	#--------------------
-	runner = MyRunner(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio)
-
 	if is_trained:
 		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
 			os.makedirs(checkpoint_dir_path, exist_ok=True)
