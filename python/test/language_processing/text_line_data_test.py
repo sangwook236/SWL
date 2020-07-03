@@ -5,6 +5,7 @@ import sys
 sys.path.append('../../src')
 
 import os, time, functools, glob
+import swl.language_processing.util as swl_langproc_util
 import text_line_data
 import text_generation_util as tg_util
 
@@ -98,18 +99,17 @@ def BasicRunTimeTextLineDataset_test():
 		#color_functor = None
 
 		labels = functools.reduce(lambda x, txt: x.union(txt), korean_word_set, set())
-		labels.add(text_line_data.BasicRunTimeTextLineDataset.UNKNOWN)
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
-		print('[SWL] Info: Labels = {}.'.format(labels))
-		print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		num_classes = len(labels) + 1  # Labels + blank label.
+		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 		print('Start creating a Korean dataset...')
 		start_time = time.time()
-		dataset = text_line_data.BasicRunTimeTextLineDataset(korean_word_set, image_height, image_width, image_channel, font_list, color_functor=color_functor, labels=labels, num_classes=num_classes)
+		dataset = text_line_data.BasicRunTimeTextLineDataset(label_converter, korean_word_set, image_height, image_width, image_channel, font_list, color_functor=color_functor)
 		print('End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -129,18 +129,17 @@ def BasicRunTimeTextLineDataset_test():
 		#color_functor = None
 
 		labels = functools.reduce(lambda x, txt: x.union(txt), english_word_set, set())
-		labels.add(text_line_data.BasicRunTimeTextLineDataset.UNKNOWN)
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
-		print('[SWL] Info: Labels = {}.'.format(labels))
-		print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		num_classes = len(labels) + 1  # Labels + blank label.
+		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 		print('Start creating an English dataset...')
 		start_time = time.time()
-		dataset = text_line_data.BasicRunTimeTextLineDataset(english_word_set, image_height, image_width, image_channel, font_list, color_functor=color_functor, labels=labels, num_classes=num_classes)
+		dataset = text_line_data.BasicRunTimeTextLineDataset(label_converter, english_word_set, image_height, image_width, image_channel, font_list, color_functor=color_functor)
 		print('End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -162,18 +161,17 @@ def BasicRunTimeTextLineDataset_test():
 		#color_functor = None
 
 		labels = functools.reduce(lambda x, txt: x.union(txt), all_word_set, set())
-		labels.add(text_line_data.BasicRunTimeTextLineDataset.UNKNOWN)
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
-		print('[SWL] Info: Labels = {}.'.format(labels))
-		print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		num_classes = len(labels) + 1  # Labels + blank label.
+		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 		print('Start creating a Korean+English dataset...')
 		start_time = time.time()
-		dataset = text_line_data.BasicRunTimeTextLineDataset(all_word_set, image_height, image_width, image_channel, font_list, color_functor=color_functor, labels=labels, num_classes=num_classes)
+		dataset = text_line_data.BasicRunTimeTextLineDataset(label_converter, all_word_set, image_height, image_width, image_channel, font_list, color_functor=color_functor)
 		print('End creating a Korean+English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -204,18 +202,17 @@ def RunTimeAlphaMatteTextLineDataset_test():
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 		labels = functools.reduce(lambda x, txt: x.union(txt), korean_word_set, set())
-		labels.add(text_line_data.RunTimeAlphaMatteTextLineDataset.UNKNOWN)
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
-		print('[SWL] Info: Labels = {}.'.format(labels))
-		print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		num_classes = len(labels) + 1  # Labels + blank label.
+		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 		print('Start creating a Korean dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(korean_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, labels=labels, num_classes=num_classes, alpha_matte_mode='1')
+		dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(label_converter, korean_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, alpha_matte_mode='1')
 		print('End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -236,18 +233,17 @@ def RunTimeAlphaMatteTextLineDataset_test():
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 		labels = functools.reduce(lambda x, txt: x.union(txt), english_word_set, set())
-		labels.add(text_line_data.RunTimeAlphaMatteTextLineDataset.UNKNOWN)
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
-		print('[SWL] Info: Labels = {}.'.format(labels))
-		print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		num_classes = len(labels) + 1  # Labels + blank label.
+		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 		print('Start creating an English dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(english_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, labels=labels, num_classes=num_classes, alpha_matte_mode='1')
+		dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(label_converter, english_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, alpha_matte_mode='1')
 		print('End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -270,18 +266,17 @@ def RunTimeAlphaMatteTextLineDataset_test():
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 		labels = functools.reduce(lambda x, txt: x.union(txt), all_word_set, set())
-		labels.add(text_line_data.RunTimeAlphaMatteTextLineDataset.UNKNOWN)
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
-		print('[SWL] Info: Labels = {}.'.format(labels))
-		print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		num_classes = len(labels) + 1  # Labels + blank label.
+		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 		print('Start creating a Korean+English dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(all_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, labels=labels, num_classes=num_classes, alpha_matte_mode='1')
+		dataset = text_line_data.RunTimeAlphaMatteTextLineDataset(label_converter, all_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, alpha_matte_mode='1')
 		print('End creating a Korean+English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -291,6 +286,8 @@ def RunTimeAlphaMatteTextLineDataset_test():
 		dataset.visualize(test_generator, num_examples=10)
 
 def RunTimeHangeulJamoAlphaMatteTextLineDataset_test():
+	import hangeul_util as hg_util
+
 	korean_word_set, _, all_word_set = construct_word_sets()
 
 	if 'posix' == os.name:
@@ -299,6 +296,11 @@ def RunTimeHangeulJamoAlphaMatteTextLineDataset_test():
 	else:
 		system_font_dir_path = 'C:/Windows/Fonts'
 		font_base_dir_path = 'D:/work/font'
+
+	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
+	hangeul2jamo_functor = lambda hangeul_str: hg_util.hangeul2jamo(hangeul_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
+	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
+	jamo2hangeul_functor = lambda jamo_str: hg_util.jamo2hangeul(jamo_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
 
 	if False:
 		font_dir_path = font_base_dir_path + '/kor'
@@ -311,20 +313,19 @@ def RunTimeHangeulJamoAlphaMatteTextLineDataset_test():
 		image_height, image_width, image_channel = 64, 640, 1
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
-		labels = functools.reduce(lambda x, txt: x.union(text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset.hangeul2jamo(txt)), korean_word_set, set())
-		labels.add(text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset.UNKNOWN)
-		#labels.add(text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset.EOJC)
+		labels = functools.reduce(lambda x, txt: x.union(hangeul2jamo_functor(txt)), korean_word_set, set())
+		labels.remove(swl_langproc_util.JamoTokenConverter.EOJ)
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
-		print('[SWL] Info: Labels = {}.'.format(labels))
-		print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		num_classes = len(labels) + 1  # Labels + blank label.
+		label_converter = swl_langproc_util.JamoTokenConverter(labels, hangeul2jamo_functor, jamo2hangeul_functor, pad_value=None)
+		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 		print('Start creating a Korean dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset(korean_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, labels=labels, num_classes=num_classes, alpha_matte_mode='1')
+		dataset = text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset(label_converter, korean_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, alpha_matte_mode='1')
 		print('End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -346,20 +347,19 @@ def RunTimeHangeulJamoAlphaMatteTextLineDataset_test():
 		image_height, image_width, image_channel = 64, 640, 1
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
-		labels = functools.reduce(lambda x, txt: x.union(text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset.hangeul2jamo(txt)), all_word_set, set())
-		labels.add(text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset.UNKNOWN)
-		#labels.add(text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset.EOJC)
+		labels = functools.reduce(lambda x, txt: x.union(hangeul2jamo_functor(txt)), all_word_set, set())
+		labels.remove(swl_langproc_util.JamoTokenConverter.EOJ)
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
-		print('[SWL] Info: Labels = {}.'.format(labels))
-		print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		num_classes = len(labels) + 1  # Labels + blank label.
+		label_converter = swl_langproc_util.JamoTokenConverter(labels, hangeul2jamo_functor, jamo2hangeul_functor, pad_value=None)
+		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 		print('Start creating a Korean+English dataset...')
 		start_time = time.time()
-		dataset = text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset(all_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, labels=labels, num_classes=num_classes, alpha_matte_mode='1')
+		dataset = text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset(label_converter, all_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, alpha_matte_mode='1')
 		print('End creating a Korean+English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -382,18 +382,17 @@ def JsonBasedTextLineDataset_test():
 		string.digits + \
 		string.punctuation + \
 		' '
-	labels = list(labels) + [text_line_data.JsonBasedTextLineDataset.UNKNOWN]
-	labels.sort()
+	labels = sorted(labels)
 	#labels = ''.join(sorted(labels))
-	print('[SWL] Info: Labels = {}.'.format(labels))
-	print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-	num_classes = len(labels) + 1  # Labels + blank label.
+	label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+	# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+	print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+	print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 	print('Start creating a JsonBasedTextLineDataset...')
 	start_time = time.time()
-	dataset = text_line_data.JsonBasedTextLineDataset(train_json_filepath, test_json_filepath, image_height, image_width, image_channel, labels, num_classes)
+	dataset = text_line_data.JsonBasedTextLineDataset(label_converter, train_json_filepath, test_json_filepath, image_height, image_width, image_channel)
 	print('End creating a JsonBasedTextLineDataset: {} secs.'.format(time.time() - start_time))
 
 	train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -403,11 +402,18 @@ def JsonBasedTextLineDataset_test():
 	dataset.visualize(test_generator, num_examples=10)
 
 def JsonBasedHangeulJamoTextLineDataset_test():
+	import hangeul_util as hg_util
+
 	# REF [function] >> generate_text_datasets() in ${DataAnalysis_HOME}/app/text_recognition/generate_text_dataset.py.
 	train_json_filepath = './text_train_dataset/text_dataset.json'
 	test_json_filepath = './text_test_dataset/text_dataset.json'
 
 	image_height, image_width, image_channel = 64, 640, 1
+
+	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
+	hangeul2jamo_functor = lambda hangeul_str: hg_util.hangeul2jamo(hangeul_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
+	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
+	jamo2hangeul_functor = lambda jamo_str: hg_util.jamo2hangeul(jamo_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
 
 	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
@@ -421,18 +427,17 @@ def JsonBasedHangeulJamoTextLineDataset_test():
 		string.digits + \
 		string.punctuation + \
 		' '
-	labels = list(labels) + [text_line_data.JsonBasedHangeulJamoTextLineDataset.UNKNOWN, text_line_data.JsonBasedHangeulJamoTextLineDataset.EOJC]
-	labels.sort()
+	labels = sorted(labels)
 	#labels = ''.join(sorted(labels))  # Error.
-	print('[SWL] Info: Labels = {}.'.format(labels))
-	print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-	num_classes = len(labels) + 1  # Labels + blank label.
+	label_converter = swl_langproc_util.JamoTokenConverter(labels, hangeul2jamo_functor, jamo2hangeul_functor, pad_value=None)
+	# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+	print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+	print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 	print('Start creating a JsonBasedHangeulJamoTextLineDataset...')
 	start_time = time.time()
-	dataset = text_line_data.JsonBasedHangeulJamoTextLineDataset(train_json_filepath, test_json_filepath, image_height, image_width, image_channel, labels, num_classes)
+	dataset = text_line_data.JsonBasedHangeulJamoTextLineDataset(label_converter, train_json_filepath, test_json_filepath, image_height, image_width, image_channel)
 	print('End creating a JsonBasedHangeulJamoTextLineDataset: {} secs.'.format(time.time() - start_time))
 
 	train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -495,8 +500,8 @@ def create_corrupter():
 	])
 
 class MyRunTimeCorruptedTextLinePairDataset(text_line_data.RunTimeCorruptedTextLinePairDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=None, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor, labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=None, use_NWHC=True):
+		super().__init__(label_converter, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor, use_NWHC)
 
 		self._corrupter = create_corrupter()
 
@@ -537,18 +542,17 @@ def RunTimeCorruptedTextLinePairDataset_test():
 		#color_functor = None
 
 		labels = functools.reduce(lambda x, txt: x.union(txt), korean_word_set, set())
-		labels.add(MyRunTimeCorruptedTextLinePairDataset.UNKNOWN)
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
-		print('[SWL] Info: Labels = {}.'.format(labels))
-		print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		num_classes = len(labels) + 1  # Labels + blank label.
+		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 		print('Start creating a Korean dataset...')
 		start_time = time.time()
-		dataset = MyRunTimeCorruptedTextLinePairDataset(korean_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, labels=labels, num_classes=num_classes)
+		dataset = MyRunTimeCorruptedTextLinePairDataset(label_converter, korean_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor)
 		print('End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -571,18 +575,17 @@ def RunTimeCorruptedTextLinePairDataset_test():
 		#color_functor = None
 
 		labels = functools.reduce(lambda x, txt: x.union(txt), english_word_set, set())
-		labels.add(MyRunTimeCorruptedTextLinePairDataset.UNKNOWN)
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
-		print('[SWL] Info: Labels = {}.'.format(labels))
-		print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		num_classes = len(labels) + 1  # Labels + blank label.
+		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 		print('Start creating an English dataset...')
 		start_time = time.time()
-		dataset = MyRunTimeCorruptedTextLinePairDataset(english_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, labels=labels, num_classes=num_classes)
+		dataset = MyRunTimeCorruptedTextLinePairDataset(label_converter, english_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor)
 		print('End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -608,18 +611,17 @@ def RunTimeCorruptedTextLinePairDataset_test():
 		#color_functor = None
 
 		labels = functools.reduce(lambda x, txt: x.union(txt), all_word_set, set())
-		labels.add(MyRunTimeCorruptedTextLinePairDataset.UNKNOWN)
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
-		print('[SWL] Info: Labels = {}.'.format(labels))
-		print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		num_classes = len(labels) + 1  # Labels + blank label.
+		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 		print('Start creating a Korean+English dataset...')
 		start_time = time.time()
-		dataset = MyRunTimeCorruptedTextLinePairDataset(all_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, labels=labels, num_classes=num_classes)
+		dataset = MyRunTimeCorruptedTextLinePairDataset(label_converter, all_word_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=color_functor)
 		print('End creating a Korean+English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -629,8 +631,8 @@ def RunTimeCorruptedTextLinePairDataset_test():
 		dataset.visualize(test_generator, num_examples=10)
 
 class MyRunTimeSuperResolvedTextLinePairDataset(text_line_data.RunTimeSuperResolvedTextLinePairDatasetBase):
-	def __init__(self, text_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, color_functor=None, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
-		super().__init__(text_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, color_functor, labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, text_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, color_functor=None, use_NWHC=True):
+		super().__init__(label_converter, text_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, color_functor, use_NWHC)
 
 		self._corrupter = create_corrupter()
 
@@ -673,18 +675,17 @@ def RunTimeSuperResolvedTextLinePairDataset_test():
 		#color_functor = None
 
 		labels = functools.reduce(lambda x, txt: x.union(txt), korean_word_set, set())
-		labels.add(MyRunTimeSuperResolvedTextLinePairDataset.UNKNOWN)
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
-		print('[SWL] Info: Labels = {}.'.format(labels))
-		print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		num_classes = len(labels) + 1  # Labels + blank label.
+		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 		print('Start creating a Korean dataset...')
 		start_time = time.time()
-		dataset = MyRunTimeSuperResolvedTextLinePairDataset(korean_word_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, labels=labels, num_classes=num_classes)
+		dataset = MyRunTimeSuperResolvedTextLinePairDataset(label_converter, korean_word_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, color_functor=color_functor)
 		print('End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -709,18 +710,17 @@ def RunTimeSuperResolvedTextLinePairDataset_test():
 		#color_functor = None
 
 		labels = functools.reduce(lambda x, txt: x.union(txt), english_word_set, set())
-		labels.add(MyRunTimeSuperResolvedTextLinePairDataset.UNKNOWN)
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
-		print('[SWL] Info: Labels = {}.'.format(labels))
-		print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		num_classes = len(labels) + 1  # Labels + blank label.
+		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 		print('Start creating an English dataset...')
 		start_time = time.time()
-		dataset = MyRunTimeSuperResolvedTextLinePairDataset(english_word_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, labels=labels, num_classes=num_classes)
+		dataset = MyRunTimeSuperResolvedTextLinePairDataset(label_converter, english_word_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, color_functor=color_functor)
 		print('End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -748,17 +748,16 @@ def RunTimeSuperResolvedTextLinePairDataset_test():
 		#color_functor = None
 
 		labels = functools.reduce(lambda x, txt: x.union(txt), all_word_set, set())
-		labels.add(MyRunTimeSuperResolvedTextLinePairDataset.UNKNOWN)
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
-		print('[SWL] Info: Labels = {}.'.format(labels))
-		print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		num_classes = len(labels) + 1  # Labels + blank label.
+		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 		print('Start creating a Korean+English dataset...')
-		dataset = MyRunTimeSuperResolvedTextLinePairDataset(all_word_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, color_functor=color_functor, labels=labels, num_classes=num_classes)
+		dataset = MyRunTimeSuperResolvedTextLinePairDataset(label_converter, all_word_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, color_functor=color_functor)
 		print('End creating a Korean+English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -771,7 +770,7 @@ def main():
 	#hangeul_charset, alphabet_charset, digit_charset, symbol_charset, hangeul_jamo_charset = construct_charsets()
 
 	#--------------------
-	#BasicRunTimeTextLineDataset_test()
+	BasicRunTimeTextLineDataset_test()
 
 	#--------------------
 	#RunTimeAlphaMatteTextLineDataset_test()
@@ -782,7 +781,7 @@ def main():
 
 	#--------------------
 	#RunTimeCorruptedTextLinePairDataset_test()
-	RunTimeSuperResolvedTextLinePairDataset_test()
+	#RunTimeSuperResolvedTextLinePairDataset_test()
 
 #--------------------------------------------------------------------
 

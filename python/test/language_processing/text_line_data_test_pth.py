@@ -4,73 +4,19 @@
 import sys
 sys.path.append('../../src')
 
-import os, math, random, time, datetime, functools, itertools, glob, csv
+import os, random, time, functools, glob
 import numpy as np
 import torch, torchvision
 import cv2
+import swl.language_processing.util as swl_langproc_util
 
 class TextLineDatasetBase(torch.utils.data.Dataset):
-	#SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
-	#EOS = '<EOS>'  # All strings will end with the End-Of-String token.
-	#SOJC = '<SOJC>'  # All Hangeul jamo strings will start with the Start-Of-Jamo-Character token.
-	EOJC = '<EOJC>'  # All Hangeul jamo strings will end with the End-Of-Jamo-Character token.
-	UNKNOWN = '<UNK>'  # Unknown label token.
-
-	def __init__(self, labels, num_classes, default_value=-1):
-		self.labels, self._num_classes, self._default_value = labels, num_classes, default_value
-
-	@property
-	def num_classes(self):
-		return self._num_classes
-
-	@property
-	def default_value(self):
-		return self._default_value
-
-	# String label -> integer label.
-	def encode_label(self, label_str, *args, **kwargs):
-		def label2index(ch):
-			try:
-				return self.labels.index(ch)
-			except ValueError:
-				print('[SWL] Error: Failed to encode a label, {} in {}.'.format(ch, label_str))
-				return self.labels.index(TextLineDatasetBase.UNKNOWN)
-		return list(label2index(ch) for ch in label_str)
-
-	# Integer label -> string label.
-	def decode_label(self, label_int, *args, **kwargs):
-		def index2label(idx):
-			try:
-				return self.labels[idx]
-			except IndexError:
-				print('[SWL] Error: Failed to decode a label, {} in {}.'.format(idx, label_int))
-				return TextLineDatasetBase.UNKNOWN  # TODO [check] >> Is it correct?
-		return ''.join(list(index2label(idx) for idx in label_int if idx != self._default_value))
-
-	# String labels -> Integer labels.
-	def encode_labels(self, labels_str, dtype=np.int16, *args, **kwargs):
-		max_label_len = functools.reduce(lambda x, y: max(x, len(y)), labels_str, 0)
-		labels_int = np.full((len(labels_str), max_label_len), self._default_value, dtype=dtype)
-		for (idx, lbl) in enumerate(labels_str):
-			try:
-				labels_int[idx,:len(lbl)] = np.array(list(self.labels.index(ch) for ch in lbl))
-			except ValueError:
-				pass
-		return labels_int
-
-	# Integer labels -> string labels.
-	def decode_labels(self, labels_int, *args, **kwargs):
-		def int2str(label):
-			try:
-				label = list(self.labels[lid] for lid in label if lid != self._default_value)
-				return ''.join(label)
-			except ValueError:
-				return None
-		return list(map(int2str, labels_int))
+	def __init__(self, label_converter):
+		self.label_converter = label_converter
 
 class MyRunTimeTextLineDataset(TextLineDatasetBase):
-	def __init__(self, num_examples, text_set, text_generator, color_functor, transform, labels, num_classes, default_value=-1):
-		super().__init__(labels, num_classes, default_value)
+	def __init__(self, label_converter, num_examples, text_set, text_generator, color_functor, transform):
+		super().__init__(label_converter)
 	
 		self.num_examples = num_examples
 		self.transform = transform
@@ -85,14 +31,14 @@ class MyRunTimeTextLineDataset(TextLineDatasetBase):
 
 	def __getitem__(self, idx):
 		texts, scenes, _ = next(self.data_generator)
-		text_int = self.encode_label(texts[0])
+		text_int = self.label_converter.encode(texts[0])
 
 		sample = {'input': scenes[0], 'output': (texts[0], text_int)}
 		return self.transform(sample) if self.transform else sample
 
 class MyFileBasedTextLineDataset(TextLineDatasetBase):
-	def __init__(self, data, transform, labels, num_classes, default_value=-1):
-		super().__init__(labels, num_classes, default_value)
+	def __init__(self, label_converter, data, transform):
+		super().__init__(label_converter)
 	
 		self.transform = transform
 
@@ -102,12 +48,12 @@ class MyFileBasedTextLineDataset(TextLineDatasetBase):
 		self.data = list()
 		for image, label_str in data:
 			try:
-				label_int = self.encode_label(label_str)
+				label_int = self.label_converter.encode(label_str)
 			except Exception:
 				#print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
 				continue
-			if label_str != self.decode_label(label_int):
-				print('[SWL] Error: Mismatched encoded and decoded labels: {} != {}.'.format(label_str, self.decode_label(label_int)))
+			if label_str != self.label_converter.decode(label_int):
+				print('[SWL] Error: Mismatched encoded and decoded labels: {} != {}.'.format(label_str, self.label_converter.decode(label_int)))
 				continue
 
 			self.data.append((image, label_str, label_int))
@@ -118,7 +64,7 @@ class MyFileBasedTextLineDataset(TextLineDatasetBase):
 	def __getitem__(self, idx):
 		"""
 		image, label_str = self.data[idx]
-		label_int = self.encode_label(label_str)
+		label_int = self.label_converter.encode(label_str)
 		"""
 		image, label_str, label_int = self.data[idx]
 
@@ -128,7 +74,7 @@ class MyFileBasedTextLineDataset(TextLineDatasetBase):
 #--------------------------------------------------------------------
 
 def construct_chars():
-	import string, random
+	import string
 
 	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
 	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
@@ -200,11 +146,9 @@ def generate_text_set(max_label_len):
 		texts = set(filter(lambda txt: len(txt) <= max_label_len, texts))
 
 	if False:
-		from swl.language_processing.util import draw_character_histogram
-		draw_character_histogram(texts, charset=None)
+		swl_langproc_util.draw_character_histogram(texts, charset=None)
 
 	labels = functools.reduce(lambda x, txt: x.union(txt), texts, set())
-	labels.add(TextLineDatasetBase.UNKNOWN)
 	labels = sorted(labels)
 	#labels = ''.join(sorted(labels))
 
@@ -367,7 +311,7 @@ def load_data(max_label_len, is_grayscale=False):
 			data_base_dir_path = 'D:/work/dataset'
 
 		# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_vision/pascal_voc_test.py
-		data_dir_path = data_base_dir_path + '/text/receipt_epapyrus/epapyrus_20190618/receipt_text_line'
+		data_dir_path = data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line'
 
 		image_filepaths, label_filepaths = sorted(glob.glob(os.path.join(data_dir_path, '*.png'), recursive=False)), sorted(glob.glob(os.path.join(data_dir_path, '*.txt'), recursive=False))
 		if not image_filepaths or not label_filepaths:
@@ -586,8 +530,10 @@ def MyRunTimeTextLineDataset_test():
 	text_generator = create_printed_text_generator(image_height, image_channel)
 	text_set, labels = generate_text_set(max_label_len)
 
-	print('[SWL] Info: Labels = {}.'.format(labels))
-	print('[SWL] Info: #labels = {}.'.format(len(labels)))
+	label_converter = swl_langproc_util.TokenConverter(labels)
+
+	print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+	print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 	num_classes = len(labels) + 1  # Labels + blank label.
@@ -608,7 +554,7 @@ def MyRunTimeTextLineDataset_test():
 		ToTensor()
 	])
 
-	dataset = MyRunTimeTextLineDataset(num_examples, text_set, text_generator, color_functor, transform, labels, num_classes, default_value=-1)
+	dataset = MyRunTimeTextLineDataset(label_converter, num_examples, text_set, text_generator, color_functor, transform)
 
 	for idx in range(len(dataset)):
 		sample = dataset[idx]
@@ -633,8 +579,10 @@ def MyFileBasedTextLineDataset_test():
 
 	data, labels = load_data(max_label_len, is_grayscale=(1 == image_channel))
 
-	print('[SWL] Info: Labels = {}.'.format(labels))
-	print('[SWL] Info: #labels = {}.'.format(len(labels)))
+	label_converter = swl_langproc_util.TokenConverter(labels)
+
+	print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+	print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 	num_classes = len(labels) + 1  # Labels + blank label.
@@ -651,7 +599,7 @@ def MyFileBasedTextLineDataset_test():
 		ToTensor()
 	])
 
-	dataset = MyFileBasedTextLineDataset(data, transform, labels, num_classes, default_value=-1)
+	dataset = MyFileBasedTextLineDataset(label_converter, data, transform)
 
 	for idx in range(len(dataset)):
 		sample = dataset[idx]

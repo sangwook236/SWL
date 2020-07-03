@@ -755,18 +755,17 @@ def Icdar2019SroieTextLineDataset_test():
 		string.digits + \
 		string.punctuation + \
 		' '
-	labels = list(labels) + [icdar_data.Icdar2019SroieTextLineDataset.UNKNOWN]
-	labels.sort()
+	labels = sorted(labels)
 	#labels = ''.join(sorted(labels))
-	print('[SWL] Info: Labels = {}.'.format(labels))
-	print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-	num_classes = len(labels) + 1  # Labels + blank label.
+	label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+	# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+	print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+	print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 	print('Start creating an Icdar2019SroieTextLineDataset...')
 	start_time = time.time()
-	dataset = icdar_data.Icdar2019SroieTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count, labels, num_classes)
+	dataset = icdar_data.Icdar2019SroieTextLineDataset(label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count)
 	print('End creating an Icdar2019SroieTextLineDataset: {} secs.'.format(time.time() - start_time))
 
 	train_generator = dataset.create_train_batch_generator(batch_size=32, shuffle=True)

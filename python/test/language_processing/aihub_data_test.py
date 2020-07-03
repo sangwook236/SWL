@@ -216,7 +216,7 @@ def AiHubPrintedTextDataset_test():
 	max_label_len = 10
 	is_image_used = False
 
-	charset = tg_util.construct_charset(hangeul_jamo=False, space=False)
+	charset = tg_util.construct_charset(space=False)
 
 	train_test_ratio = 0.8
 	batch_size = 64

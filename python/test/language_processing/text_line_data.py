@@ -1,81 +1,18 @@
-import os, abc, random, functools, time, glob, json
+import os, abc, random, time, json
 import numpy as np
 import cv2
-import swl.machine_learning.util as swl_ml_util
+#import swl.machine_learning.util as swl_ml_util
 import text_generation_util as tg_util
-import hangeul_util as hg_util
+#import hangeul_util as hg_util
 
 #--------------------------------------------------------------------
 
 class TextLineDatasetBase(abc.ABC):
-	#SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
-	#EOS = '<EOS>'  # All strings will end with the End-Of-String token.
-	#SOJC = '<SOJC>'  # All Hangeul jamo strings will start with the Start-Of-Jamo-Character token.
-	EOJC = '<EOJC>'  # All Hangeul jamo strings will end with the End-Of-Jamo-Character token.
-	UNKNOWN = '<UNK>'  # Unknown label token.
-
-	def __init__(self, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
+	def __init__(self, label_converter, use_NWHC=True):
 		super().__init__()
 
-		self._labels = labels
-		self._num_classes = num_classes
+		self._label_converter = label_converter
 		self._use_NWHC = use_NWHC
-		self._default_value = default_value
-
-	@property
-	def labels(self):
-		return self._labels
-
-	@property
-	def num_classes(self):
-		return self._num_classes
-
-	@property
-	def default_value(self):
-		return self._default_value
-
-	# String label -> integer label.
-	# REF [function] >> TokenConverter.encode() in swl/language_processing/util.py.
-	def encode_label(self, label_str, *args, **kwargs):
-		def label2index(ch):
-			try:
-				return self._labels.index(ch)
-			except ValueError:
-				print('[SWL] Error: Failed to encode a label, {} in {}.'.format(ch, label_str))
-				return self._labels.index(self.UNKNOWN)
-		return list(label2index(ch) for ch in label_str)
-
-	# Integer label -> string label.
-	# REF [function] >> TokenConverter.decode() in swl/language_processing/util.py.
-	def decode_label(self, label_int, *args, **kwargs):
-		def index2label(id):
-			try:
-				return self._labels[id]
-			except IndexError:
-				print('[SWL] Error: Failed to decode a label, {} in {}.'.format(id, label_int))
-				return self.UNKNOWN  # TODO [check] >> Is it correct?
-		return ''.join(list(index2label(id) for id in label_int if id != self._default_value))
-
-	# String labels -> Integer labels.
-	def encode_labels(self, labels_str, dtype=np.int16, *args, **kwargs):
-		max_label_len = functools.reduce(lambda x, y: max(x, len(y)), labels_str, 0)
-		labels_int = np.full((len(labels_str), max_label_len), self._default_value, dtype=dtype)
-		for (idx, lbl) in enumerate(labels_str):
-			try:
-				labels_int[idx,:len(lbl)] = np.array(list(self._labels.index(ch) for ch in lbl))
-			except ValueError:
-				pass
-		return labels_int
-
-	# Integer labels -> string labels.
-	def decode_labels(self, labels_int, *args, **kwargs):
-		def int2str(label):
-			try:
-				label = list(self._labels[id] for id in label if id != self._default_value)
-				return ''.join(label)
-			except ValueError:
-				return None
-		return list(map(int2str, labels_int))
 
 	@abc.abstractmethod
 	def augment(self, inputs, outputs, *args, **kwargs):
@@ -114,7 +51,7 @@ class TextLineDatasetBase(abc.ABC):
 
 			minval, maxval = np.min(batch_images), np.max(batch_images)
 			for idx, (img, lbl_str, lbl_int) in enumerate(zip(batch_images, batch_labels_str, batch_labels_int)):
-				print('Label (str) = {}, Label (int) = {}({}).'.format(lbl_str, lbl_int, self.decode_label(lbl_int)))
+				print('Label (str) = {}, Label (int) = {}({}).'.format(lbl_str, lbl_int, self._label_converter.decode(lbl_int)))
 
 				#img = ((img - minval) * (255 / (maxval - minval))).astype(np.uint8)
 				img = ((img - minval) / (maxval - minval)).astype(np.float32)
@@ -160,21 +97,11 @@ class TextLineDatasetBase(abc.ABC):
 
 		return images
 
-	@staticmethod
-	def hangeul2jamo(label):
-        # NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
-		return hg_util.hangeul2jamo(label, eojc_str=TextLineDatasetBase.EOJC, use_separate_consonants=False, use_separate_vowels=True)
-
-	@staticmethod
-	def jamo2hangeul(label):
-        # NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
-		return hg_util.jamo2hangeul(label, eojc_str=TextLineDatasetBase.EOJC, use_separate_consonants=False, use_separate_vowels=True)
-
 #--------------------------------------------------------------------
 
 class RunTimeTextLineDatasetBase(TextLineDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, color_functor=None, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
-		super().__init__(labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, text_set, image_height, image_width, image_channel, color_functor=None, use_NWHC=True):
+		super().__init__(label_converter, use_NWHC)
 
 		self._text_set = text_set
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
@@ -322,7 +249,7 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 			scenes = apply_transform(scenes)
 			scenes, _ = self.preprocess(scenes, None)
 			#scene_text_masks, _ = self.preprocess(scene_text_masks, None)
-			texts_int = list(map(lambda txt: self.encode_label(txt), texts))
+			texts_int = list(map(lambda txt: self._label_converter.encode(txt), texts))
 			#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
 			yield (scenes, texts, texts_int), len(texts)
 			if steps_per_epoch and (step + 1) >= steps_per_epoch:
@@ -330,8 +257,8 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 
 # This class is independent of language.
 class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, color_functor=None, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, color_functor=color_functor, labels=labels, num_classes=num_classes, use_NWHC=use_NWHC, default_value=default_value)
+	def __init__(self, label_converter, text_set, image_height, image_width, image_channel, font_list, color_functor=None, use_NWHC=True):
+		super().__init__(label_converter, text_set, image_height, image_width, image_channel, color_functor, use_NWHC)
 
 		#--------------------
 		min_font_size, max_font_size = round(image_height * 0.8), round(image_height * 1.25)
@@ -352,8 +279,8 @@ class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 #--------------------------------------------------------------------
 
 class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, color_functor=None, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, color_functor, labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, text_set, image_height, image_width, image_channel, color_functor=None, use_NWHC=True):
+		super().__init__(label_converter, text_set, image_height, image_width, image_channel, color_functor, use_NWHC)
 
 	def _create_batch_generator(self, textGenerator, color_functor, text_set, batch_size, steps_per_epoch, shuffle, is_training=False):
 		if steps_per_epoch:
@@ -399,7 +326,7 @@ class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
 			scenes = apply_transform(scenes)
 			scenes, _ = self.preprocess(scenes, None)
 			#scene_text_masks = scene_text_masks.astype(np.float32) / 255
-			texts_int = list(map(lambda txt: self.encode_label(txt), texts))
+			texts_int = list(map(lambda txt: self._label_converter.encode(txt), texts))
 			#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
 			yield (scenes, texts, texts_int), len(texts)
 			if steps_per_epoch and (step + 1) >= steps_per_epoch:
@@ -407,8 +334,8 @@ class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
 
 # This class is independent of language.
 class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=None, labels=None, num_classes=0, alpha_matte_mode='1', use_NWHC=True, default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, color_functor, labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=None, alpha_matte_mode='1', use_NWHC=True):
+		super().__init__(label_converter, text_set, image_height, image_width, image_channel, color_functor, use_NWHC)
 
 		#--------------------
 		min_font_size, max_font_size = round(image_height * 0.8), round(image_height * 1.25)
@@ -429,8 +356,8 @@ class RunTimeAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 
 # This class is independent of language.
 class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=None, labels=None, num_classes=0, alpha_matte_mode='1', use_NWHC=True, default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, color_functor, labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=None, alpha_matte_mode='1', use_NWHC=True):
+		super().__init__(label_converter, text_set, image_height, image_width, image_channel, color_functor, use_NWHC)
 
 		#--------------------
 		min_font_size, max_font_size = round(image_height * 0.8), round(image_height * 1.25)
@@ -446,55 +373,14 @@ class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatas
 		self._textGenerator = tg_util.SimpleTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio))
 		"""
 
-	# String label -> integer label.
-	def encode_label(self, label_str, *args, **kwargs):
-		try:
-			label_str = self.hangeul2jamo(label_str)
-			return list(self._labels.index(ch) for ch in label_str)
-		except Exception as ex:
-			print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
-			raise
-
-	# Integer label -> string label.
-	def decode_label(self, label_int, *args, **kwargs):
-		try:
-			label_str = ''.join(list(self._labels[id] for id in label_int if id != self._default_value))
-			return self.jamo2hangeul(label_str)
-		except Exception as ex:
-			print('[SWL] Error: Failed to decode a label: {}.'.format(label_int))
-			raise
-
-	# String labels -> Integer labels.
-	def encode_labels(self, labels_str, dtype=np.int16, *args, **kwargs):
-		labels_str = list(map(lambda label: self.hangeul2jamo(label), labels_str))
-
-		max_label_len = functools.reduce(lambda x, y: max(x, len(y)), labels_str, 0)
-		labels_int = np.full((len(labels_str), max_label_len), self._default_value, dtype=dtype)
-		for (idx, lbl) in enumerate(labels_str):
-			try:
-				labels_int[idx,:len(lbl)] = np.array(list(self._labels.index(ch) for ch in lbl))
-			except ValueError:
-				pass
-		return labels_int
-
-	# Integer labels -> string labels.
-	def decode_labels(self, labels_int, *args, **kwargs):
-		def int2str(label):
-			try:
-				label = ''.join(list(self._labels[id] for id in label if id != self._default_value))
-				return self.jamo2hangeul(label)
-			except ValueError:
-				return None
-		return list(map(int2str, labels_int))
-
 	def augment(self, inputs, outputs, *args, **kwargs):
 		return inputs, outputs
 
 #--------------------------------------------------------------------
 
 class FileBasedTextLineDatasetBase(TextLineDatasetBase):
-	def __init__(self, image_height, image_width, image_channel, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
-		super().__init__(labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, image_height, image_width, image_channel, use_NWHC=True):
+		super().__init__(label_converter, use_NWHC)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 		self._train_data, self._test_data = None, None
@@ -674,12 +560,12 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 
 			#img = self.resize(img, None, image_height, image_width)
 			try:
-				label_int = self.encode_label(label_str)
+				label_int = self._label_converter.encode(label_str)
 			except Exception:
 				#print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
 				continue
-			if label_str != self.decode_label(label_int):
-				print('[SWL] Error: Mismatched original and decoded labels: {} != {}.'.format(label_str, self.decode_label(label_int)))
+			if label_str != self._label_converter.decode(label_int):
+				print('[SWL] Error: Mismatched original and decoded labels: {} != {}.'.format(label_str, self._label_converter.decode(label_int)))
 				# TODO [check] >> I think such data should be used to deal with unknown characters (as negative data) in real data.
 				#continue
 
@@ -733,12 +619,12 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 
 			#img = self.resize(img, None, image_height, image_width)
 			try:
-				label_int = self.encode_label(label_str)
+				label_int = self._label_converter.encode(label_str)
 			except Exception:
 				#print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
 				continue
-			if label_str != self.decode_label(label_int):
-				print('[SWL] Error: Mismatched original and decoded labels: {} != {}.'.format(label_str, self.decode_label(label_int)))
+			if label_str != self._label_converter.decode(label_int):
+				print('[SWL] Error: Mismatched original and decoded labels: {} != {}.'.format(label_str, self._label_converter.decode(label_int)))
 				# TODO [check] >> I think such data should be used to deal with unknown characters (as negative data) in real data.
 				#continue
 
@@ -755,16 +641,16 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 #--------------------------------------------------------------------
 
 class JsonBasedTextLineDatasetBase(FileBasedTextLineDatasetBase):
-	def __init__(self, image_height, image_width, image_channel, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, image_height, image_width, image_channel, use_NWHC=True):
+		super().__init__(label_converter, image_height, image_width, image_channel, use_NWHC)
 
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
-		return self._create_batch_generator(self._train_data, batch_size, shuffle, is_training=True, default_value=self._default_value)
+		return self._create_batch_generator(self._train_data, batch_size, shuffle, is_training=True)
 
 	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
-		return self._create_batch_generator(self._test_data, batch_size, shuffle, is_training=False, default_value=self._default_value)
+		return self._create_batch_generator(self._test_data, batch_size, shuffle, is_training=False)
 
-	def _create_batch_generator(self, data, batch_size, shuffle, is_training=False, default_value=-1):
+	def _create_batch_generator(self, data, batch_size, shuffle, is_training=False):
 		images, labels_str = data
 
 		num_examples = len(images)
@@ -787,7 +673,7 @@ class JsonBasedTextLineDatasetBase(FileBasedTextLineDatasetBase):
 				# FIXME [fix] >> Does not work correctly in time-major data.
 				batch_images, batch_labels_str = images[batch_indices], labels_str[batch_indices]
 				if batch_images.size > 0 and batch_labels_str.size > 0:  # If batch_images and batch_labels_str are non-empty.
-					batch_labels_int = list(map(lambda lbl: self.encode_label(lbl), batch_labels_str))
+					batch_labels_int = list(map(lambda lbl: self._label_converter.encode(lbl), batch_labels_str))
 					#batch_labels_int = swl_ml_util.sequences_to_sparse(batch_labels_int, dtype=np.int32)  # Sparse tensor.
 					yield (batch_images, batch_labels_str, batch_labels_int), batch_indices.size
 				else:
@@ -855,8 +741,8 @@ class JsonBasedTextLineDatasetBase(FileBasedTextLineDatasetBase):
 # REF [function] >> generate_simple_text_lines_test() and generate_text_lines_test() in text_generation_util_test.py.
 # This class is independent of language.
 class JsonBasedTextLineDataset(JsonBasedTextLineDatasetBase):
-	def __init__(self, train_json_filepath, test_json_filepath, image_height, image_width, image_channel, labels, num_classes, use_NWHC=True, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, labels=labels, num_classes=num_classes, use_NWHC=use_NWHC, default_value=default_value)
+	def __init__(self, label_converter, train_json_filepath, test_json_filepath, image_height, image_width, image_channel, use_NWHC=True):
+		super().__init__(label_converter, image_height, image_width, image_channel, use_NWHC)
 
 		#--------------------
 		print('[SWL] Info: Start loading dataset...')
@@ -870,7 +756,7 @@ class JsonBasedTextLineDataset(JsonBasedTextLineDatasetBase):
 
 		"""
 		self._labels = set(train_charset + test_charset)
-		self._labels.add(JsonBasedTextLineDataset.UNKNOWN)
+		self._labels.add(self.UNKNOWN)
 		self._labels = sorted(self._labels)
 		#self._labels = ''.join(sorted(self._labels))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
@@ -896,8 +782,8 @@ class JsonBasedTextLineDataset(JsonBasedTextLineDatasetBase):
 
 # This class is independent of language.
 class JsonBasedHangeulJamoTextLineDataset(JsonBasedTextLineDatasetBase):
-	def __init__(self, train_json_filepath, test_json_filepath, image_height, image_width, image_channel, labels, num_classes, use_NWHC=True, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, labels=labels, num_classes=num_classes, use_NWHC=use_NWHC, default_value=default_value)
+	def __init__(self, label_converter, train_json_filepath, test_json_filepath, image_height, image_width, image_channel, use_NWHC=True):
+		super().__init__(label_converter, image_height, image_width, image_channel, use_NWHC)
 
 		#--------------------
 		print('[SWL] Info: Start loading dataset...')
@@ -929,47 +815,6 @@ class JsonBasedHangeulJamoTextLineDataset(JsonBasedTextLineDatasetBase):
 		print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
 		print('Test label: shape = {}, dtype = {}.'.format(self._test_images.shape, self._test_images.dtype))
 
-	# String label -> integer label.
-	def encode_label(self, label_str, *args, **kwargs):
-		try:
-			label_str = self.hangeul2jamo(label_str)
-			return list(self._labels.index(ch) for ch in label_str)
-		except Exception as ex:
-			print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
-			raise
-
-	# Integer label -> string label.
-	def decode_label(self, label_int, *args, **kwargs):
-		try:
-			label_str = ''.join(list(self._labels[id] for id in label_int if id != self._default_value))
-			return self.jamo2hangeul(label_str)
-		except Exception as ex:
-			print('[SWL] Error: Failed to decode a label: {}.'.format(label_int))
-			raise
-
-	# String labels -> Integer labels.
-	def encode_labels(self, labels_str, dtype=np.int16, *args, **kwargs):
-		labels_str = list(map(lambda label: self.hangeul2jamo(label), labels_str))
-
-		max_label_len = functools.reduce(lambda x, y: max(x, len(y)), labels_str, 0)
-		labels_int = np.full((len(labels_str), max_label_len), self._default_value, dtype=dtype)
-		for (idx, lbl) in enumerate(labels_str):
-			try:
-				labels_int[idx,:len(lbl)] = np.array(list(self._labels.index(ch) for ch in lbl))
-			except ValueError:
-				pass
-		return labels_int
-
-	# Integer labels -> string labels.
-	def decode_labels(self, labels_int, *args, **kwargs):
-		def int2str(label):
-			try:
-				label = ''.join(list(self._labels[id] for id in label if id != self._default_value))
-				return self.jamo2hangeul(label)
-			except ValueError:
-				return None
-		return list(map(int2str, labels_int))
-
 	def augment(self, inputs, outputs, *args, **kwargs):
 		return inputs, outputs
 
@@ -979,8 +824,8 @@ class TextLinePairDatasetBase(TextLineDatasetBase):
 	"""A base dataset for paired text lines, input & output text line images.
 	"""
 
-	def __init__(self, image_height, image_width, image_channel, color_functor=None, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
-		super().__init__(labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, image_height, image_width, image_channel, color_functor=None, use_NWHC=True):
+		super().__init__(label_converter, use_NWHC)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 		self._color_functor = color_functor
@@ -1080,7 +925,7 @@ class TextLinePairDatasetBase(TextLineDatasetBase):
 			inp_minval, inp_maxval = np.min(batch_input_images), np.max(batch_input_images)
 			outp_minval, outp_maxval = np.min(batch_output_images), np.max(batch_output_images)
 			for idx, (inp, outp, lbl_str, lbl_int) in enumerate(zip(batch_input_images, batch_output_images, batch_labels_str, batch_labels_int)):
-				print('Label (str) = {}, Label (int) = {}({}).'.format(lbl_str, lbl_int, self.decode_label(lbl_int)))
+				print('Label (str) = {}, Label (int) = {}({}).'.format(lbl_str, lbl_int, self._label_converter.decode(lbl_int)))
 
 				#inp = ((inp - inp_minval) * (255 / (inp_maxval - inp_minval))).astype(np.uint8)
 				inp = ((inp - inp_minval) / (inp_maxval - inp_minval)).astype(np.float32)
@@ -1111,15 +956,15 @@ class TextLinePairDatasetBase(TextLineDatasetBase):
 #--------------------------------------------------------------------
 
 class RunTimeTextLinePairDatasetBase(TextLinePairDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, color_functor=None, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, color_functor, labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, text_set, image_height, image_width, image_channel, color_functor=None, use_NWHC=True):
+		super().__init__(label_converter, image_height, image_width, image_channel, color_functor, use_NWHC)
 
 		self._text_set = text_set
 
 # This class is independent of language.
 class RunTimeCorruptedTextLinePairDatasetBase(RunTimeTextLinePairDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=None, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, color_functor, labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=None, use_NWHC=True):
+		super().__init__(label_converter, text_set, image_height, image_width, image_channel, color_functor, use_NWHC)
 
 		#--------------------
 		min_font_size, max_font_size = round(image_height * 0.8), round(image_height * 1.25)
@@ -1190,7 +1035,7 @@ class RunTimeCorruptedTextLinePairDatasetBase(RunTimeTextLinePairDatasetBase):
 
 			corrupted_scenes, _ = self.preprocess(corrupted_scenes, None)
 			clean_scenes, _ = self.preprocess(clean_scenes, None)
-			texts_int = list(map(lambda txt: self.encode_label(txt), texts))
+			texts_int = list(map(lambda txt: self._label_converter.encode(txt), texts))
 			#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
 			yield (corrupted_scenes, clean_scenes, texts, texts_int), len(texts)
 			if steps_per_epoch and (step + 1) >= steps_per_epoch:
@@ -1198,8 +1043,8 @@ class RunTimeCorruptedTextLinePairDatasetBase(RunTimeTextLinePairDatasetBase):
 
 # This class is independent of language.
 class RunTimeSuperResolvedTextLinePairDatasetBase(RunTimeTextLinePairDatasetBase):
-	def __init__(self, text_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, color_functor=None, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
-		super().__init__(text_set, hr_image_height, hr_image_width, image_channel, color_functor, labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, text_set, hr_image_height, hr_image_width, lr_image_height, lr_image_width, image_channel, font_list, char_images_dict, color_functor=None, use_NWHC=True):
+		super().__init__(label_converter, text_set, hr_image_height, hr_image_width, image_channel, color_functor, use_NWHC)
 
 		self._lr_image_height, self._lr_image_width = lr_image_height, lr_image_width
 
@@ -1275,7 +1120,7 @@ class RunTimeSuperResolvedTextLinePairDatasetBase(RunTimeTextLinePairDatasetBase
 
 			corrupted_scenes, _ = self.preprocess(corrupted_scenes, None)
 			clean_scenes, _ = self.preprocess(clean_scenes, None)
-			texts_int = list(map(lambda txt: self.encode_label(txt), texts))
+			texts_int = list(map(lambda txt: self._label_converter.encode(txt), texts))
 			#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
 			yield (corrupted_scenes, clean_scenes, texts, texts_int), len(texts)
 			if steps_per_epoch and (step + 1) >= steps_per_epoch:

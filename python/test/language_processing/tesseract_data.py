@@ -9,8 +9,8 @@ import text_line_data
 # REF [site] >> https://github.com/tesseract-ocr
 
 class TesseractTextLineDatasetBase(text_line_data.FileBasedTextLineDatasetBase):
-	def __init__(self, image_height, image_width, image_channel, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, image_height, image_width, image_channel, use_NWHC=True):
+		super().__init__(label_converter, image_height, image_width, image_channel, use_NWHC)
 
 	def _load_data_from_image_and_label_files(self, image_filepaths, box_filepaths, image_height, image_width, image_channel, max_label_len):
 		images, labels_str, labels_int = list(), list(), list()
@@ -82,8 +82,8 @@ class TesseractTextLineDatasetBase(text_line_data.FileBasedTextLineDatasetBase):
 		return images, labels_str, labels_int
 
 class EnglishTesseractTextLineDataset(TesseractTextLineDatasetBase):
-	def __init__(self, image_filepaths, box_filepaths, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, use_NWHC=True, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, image_filepaths, box_filepaths, image_height, image_width, image_channel, train_test_ratio, max_label_len, use_NWHC=True):
+		super().__init__(label_converter, image_height, image_width, image_channel, use_NWHC)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
@@ -143,8 +143,8 @@ class EnglishTesseractTextLineDataset(TesseractTextLineDatasetBase):
 		return inputs, outputs
 
 class HangeulTesseractTextLineDataset(TesseractTextLineDatasetBase):
-	def __init__(self, image_filepaths, box_filepaths, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, use_NWHC=True, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, image_filepaths, box_filepaths, image_height, image_width, image_channel, train_test_ratio, max_label_len, use_NWHC=True):
+		super().__init__(label_converter, image_height, image_width, image_channel, use_NWHC)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
@@ -206,8 +206,8 @@ class HangeulTesseractTextLineDataset(TesseractTextLineDatasetBase):
 		return inputs, outputs
 
 class HangeulJamoTesseractTextLineDataset(TesseractTextLineDatasetBase):
-	def __init__(self, image_filepaths, box_filepaths, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, use_NWHC=True, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, image_filepaths, box_filepaths, image_height, image_width, image_channel, train_test_ratio, max_label_len, use_NWHC=True):
+		super().__init__(label_converter, image_height, image_width, image_channel, use_NWHC)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
@@ -228,23 +228,6 @@ class HangeulJamoTesseractTextLineDataset(TesseractTextLineDatasetBase):
 		test_offset = round(train_test_ratio * num_examples)
 		train_indices, test_indices = indices[:test_offset], indices[test_offset:]
 		self._train_data, self._test_data = (images[train_indices], labels_str[train_indices], labels_int[train_indices]), (images[test_indices], labels_str[test_indices], labels_int[test_indices])
-
-	# String label -> integer label.
-	def encode_label(self, label_str, *args, **kwargs):
-		try:
-			return list(self._labels.index(ch) for ch in HangeulJamoTesseractTextLineDataset.hangeul2jamo(label_str))
-		except Exception as ex:
-			print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
-			raise
-
-	# Integer label -> string label.
-	def decode_label(self, label_int, *args, **kwargs):
-		try:
-			label_str = ''.join(list(self._labels[id] for id in label_int if id != self._default_value))
-			return HangeulJamoTesseractTextLineDataset.jamo2hangeul(label_str)
-		except Exception as ex:
-			print('[SWL] Error: Failed to decode a label: {}.'.format(label_int))
-			raise
 
 	def augment(self, inputs, outputs, *args, **kwargs):
 		return inputs, outputs

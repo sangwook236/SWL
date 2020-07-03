@@ -27,18 +27,17 @@ def EnglishOcropusTextLineDataset_test():
 		string.digits + \
 		string.punctuation + \
 		' '
-	labels = list(labels) + [ocropus_data.EnglishOcropusTextLineDataset.UNKNOWN]
-	labels.sort()
+	labels = sorted(labels)
 	#labels = ''.join(sorted(labels))
-	print('[SWL] Info: Labels = {}.'.format(labels))
-	print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-	num_classes = len(labels) + 1  # Labels + blank label.
+	label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+	# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+	print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+	print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 	print('Start creating an EnglishOcropusTextLineDataset...')
 	start_time = time.time()
-	dataset = ocropus_data.EnglishOcropusTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count, labels, num_classes)
+	dataset = ocropus_data.EnglishOcropusTextLineDataset(label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count)
 	print('End creating an EnglishOcropusTextLineDataset: {} secs.'.format(time.time() - start_time))
 
 	train_generator = dataset.create_train_batch_generator(batch_size=32, shuffle=True)
@@ -81,18 +80,17 @@ def HangeulOcropusTextLineDataset_test():
 		string.digits + \
 		string.punctuation + \
 		' '
-	labels = list(labels) + [ocropus_data.HangeulOcropusTextLineDataset.UNKNOWN]
-	labels.sort()
+	labels = sorted(labels)
 	#labels = ''.join(sorted(labels))
-	print('[SWL] Info: Labels = {}.'.format(labels))
-	print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-	num_classes = len(labels) + 1  # Labels + blank label.
+	label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+	# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+	print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+	print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 	print('Start creating a HangeulOcropusTextLineDataset...')
 	start_time = time.time()
-	dataset = ocropus_data.HangeulOcropusTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count, labels, num_classes)
+	dataset = ocropus_data.HangeulOcropusTextLineDataset(label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count)
 	print('End creating a HangeulOcropusTextLineDataset: {} secs.'.format(time.time() - start_time))
 
 	train_generator = dataset.create_train_batch_generator(batch_size=32, shuffle=True)
@@ -110,6 +108,11 @@ def HangeulJamoOcropusTextLineDataset_test():
 		data_base_dir_path = 'D:/work/dataset'
 	data_dir_path = data_base_dir_path + '/text/ocropus/linegen_kor'
 
+	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
+	hangeul2jamo_functor = lambda hangeul_str: hg_util.hangeul2jamo(hangeul_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
+	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
+	jamo2hangeul_functor = lambda jamo_str: hg_util.jamo2hangeul(jamo_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
+
 	image_height, image_width, image_channel = 64, 1000, 1
 	train_test_ratio = 0.8
 	max_char_count = 200
@@ -126,18 +129,17 @@ def HangeulJamoOcropusTextLineDataset_test():
 		string.digits + \
 		string.punctuation + \
 		' '
-	labels = list(labels) + [ocropus_data.HangeulJamoOcropusTextLineDataset.UNKNOWN, ocropus_data.HangeulJamoOcropusTextLineDataset.EOJC]
-	labels.sort()
+	labels = sorted(labels)
 	#labels = ''.join(sorted(labels))
-	print('[SWL] Info: Labels = {}.'.format(labels))
-	print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-	num_classes = len(labels) + 1  # Labels + blank label.
+	label_converter = swl_langproc_util.JamoTokenConverter(labels, hangeul2jamo_functor, jamo2hangeul_functor, pad_value=None)
+	# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+	print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+	print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 	print('Start creating a HangeulJamoOcropusTextLineDataset...')
 	start_time = time.time()
-	dataset = ocropus_data.HangeulJamoOcropusTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count, labels, num_classes)
+	dataset = ocropus_data.HangeulJamoOcropusTextLineDataset(label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count)
 	print('End creating a HangeulJamoOcropusTextLineDataset: {} secs.'.format(time.time() - start_time))
 
 	train_generator = dataset.create_train_batch_generator(batch_size=32, shuffle=True)

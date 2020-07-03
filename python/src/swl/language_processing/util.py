@@ -5,14 +5,12 @@ import cv2
 
 #--------------------------------------------------------------------
 
-class TokenConverter(object):
+class TokenConverterBase(object):
 	UNKNOWN = '<UNK>'  # Unknown token.
 	SOS = '<SOS>'  # All token sequences may start with the Start-Of-Sequence (SOS) token.
 	EOS = '<EOS>'  # All token sequences may end with the End-Of-Sequence (EOS) token.
-	#SOJ = '<SOJ>'  # All Hangeul jamo sequences may start with the Start-Of-Jamo-Sequence (SOJ) token.
-	#EOJ = '<EOJ>'  # All Hangeul jamo sequences may end with the End-Of-Jamo-Sequence (EOJ) token.
 
-	def __init__(self, tokens, use_sos=False, use_eos=False, prefixes=None, suffixes=None, pad_value=None):
+	def __init__(self, tokens, use_sos=False, use_eos=False, prefixes=None, suffixes=None, pad_value=None, additional_tokens=None):
 		"""
 		Inputs:
 			tokens (list of tokens): Tokens to be regarded as individual units.
@@ -29,7 +27,10 @@ class TokenConverter(object):
 		if use_eos: suffixes += [self.EOS]
 		self._num_affixes = len(prefixes + suffixes)
 
-		extended_tokens = tokens + prefixes + suffixes + [self.UNKNOWN]
+		if additional_tokens:
+			extended_tokens = tokens + additional_tokens + prefixes + suffixes + [self.UNKNOWN]
+		else:
+			extended_tokens = tokens + prefixes + suffixes + [self.UNKNOWN]
 		#self._tokens = tokens
 		self._tokens = extended_tokens
 
@@ -53,9 +54,9 @@ class TokenConverter(object):
 		if use_eos:
 			EOS_int = extended_tokens.index(self.EOS)
 			#self.auxiliary_tokens_int.remove(self.EOS)  # TODO [decide] >>
-			self.decode = functools.partial(self._decode_with_eos, EOS_int=EOS_int)
+			self.decode_functor = functools.partial(self._decode_with_eos, EOS_int=EOS_int)
 		else:
-			self.decode = self._decode
+			self.decode_functor = self._decode
 
 	@property
 	def num_tokens(self):
@@ -74,63 +75,59 @@ class TokenConverter(object):
 		return self._num_affixes
 
 	# Token sequence -> integer token sequence.
-	def encode(self, tokens, is_bare_output=False, *args, **kwargs):
+	def encode(self, seq, is_bare_output=False, *args, **kwargs):
 		"""
 		Inputs:
-			tokens (list of tokens): Tokens to encode.
-			is_bare_output (bool): Specifies whether encoded integer tokens without prefixes and suffixes are returned or not.
+			seq (list of tokens): A sequence of tokens to encode.
+			is_bare_output (bool): Specifies whether an encoded integer sequence without prefixes and suffixes is returned or not.
 		"""
 		def tok2int(tok):
 			try:
 				return self._tokens.index(tok)
 			except ValueError:
-				#print('[SWL] Error: Failed to encode a token, {} in {}.'.format(tok, tokens))
+				#print('[SWL] Error: Failed to encode a token, {} in {}.'.format(tok, seq))
 				return self.UNKNOWN_int
-		if is_bare_output:
-			return [tok2int(tok) for tok in tokens]
-		else:
-			return self.decoration_functor([tok2int(tok) for tok in tokens])
+		seq_int = [tok2int(tok) for tok in seq]
+		return seq_int if is_bare_output else self.decoration_functor(seq_int)
 
 	# Integer token sequence -> token sequence.
-	def _decode(self, integer_tokens, is_string_output=True, *args, **kwargs):
+	def decode(self, integer_seq, is_string_output=True, *args, **kwargs):
 		"""
 		Inputs:
-			integer_tokens (list of integer tokens): Integer tokens to decode.
-			is_string_output (bool): Specifies whether the decoded output is string or not.
+			integer_seq (list of integer tokens): A sequence of integer tokens to decode.
+			is_string_output (bool): Specifies whether the decoded output is a string or not.
 		"""
+
+		return self.decode_functor(integer_seq, is_string_output, *args, **kwargs)
+
+	# Integer token sequence -> token sequence.
+	def _decode(self, integer_seq, is_string_output=True, *args, **kwargs):
 		def int2tok(tok):
 			try:
 				return self._tokens[tok]
 			except IndexError:
-				#print('[SWL] Error: Failed to decode an integer token, {} in {}.'.format(tok, integer_tokens))
+				#print('[SWL] Error: Failed to decode an integer token, {} in {}.'.format(tok, integer_seq))
 				return self.UNKNOWN  # TODO [check] >> Is it correct?
-		if is_string_output:
-			return ''.join([int2tok(tok) for tok in integer_tokens if tok not in self.auxiliary_tokens_int])
-		else:
-			return [int2tok(tok) for tok in integer_tokens if tok not in self.auxiliary_tokens_int]
+		seq = [int2tok(tok) for tok in integer_seq if tok not in self.auxiliary_tokens_int]
+		return ''.join(seq) if is_string_output else seq
 
 	# Integer token sequence -> token sequence.
-	def _decode_with_eos(self, integer_tokens, is_string_output=True, EOS_int=None, *args, **kwargs):
-		"""
-		Inputs:
-			integer_tokens (list of integer tokens): Integer tokens to decode.
-			is_string_output (bool): Specifies whether the decoded output is string or not.
-		"""
+	def _decode_with_eos(self, integer_seq, is_string_output=True, EOS_int=None, *args, **kwargs):
 		def int2tok(tok):
 			try:
 				return self._tokens[tok]
 			except IndexError:
-				#print('[SWL] Error: Failed to decode an integer token, {} in {}.'.format(tok, integer_tokens))
+				#print('[SWL] Error: Failed to decode an integer token, {} in {}.'.format(tok, integer_seq))
 				return self.UNKNOWN  # TODO [check] >> Is it correct?
 		"""
 		try:
-			integer_tokens = integer_tokens[:integer_tokens.index(EOS_int)]  # NOTE [info] >> It is applied to list only.
+			integer_seq = integer_seq[:integer_seq.index(EOS_int)]  # NOTE [info] >> It is applied to list only.
 		except ValueError:
 			pass
-		return self._decode(integer_tokens, is_string_output, *args, **kwargs)
+		return self._decode(integer_seq, is_string_output, *args, **kwargs)
 		"""
 		tokens = list()
-		for tok in integer_tokens:
+		for tok in integer_seq:
 			if tok == EOS_int: break
 			elif tok in self.auxiliary_tokens_int: continue
 			else: tokens.append(int2tok(tok))
@@ -141,11 +138,58 @@ class TokenConverter(object):
 			elif tok in self.auxiliary_tokens_int: pass  # Error: return None.
 			else: return int2tok(tok)
 		try:
-			tokens = map(ff, integer_tokens)
-			#tokens = map(ff, filter(lambda tok: tok in self.auxiliary_tokens_int, integer_tokens))
+			tokens = map(ff, integer_seq)
+			#tokens = map(ff, filter(lambda tok: tok in self.auxiliary_tokens_int, integer_seq))
 		except StopIteration:
 			pass
 		"""
+
+class TokenConverter(TokenConverterBase):
+	def __init__(self, tokens, use_sos=False, use_eos=False, prefixes=None, suffixes=None, pad_value=None):
+		super().__init__(tokens, use_sos, use_eos, prefixes, suffixes, pad_value)
+
+class JamoTokenConverter(TokenConverterBase):
+	SOJ = '<SOJ>'  # All Hangeul jamo sequences may start with the Start-Of-Jamo-Sequence (SOJ) token.
+	EOJ = '<EOJ>'  # All Hangeul jamo sequences may end with the End-Of-Jamo-Sequence (EOJ) token.
+
+	def __init__(self, tokens, hangeul2jamo_functor, jamo2hangeul_functor, use_sos=False, use_eos=False, prefixes=None, suffixes=None, pad_value=None):
+		#super().__init__(tokens, use_sos, use_eos, prefixes, suffixes, pad_value, additional_tokens=[self.SOJ, self.EOJ])
+		super().__init__(tokens, use_sos, use_eos, prefixes, suffixes, pad_value, additional_tokens=[self.EOJ])
+
+		# TODO [check] >> This implementation using itertools.chain() may be slow.
+		import itertools
+		#self.hangeul2jamo_functor = hangeul2jamo_functor
+		self.hangeul2jamo_functor = lambda hgstr: list(itertools.chain(*[[tt] if len(tt) > 1 else hangeul2jamo_functor(tt) for tt in hgstr]))
+		self.jamo2hangeul_functor = jamo2hangeul_functor
+		#self.jamo2hangeul_functor = lambda jmstr: list(itertools.chain(*[[tt] if len(tt) > 1 else jamo2hangeul_functor(tt) for tt in jmstr]))
+
+	# Token sequence -> integer token sequence.
+	def encode(self, seq, is_bare_output=False, *args, **kwargs):
+		"""
+		Inputs:
+			seq (list of tokens): A sequence of tokens to encode.
+			is_bare_output (bool): Specifies whether an encoded integer sequence without prefixes and suffixes is returned or not.
+		"""
+
+		try:
+			return super().encode(self.hangeul2jamo_functor(seq), is_bare_output, *args, **kwargs)
+		except Exception as ex:
+			print('[SWL] Error: Failed to encode a sequence: {}.'.format(seq))
+			raise
+
+	# Integer token sequence -> token sequence.
+	def decode(self, integer_seq, is_string_output=True, *args, **kwargs):
+		"""
+		Inputs:
+			integer_seq (list of integer tokens): A sequence of integer tokens to decode.
+			is_string_output (bool): Specifies whether the decoded output is a string or not.
+		"""
+
+		try:
+			return self.jamo2hangeul_functor(super().decode(integer_seq, is_string_output, *args, **kwargs))
+		except Exception as ex:
+			print('[SWL] Error: Failed to decode an integer sequence: {}.'.format(integer_seq))
+			raise
 
 #--------------------------------------------------------------------
 

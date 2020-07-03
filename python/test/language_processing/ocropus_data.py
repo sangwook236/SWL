@@ -9,12 +9,12 @@ import text_line_data
 # REF [site] >> https://github.com/tmbdev/ocropy
 
 class OcropusTextLineDatasetBase(text_line_data.FileBasedTextLineDatasetBase):
-	def __init__(self, image_height, image_width, image_channel, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, image_height, image_width, image_channel, use_NWHC=True):
+		super().__init__(label_converter, image_height, image_width, image_channel, use_NWHC)
 
 class EnglishOcropusTextLineDataset(OcropusTextLineDatasetBase):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, use_NWHC=True, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, use_NWHC=True):
+		super().__init__(label_converter, image_height, image_width, image_channel, use_NWHC)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
@@ -80,8 +80,8 @@ class EnglishOcropusTextLineDataset(OcropusTextLineDatasetBase):
 		return inputs, outputs
 
 class HangeulOcropusTextLineDataset(OcropusTextLineDatasetBase):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, use_NWHC=True, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, use_NWHC=True):
+		super().__init__(label_converter, image_height, image_width, image_channel, use_NWHC)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
@@ -149,8 +149,8 @@ class HangeulOcropusTextLineDataset(OcropusTextLineDatasetBase):
 		return inputs, outputs
 
 class HangeulJamoOcropusTextLineDataset(OcropusTextLineDatasetBase):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, use_NWHC=True, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, use_NWHC=True):
+		super().__init__(label_converter, image_height, image_width, image_channel, use_NWHC)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
@@ -177,23 +177,6 @@ class HangeulJamoOcropusTextLineDataset(OcropusTextLineDatasetBase):
 			print('[SWL] Info: Dataset were not loaded.')
 			self._train_data, self._test_data = None, None
 			num_examples = 0
-
-	# String label -> integer label.
-	def encode_label(self, label_str, *args, **kwargs):
-		try:
-			return list(self._labels.index(ch) for ch in HangeulJamoOcropusTextLineDataset.hangeul2jamo(label_str))
-		except Exception as ex:
-			print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
-			raise
-
-	# Integer label -> string label.
-	def decode_label(self, label_int, *args, **kwargs):
-		try:
-			label_str = ''.join(list(self._labels[id] for id in label_int if id != self._default_value))
-			return HangeulJamoOcropusTextLineDataset.jamo2hangeul(label_str)
-		except Exception as ex:
-			print('[SWL] Error: Failed to decode a label: {}.'.format(label_int))
-			raise
 
 	def augment(self, inputs, outputs, *args, **kwargs):
 		return inputs, outputs

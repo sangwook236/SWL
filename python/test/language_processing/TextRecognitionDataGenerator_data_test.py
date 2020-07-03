@@ -5,11 +5,12 @@ import sys
 sys.path.append('../../src')
 
 import os, time, functools
+import swl.language_processing.util as swl_langproc_util
 import TextRecognitionDataGenerator_data
 
 class MyEnglishTextLineDataset(TextRecognitionDataGenerator_data.EnglishTextRecognitionDataGeneratorTextLineDataset):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle=True):
-		super().__init__(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle)
+	def __init__(self, label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True):
+		super().__init__(label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle)
 
 		#--------------------
 		#import imgaug as ia
@@ -94,24 +95,23 @@ def EnglishTextRecognitionDataGeneratorTextLineDataset_test():
 		string.digits + \
 		string.punctuation + \
 		' '
-	labels = list(labels) + [TextRecognitionDataGenerator_data.EnglishTextRecognitionDataGeneratorTextLineDataset.UNKNOWN]
-	labels.sort()
+	labels = sorted(labels)
 	#labels = ''.join(sorted(labels))
-	print('[SWL] Info: Labels = {}.'.format(labels))
-	print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-	num_classes = len(labels) + 1  # Labels + blank label.
+	label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+	# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+	print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+	print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 	if True:
 		print('Start creating an EnglishTextRecognitionDataGeneratorTextLineDataset...')
 		start_time = time.time()
-		dataset = TextRecognitionDataGenerator_data.EnglishTextRecognitionDataGeneratorTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count, labels, num_classes)
+		dataset = TextRecognitionDataGenerator_data.EnglishTextRecognitionDataGeneratorTextLineDataset(label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count)
 		print('End creating an EnglishTextRecognitionDataGeneratorTextLineDataset: {} secs.'.format(time.time() - start_time))
 	else:
 		print('Start creating an MyEnglishTextLineDataset...')
 		start_time = time.time()
-		dataset = MyEnglishTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count, labels, num_classes, shuffle=True)
+		dataset = MyEnglishTextLineDataset(label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count, shuffle=True)
 		print('End creating an MyEnglishTextLineDataset: {} secs.'.format(time.time() - start_time))
 
 	train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -151,20 +151,19 @@ def HangeulTextRecognitionDataGeneratorTextLineDataset_test():
 		string.digits + \
 		string.punctuation + \
 		' '
-	labels = list(labels) + [TextRecognitionDataGenerator_data.HangeulTextRecognitionDataGeneratorTextLineDataset.UNKNOWN]
 	# There are words of Unicode Hangeul letters besides KS X 1001.
 	#labels = functools.reduce(lambda x, fpath: x.union(fpath.split('_')[0]), os.listdir(data_dir_path), set(labels))
 	labels = sorted(labels)
 	#labels = ''.join(sorted(labels))
-	print('[SWL] Info: Labels = {}.'.format(labels))
-	print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-	num_classes = len(labels) + 1  # Labels + blank label.
+	label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+	# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+	print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+	print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 	print('Start creating a HangeulTextRecognitionDataGeneratorTextLineDataset...')
 	start_time = time.time()
-	dataset = TextRecognitionDataGenerator_data.HangeulTextRecognitionDataGeneratorTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count, labels, num_classes)
+	dataset = TextRecognitionDataGenerator_data.HangeulTextRecognitionDataGeneratorTextLineDataset(label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count)
 	print('End creating a HangeulTextRecognitionDataGeneratorTextLineDataset: {} secs.'.format(time.time() - start_time))
 
 	train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -176,7 +175,14 @@ def HangeulTextRecognitionDataGeneratorTextLineDataset_test():
 # REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
 # REF [script] >> generate_TextRecognitionDataGenerator_data.sh
 def HangeulJamoTextRecognitionDataGeneratorTextLineDataset_test():
+	import hangeul_util as hg_util
+
 	data_dir_path = './text_line_samples_kr_train/dic_h32_w1'
+
+	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
+	hangeul2jamo_functor = lambda hangeul_str: hg_util.hangeul2jamo(hangeul_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
+	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
+	jamo2hangeul_functor = lambda jamo_str: hg_util.jamo2hangeul(jamo_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
 
 	#image_height, image_width, image_channel = 32, 160, 1
 	image_height, image_width, image_channel = 64, 320, 1
@@ -195,20 +201,19 @@ def HangeulJamoTextRecognitionDataGeneratorTextLineDataset_test():
 		string.digits + \
 		string.punctuation + \
 		' '
-	labels = list(labels) + [TextRecognitionDataGenerator_data.HangeulJamoTextRecognitionDataGeneratorTextLineDataset.UNKNOWN, TextRecognitionDataGenerator_data.HangeulJamoTextRecognitionDataGeneratorTextLineDataset.EOJC]
 	# There are words of Unicode Hangeul letters besides KS X 1001.
-	labels = functools.reduce(lambda x, fpath: x.union(TextRecognitionDataGenerator_data.HangeulJamoTextRecognitionDataGeneratorTextLineDataset.hangeul2jamo(fpath.split('_')[0])), os.listdir(data_dir_path), set(labels))
+	labels = functools.reduce(lambda x, fpath: x.union(hangeul2jamo_functor(fpath.split('_')[0])), os.listdir(data_dir_path), set(labels))
 	labels = sorted(labels)
 	#labels = ''.join(sorted(labels))
-	print('[SWL] Info: Labels = {}.'.format(labels))
-	print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-	num_classes = len(labels) + 1  # Labels + blank label.
+	label_converter = swl_langproc_util.JamoTokenConverter(labels, hangeul2jamo_functor, jamo2hangeul_functor, pad_value=None)
+	# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+	print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+	print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 	print('Start creating a HangeulJamoTextRecognitionDataGeneratorTextLineDataset...')
 	start_time = time.time()
-	dataset = TextRecognitionDataGenerator_data.HangeulJamoTextRecognitionDataGeneratorTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count, labels, num_classes)
+	dataset = TextRecognitionDataGenerator_data.HangeulJamoTextRecognitionDataGeneratorTextLineDataset(label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count)
 	print('End creating a HangeulJamoTextRecognitionDataGeneratorTextLineDataset: {} secs.'.format(time.time() - start_time))
 
 	train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -290,7 +295,7 @@ def check_label_distribution():
 		print('[SWL] Error: File not found: {}.'.format(label_filepath))
 		return
 	except UnicodeDecodeError as ex:
-		print('[SWL] Error: Unicode decode error: {}.'.format(text_fpath))
+		print('[SWL] Error: Unicode decode error: {}.'.format(label_filepath))
 		return
 
 	texts = list()
@@ -303,8 +308,7 @@ def check_label_distribution():
 		texts.append(label)
 
 	#--------------------
-	from swl.language_processing.util import draw_character_histogram
-	draw_character_histogram(texts, charset=None)
+	swl_langproc_util.draw_character_histogram(texts, charset=None)
 
 def main():
 	#EnglishTextRecognitionDataGeneratorTextLineDataset_test()

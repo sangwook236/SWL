@@ -52,8 +52,8 @@ def n_gram_language_model_with_prefix_tree_test():
 	print('End loading Sejong corpus: {} secs.'.format(time.time() - start_time))
 
 	# #classes = #chars + blank label.
-	chars = tg_util.construct_charset(hangeul_jamo=False, space=False)
-	wordChars = tg_util.construct_charset(hangeul_jamo=False, digit=False, punctuation=False, space=False)
+	chars = tg_util.construct_charset(space=False)
+	wordChars = tg_util.construct_charset(digit=False, punctuation=False, space=False)
 	#chars += "£§àâèéê⊥"
 	#wordChars += "'§àâèéê"
 	wordChars += "'"

@@ -9,8 +9,8 @@ import text_line_data
 # REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
 
 class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.FileBasedTextLineDatasetBase):
-	def __init__(self, image_height, image_width, image_channel, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, image_height, image_width, image_channel, use_NWHC=True):
+		super().__init__(label_converter, image_height, image_width, image_channel, use_NWHC)
 
 	def _load_data_from_image_and_label_files(self, data_dir_path, image_height, image_width, image_channel, max_label_len, label_filename=None, use_NWHC=True):
 		if label_filename is None:
@@ -59,13 +59,13 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.FileBasedTe
 
 			img = self.resize(img, None, image_height, image_width)
 			try:
-				#img, label_int = self.preprocess(img, self.encode_label(label_str))
-				label_int = self.encode_label(label_str)
+				#img, label_int = self.preprocess(img, self._label_converter.encode(label_str))
+				label_int = self._label_converter.encode(label_str)
 			except Exception:
 				#print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
 				continue
-			if label_str != self.decode_label(label_int):
-				print('[SWL] Error: Mismatched encoded and decoded labels: {} != {}.'.format(label_str, self.decode_label(label_int)))
+			if label_str != self._label_converter.decode(label_int):
+				print('[SWL] Error: Mismatched encoded and decoded labels: {} != {}.'.format(label_str, self._label_converter.decode(label_int)))
 				continue
 
 			images.append(img)
@@ -114,13 +114,13 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.FileBasedTe
 
 			img = self.resize(img, None, image_height, image_width)
 			try:
-				#img, label_int = self.preprocess(img, self.encode_label(label_str))
-				label_int = self.encode_label(label_str)
+				#img, label_int = self.preprocess(img, self._label_converter.encode(label_str))
+				label_int = self._label_converter.encode(label_str)
 			except Exception:
 				#print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
 				continue
-			if label_str != self.decode_label(label_int):
-				print('[SWL] Error: Mismatched encoded and decoded labels: {} != {}.'.format(label_str, self.decode_label(label_int)))
+			if label_str != self._label_converter.decode(label_int):
+				print('[SWL] Error: Mismatched encoded and decoded labels: {} != {}.'.format(label_str, self._label_converter.decode(label_int)))
 				continue
 
 			images.append(img)
@@ -173,8 +173,8 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.FileBasedTe
 			start_idx = end_idx
 
 class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle=True, use_NWHC=True, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True, use_NWHC=True):
+		super().__init__(label_converter, image_height, image_width, image_channel, use_NWHC)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
@@ -253,8 +253,8 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 		return inputs, outputs
 
 class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle=True, use_NWHC=True, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True, use_NWHC=True):
+		super().__init__(label_converter, image_height, image_width, image_channel, use_NWHC)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
@@ -333,8 +333,8 @@ class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 		return inputs, outputs
 
 class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle=True, use_NWHC=True, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True, use_NWHC=True):
+		super().__init__(label_converter, image_height, image_width, image_channel, use_NWHC)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
@@ -369,23 +369,6 @@ class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionData
 			print('[SWL] Info: Dataset were not loaded.')
 			self._train_data, self._test_data = None, None
 			num_examples = 0
-
-	# String label -> integer label.
-	def encode_label(self, label_str, *args, **kwargs):
-		try:
-			return list(self._labels.index(ch) for ch in HangeulJamoTextRecognitionDataGeneratorTextLineDataset.hangeul2jamo(label_str))
-		except Exception as ex:
-			print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
-			raise
-
-	# Integer label -> string label.
-	def decode_label(self, label_int, *args, **kwargs):
-		try:
-			label_str = ''.join(list(self._labels[id] for id in label_int if id != self._default_value))
-			return HangeulJamoTextRecognitionDataGeneratorTextLineDataset.jamo2hangeul(label_str)
-		except Exception as ex:
-			print('[SWL] Error: Failed to decode a label: {}.'.format(label_int))
-			raise
 
 	def augment(self, inputs, outputs, *args, **kwargs):
 		return inputs, outputs

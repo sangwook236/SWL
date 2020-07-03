@@ -13,6 +13,7 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.losses import mse, binary_crossentropy
 from tensorflow.keras import backend as K
 import cv2
+import swl.language_processing.util as swl_langproc_util
 import swl.machine_learning.util as swl_ml_util
 import text_line_data
 
@@ -74,8 +75,8 @@ def create_corrupter():
 	return corrupter
 
 class MyRunTimeCorruptedTextLinePairDataset(text_line_data.RunTimeCorruptedTextLinePairDatasetBase):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=None, labels=None, num_classes=0, use_NWHC=True, default_value=-1):
-		super().__init__(ext_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor, labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=None, use_NWHC=True):
+		super().__init__(label_converter, text_set, image_height, image_width, image_channel, font_list, char_images_dict, color_functor, use_NWHC)
 
 		self._corrupter = create_corrupter()
 
@@ -291,14 +292,13 @@ class MyRunner(object):
 			draw_character_histogram(texts, charset=None)
 
 		labels = functools.reduce(lambda x, txt: x.union(txt), texts, set())
-		labels.add(MyRunTimeCorruptedTextLinePairDataset.UNKNOWN)
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
-		print('[SWL] Info: Labels = {}.'.format(labels))
-		print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		num_classes = len(labels) + 1  # Labels + blank label.
+		self._label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+		print('[SWL] Info: Labels = {}.'.format(self._label_converter.tokens))
+		print('[SWL] Info: #labels = {}.'.format(self._label_converter.num_tokens))
 
 		#--------------------
 		if 'posix' == os.name:
@@ -317,13 +317,17 @@ class MyRunner(object):
 
 		print('[SWL] Info: Start creating an English dataset...')
 		start_time = time.time()
-		self._dataset = MyRunTimeCorruptedTextLinePairDataset(texts, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=functools.partial(generate_font_colors, image_depth=image_channel), labels=labels, num_classes=num_classes, use_NWHC=False)
+		self._dataset = MyRunTimeCorruptedTextLinePairDataset(self._label_converter, texts, image_height, image_width, image_channel, font_list, char_images_dict, color_functor=functools.partial(generate_font_colors, image_depth=image_channel), use_NWHC=False)
 		print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		#self._train_examples_per_epoch, self._test_examples_per_epoch = 500000, 10000  # Uses a subset of texts per epoch.
 		#self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000  # Uses a subset of texts per epoch.
 		self._train_examples_per_epoch, self._test_examples_per_epoch = 100000, 10000  # Uses a subset of texts per epoch.
 		#self._train_examples_per_epoch, self._test_examples_per_epoch = None, None  # Uses the whole set of texts per epoch.
+
+	@property
+	def label_converter(self):
+		return self._label_converter
 
 	@property
 	def dataset(self):

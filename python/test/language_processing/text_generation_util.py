@@ -5,7 +5,7 @@ import cv2
 import swl.language_processing.util as swl_langproc_util
 from swl.language_processing.text_generator import Transformer, HangeulJamoGenerator, HangeulLetterGenerator, TextGenerator, SceneProvider, SceneTextGenerator
 
-def construct_charset(digit=True, alphabet_uppercase=True, alphabet_lowercase=True, punctuation=True, space=True, hangeul=True, hangeul_jamo=True, whitespace=False, unit=False, currency=False, latin=False, greek_uppercase=False, greek_lowercase=False, chinese=False, hiragana=False, katakana=False, hangeul_letter_filepath=None):
+def construct_charset(digit=True, alphabet_uppercase=True, alphabet_lowercase=True, punctuation=True, space=True, hangeul=True, hangeul_jamo=False, whitespace=False, unit=False, currency=False, latin=False, greek_uppercase=False, greek_lowercase=False, chinese=False, hiragana=False, katakana=False, hangeul_letter_filepath=None):
 	charset = ''
 
 	# Latin.

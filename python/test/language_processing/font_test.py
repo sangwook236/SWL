@@ -48,7 +48,7 @@ def visualize_font_text(font_dir_path):
 		"""
 
 	if True:
-		text = tg_util.construct_charset(space=True)
+		text = tg_util.construct_charset(hangeul_jamo=True)
 		line_len = 27
 		text = '\n'.join(text[i:i+line_len] for i in range(0, len(text), line_len))
 	else:
@@ -184,7 +184,7 @@ def is_valid_font_by_area(font_filepath, ch, area_thresh=0.1, height=64, width=6
 	return area > (img.size[0] * img.size[1] * area_thresh)
 
 def check_font_validity_by_area(font_dir_path, dst_dir_path=None):
-	chars = tg_util.construct_charset(space=True)
+	chars = tg_util.construct_charset(hangeul_jamo=True)
 	area_thresh = 0.05  # Area ratio threshold, [0, 1].
 
 	print('Start checking font validity by area...')

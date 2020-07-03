@@ -25,18 +25,17 @@ def EnglishTesseractTextLineDataset_test():
 		string.digits + \
 		string.punctuation + \
 		' '
-	labels = list(labels) + [tesseract_data.EnglishTesseractTextLineDataset.UNKNOWN]
-	labels.sort()
+	labels = sorted(labels)
 	#labels = ''.join(sorted(labels))
-	print('[SWL] Info: Labels = {}.'.format(labels))
-	print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-	num_classes = len(labels) + 1  # Labels + blank label.
+	label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+	# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+	print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+	print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 	print('Start creating an EnglishTesseractTextLineDataset...')
 	start_time = time.time()
-	dataset = tesseract_data.EnglishTesseractTextLineDataset(image_filepaths, box_filepaths, image_height, image_width, image_channel, train_test_ratio, max_char_count, labels, num_classes)
+	dataset = tesseract_data.EnglishTesseractTextLineDataset(label_converter, image_filepaths, box_filepaths, image_height, image_width, image_channel, train_test_ratio, max_char_count)
 	print('End creating an EnglishTesseractTextLineDataset: {} secs.'.format(time.time() - start_time))
 
 	train_generator = dataset.create_train_batch_generator(batch_size=32, shuffle=True)
@@ -77,18 +76,17 @@ def HangeulTesseractTextLineDataset_test():
 		string.digits + \
 		string.punctuation + \
 		' '
-	labels = list(labels) + [tesseract_data.HangeulTesseractTextLineDataset.UNKNOWN]
-	labels.sort()
+	labels = sorted(labels)
 	#labels = ''.join(sorted(labels))
-	print('[SWL] Info: Labels = {}.'.format(labels))
-	print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-	num_classes = len(labels) + 1  # Labels + blank label.
+	label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+	# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+	print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+	print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 	print('Start creating a HangeulTesseractTextLineDataset...')
 	start_time = time.time()
-	dataset = tesseract_data.HangeulTesseractTextLineDataset(image_filepaths, box_filepaths, image_height, image_width, image_channel, train_test_ratio, max_char_count, labels, num_classes)
+	dataset = tesseract_data.HangeulTesseractTextLineDataset(label_converter, image_filepaths, box_filepaths, image_height, image_width, image_channel, train_test_ratio, max_char_count)
 	print('End creating a HangeulTesseractTextLineDataset: {} secs.'.format(time.time() - start_time))
 
 	train_generator = dataset.create_train_batch_generator(batch_size=32, shuffle=True)
@@ -103,6 +101,11 @@ def HangeulTesseractTextLineDataset_test():
 def HangeulJamoTesseractTextLineDataset_test():
 	image_filepaths = ['./kor_training.tif']
 	box_filepaths = ['./kor_training.box']
+
+	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
+	hangeul2jamo_functor = lambda hangeul_str: hg_util.hangeul2jamo(hangeul_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
+	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
+	jamo2hangeul_functor = lambda jamo_str: hg_util.jamo2hangeul(jamo_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
 
 	image_height, image_width, image_channel = 64, 1600, 1
 	train_test_ratio = 0.8
@@ -120,18 +123,17 @@ def HangeulJamoTesseractTextLineDataset_test():
 		string.digits + \
 		string.punctuation + \
 		' '
-	labels = list(labels) + [tesseract_data.HangeulJamoTesseractTextLineDataset.UNKNOWN, tesseract_data.HangeulJamoTesseractTextLineDataset.EOJC]
-	labels.sort()
+	labels = sorted(labels)
 	#labels = ''.join(sorted(labels))
-	print('[SWL] Info: Labels = {}.'.format(labels))
-	print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-	num_classes = len(labels) + 1  # Labels + blank label.
+	label_converter = swl_langproc_util.JamoTokenConverter(labels, hangeul2jamo_functor, jamo2hangeul_functor, pad_value=None)
+	# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+	print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
+	print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
 
 	print('Start creating a HangeulJamoTesseractTextLineDataset...')
 	start_time = time.time()
-	dataset = tesseract_data.HangeulJamoTesseractTextLineDataset(image_filepaths, box_filepaths, image_height, image_width, image_channel, train_test_ratio, max_char_count, labels, num_classes)
+	dataset = tesseract_data.HangeulJamoTesseractTextLineDataset(label_converter, image_filepaths, box_filepaths, image_height, image_width, image_channel, train_test_ratio, max_char_count)
 	print('End creating a HangeulJamoTesseractTextLineDataset: {} secs.'.format(time.time() - start_time))
 
 	train_generator = dataset.create_train_batch_generator(batch_size=32, shuffle=True)

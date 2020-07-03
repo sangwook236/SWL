@@ -7,6 +7,7 @@ sys.path.append('../../src')
 import os, math, time, datetime, functools, itertools, glob, csv
 import numpy as np
 import tensorflow as tf
+import swl.language_processing.util as swl_langproc_util
 import swl.machine_learning.util as swl_ml_util
 import text_line_data
 import TextRecognitionDataGenerator_data
@@ -149,8 +150,8 @@ def generate_font_colors(image_depth):
 	return font_color, bg_color
 
 class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, labels, num_classes, use_NWHC=True, default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, font_list, functools.partial(generate_font_colors, image_depth=image_channel), labels, num_classes, use_NWHC, default_value)
+	def __init__(self, label_converter, text_set, image_height, image_width, image_channel, font_list, use_NWHC=True):
+		super().__init__(label_converter, text_set, image_height, image_width, image_channel, font_list, functools.partial(generate_font_colors, image_depth=image_channel), use_NWHC)
 
 		self._augmenter = create_augmenter()
 
@@ -218,15 +219,15 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 			scenes = apply_transform(scenes)
 			scenes, _ = self.preprocess(scenes, None)
 			#scene_text_masks, _ = self.preprocess(scene_text_masks, None)
-			texts_int = list(map(lambda txt: self.encode_label(txt), texts))
+			texts_int = list(map(lambda txt: self._label_converter.encode(txt), texts))
 			#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
 			yield (scenes, texts, texts_int), len(texts)
 			if steps_per_epoch and (step + 1) >= steps_per_epoch:
 				break
 
 class MyRunTimeAlphaMatteTextLineDataset(text_line_data.RunTimeAlphaMatteTextLineDataset):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, labels, num_classes, alpha_matte_mode='1', use_NWHC=True, default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, font_list, char_images_dict, functools.partial(generate_font_colors, image_depth=image_channel), labels, num_classes, alpha_matte_mode, use_NWHC, default_value)
+	def __init__(self, label_converter, text_set, image_height, image_width, image_channel, font_list, char_images_dict, alpha_matte_mode='1', use_NWHC=True):
+		super().__init__(label_converter, text_set, image_height, image_width, image_channel, font_list, char_images_dict, functools.partial(generate_font_colors, image_depth=image_channel), alpha_matte_mode, use_NWHC)
 
 		self._augmenter = create_augmenter()
 
@@ -238,8 +239,8 @@ class MyRunTimeAlphaMatteTextLineDataset(text_line_data.RunTimeAlphaMatteTextLin
 			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
 class MyHangeulTextLineDataset(TextRecognitionDataGenerator_data.HangeulTextRecognitionDataGeneratorTextLineDataset):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle=True, use_NWHC=True, default_value=-1):
-		super().__init__(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle, use_NWHC, default_value)
+	def __init__(self, label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True, use_NWHC=True):
+		super().__init__(label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle, use_NWHC)
 
 		self._augmenter = create_augmenter()
 
@@ -683,11 +684,13 @@ class MyRunner(object):
 				draw_character_histogram(texts, charset=None)
 
 			labels = functools.reduce(lambda x, txt: x.union(txt), texts, set())
-			labels.add(MyRunTimeTextLineDataset.UNKNOWN)
 			labels = sorted(labels)
 			#labels = ''.join(sorted(labels))
-			print('[SWL] Info: Labels = {}.'.format(labels))
-			print('[SWL] Info: #labels = {}.'.format(len(labels)))
+
+			self._label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+			# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+			print('[SWL] Info: Labels = {}.'.format(self._label_converter.tokens))
+			print('[SWL] Info: #labels = {}.'.format(self._label_converter.num_tokens))
 
 			#--------------------
 			if 'posix' == os.name:
@@ -705,8 +708,8 @@ class MyRunner(object):
 
 			print('[SWL] Info: Start creating a Hangeul dataset...')
 			start_time = time.time()
-			self._dataset = MyRunTimeTextLineDataset(texts, image_height, image_width, image_channel, font_list, labels, num_classes)
-			#self._dataset = MyRunTimeAlphaMatteTextLineDataset(texts, image_height, image_width, image_channel, font_list, char_images_dict, labels, num_classes)
+			self._dataset = MyRunTimeTextLineDataset(self._label_converter, texts, image_height, image_width, image_channel, font_list)
+			#self._dataset = MyRunTimeAlphaMatteTextLineDataset(self._label_converter, texts, image_height, image_width, image_channel, font_list, char_images_dict)
 			print('[SWL] Info: End creating a Hangeul dataset: {} secs.'.format(time.time() - start_time))
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000  # Uses a subset of texts per epoch.
@@ -733,20 +736,23 @@ class MyRunner(object):
 				string.digits + \
 				string.punctuation + \
 				' '
-			labels = list(labels) + [MyHangeulTextLineDataset.UNKNOWN]
 			# There are words of Unicode Hangeul letters besides KS X 1001.
 			#labels = functools.reduce(lambda x, fpath: x.union(fpath.split('_')[0]), os.listdir(data_dir_path), set(labels))
 			labels = sorted(labels)
 			#labels = ''.join(sorted(labels))
-			print('[SWL] Info: Labels = {}.'.format(labels))
-			print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-			# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-			num_classes = len(labels) + 1  # Labels + blank label.
+			self._label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+			# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+			print('[SWL] Info: Labels = {}.'.format(self._label_converter.tokens))
+			print('[SWL] Info: #labels = {}.'.format(self._label_converter.num_tokens))
 
-			self._dataset = MyHangeulTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes)
+			self._dataset = MyHangeulTextLineDataset(self._label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len)
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = None, None
+
+	@property
+	def label_converter(self):
+		return self._label_converter
 
 	@property
 	def dataset(self):
@@ -848,7 +854,7 @@ class MyRunner(object):
 
 					train_loss += batch_loss * num_batch_examples
 					#train_acc += batch_acc * num_batch_examples
-					train_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(model.decode_label(batch_labels_int), batch_data[1]))))
+					train_acc += len(list(filter(lambda x: x[1] == self._label_converter.decode(x[0]), zip(model.decode_label(batch_labels_int), batch_data[1]))))
 					num_examples += num_batch_examples
 
 					if (batch_step + 1) % 100 == 0:
@@ -897,14 +903,14 @@ class MyRunner(object):
 
 						val_loss += batch_loss * num_batch_examples
 						#val_acc += batch_acc * num_batch_examples
-						val_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(model.decode_label(batch_labels_int), batch_data[1]))))
+						val_acc += len(list(filter(lambda x: x[1] == self._label_converter.decode(x[0]), zip(model.decode_label(batch_labels_int), batch_data[1]))))
 						num_examples += num_batch_examples
 
 						# Show some results.
 						if 0 == batch_step:
 							preds, gts = list(), list()
 							for count, (inf, gt) in enumerate(zip(model.decode_label(batch_labels_int), batch_data[1])):
-								inf = self._dataset.decode_label(inf)
+								inf = self._label_converter.decode(inf)
 								preds.append(inf)
 								gts.append(gt)
 								if (count + 1) >= 10:
@@ -1002,7 +1008,7 @@ class MyRunner(object):
 				correct_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0, 0
 				total_text_count = max(len(inferences), len(ground_truths))
 				for inf_lbl, gt_lbl in zip(inferences, ground_truths):
-					inf_lbl = self._dataset.decode_label(inf_lbl)
+					inf_lbl = self._label_converter.decode(inf_lbl)
 
 					if inf_lbl == gt_lbl:
 						correct_text_count += 1
@@ -1025,7 +1031,7 @@ class MyRunner(object):
 					writer = csv.writer(csvfile, delimiter=',')
 
 					for inf, gt in zip(inferences, ground_truths):
-						inf = self._dataset.decode_label(inf)
+						inf = self._label_converter.decode(inf)
 						writer.writerow([gt, inf])
 			else:
 				print('[SWL] Warning: Invalid test results.')
@@ -1235,7 +1241,7 @@ def main():
 
 			inferences_str = list()
 			for inf in inferences:
-				inferences_str.extend(map(lambda x: runner.dataset.decode_label(x), inf))
+				inferences_str.extend(map(lambda x: runner.label_converter.decode(x), inf))
 
 			# Output to a file.
 			csv_filepath = os.path.join(inference_dir_path, 'inference_results.csv')

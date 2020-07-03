@@ -9,6 +9,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Conv2D, LSTM, MaxPooling2D, Reshape, Lambda, BatchNormalization
 from tensorflow.keras.layers import Input, Dense, Activation, add, concatenate
+import swl.language_processing.util as swl_langproc_util
 import swl.machine_learning.util as swl_ml_util
 import text_line_data
 import TextRecognitionDataGenerator_data
@@ -151,8 +152,8 @@ def generate_font_colors(image_depth):
 	return font_color, bg_color
 
 class MyRunTimeAlphaMatteTextLineDataset(text_line_data.RunTimeAlphaMatteTextLineDataset):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, labels, num_classes, alpha_matte_mode='1', use_NWHC=True, default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, font_list, char_images_dict, functools.partial(generate_font_colors, image_depth=image_channel), labels, num_classes, alpha_matte_mode, use_NWHC, default_value)
+	def __init__(self, label_converter, text_set, image_height, image_width, image_channel, font_list, char_images_dict, alpha_matte_mode='1', use_NWHC=True):
+		super().__init__(label_converter, text_set, image_height, image_width, image_channel, font_list, char_images_dict, functools.partial(generate_font_colors, image_depth=image_channel), alpha_matte_mode, use_NWHC)
 
 		self._train_data, self._test_data = None, None
 		self._augmenter = create_augmenter()
@@ -181,8 +182,8 @@ class MyRunTimeAlphaMatteTextLineDataset(text_line_data.RunTimeAlphaMatteTextLin
 			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
 class MyHangeulTextLineDataset(TextRecognitionDataGenerator_data.HangeulTextRecognitionDataGeneratorTextLineDataset):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle=True, use_NWHC=True, default_value=-1):
-		super().__init__(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle, use_NWHC, default_value)
+	def __init__(self, label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True, use_NWHC=True):
+		super().__init__(label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle, use_NWHC)
 
 		self._train_data, self._test_data = None, None
 
@@ -209,11 +210,11 @@ class MyHangeulTextLineDataset(TextRecognitionDataGenerator_data.HangeulTextReco
 
 """
 class MyDataSequence(tf.keras.utils.Sequence):
-	def __init__(self, batch_generator, steps_per_epoch, max_label_len, model_output_time_steps, default_value, encode_labels_functor):
+	def __init__(self, batch_generator, label_converter, steps_per_epoch, max_label_len, model_output_time_steps):
 		self._batch_generator = batch_generator
+		self._label_converter = label_converter
 		self._steps_per_epoch = steps_per_epoch
-		self._max_label_len, self._model_output_time_steps, self._default_value = max_label_len, model_output_time_steps, default_value
-		self._encode_labels_functor = encode_labels_functor
+		self._max_label_len, self._model_output_time_steps = max_label_len, model_output_time_steps
 
 	def __len__(self):
 		return self._steps_per_epoch if self._steps_per_epoch is not None else 0
@@ -222,10 +223,10 @@ class MyDataSequence(tf.keras.utils.Sequence):
 		for batch_data, num_batch_examples in self._batch_generator:
 			#batch_images, batch_labels_str, batch_labels_int (sparse tensor) = batch_data
 			batch_images, batch_labels_str, _ = batch_data
-			batch_labels_int = self._encode_labels_functor(batch_labels_str)  # Densor tensor.
+			batch_labels_int = self._encode_labels(batch_labels_str)  # Dense tensor.
 
 			if batch_labels_int.shape[1] < self._max_label_len:
-				labels = np.full((num_batch_examples, self._max_label_len), self._default_value)
+				labels = np.full((num_batch_examples, self._max_label_len), self._label_converter.pad_value)
 				labels[:,:batch_labels_int.shape[1]] = batch_labels_int
 				batch_labels_int = labels
 			elif batch_labels_int.shape[1] > self._max_label_len:
@@ -245,10 +246,10 @@ class MyDataSequence(tf.keras.utils.Sequence):
 """
 
 class MyDataSequence(tf.keras.utils.Sequence):
-	def __init__(self, examples, max_label_len, model_output_time_steps, default_value, encode_labels_functor, batch_size=None, shuffle=False):
+	def __init__(self, examples, label_converter, max_label_len, model_output_time_steps, batch_size=None, shuffle=False):
 		self._examples = np.array(examples)
-		self._max_label_len, self._model_output_time_steps, self._default_value = max_label_len, model_output_time_steps, default_value
-		self._encode_labels_functor = encode_labels_functor
+		self._label_converter = label_converter
+		self._max_label_len, self._model_output_time_steps = max_label_len, model_output_time_steps
 		self._batch_size = batch_size
 
 		self._num_examples = len(self._examples)
@@ -275,10 +276,10 @@ class MyDataSequence(tf.keras.utils.Sequence):
 			if batch_data.size > 0:  # If batch_data is non-empty.
 				#batch_images, batch_labels_str, batch_labels_int (sparse tensor) = batch_data
 				batch_images, batch_labels_str, _ = zip(*batch_data)
-				batch_labels_int = self._encode_labels_functor(batch_labels_str)  # Densor tensor.
+				batch_labels_int = self._encode_labels(batch_labels_str)  # Dense tensor.
 
 				if batch_labels_int.shape[1] < self._max_label_len:
-					labels = np.full((num_batch_examples, self._max_label_len), self._default_value)
+					labels = np.full((num_batch_examples, self._max_label_len), self._label_converter.pad_value)
 					labels[:,:batch_labels_int.shape[1]] = batch_labels_int
 					batch_labels_int = labels
 				elif batch_labels_int.shape[1] > self._max_label_len:
@@ -296,6 +297,33 @@ class MyDataSequence(tf.keras.utils.Sequence):
 				outputs = {'ctc_loss': np.zeros((num_batch_examples,))}  # Dummy.
 				return (inputs, outputs)
 		return (None, None)
+
+	# String sequences -> Integer sequences.
+	def _encode_labels(self, labels_str, dtype=np.int16):
+		max_label_len = functools.reduce(lambda x, y: max(x, len(y)), labels_str, 0)
+		labels_int = np.full((len(labels_str), max_label_len), self._label_converter.pad_value, dtype=dtype)
+		for (idx, lbl) in enumerate(labels_str):
+			"""
+			try:
+				labels_int[idx,:len(lbl)] = np.array(list(self._labels.index(ch) for ch in lbl))
+			except ValueError:
+				pass
+			"""
+			labels_int[idx,:len(lbl)] = self._label_converter.encode_label(lbl)
+		return labels_int
+
+	# Integer sequences -> string sequences.
+	def _decode_labels(self, labels_int):
+		"""
+		def int2str(label):
+			try:
+				label = list(self._labels[id] for id in label if id != self._label_converter.pad_value)
+				return ''.join(label)
+			except ValueError:
+				return None
+		return list(map(int2str, labels_int))
+		"""
+		return list(map(self._label_converter.decode_label, labels_int))
 
 #--------------------------------------------------------------------
 
@@ -454,14 +482,13 @@ class MyRunner(object):
 				draw_character_histogram(texts, charset=None)
 
 			labels = functools.reduce(lambda x, txt: x.union(txt), texts, set())
-			labels.add(MyRunTimeAlphaMatteTextLineDataset.UNKNOWN)
 			labels = sorted(labels)
 			#labels = ''.join(sorted(labels))
-			print('[SWL] Info: Labels = {}.'.format(labels))
-			print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-			# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-			num_classes = len(labels) + 1  # Labels + blank label.
+			self._label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+			# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+			print('[SWL] Info: Labels = {}.'.format(self._label_converter.tokens))
+			print('[SWL] Info: #labels = {}.'.format(self._label_converter.num_tokens))
 
 			#--------------------
 			if 'posix' == os.name:
@@ -479,7 +506,7 @@ class MyRunner(object):
 
 			print('[SWL] Info: Start creating a Hangeul dataset...')
 			start_time = time.time()
-			self._dataset = MyRunTimeAlphaMatteTextLineDataset(texts, image_height, image_width, image_channel, font_list, char_images_dict, labels=labels, num_classes=num_classes, alpha_matte_mode='1')
+			self._dataset = MyRunTimeAlphaMatteTextLineDataset(self._label_converter, texts, image_height, image_width, image_channel, font_list, char_images_dict, alpha_matte_mode='1')
 			print('[SWL] Info: End creating a Hangeul dataset: {} secs.'.format(time.time() - start_time))
 
 			self._train_examples_per_epoch, self._val_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000, 10000 #500000, 10000, 10000  # Uses a subset of texts per epoch.
@@ -506,20 +533,23 @@ class MyRunner(object):
 				string.digits + \
 				string.punctuation + \
 				' '
-			labels = list(labels) + [MyHangeulTextLineDataset.UNKNOWN]
 			# There are words of Unicode Hangeul letters besides KS X 1001.
 			#labels = functools.reduce(lambda x, fpath: x.union(fpath.split('_')[0]), os.listdir(data_dir_path), set(labels))
 			labels = sorted(labels)
 			#labels = ''.join(sorted(labels))
-			print('[SWL] Info: Labels = {}.'.format(labels))
-			print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-			# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-			num_classes = len(labels) + 1  # Labels + blank label.
+			self._label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+			# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+			print('[SWL] Info: Labels = {}.'.format(self._label_converter.tokens))
+			print('[SWL] Info: #labels = {}.'.format(self._label_converter.num_tokens))
 
-			self._dataset = MyHangeulTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes)
+			self._dataset = MyHangeulTextLineDataset(self._label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len)
 
 			self._train_examples_per_epoch, self._val_examples_per_epoch, self._test_examples_per_epoch = self._dataset.num_train_examples, self._dataset.num_test_examples, self._dataset.num_test_examples
+
+	@property
+	def label_converter(self):
+		return self._label_converter
 
 	def train(self, model_filepath, model_checkpoint_filepath, batch_size, final_epoch, initial_epoch=0, is_training_resumed=False):
 		if is_training_resumed:
@@ -566,10 +596,10 @@ class MyRunner(object):
 			print('[SWL] Info: Start training...')
 		start_time = time.time()
 		# NOTE [error] >> TypeError("can't pickle generator objects").
-		#train_sequence = MyDataSequence(self._dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=True), train_steps_per_epoch, self._max_label_len, self._model_output_time_steps, self._dataset.default_value, self._dataset.encode_labels)
-		#val_sequence = MyDataSequence(self._dataset.create_test_batch_generator(batch_size, val_steps_per_epoch, shuffle=False), val_steps_per_epoch, self._max_label_len, self._model_output_time_steps, self._dataset.default_value, self._dataset.encode_labels)
-		train_sequence = MyDataSequence(self._dataset.train_examples, self._max_label_len, self._model_output_time_steps, self._dataset.default_value, self._dataset.encode_labels, batch_size, shuffle=True)
-		val_sequence = MyDataSequence(self._dataset.test_examples, self._max_label_len, self._model_output_time_steps, self._dataset.default_value, self._dataset.encode_labels, batch_size, shuffle=False)
+		#train_sequence = MyDataSequence(self._dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=True), self._label_converter, train_steps_per_epoch, self._max_label_len, self._model_output_time_steps)
+		#val_sequence = MyDataSequence(self._dataset.create_test_batch_generator(batch_size, val_steps_per_epoch, shuffle=False), self._label_converter, val_steps_per_epoch, self._max_label_len, self._model_output_time_steps)
+		train_sequence = MyDataSequence(self._dataset.train_examples, self._label_converter, self._max_label_len, self._model_output_time_steps, batch_size, shuffle=True)
+		val_sequence = MyDataSequence(self._dataset.test_examples, self._label_converter, self._max_label_len, self._model_output_time_steps, batch_size, shuffle=False)
 		history = model.fit_generator(train_sequence, epochs=num_epochs, steps_per_epoch=train_steps_per_epoch, validation_data=val_sequence, validation_steps=val_steps_per_epoch, shuffle=True, initial_epoch=initial_epoch, class_weight=None, max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing, callbacks=[early_stopping_callback, model_checkpoint_callback])
 		print('[SWL] Info: End training: {} secs.'.format(time.time() - start_time))
 
@@ -577,8 +607,8 @@ class MyRunner(object):
 		print('[SWL] Info: Start evaluating...')
 		start_time = time.time()
 		# NOTE [error] >> TypeError("can't pickle generator objects").
-		#val_sequence = MyDataSequence(self._dataset.create_test_batch_generator(batch_size, val_steps_per_epoch, shuffle=False), , self._max_label_len, self._model_output_time_steps, self._dataset.default_value, self._dataset.encode_labels)
-		val_sequence = MyDataSequence(self._dataset.test_examples, self._max_label_len, self._model_output_time_steps, self._dataset.default_value, self._dataset.encode_labels, batch_size, shuffle=False)
+		#val_sequence = MyDataSequence(self._dataset.create_test_batch_generator(batch_size, val_steps_per_epoch, shuffle=False), self._label_converter, self._max_label_len, self._model_output_time_steps)
+		val_sequence = MyDataSequence(self._dataset.test_examples, self._label_converter, self._max_label_len, self._model_output_time_steps, batch_size, shuffle=False)
 		score = model.evaluate_generator(val_sequence, steps=val_steps_per_epoch, max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
 		print('\tValidation: Loss = {:.6f}, accuracy = {:.6f}.'.format(*score))
 		print('[SWL] Info: End evaluating: {} secs.'.format(time.time() - start_time))
@@ -645,7 +675,7 @@ class MyRunner(object):
 			correct_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0, 0
 			total_text_count = max(len(inferences), len(ground_truths))
 			for inf_lbl, gt_lbl in zip(inferences, ground_truths):
-				inf_lbl = self._dataset.decode_label(inf_lbl)
+				inf_lbl = self._label_converter.decode(inf_lbl)
 
 				if inf_lbl == gt_lbl:
 					correct_text_count += 1
@@ -668,7 +698,7 @@ class MyRunner(object):
 				writer = csv.writer(csvfile, delimiter=',')
 
 				for inf, gt in zip(inferences, ground_truths):
-					inf = self._dataset.decode_label(inf)
+					inf = self._label_converter.decode(inf)
 					writer.writerow([gt, inf])
 		else:
 			print('[SWL] Warning: Invalid test results.')
@@ -810,7 +840,7 @@ def main():
 		if inferences is not None:
 			#print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
-			inferences = list(map(lambda x: runner.dataset.decode_label(x), inferences))
+			inferences = list(map(lambda x: runner.label_converter.decode(x), inferences))
 
 			# Output to a file.
 			csv_filepath = os.path.join(inference_dir_path, 'inference_results.csv')

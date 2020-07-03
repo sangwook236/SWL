@@ -3,6 +3,7 @@
 
 import sys
 sys.path.append('../../src')
+sys.path.append('./src')
 
 import os, math, glob, time, string
 import numpy as np
@@ -24,12 +25,12 @@ def TokenConverter_test():
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
 	print('Pad value = {}.'.format(converter.pad_value))
 
-	inputs = '123ABCxyz'
-	encoded = converter.encode(inputs)
-	print('Encoded tokens = {}.'.format(encoded))
+	seq = '123ABCxyz'
+	encoded = converter.encode(seq)
+	print('Encoded sequence = {}.'.format(encoded))
 	decoded = converter.decode(encoded)
-	print('Decoded tokens = {}.'.format(decoded))
-	assert inputs == decoded
+	print('Decoded sequence = {}.'.format(decoded))
+	assert seq == decoded
 
 	#--------------------
 	print('---------- SOS + EOS.')
@@ -38,40 +39,40 @@ def TokenConverter_test():
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
 	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
 
-	inputs = '123ABCxyz'
-	encoded = converter.encode(inputs)
-	print('Encoded tokens = {}.'.format(encoded))
+	seq = '123ABCxyz'
+	encoded = converter.encode(seq)
+	print('Encoded sequence = {}.'.format(encoded))
 	decoded = converter.decode(encoded)
-	print('Decoded tokens = {}.'.format(decoded))
-	assert inputs == decoded
+	print('Decoded sequence = {}.'.format(decoded))
+	assert seq == decoded
 
-	# <EOS> exists in the middle of tokens.
-	inputs = list('123ABCxyz')
+	# <EOS> exists in the middle of a sequence.
+	seq = list('123ABCxyz')
 	pos = 6
-	inputs2 = inputs[:pos] + [converter.EOS] + inputs[pos:]
-	encoded = converter.encode(inputs2)
-	print('Encoded tokens = {}.'.format(encoded))
+	seq2 = seq[:pos] + [converter.EOS] + seq[pos:]
+	encoded = converter.encode(seq2)
+	print('Encoded sequence = {}.'.format(encoded))
 	decoded = converter.decode(encoded)
-	print('Decoded tokens = {}.'.format(decoded))
-	assert ''.join(inputs[:pos]) == decoded
+	print('Decoded sequence = {}.'.format(decoded))
+	assert ''.join(seq[:pos]) == decoded
 
 	# No <SOS> exists.
-	inputs = '123ABCxyz'
-	encoded = converter.encode(inputs)
+	seq = '123ABCxyz'
+	encoded = converter.encode(seq)
 	encoded2 = encoded[1:]
-	print('Encoded tokens = {}.'.format(encoded2))
+	print('Encoded sequence = {}.'.format(encoded2))
 	decoded = converter.decode(encoded2)
-	print('Decoded tokens = {}.'.format(decoded))
-	assert inputs == decoded
+	print('Decoded sequence = {}.'.format(decoded))
+	assert seq == decoded
 
 	# No <EOS> exists.
-	inputs = '123ABCxyz'
-	encoded = converter.encode(inputs)
+	seq = '123ABCxyz'
+	encoded = converter.encode(seq)
 	encoded2 = encoded[:-1]
-	print('Encoded tokens = {}.'.format(encoded2))
+	print('Encoded sequence = {}.'.format(encoded2))
 	decoded = converter.decode(encoded2)
-	print('Decoded tokens = {}.'.format(decoded))
-	assert inputs == decoded
+	print('Decoded sequence = {}.'.format(decoded))
+	assert seq == decoded
 
 	#--------------------
 	print('---------- SOS + EOS & pad value = SOS.')
@@ -80,12 +81,12 @@ def TokenConverter_test():
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
 	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
 
-	inputs = '123ABCxyz'
-	encoded = converter.encode(inputs)
-	print('Encoded tokens = {}.'.format(encoded))
+	seq = '123ABCxyz'
+	encoded = converter.encode(seq)
+	print('Encoded sequence = {}.'.format(encoded))
 	decoded = converter.decode(encoded)
-	print('Decoded tokens = {}.'.format(decoded))
-	assert inputs == decoded
+	print('Decoded sequence = {}.'.format(decoded))
+	assert seq == decoded
 
 	#--------------------
 	print('---------- SOS + EOS + prefix + suffix.')
@@ -94,12 +95,111 @@ def TokenConverter_test():
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
 	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
 
-	inputs = '123ABCxyz'
-	encoded = converter.encode(inputs)
+	seq = '123ABCxyz'
+	encoded = converter.encode(seq)
+	print('Encoded sequence = {}.'.format(encoded))
+	decoded = converter.decode(encoded)
+	print('Decoded sequence = {}.'.format(decoded))
+	assert seq == decoded
+
+def JamoTokenConverter_test():
+	import hangeul_util as hg_util
+	import text_generation_util as tg_util
+
+	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
+	hangeul2jamo_functor = lambda hangeul_str: hg_util.hangeul2jamo(hangeul_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
+	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
+	jamo2hangeul_functor = lambda jamo_str: hg_util.jamo2hangeul(jamo_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
+
+	charset = string.digits
+	charset += string.ascii_uppercase
+	charset += string.ascii_lowercase
+
+	charset = tg_util.construct_charset(digit=True, alphabet_uppercase=True, alphabet_lowercase=True, punctuation=False, space=True, hangeul=False, hangeul_jamo=True)
+
+	#--------------------
+	print('---------- Basic.')
+	converter = swl_langproc_util.JamoTokenConverter(list(charset), hangeul2jamo_functor, jamo2hangeul_functor, use_sos=False, use_eos=False, prefixes=None, suffixes=None, pad_value=None)
+	print('Tokens = {}.'.format(converter.tokens))
+	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
+	print('Pad value = {}.'.format(converter.pad_value))
+
+	seq = '123ABCxyz가나다라각난닭랍'
+	encoded = converter.encode(seq)
+	print('Encoded sequence = {}.'.format(encoded))
+	decoded = converter.decode(encoded)
+	print('Decoded sequence = {}.'.format(decoded))
+	assert seq == decoded
+
+	#--------------------
+	print('---------- SOS + EOS.')
+	converter = swl_langproc_util.JamoTokenConverter(list(charset), hangeul2jamo_functor, jamo2hangeul_functor, use_sos=True, use_eos=True, prefixes=None, suffixes=None, pad_value=None)
+	print('Tokens = {}.'.format(converter.tokens))
+	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
+	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
+
+	seq = '123ABCxyz가나다라각난닭랍'
+	encoded = converter.encode(seq)
+	print('Encoded sequence = {}.'.format(encoded))
+	decoded = converter.decode(encoded)
+	print('Decoded sequence = {}.'.format(decoded))
+	assert seq == decoded
+
+	# <EOS> exists in the middle of a sequence.
+	seq = list('123ABCxyz가나다라각난닭랍')
+	pos = 6
+	seq2 = seq[:pos] + [converter.EOS] + seq[pos:]
+	encoded = converter.encode(seq2)
+	print('Encoded sequence = {}.'.format(encoded))
+	decoded = converter.decode(encoded)
+	print('Decoded sequence = {}.'.format(decoded))
+	assert ''.join(seq[:pos]) == decoded
+
+	# No <SOS> exists.
+	seq = '123ABCxyz가나다라각난닭랍'
+	encoded = converter.encode(seq)
+	encoded2 = encoded[1:]
+	print('Encoded sequence = {}.'.format(encoded2))
+	decoded = converter.decode(encoded2)
+	print('Decoded sequence = {}.'.format(decoded))
+	assert seq == decoded
+
+	# No <EOS> exists.
+	seq = '123ABCxyz가나다라각난닭랍'
+	encoded = converter.encode(seq)
+	encoded2 = encoded[:-1]
+	print('Encoded sequence = {}.'.format(encoded2))
+	decoded = converter.decode(encoded2)
+	print('Decoded sequence = {}.'.format(decoded))
+	assert seq == decoded
+
+	#--------------------
+	print('---------- SOS + EOS & pad value = SOS.')
+	converter = swl_langproc_util.JamoTokenConverter(list(charset), hangeul2jamo_functor, jamo2hangeul_functor, use_sos=True, use_eos=True, prefixes=None, suffixes=None, pad_value=swl_langproc_util.TokenConverter.SOS)
+	print('Tokens = {}.'.format(converter.tokens))
+	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
+	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
+
+	seq = '123ABCxyz가나다라각난닭랍'
+	encoded = converter.encode(seq)
 	print('Encoded tokens = {}.'.format(encoded))
 	decoded = converter.decode(encoded)
 	print('Decoded tokens = {}.'.format(decoded))
-	assert inputs == decoded
+	assert seq == decoded
+
+	#--------------------
+	print('---------- SOS + EOS + prefix + suffix.')
+	converter = swl_langproc_util.JamoTokenConverter(list(charset), hangeul2jamo_functor, jamo2hangeul_functor, use_sos=True, use_eos=True, prefixes=['<HEAD>'], suffixes=['<TAIL>'], pad_value=None)
+	print('Tokens = {}.'.format(converter.tokens))
+	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
+	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
+
+	seq = '123ABCxyz가나다라각난닭랍'
+	encoded = converter.encode(seq)
+	print('Encoded tokens = {}.'.format(encoded))
+	decoded = converter.decode(encoded)
+	print('Decoded tokens = {}.'.format(decoded))
+	assert seq == decoded
 
 def compute_simple_text_recognition_accuracy_test():
 	inferred_texts     = ['abc', 'df',  'ghijk', 'ab cde', 'fhijk lmno', 'pqrst uvwy', 'abc defg hijklmn opqr', 'abc deg hijklmn opqr', 'abc df hijklmn opqr', '',    'zyx']
@@ -762,7 +862,8 @@ def transform_text_line_test():
 	cv2.destroyAllWindows()
 
 def main():
-	TokenConverter_test()
+	#TokenConverter_test()
+	JamoTokenConverter_test()
 
 	#compute_simple_text_recognition_accuracy_test()
 	#compute_string_distance_test()

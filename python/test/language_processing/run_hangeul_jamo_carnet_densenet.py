@@ -7,6 +7,7 @@ sys.path.append('../../src')
 import os, math, time, datetime, functools, itertools, glob, csv
 import numpy as np
 import tensorflow as tf
+import swl.language_processing.util as swl_langproc_util
 import swl.machine_learning.util as swl_ml_util
 import text_line_data
 import TextRecognitionDataGenerator_data
@@ -150,8 +151,8 @@ def generate_font_colors(image_depth):
 	return font_color, bg_color
 
 class MyRunTimeHangeulJamoAlphaMatteTextLineDataset(text_line_data.RunTimeHangeulJamoAlphaMatteTextLineDataset):
-	def __init__(self, text_set, image_height, image_width, image_channel, font_list, char_images_dict, labels, num_classes, alpha_matte_mode='1', use_NWHC=False, default_value=-1):
-		super().__init__(text_set, image_height, image_width, image_channel, font_list, char_images_dict, functools.partial(generate_font_colors, image_depth=image_channel), labels, num_classes, alpha_matte_mode, use_NWHC, default_value)
+	def __init__(self, label_converter, text_set, image_height, image_width, image_channel, font_list, char_images_dict, alpha_matte_mode='1', use_NWHC=False):
+		super().__init__(label_converter, text_set, image_height, image_width, image_channel, font_list, char_images_dict, functools.partial(generate_font_colors, image_depth=image_channel), alpha_matte_mode, use_NWHC)
 
 		self._augmenter = create_augmenter()
 
@@ -163,8 +164,8 @@ class MyRunTimeHangeulJamoAlphaMatteTextLineDataset(text_line_data.RunTimeHangeu
 			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
 class MyHangeulJamoTextLineDataset(TextRecognitionDataGenerator_data.HangeulJamoTextRecognitionDataGeneratorTextLineDataset):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle=True, use_NWHC=False, default_value=-1):
-		super().__init__(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes, shuffle, use_NWHC, default_value)
+	def __init__(self, label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True, use_NWHC=False):
+		super().__init__(label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle, use_NWHC)
 
 		self._augmenter = create_augmenter()
 
@@ -463,6 +464,12 @@ class MyRunner(object):
 
 		#--------------------
 		# Create a dataset.
+		import hangeul_util as hg_util
+		# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
+		hangeul2jamo_functor = lambda hangeul_str: hg_util.hangeul2jamo(hangeul_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
+		# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
+		jamo2hangeul_functor = lambda jamo_str: hg_util.jamo2hangeul(jamo_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
+
 		if is_dataset_generated_at_runtime:
 			import text_generation_util as tg_util
 
@@ -487,16 +494,15 @@ class MyRunner(object):
 				from swl.language_processing.util import draw_character_histogram
 				draw_character_histogram(texts, charset=None)
 
-			labels = functools.reduce(lambda x, txt: x.union(MyRunTimeHangeulJamoAlphaMatteTextLineDataset.hangeul2jamo(txt)), texts, set())
-			labels.add(MyRunTimeHangeulJamoAlphaMatteTextLineDataset.UNKNOWN)
-			#labels.add(MyRunTimeHangeulJamoAlphaMatteTextLineDataset.EOJC)
+			labels = functools.reduce(lambda x, txt: x.union(hangeul2jamo_functor(txt)), texts, set())
+			labels.remove(swl_langproc_util.JamoTokenConverter.EOJ)
 			labels = sorted(labels)
 			#labels = ''.join(sorted(labels))
-			print('[SWL] Info: Labels = {}.'.format(labels))
-			print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-			# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-			num_classes = len(labels) + 1  # Labels + blank label.
+			self._label_converter = swl_langproc_util.JamoTokenConverter(labels, hangeul2jamo_functor, jamo2hangeul_functor, pad_value=None)
+			# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+			print('[SWL] Info: Labels = {}.'.format(self._label_converter.tokens))
+			print('[SWL] Info: #labels = {}.'.format(self._label_converter.num_tokens))
 
 			#--------------------
 			if 'posix' == os.name:
@@ -514,7 +520,7 @@ class MyRunner(object):
 
 			print('[SWL] Info: Start creating a Hangeul jamo dataset...')
 			start_time = time.time()
-			self._dataset = MyRunTimeHangeulJamoAlphaMatteTextLineDataset(texts, image_height, image_width, image_channel, font_list, char_images_dict, labels=labels, num_classes=num_classes, alpha_matte_mode='1')
+			self._dataset = MyRunTimeHangeulJamoAlphaMatteTextLineDataset(self._label_converter, texts, image_height, image_width, image_channel, font_list, char_images_dict, alpha_matte_mode='1')
 			print('[SWL] Info: End creating a Hangeul jamo dataset: {} secs.'.format(time.time() - start_time))
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000  # Uses a subset of texts per epoch.
@@ -532,20 +538,24 @@ class MyRunner(object):
 				string.digits + \
 				string.punctuation + \
 				' '
-			labels = list(labels) + [MyHangeulJamoTextLineDataset.UNKNOWN, MyHangeulJamoTextLineDataset.EOJC]
 			# There are words of Unicode Hangeul letters besides KS X 1001.
-			labels = functools.reduce(lambda x, fpath: x.union(MyHangeulJamoTextLineDataset.hangeul2jamo(fpath.split('_')[0])), os.listdir(data_dir_path), set(labels))
+			labels = functools.reduce(lambda x, fpath: x.union(hangeul2jamo_functor(fpath.split('_')[0])), os.listdir(data_dir_path), set(labels))
+			labels.remove(swl_langproc_util.JamoTokenConverter.EOJ)
 			labels = sorted(labels)
 			#labels = ''.join(sorted(labels))
-			print('[SWL] Info: Labels = {}.'.format(labels))
-			print('[SWL] Info: #labels = {}.'.format(len(labels)))
 
-			# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-			num_classes = len(labels) + 1  # Labels + blank label.
+			self._label_converter = swl_langproc_util.JamoTokenConverter(labels, hangeul2jamo_functor, jamo2hangeul_functor, pad_value=None)
+			# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+			print('[SWL] Info: Labels = {}.'.format(self._label_converter.tokens))
+			print('[SWL] Info: #labels = {}.'.format(self._label_converter.num_tokens))
 
-			self._dataset = MyHangeulJamoTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, labels, num_classes)
+			self._dataset = MyHangeulJamoTextLineDataset(self._label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len)
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = None, None
+
+	@property
+	def label_converter(self):
+		return self._label_converter
 
 	@property
 	def dataset(self):
@@ -647,7 +657,7 @@ class MyRunner(object):
 
 					train_loss += batch_loss * num_batch_examples
 					#train_acc += batch_acc * num_batch_examples
-					train_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(model.decode_label(batch_labels_int), batch_data[1]))))
+					train_acc += len(list(filter(lambda x: x[1] == self._label_converter.decode(x[0]), zip(model.decode_label(batch_labels_int), batch_data[1]))))
 					num_examples += num_batch_examples
 
 					if (batch_step + 1) % 100 == 0:
@@ -696,14 +706,14 @@ class MyRunner(object):
 
 						val_loss += batch_loss * num_batch_examples
 						#val_acc += batch_acc * num_batch_examples
-						val_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(model.decode_label(batch_labels_int), batch_data[1]))))
+						val_acc += len(list(filter(lambda x: x[1] == self._label_converter.decode(x[0]), zip(model.decode_label(batch_labels_int), batch_data[1]))))
 						num_examples += num_batch_examples
 
 						# Show some results.
 						if 0 == batch_step:
 							preds, gts = list(), list()
 							for count, (inf, gt) in enumerate(zip(model.decode_label(batch_labels_int), batch_data[1])):
-								inf = self._dataset.decode_label(inf)
+								inf = self._label_converter.decode(inf)
 								preds.append(inf)
 								gts.append(gt)
 								if (count + 1) >= 10:
@@ -801,7 +811,7 @@ class MyRunner(object):
 				correct_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0, 0
 				total_text_count = max(len(inferences), len(ground_truths))
 				for inf_lbl, gt_lbl in zip(inferences, ground_truths):
-					inf_lbl = self._dataset.decode_label(inf_lbl)
+					inf_lbl = self._label_converter.decode(inf_lbl)
 
 					if inf_lbl == gt_lbl:
 						correct_text_count += 1
@@ -824,7 +834,7 @@ class MyRunner(object):
 					writer = csv.writer(csvfile, delimiter=',')
 
 					for inf, gt in zip(inferences, ground_truths):
-						inf = self._dataset.decode_label(inf)
+						inf = self._label_converter.decode(inf)
 						writer.writerow([gt, inf])
 			else:
 				print('[SWL] Warning: Invalid test results.')
@@ -888,10 +898,16 @@ class MyRunner(object):
 
 #--------------------------------------------------------------------
 
-def check_data(dataset, batch_size, default_value=-1):
+def check_data(dataset, label_converter, batch_size, default_value=-1):
 	train_examples_per_epoch, test_examples_per_epoch = None, None
 	train_steps_per_epoch = None if train_examples_per_epoch is None else math.ceil(train_examples_per_epoch / batch_size)
 	test_steps_per_epoch = None if test_examples_per_epoch is None else math.ceil(test_examples_per_epoch / batch_size)
+
+	import hangeul_util as hg_util
+	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
+	hangeul2jamo_functor = lambda hangeul_str: hg_util.hangeul2jamo(hangeul_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
+	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
+	jamo2hangeul_functor = lambda jamo_str: hg_util.jamo2hangeul(jamo_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
 
 	generator = runner.dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=False)
 	for batch_step, (batch_data, num_batch_examples) in enumerate(generator):
@@ -909,15 +925,15 @@ def check_data(dataset, batch_size, default_value=-1):
 		if batch_size != len(batch_data[1]) or batch_size != len(batch_data[2]):
 			print('Invalid label size: {0} != {1} or {0} != {2}.'.format(batch_size, len(batch_data[1]), len(batch_data[1])))
 
-		batch_data2_decoded = map(lambda x: dataset.decode_label(x), batch_data[2])
+		batch_data2_decoded = map(lambda x: label_converter.decode(x), batch_data[2])
 		for idx, (lbl, lbl_int, lbl_int_decoded) in enumerate(zip(batch_data[1], batch_data[2], batch_data2_decoded)):
 			if len(lbl) != len(lbl_int_decoded):
 				print('Unmatched label length: {} != {}.'.format(lbl, lbl_int))
 			if 0 == len(lbl_int):
 				print('Zero-length label: {}, {}.'.format(lbl, lbl_int))
 
-			jamo_lbl = MyRunTimeHangeulJamoAlphaMatteTextLineDataset.hangeul2jamo(lbl)
-			letter_lbl = MyRunTimeHangeulJamoAlphaMatteTextLineDataset.jamo2hangeul(jamo_lbl)
+			jamo_lbl = hangeul2jamo_functor(lbl)
+			letter_lbl = jamo2hangeul_functor(jamo_lbl)
 			if letter_lbl != lbl:
 				print('Unmatched encoded/decoded labels: {} != {} ({}).'.format(lbl, letter_lbl, jamo_lbl))
 
@@ -967,7 +983,7 @@ def main():
 	if False:
 		print('[SWL] Info: Start checking data...')
 		start_time = time.time()
-		check_data(runner.dataset, batch_size, default_value=-1)
+		check_data(runner.dataset, runner.label_converter, batch_size, default_value=-1)
 		print('[SWL] Info: End checking data: {} secs.'.format(time.time() - start_time))
 
 	#--------------------
