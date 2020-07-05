@@ -408,7 +408,7 @@ def SimpleCharacterDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset = tg_util.construct_charset(hangeul_jamo=False, space=False)
+	charset = tg_util.construct_charset(space=False)
 	font_list = construct_font(korean=True, english=False)
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
@@ -487,7 +487,7 @@ def NoisyCharacterDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset = tg_util.construct_charset(hangeul_jamo=False, space=False)
+	charset = tg_util.construct_charset(space=False)
 	font_list = construct_font(korean=True, english=False)
 
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
@@ -567,7 +567,7 @@ def FileBasedCharacterDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset = tg_util.construct_charset(hangeul_jamo=False, space=False)
+	charset = tg_util.construct_charset(space=False)
 
 	train_test_ratio = 0.8
 	batch_size = 64
@@ -677,7 +677,7 @@ def SimpleWordDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=False), tg_util.construct_word_set(korean=True, english=True)
+	charset, wordset = tg_util.construct_charset(space=False), tg_util.construct_word_set(korean=True, english=True)
 	font_list = construct_font(korean=True, english=False)
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
@@ -758,12 +758,12 @@ def RandomWordDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset = tg_util.construct_charset(hangeul_jamo=False, space=False)
+	charset = tg_util.construct_charset(space=False)
 	font_list = construct_font(korean=True, english=False)
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	max_word_len = None  # Use max. word length.
-	char_len_interval = (1, 20)
+	word_len_interval = (1, 20)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
@@ -800,8 +800,8 @@ def RandomWordDataset_test():
 	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
 	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
 	chars = charset  # Can make the number of each character different.
-	train_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, max_word_len, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
-	test_dataset = text_data.RandomWordDataset(label_converter, chars, num_test_examples, image_channel, max_word_len, char_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
+	train_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
+	test_dataset = text_data.RandomWordDataset(label_converter, chars, num_test_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 	print('#classes = {}.'.format(label_converter.num_tokens))
@@ -841,7 +841,7 @@ def FileBasedWordDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset = tg_util.construct_charset(hangeul_jamo=False, space=False)
+	charset = tg_util.construct_charset(space=False)
 
 	max_word_len = 30
 	train_test_ratio = 0.8
@@ -952,7 +952,7 @@ def SimpleTextLineDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset, wordset = tg_util.construct_charset(hangeul_jamo=False, space=True), tg_util.construct_word_set(korean=True, english=True)
+	charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
 	font_list = construct_font(korean=True, english=False)
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
@@ -1031,8 +1031,94 @@ def SimpleTextLineDataset_test():
 	visualize_data_with_length(train_dataloader, label_converter, num_data=10)
 	visualize_data_with_length(test_dataloader, label_converter, num_data=10)
 
+def RandomTextLineDataset_test():
+	image_height, image_width, image_channel = 64, 1280, 3
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
+	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	charset = tg_util.construct_charset()
+	font_list = construct_font(korean=True, english=False)
+
+	num_train_examples, num_test_examples = int(1e6), int(1e4)
+	max_textline_len = 80
+	word_len_interval = (1, 20)
+	font_size_interval = (10, 100)
+	char_space_ratio_interval = (0.8, 1.25)
+	word_count_interval = (1, 5)
+	space_count_interval = (1, 3)
+	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
+
+	batch_size = 64
+	shuffle = True
+	num_workers = 4
+
+	#--------------------
+	train_transform = torchvision.transforms.Compose([
+		RandomAugment(create_text_line_augmenter()),
+		RandomInvert(),
+		#ConvertPILMode(mode='RGB'),
+		ResizeImage(image_height_before_crop, image_width_before_crop),
+		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
+		#torchvision.transforms.RandomCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	])
+	train_target_transform = ToIntTensor()
+	test_transform = torchvision.transforms.Compose([
+		RandomInvert(),
+		#ConvertPILMode(mode='RGB'),
+		ResizeImage(image_height, image_width),
+		#torchvision.transforms.Resize((image_height, image_width)),
+		#torchvision.transforms.CenterCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	])
+	test_target_transform = ToIntTensor()
+
+	#--------------------
+	print('Start creating datasets...')
+	start_time = time.time()
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
+	charset_without_space = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
+	train_dataset = text_data.RandomTextLineDataset(label_converter, charset_without_space, num_train_examples, image_height, image_width, image_channel, max_textline_len,font_list, font_size_interval, char_space_ratio_interval, word_count_interval, word_len_interval, space_count_interval, color_functor, transform=train_transform, target_transform=train_target_transform)
+	test_dataset = text_data.RandomTextLineDataset(label_converter, charset_without_space, num_test_examples, image_height, image_width, image_channel, max_textline_len, font_list, font_size_interval, char_space_ratio_interval, word_count_interval, word_len_interval, space_count_interval, color_functor, transform=test_transform, target_transform=test_target_transform)
+	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
+	print('#classes = {}.'.format(label_converter.num_tokens))
+
+	#--------------------
+	print('Start creating data loaders...')
+	start_time = time.time()
+	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
+
+	#--------------------
+	# Show data info.
+	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
+	data_iter = iter(train_dataloader)
+	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
+	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
+	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+	print('Train label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
+
+	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
+	data_iter = iter(test_dataloader)
+	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
+	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
+	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+	print('Test label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
+
+	#--------------------
+	# Visualize.
+	visualize_data_with_length(train_dataloader, label_converter, num_data=10)
+	visualize_data_with_length(test_dataloader, label_converter, num_data=10)
+
 def main():
-	SimpleCharacterDataset_test()
+	#SimpleCharacterDataset_test()
 	#NoisyCharacterDataset_test()
 	#FileBasedCharacterDataset_test()
 
@@ -1043,6 +1129,7 @@ def main():
 
 	#--------------------
 	#SimpleTextLineDataset_test()
+	RandomTextLineDataset_test()
 
 #--------------------------------------------------------------------
 
