@@ -3436,7 +3436,7 @@ def recognize_word_using_mixup():
 	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def evaluate_rare2_word_recognizer():
+def evaluate_word_recognizer():
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3444,269 +3444,177 @@ def evaluate_rare2_word_recognizer():
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	lang = 'kor'  # {'kor', 'eng'}.
-	if lang == 'kor':
-		hidden_size = 512  # The size of the LSTM hidden states.
-	else:
-		hidden_size = 256  # The size of the LSTM hidden states.
 
 	batch_size = 64
 	shuffle = True
 	num_workers = 8
 
-	is_model_loaded = True
 	is_individual_pad_value_used = False
 
-	if is_model_loaded:
+	if lang == 'kor':
+		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
+		font_list = construct_font(korean=True, english=False)
+	elif lang == 'eng':
+		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
+		font_list = construct_font(korean=False, english=True)
+	else:
+		raise ValueError('Invalid language, {}'.format(lang))
+
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device: {}.'.format(device))
+
+	#--------------------
+	# Prepare data.
+
+	if is_individual_pad_value_used:
+		# When the pad value is the ID of a valid token.
+		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
+		PAD_TOKEN = '<PAD>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
+		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
+	else:
+		# When the pad value = the ID of <SOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
+	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
+	num_suffixes = 1
+
+	import aihub_data
+
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+
+	aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
+	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
+
+	image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
+	max_label_len = 10
+	is_image_used = False
+
+	test_transform = torchvision.transforms.Compose([
+		ResizeImage(image_height, image_width),
+		#torchvision.transforms.Resize((image_height, image_width)),
+		#torchvision.transforms.CenterCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	])
+	test_target_transform = ToIntTensor()
+
+	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_image_used, transform=test_transform, target_transform=test_target_transform)
+	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+	print('#classes = {}.'.format(num_classes))
+	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_value, SOS_VALUE, EOS_VALUE))
+
+	# Show data info.
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+
+	#--------------------
+	# Build a model.
+
+	#--------------------
+	# For RARE2.
+	if True:
+		if lang == 'kor':
+			hidden_size = 512  # The size of the LSTM hidden states.
+		else:
+			hidden_size = 256  # The size of the LSTM hidden states.
+
 		model_filepath_to_load = None
-	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
+		assert model_filepath_to_load is not None
 
-	if lang == 'kor':
-		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
-	elif lang == 'eng':
-		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
-	else:
-		raise ValueError('Invalid language, {}'.format(lang))
+		class Inferer(object):
+			def __init__(self, model):
+				self.model = model
 
-	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
-	print('Device: {}.'.format(device))
+			def __call__(self, inputs, outputs, output_lens, device):
+				outputs = outputs.long()
 
-	#--------------------
-	# Prepare data.
+				# Construct outputs for one-step look-ahead.
+				decoder_outputs = outputs[:,1:]  # Remove <SOS> token.
+				decoder_output_lens = output_lens - 1
 
-	if is_individual_pad_value_used:
-		# When the pad value is the ID of a valid token.
-		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
-		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
-		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
-		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
-	else:
-		# When the pad value = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
-	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
-	num_suffixes = 1
+				model_outputs = model(inputs.to(device), decoder_outputs.to(device), decoder_output_lens.to(device), device=device)
 
-	import aihub_data
+				_, model_outputs = torch.max(model_outputs, 1)
+				model_outputs = model_outputs.cpu().numpy()
+				separated_model_outputs = np.zeros(decoder_outputs.shape, model_outputs.dtype)
+				start_idx = 0
+				for idx, dl in enumerate(decoder_output_lens):
+					end_idx = start_idx + dl
+					separated_model_outputs[idx,:dl] = model_outputs[start_idx:end_idx]
+					start_idx = end_idx
+				return decoder_outputs.numpy(), separated_model_outputs
 
-	if 'posix' == os.name:
-		data_base_dir_path = '/home/sangwook/work/dataset'
-	else:
-		data_base_dir_path = 'D:/work/dataset'
-
-	aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
-	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
-
-	image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
-	max_label_len = 10
-	is_image_used = False
-
-	test_transform = torchvision.transforms.Compose([
-		ResizeImage(image_height, image_width),
-		#torchvision.transforms.Resize((image_height, image_width)),
-		#torchvision.transforms.CenterCrop((image_height, image_width)),
-		torchvision.transforms.ToTensor(),
-		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-	])
-	test_target_transform = ToIntTensor()
-
-	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_image_used, transform=test_transform, target_transform=test_target_transform)
-	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	print('#classes = {}.'.format(num_classes))
-	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_value, SOS_VALUE, EOS_VALUE))
-
-	# Show data info.
-	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+		# FIXME [fix] >> Cannot infer using this model.
+		import rare.crnn_lang
+		model = rare.crnn_lang.CRNN(imgH=image_height, nc=image_channel, nclass=num_classes, nh=hidden_size, n_rnn=2, num_embeddings=256, leakyRelu=False)
 
 	#--------------------
-	class Inferer(object):
-		def __init__(self, model):
-			self.model = model
+	# For ASTER + OpenNMT.
+	elif False:
+		#num_fiducials = 20  # The number of fiducial points of TPS-STN.
+		num_fiducials = None
+		if lang == 'kor':
+			word_vec_size = 80
+			encoder_rnn_size, decoder_hidden_size = 1024, 1024
+		else:
+			word_vec_size = 80
+			encoder_rnn_size, decoder_hidden_size = 512, 512
 
-		def __call__(self, inputs, outputs, output_lens, device):
-			outputs = outputs.long()
-
-			# Construct outputs for one-step look-ahead.
-			decoder_outputs = outputs[:,1:]  # Remove <SOS> token.
-			decoder_output_lens = output_lens - 1
-
-			model_outputs = model(inputs.to(device), decoder_outputs.to(device), decoder_output_lens.to(device), device=device)
-
-			_, model_outputs = torch.max(model_outputs, 1)
-			model_outputs = model_outputs.cpu().numpy()
-			separated_model_outputs = np.zeros(decoder_outputs.shape, model_outputs.dtype)
-			start_idx = 0
-			for idx, dl in enumerate(decoder_output_lens):
-				end_idx = start_idx + dl
-				separated_model_outputs[idx,:dl] = model_outputs[start_idx:end_idx]
-				start_idx = end_idx
-			return decoder_outputs.numpy(), separated_model_outputs
-
-	#--------------------
-	# Build a model.
-
-	# FIXME [fix] >> Cannot infer using this model.
-	import rare.crnn_lang
-	model = rare.crnn_lang.CRNN(imgH=image_height, nc=image_channel, nclass=num_classes, nh=hidden_size, n_rnn=2, num_embeddings=256, leakyRelu=False)
-
-	if is_model_loaded:
-		# Load a model.
-		model = load_model(model_filepath_to_load, model, device=device)
-
-	model = model.to(device)
-
-	#--------------------
-	# Evaluate the model.
-
-	print('Start evaluating...')
-	start_time = time.time()
-	model.eval()
-	evaluate_text_recognition_model(Inferer(model), test_dataloader, label_converter, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=True, device=device)
-	print('End evaluating: {} secs.'.format(time.time() - start_time))
-
-def evaluate_aster_and_opennmt_word_recognizer():
-	#image_height, image_width, image_channel = 32, 100, 3
-	image_height, image_width, image_channel = 64, 640, 3
-	#image_height, image_width, image_channel = 64, 1280, 3
-	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
-	image_height_before_crop, image_width_before_crop = image_height, image_width
-
-	lang = 'kor'  # {'kor', 'eng'}.
-	#num_fiducials = 20  # The number of fiducial points of TPS-STN.
-	num_fiducials = None
-	if lang == 'kor':
-		word_vec_size = 80
-		encoder_rnn_size, decoder_hidden_size = 1024, 1024
-	else:
-		word_vec_size = 80
-		encoder_rnn_size, decoder_hidden_size = 512, 512
-
-	batch_size = 64
-	shuffle = True
-	num_workers = 8
-
-	is_model_loaded = True
-	is_individual_pad_value_used = False
-
-	if is_model_loaded:
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_nll_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.9203_epoch3.pth'
-	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
+		assert model_filepath_to_load is not None
 
-	if lang == 'kor':
-		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
-	elif lang == 'eng':
-		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
-	else:
-		raise ValueError('Invalid language, {}'.format(lang))
+		class MyCompositeModel(torch.nn.Module):
+			def __init__(self, image_height, image_width, input_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size):
+				super().__init__()
 
-	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
-	print('Device: {}.'.format(device))
+				if num_fiducials:
+					import rare.modules.transformation
+					self.transformer = rare.modules.transformation.TPS_SpatialTransformerNetwork(F=num_fiducials, I_size=(image_height, image_width), I_r_size=(image_height, image_width), I_channel_num=input_channel)
+				else:
+					self.transformer = None
 
-	#--------------------
-	# Prepare data.
+				import aster.resnet_aster
+				self.encoder = aster.resnet_aster.ResNet_ASTER(with_lstm=True, in_height=image_height, in_channels=input_channel, hidden_size=encoder_rnn_size // 2)
+				_, self.decoder, self.generator = build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size)
 
-	if is_individual_pad_value_used:
-		# When the pad value is the ID of a valid token.
-		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
-		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
-		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
-		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
-	else:
-		# When the pad value = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
-	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
-	num_suffixes = 1
+			# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
+			def forward(self, src, tgt, lengths, bptt=False, with_align=False):
+				dec_in = tgt[:-1]  # Exclude last target from inputs.
 
-	import aihub_data
+				if self.transformer: src = self.transformer(src, device)  # [B, C, H, W].
 
-	if 'posix' == os.name:
-		data_base_dir_path = '/home/sangwook/work/dataset'
-	else:
-		data_base_dir_path = 'D:/work/dataset'
+				enc_outputs, enc_hiddens = self.encoder(src)
+				enc_outputs = enc_outputs.transpose(0, 1)  # [B, T, F] -> [T, B, F].
 
-	aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
-	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
+				# TODO [check] >> Is it proper to use enc_outputs & enc_hiddens?
+				if bptt is False:
+					self.decoder.init_state(src, enc_outputs, enc_hiddens)
+				dec_outs, attns = self.decoder(dec_in, enc_outputs, memory_lengths=lengths, with_align=with_align)
+				outs = self.generator(dec_outs)
+				return outs, attns
 
-	image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
-	max_label_len = 10
-	is_image_used = False
+		class Inferer(object):
+			def __init__(self, model):
+				self.model = model
 
-	test_transform = torchvision.transforms.Compose([
-		ResizeImage(image_height, image_width),
-		#torchvision.transforms.Resize((image_height, image_width)),
-		#torchvision.transforms.CenterCrop((image_height, image_width)),
-		torchvision.transforms.ToTensor(),
-		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-	])
-	test_target_transform = ToIntTensor()
+			def __call__(self, inputs, outputs, output_lens, device):
+				decoder_outputs = outputs[:,1:]
+				outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
 
-	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_image_used, transform=test_transform, target_transform=test_target_transform)
-	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	print('#classes = {}.'.format(num_classes))
-	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_value, SOS_VALUE, EOS_VALUE))
+				model_outputs = self.model(inputs.to(device), outputs.to(device), output_lens.to(device))
 
-	# Show data info.
-	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+				predictions = model_outputs[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+				#attentions = model_outputs[1]['std']
 
-	#--------------------
-	class MyCompositeModel(torch.nn.Module):
-		def __init__(self, image_height, image_width, input_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size):
-			super().__init__()
+				_, predictions = torch.max(predictions, 2)
+				return decoder_outputs.numpy(), predictions.cpu().numpy()
 
-			if num_fiducials:
-				import rare.modules.transformation
-				self.transformer = rare.modules.transformation.TPS_SpatialTransformerNetwork(F=num_fiducials, I_size=(image_height, image_width), I_r_size=(image_height, image_width), I_channel_num=input_channel)
-			else:
-				self.transformer = None
-
-			import aster.resnet_aster
-			self.encoder = aster.resnet_aster.ResNet_ASTER(with_lstm=True, in_height=image_height, in_channels=input_channel, hidden_size=encoder_rnn_size // 2)
-			_, self.decoder, self.generator = build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size)
-
-		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
-		def forward(self, src, tgt, lengths, bptt=False, with_align=False):
-			dec_in = tgt[:-1]  # Exclude last target from inputs.
-
-			if self.transformer: src = self.transformer(src, device)  # [B, C, H, W].
-
-			enc_outputs, enc_hiddens = self.encoder(src)
-			enc_outputs = enc_outputs.transpose(0, 1)  # [B, T, F] -> [T, B, F].
-
-			# TODO [check] >> Is it proper to use enc_outputs & enc_hiddens?
-			if bptt is False:
-				self.decoder.init_state(src, enc_outputs, enc_hiddens)
-			dec_outs, attns = self.decoder(dec_in, enc_outputs, memory_lengths=lengths, with_align=with_align)
-			outs = self.generator(dec_outs)
-			return outs, attns
-
-	class Inferer(object):
-		def __init__(self, model):
-			self.model = model
-
-		def __call__(self, inputs, outputs, output_lens, device):
-			decoder_outputs = outputs[:,1:]
-			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
-
-			model_outputs = self.model(inputs.to(device), outputs.to(device), output_lens.to(device))
-
-			predictions = model_outputs[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
-			#attentions = model_outputs[1]['std']
-
-			_, predictions = torch.max(predictions, 2)
-			return decoder_outputs.numpy(), predictions.cpu().numpy()
-
-	#--------------------
-	# Build a model.
-
-	model = MyCompositeModel(image_height, image_width, image_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size)
+		model = MyCompositeModel(image_height, image_width, image_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size)
 
 	if is_model_loaded:
 		# Load a model.
@@ -4215,8 +4123,7 @@ def main():
 	#recognize_word_by_aster_and_opennmt()  # Use ASTER (encoder) + OpenNMT (decoder).
 	#recognize_word_using_mixup()  # Use RARE #1. Not working.
 
-	evaluate_rare2_word_recognizer()
-	#evaluate_aster_and_opennmt_word_recognizer()
+	evaluate_word_recognizer()
 
 	# Recognize word using CRAFT (scene text detector) + word recognizer.
 	#recognize_word_using_craft_and_word_recognizer()  # Use RARE #1.
