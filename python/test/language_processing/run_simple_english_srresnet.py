@@ -621,7 +621,7 @@ class MyRunner(object):
 
 #--------------------------------------------------------------------
 
-def check_data(dataset, batch_size, default_value=-1):
+def check_data(dataset, label_converter, batch_size):
 	#train_examples_per_epoch, test_examples_per_epoch = 5000, 1000
 	#train_examples_per_epoch, test_examples_per_epoch = 2000, 1000
 	train_examples_per_epoch, test_examples_per_epoch = 1000, 1000
@@ -655,8 +655,8 @@ def check_data(dataset, batch_size, default_value=-1):
 		sparse = swl_ml_util.sequences_to_sparse(batch_data[3], dtype=np.int32)
 		sequences = swl_ml_util.sparse_to_sequences(*sparse, dtype=np.int32)
 		#print('Sparse tensor = {}.'.format(sparse))
-		dense = swl_ml_util.sequences_to_dense(batch_data[3], default_value=default_value, dtype=np.int32)
-		sequences = swl_ml_util.dense_to_sequences(dense, default_value=default_value, dtype=np.int32)
+		dense = swl_ml_util.sequences_to_dense(batch_data[3], default_value=label_converter.pad_value, dtype=np.int32)
+		sequences = swl_ml_util.dense_to_sequences(dense, default_value=label_converter.pad_value, dtype=np.int32)
 		#print('Dense tensor = {}.'.format(dense))
 
 		break
@@ -681,7 +681,7 @@ def main():
 	if False:
 		print('[SWL] Info: Start checking data...')
 		start_time = time.time()
-		check_data(runner.dataset, batch_size, default_value=-1)
+		check_data(runner.dataset, runner.label_converter, batch_size)
 		print('[SWL] Info: End checking data: {} secs.'.format(time.time() - start_time))
 
 	#--------------------

@@ -572,7 +572,7 @@ class MyRunner(object):
 				return
 		else:
 			# Create a model.
-			model = MyModel.create_model(self._dataset.shape, self._dataset.num_classes, self._max_label_len, is_training=True)
+			model = MyModel.create_model(self._dataset.shape, self._label_converter.num_tokens + 1, self._max_label_len, is_training=True)
 			#print('Model summary =', model.summary())
 
 		# Create a trainer.
@@ -662,7 +662,7 @@ class MyRunner(object):
 		inferences, ground_truths = list(), list()
 		for batch_images, batch_labels in zip(batch_images_list, batch_labels_list):
 			batch_outputs = model.predict(batch_images, batch_size=batch_size)
-			batch_outputs = MyModel.decode_label(batch_outputs, self._dataset.num_classes - 1)
+			batch_outputs = MyModel.decode_label(batch_outputs, self._label_converter.num_tokens)
 
 			inferences.extend(batch_outputs)
 			ground_truths.extend(list(batch_labels))
@@ -733,7 +733,7 @@ class MyRunner(object):
 		print('[SWL] Info: Start inferring...')
 		start_time = time.time()
 		inferences = model.predict(inputs, batch_size=batch_size)
-		inferences = MyModel.decode_label(inferences, self._dataset.num_classes - 1)
+		inferences = MyModel.decode_label(inferences, self._label_converter.num_tokens)
 		print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
 		return inferences
 

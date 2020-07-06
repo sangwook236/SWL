@@ -474,6 +474,21 @@ class MyModel(object):
 		with tf.variable_scope('birnn_1', reuse=tf.AUTO_REUSE):
 			fw_cell_1, bw_cell_1 = MyModel._create_unit_cell(256, kernel_initializer, 'fw_cell'), MyModel._create_unit_cell(256, kernel_initializer, 'bw_cell')
 
+			# Attention.
+			num_attention_units = 128
+			# TODO [decide] >>
+			if True:
+				# Additive attention.
+				# REF [paper] >> "Neural Machine Translation by Jointly Learning to Align and Translate", arXiv 2016.
+				attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(num_attention_units, memory=inputs, memory_sequence_length=input_len)
+			else:
+				# Multiplicative attention.
+				# REF [paper] >> "Effective Approaches to Attention-based Neural Machine Translation", arXiv 2015.
+				attention_mechanism = tf.contrib.seq2seq.LuongAttention(num_attention_units, memory=inputs, memory_sequence_length=input_len)
+			# TODO [decide] >> Are different attention_mechanisms used for fw_cell_1 and bw_cell_1?
+			fw_cell_1 = tf.contrib.seq2seq.AttentionWrapper(fw_cell_1, attention_mechanism, attention_layer_size=num_attention_units)
+			bw_cell_1 = tf.contrib.seq2seq.AttentionWrapper(bw_cell_1, attention_mechanism, attention_layer_size=num_attention_units)
+
 			outputs_1, _ = tf.nn.bidirectional_dynamic_rnn(fw_cell_1, bw_cell_1, inputs, input_len, dtype=tf.float32)
 			outputs_1 = tf.concat(outputs_1, 2)
 			outputs_1 = tf.layers.batch_normalization(outputs_1, name='batchnorm')
@@ -556,16 +571,16 @@ class MyRunner(object):
 		#	REF [function] >> MyModel.create_model().
 		#width_downsample_factor = 4
 		if False:
-			image_height, image_width, image_channel = 32, 320, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+			image_height, image_width, image_channel = 32, 320, 3  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
 			model_output_time_steps = 39 #79
 		elif False:
-			image_height, image_width, image_channel = 64, 640, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+			image_height, image_width, image_channel = 64, 640, 3  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
 			model_output_time_steps = 79 #159
-		elif False:
-			image_height, image_width, image_channel = 64, 1280, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+		elif True:
+			image_height, image_width, image_channel = 64, 1280, 3  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
 			model_output_time_steps = 99 #319
 		else:
-			image_height, image_width, image_channel = 64, 2560, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+			image_height, image_width, image_channel = 64, 2560, 3  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
 			model_output_time_steps = 99 #639
 		max_label_len = model_output_time_steps  # max_label_len <= model_output_time_steps.
 
@@ -685,8 +700,8 @@ class MyRunner(object):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(*self._dataset.shape, blank_label=self._dataset.num_classes - 1, default_value=self._dataset.default_value)
-			model_output, loss, accuracy = model.create_model(self._dataset.num_classes, is_training=True)
+			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_value)
+			model_output, loss, accuracy = model.create_model(self._label_converter.num_tokens + 1, is_training=True)
 
 			# Create a trainer.
 			global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
@@ -889,8 +904,8 @@ class MyRunner(object):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(*self._dataset.shape, blank_label=self._dataset.num_classes - 1, default_value=self._dataset.default_value)
-			model_output = model.create_model(self._dataset.num_classes, is_training=False)
+			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_value)
+			model_output = model.create_model(self._label_converter.num_tokens + 1, is_training=False)
 
 			# Create a saver.
 			saver = tf.train.Saver()
@@ -963,8 +978,8 @@ class MyRunner(object):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(*self._dataset.shape, blank_label=self._dataset.num_classes - 1, default_value=self._dataset.default_value)
-			model_output = model.create_model(self._dataset.num_classes, is_training=False)
+			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_value)
+			model_output = model.create_model(self._label_converter.num_tokens + 1, is_training=False)
 
 			# Create a saver.
 			saver = tf.train.Saver()
@@ -1018,7 +1033,7 @@ class MyRunner(object):
 
 #--------------------------------------------------------------------
 
-def check_data(dataset, batch_size, default_value=-1):
+def check_data(dataset, label_converter, batch_size):
 	train_examples_per_epoch, test_examples_per_epoch = None, None
 	train_steps_per_epoch = None if train_examples_per_epoch is None else math.ceil(train_examples_per_epoch / batch_size)
 	test_steps_per_epoch = None if test_examples_per_epoch is None else math.ceil(test_examples_per_epoch / batch_size)
@@ -1048,8 +1063,8 @@ def check_data(dataset, batch_size, default_value=-1):
 		sparse = swl_ml_util.sequences_to_sparse(batch_data[2], dtype=np.int32)
 		sequences = swl_ml_util.sparse_to_sequences(*sparse, dtype=np.int32)
 		#print('Sparse tensor = {}.'.format(sparse))
-		dense = swl_ml_util.sequences_to_dense(batch_data[2], default_value=default_value, dtype=np.int32)
-		sequences = swl_ml_util.dense_to_sequences(dense, default_value=default_value, dtype=np.int32)
+		dense = swl_ml_util.sequences_to_dense(batch_data[2], default_value=label_converter.pad_value, dtype=np.int32)
+		sequences = swl_ml_util.dense_to_sequences(dense, default_value=label_converter.pad_value, dtype=np.int32)
 		#print('Dense tensor = {}.'.format(dense))
 
 		break
@@ -1066,7 +1081,7 @@ def main():
 	#--------------------
 	is_trained, is_tested, is_inferred = True, True, True
 	is_training_resumed = False
-	initial_epoch, final_epoch, batch_size = 0, 50, 64
+	initial_epoch, final_epoch, batch_size = 0, 50, 32
 
 	is_dataset_generated_at_runtime = True
 	is_fine_tuned = False
@@ -1102,7 +1117,7 @@ def main():
 	if False:
 		print('[SWL] Info: Start checking data...')
 		start_time = time.time()
-		check_data(runner.dataset, batch_size, default_value=-1)
+		check_data(runner.dataset, runner.label_converter, batch_size)
 		print('[SWL] Info: End checking data: {} secs.'.format(time.time() - start_time))
 
 	#--------------------
@@ -1193,5 +1208,174 @@ def main():
 
 #--------------------------------------------------------------------
 
+# REF [function] >> aihub_printed_text_data_loading_test() in aihub_data_test.py.
+def load_aihub_printed_text_data():
+	import json, cv2
+
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+
+	aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
+	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
+
+	try:
+		print('Start loading AI Hub dataset info...')
+		start_time = time.time()
+		with open(aihub_data_json_filepath, encoding='UTF8') as fd:
+			json_data = json.load(fd)
+		print('End loading AI Hub dataset info: {} secs.'.format(time.time() - start_time))
+	except FileNotFoundError as ex:
+		print('File not found: {}.'.format(aihub_data_json_filepath))
+		return
+	except UnicodeDecodeError as ex:
+		print('Unicode decode error: {}.'.format(aihub_data_json_filepath))
+		return
+
+	print('#images = {}, #annotations = {}.'.format(len(json_data['images']), len(json_data['annotations'])))
+	assert len(json_data['images']) == len(json_data['annotations'])
+
+	#--------------------
+	image_type_mapper = {'글자(음절)': 'syllable', '단어(어절)': 'word', '문장': 'sentence'}
+	additional_data_dir_path = '01_printed_{}_images'
+	image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
+
+	print('Start loading AI Hub dataset...')
+	start_time = time.time()
+	image_infos = dict()
+	for info in json_data['images']:
+		image_infos[int(info['id'])] = {'width': info['width'], 'height': info['height'], 'file_name': info['file_name']}
+
+	image_filepaths, labels = list(), list()
+	for info in json_data['annotations']:
+		img_type = image_type_mapper[info['attributes']['type']]
+		if img_type not in image_types_to_load: continue
+
+		img_id = int(info['image_id'])
+		label = info['text']
+		img_height, img_width = image_infos[img_id]['height'], image_infos[img_id]['width']
+		img_fname = os.path.join(additional_data_dir_path.format(img_type), image_infos[img_id]['file_name'])
+
+		image_filepaths.append(os.path.join(aihub_data_dir_path, img_fname))
+		labels.append(label)
+
+		if False:
+			img_fpath = os.path.join(aihub_data_dir_path, img_fname)
+			img = cv2.imread(img_fpath)
+			if img is None:
+				print('Failed to load an image, {}.'.format(img_fpath))
+				continue
+
+			assert img.shape[0] == img_height and img.shape[1] == img_width
+	print('End loading AI Hub dataset: {} secs.'.format(time.time() - start_time))
+
+	return image_filepaths, labels
+
+# REF [function] >> show_per_char_accuracy() in run_text_recognition.py.
+def show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char=False):
+	#for idx in range(num_classes):
+	#	print('Accuracy of {:5s} = {:2d} %.'.format(classes[idx], 100 * correct_char_class_count[idx] / total_char_class_count[idx] if total_char_class_count[idx] > 0 else -1))
+	accuracies = [100 * correct_char_class_count[idx] / total_char_class_count[idx] if total_char_class_count[idx] > 0 else -1 for idx in range(num_classes)]
+	#print('Accuracy: {}.'.format(accuracies))
+	hist, bin_edges = np.histogram(accuracies, bins=range(-1, 101), density=False)
+	#hist, bin_edges = np.histogram(accuracies, bins=range(0, 101), density=False)
+	#print('Per-character accuracy histogram: {}.'.format({bb: hh for bb, hh in zip(bin_edges, hist)}))
+	print('Per-character accuracy histogram: {}.'.format({bb: hh for bb, hh in zip(bin_edges, hist) if hh > 0}))
+
+	if show_acc_per_char:
+		valid_accuracies = [100 * correct_char_class_count[idx] / total_char_class_count[idx] for idx in range(num_classes) if total_char_class_count[idx] > 0]
+		print('Per-character accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
+		acc_thresh = 98
+		print('Per-character accuracy (< {}) = {}.'.format(acc_thresh, {classes[idx]: round(acc, 2) for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]) if acc < acc_thresh}))
+
+# REF [function] >> evaluate_text_recognition_model() in run_text_recognition.py.
+def evaluate_text_recognition_results(gts, predictions, classes, num_classes, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False):
+	error_cases_dir_path = './text_error_cases'
+	if is_error_cases_saved:
+		os.makedirs(error_cases_dir_path, exist_ok=True)
+
+	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0, 0, 0
+	correct_char_class_count, total_char_class_count = [0] * num_classes, [0] * num_classes
+	error_cases = list()
+	error_idx = 0
+	total_text_count += len(gts)
+	for gt, pred in zip(gts, predictions):
+		for gl, pl in zip(gt, pred):
+			if gl == pl: correct_char_class_count[gl] += 1
+			total_char_class_count[gl] += 1
+
+		gt_case, pred_case = (gt, pred) if is_case_sensitive else (gt.lower(), pred.lower())
+
+		if gt_case == pred_case:
+			correct_text_count += 1
+		else:
+			#cv2.imwrite(os.path.join(error_cases_dir_path, 'image_{}.png'.format(error_idx)), img)
+			error_cases.append((gt, pred))
+			error_idx += 1
+
+		gt_words, pred_words = gt_case.split(' '), pred_case.split(' ')
+		total_word_count += max(len(gt_words), len(pred_words))
+		correct_word_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gt_words, pred_words))))
+
+		total_char_count += max(len(gt), len(pred))
+		correct_char_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gt_case, pred_case))))
+
+	if is_error_cases_saved:
+		err_fpath = os.path.join(error_cases_dir_path, 'error_cases.txt')
+		try:
+			with open(err_fpath, 'w', encoding='UTF8') as fd:
+				for idx, (gt, pred) in enumerate(error_cases):
+					fd.write('{}: {}\t{}\n'.format(idx, gt, pred))
+		except FileNotFoundError as ex:
+			print('File not found: {}.'.format(err_fpath))
+		except UnicodeDecodeError as ex:
+			print('Unicode decode error: {}.'.format(err_fpath))
+
+	show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char)
+	print('Text accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
+	print('Word accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
+	print('Char accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
+
+def inference_main():
+	checkpoint_dir_path = './training_outputs_crnn/simple_hangeul_crnn_densenet_20191130T113620_fine_tuning_12/tf_checkpoint'
+	batch_size = 64
+
+	runner = MyRunner(is_dataset_generated_at_runtime=False, data_dir_path=None, train_test_ratio=0.0, is_fine_tuned=False)
+
+	if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
+		print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
+		return
+
+	image_filepaths, labels = load_aihub_printed_text_data()
+
+	print('[SWL] Info: Start loading images...')
+	start_time = time.time()
+	images, image_filepaths0 = runner.dataset.load_images_from_files(image_filepaths, is_grayscale=True)
+	print('[SWL] Info: End loading images: {} secs.'.format(time.time() - start_time))
+	print('[SWL] Info: Loaded images: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
+
+	for fpath, fpath0 in zip(image_filepaths, image_filepaths0):
+		if fpath != fpath0:
+			print('[SWL] Warning: Unmatched filenames: {} != {}.'.format(fpath, fpath0))
+
+	inferences = runner.infer(checkpoint_dir_path, images, batch_size)
+
+	if inferences:
+		#print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+
+		inferences_str = list()
+		for inf in inferences:
+			inferences_str.extend(map(lambda x: runner.label_converter.decode(x), inf))
+
+		# TODO [check] >> Which one is correct?
+		evaluate_text_recognition_results(labels, inferences_str, runner.label_converter.tokens, runner.label_converter.num_tokens, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False)
+		#evaluate_text_recognition_results(labels, inferences_str, runner.label_converter.tokens, runner.label_converter.num_tokens + 1, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False)
+	else:
+		print('[SWL] Warning: Invalid inference results.')
+
+#--------------------------------------------------------------------
+
 if '__main__' == __name__:
 	main()
+	#inference_main()

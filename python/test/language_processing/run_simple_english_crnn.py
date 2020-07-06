@@ -719,8 +719,8 @@ class MyRunner(object):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(*self._dataset.shape, blank_label=self._dataset.num_classes - 1, default_value=self._dataset.default_value)
-			model_output, loss, accuracy = model.create_model(self._dataset.num_classes, is_training=True)
+			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_value)
+			model_output, loss, accuracy = model.create_model(self._label_converter.num_tokens + 1, is_training=True)
 
 			# Create a trainer.
 			global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
@@ -922,8 +922,8 @@ class MyRunner(object):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(*self._dataset.shape, blank_label=self._dataset.num_classes - 1, default_value=self._dataset.default_value)
-			model_output = model.create_model(self._dataset.num_classes, is_training=False)
+			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_value)
+			model_output = model.create_model(self._label_converter.num_tokens + 1, is_training=False)
 
 			# Create a saver.
 			saver = tf.train.Saver()
@@ -996,8 +996,8 @@ class MyRunner(object):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(*self._dataset.shape, blank_label=self._dataset.num_classes - 1, default_value=self._dataset.default_value)
-			model_output = model.create_model(self._dataset.num_classes, is_training=False)
+			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_value)
+			model_output = model.create_model(self._label_converter.num_tokens + 1, is_training=False)
 
 			# Create a saver.
 			saver = tf.train.Saver()
@@ -1051,7 +1051,7 @@ class MyRunner(object):
 
 #--------------------------------------------------------------------
 
-def check_data(dataset, batch_size, default_value=-1):
+def check_data(dataset, label_converter, batch_size):
 	train_examples_per_epoch, test_examples_per_epoch = None, None
 	train_steps_per_epoch = None if train_examples_per_epoch is None else math.ceil(train_examples_per_epoch / batch_size)
 	test_steps_per_epoch = None if test_examples_per_epoch is None else math.ceil(test_examples_per_epoch / batch_size)
@@ -1081,8 +1081,8 @@ def check_data(dataset, batch_size, default_value=-1):
 		sparse = swl_ml_util.sequences_to_sparse(batch_data[2], dtype=np.int32)
 		sequences = swl_ml_util.sparse_to_sequences(*sparse, dtype=np.int32)
 		#print('Sparse tensor = {}.'.format(sparse))
-		dense = swl_ml_util.sequences_to_dense(batch_data[2], default_value=default_value, dtype=np.int32)
-		sequences = swl_ml_util.dense_to_sequences(dense, default_value=default_value, dtype=np.int32)
+		dense = swl_ml_util.sequences_to_dense(batch_data[2], default_value=label_converter.pad_value, dtype=np.int32)
+		sequences = swl_ml_util.dense_to_sequences(dense, default_value=label_converter.pad_value, dtype=np.int32)
 		#print('Dense tensor = {}.'.format(dense))
 
 		break
@@ -1121,7 +1121,7 @@ def main():
 	if False:
 		print('[SWL] Info: Start checking data...')
 		start_time = time.time()
-		check_data(runner.dataset, batch_size, default_value=-1)
+		check_data(runner.dataset, runner.label_converter, batch_size)
 		print('[SWL] Info: End checking data: {} secs.'.format(time.time() - start_time))
 
 	#--------------------
