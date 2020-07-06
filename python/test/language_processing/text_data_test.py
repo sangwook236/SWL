@@ -526,10 +526,10 @@ def NoisyCharacterDataset_test():
 	label_converter = swl_langproc_util.TokenConverter(list(charset))
 	chars = list(charset * num_train_examples_per_class)
 	random.shuffle(chars)
-	train_dataset = text_data.NoisyCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor, transform=train_transform)
+	train_dataset = text_data.NoisyCharacterDataset(label_converter, chars, image_channel, char_clipping_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform)
 	chars = list(charset * num_test_examples_per_class)
 	random.shuffle(chars)
-	test_dataset = text_data.NoisyCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, char_clipping_ratio_interval, color_functor=color_functor, transform=test_transform)
+	test_dataset = text_data.NoisyCharacterDataset(label_converter, chars, image_channel, char_clipping_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 	print('#classes = {}.'.format(label_converter.num_tokens))
@@ -957,10 +957,10 @@ def SimpleTextLineDataset_test():
 
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	max_textline_len = 80
-	font_size_interval = (10, 100)
-	char_space_ratio_interval = (0.8, 1.25)
 	word_count_interval = (1, 5)
 	space_count_interval = (1, 3)
+	char_space_ratio_interval = (0.8, 1.25)
+	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 	batch_size = 64
@@ -995,8 +995,8 @@ def SimpleTextLineDataset_test():
 	start_time = time.time()
 	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
 	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
-	train_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_train_examples, image_height, image_width, image_channel, max_textline_len, font_list, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor, transform=train_transform, target_transform=train_target_transform)
-	test_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_test_examples, image_height, image_width, image_channel, max_textline_len, font_list, font_size_interval, char_space_ratio_interval, word_count_interval, space_count_interval, color_functor, transform=test_transform, target_transform=test_target_transform)
+	train_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_train_examples, image_channel, max_textline_len, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, transform=train_transform, target_transform=train_target_transform)
+	test_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_test_examples, image_channel, max_textline_len, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 	print('#classes = {}.'.format(label_converter.num_tokens))
@@ -1042,10 +1042,10 @@ def RandomTextLineDataset_test():
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	max_textline_len = 80
 	word_len_interval = (1, 20)
-	font_size_interval = (10, 100)
-	char_space_ratio_interval = (0.8, 1.25)
 	word_count_interval = (1, 5)
 	space_count_interval = (1, 3)
+	char_space_ratio_interval = (0.8, 1.25)
+	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 	batch_size = 64
@@ -1081,8 +1081,8 @@ def RandomTextLineDataset_test():
 	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
 	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
 	charset_without_space = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
-	train_dataset = text_data.RandomTextLineDataset(label_converter, charset_without_space, num_train_examples, image_height, image_width, image_channel, max_textline_len,font_list, font_size_interval, char_space_ratio_interval, word_count_interval, word_len_interval, space_count_interval, color_functor, transform=train_transform, target_transform=train_target_transform)
-	test_dataset = text_data.RandomTextLineDataset(label_converter, charset_without_space, num_test_examples, image_height, image_width, image_channel, max_textline_len, font_list, font_size_interval, char_space_ratio_interval, word_count_interval, word_len_interval, space_count_interval, color_functor, transform=test_transform, target_transform=test_target_transform)
+	train_dataset = text_data.RandomTextLineDataset(label_converter, charset_without_space, num_train_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, transform=train_transform, target_transform=train_target_transform)
+	test_dataset = text_data.RandomTextLineDataset(label_converter, charset_without_space, num_test_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 	print('#classes = {}.'.format(label_converter.num_tokens))
