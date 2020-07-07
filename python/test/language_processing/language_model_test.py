@@ -85,7 +85,7 @@ def simple_neural_language_model_example():
 	from sklearn.model_selection import train_test_split
 
 	# Read the dataset.
-	data_filepath = '../../data/language_processing/us_declaration of_independance.txt'
+	data_filepath = '../../data/language_processing/us_declaration_of_independance.txt'
 	try:
 		with open(data_filepath, 'r', encoding='UTF8') as fd:
 			data_text = fd.read()
@@ -96,7 +96,7 @@ def simple_neural_language_model_example():
 		print('Unicode decode error: {}.'.format(data_filepath))
 		return
 
-	def text_cleaner(text):
+	def clean_text(text):
 		import re
 		# Lower case text.
 		newString = text.lower()
@@ -111,7 +111,7 @@ def simple_neural_language_model_example():
 		return (' '.join(long_words)).strip()
 
 	# Preprocess the text.
-	data_new = text_cleaner(data_text)
+	data_new = clean_text(data_text)
 
 	def create_seq(text):
 		length = 30
@@ -119,7 +119,6 @@ def simple_neural_language_model_example():
 		for i in range(length, len(text)):
 			# Select sequence of tokens.
 			seq = text[i-length:i+1]
-			# Store.
 			sequences.append(seq)
 		print('Total Sequences: %d' % len(sequences))
 		return sequences
@@ -203,6 +202,7 @@ def main():
 	# n-gram language model.
 
 	# REF [file] >> ${SWDT_PYTHON_HOME}/rnd/test/language_processing/nltk_test.py
+
 	n_gram_language_model_with_prefix_tree_test()
 
 	#--------------------

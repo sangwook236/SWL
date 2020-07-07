@@ -1098,8 +1098,6 @@ def recognize_character():
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	lang = 'kor'  # {'kor', 'eng'}.
-	#max_gradient_norm = 5  # Gradient clipping value.
-	max_gradient_norm = None
 
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
@@ -1116,10 +1114,14 @@ def recognize_character():
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 	train_test_ratio = 0.8
-	num_epochs = 100
-	batch_size = 128
 	shuffle = True
 	num_workers = 8
+
+	loss_type = 'xent'  # {'xent', 'nll'}.
+	#max_gradient_norm = 5  # Gradient clipping value.
+	max_gradient_norm = None
+	num_epochs = 100
+	batch_size = 128
 	log_print_freq = 1000
 
 	is_trained = True
@@ -1129,9 +1131,10 @@ def recognize_character():
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	model_filepath_base = './char_recognition_{}_{}_{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, lang, image_height, image_width, image_channel)
+	model_filepath_base = './char_recognition_{}_{}_{}_{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, lang, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	print('Model filepath: {}.'.format(model_filepath_format.format('')))
+
 	if is_model_loaded:
 		model_filepath_to_load = None
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
@@ -1196,7 +1199,7 @@ def recognize_character():
 
 	if is_trained:
 		if is_all_model_params_optimized:
-			model_params = model.parameters()
+			model_params = list(model.parameters())
 		else:
 			# Filter model parameters only that require gradients.
 			#model_params = filter(lambda p: p.requires_grad, model.parameters())
@@ -1209,8 +1212,12 @@ def recognize_character():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define a loss function and optimizer.
-		criterion = torch.nn.CrossEntropyLoss().to(device)
-		#criterion = torch.nn.NLLLoss(reduction='sum').to(device)
+		if loss_type == 'xent':
+			criterion = torch.nn.CrossEntropyLoss().to(device)
+		elif loss_type == 'nll':
+			criterion = torch.nn.NLLLoss(reduction='sum').to(device)
+		else:
+			raise ValueError('Invalid loss type, {}'.format(loss_type))
 		optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = None
@@ -1257,8 +1264,6 @@ def recognize_character_using_mixup():
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	lang = 'kor'  # {'kor', 'eng'}.
-	#max_gradient_norm = 5  # Gradient clipping value.
-	max_gradient_norm = None
 
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
@@ -1275,10 +1280,14 @@ def recognize_character_using_mixup():
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 	train_test_ratio = 0.8
-	num_epochs = 100
-	batch_size = 128
 	shuffle = True
 	num_workers = 8
+
+	loss_type = 'xent'  # {'xent', 'nll'}.
+	#max_gradient_norm = 5  # Gradient clipping value.
+	max_gradient_norm = None
+	num_epochs = 100
+	batch_size = 128
 	log_print_freq = 1000
 
 	mixup_input, mixup_hidden, mixup_alpha = True, True, 2.0
@@ -1291,9 +1300,10 @@ def recognize_character_using_mixup():
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	model_filepath_base = './char_recognition_mixup_{}_{}_{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, lang, image_height, image_width, image_channel)
+	model_filepath_base = './char_recognition_mixup_{}_{}_{}_{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, lang, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	print('Model filepath: {}.'.format(model_filepath_format.format('')))
+
 	if is_model_loaded:
 		model_filepath_to_load = None
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
@@ -1359,7 +1369,7 @@ def recognize_character_using_mixup():
 
 	if is_trained:
 		if is_all_model_params_optimized:
-			model_params = model.parameters()
+			model_params = list(model.parameters())
 		else:
 			# Filter model parameters only that require gradients.
 			#model_params = filter(lambda p: p.requires_grad, model.parameters())
@@ -1372,8 +1382,12 @@ def recognize_character_using_mixup():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define a loss function and optimizer.
-		criterion = torch.nn.CrossEntropyLoss().to(device)
-		#criterion = torch.nn.NLLLoss(reduction='sum').to(device)
+		if loss_type == 'xent':
+			criterion = torch.nn.CrossEntropyLoss().to(device)
+		elif loss_type == 'nll':
+			criterion = torch.nn.NLLLoss(reduction='sum').to(device)
+		else:
+			raise ValueError('Invalid loss type, {}'.format(loss_type))
 		optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = None
@@ -1428,7 +1442,6 @@ def recognize_word_by_rare1():
 		hidden_size = 1024  # The size of the LSTM hidden states.
 	else:
 		hidden_size = 512  # The size of the LSTM hidden states.
-	max_gradient_norm = 5  # Gradient clipping value.
 	transformer = 'TPS'  # The type of transformer. {None, 'TPS'}.
 	feature_extractor = 'VGG'  # The type of feature extractor. {'VGG', 'RCNN', 'ResNet'}.
 	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
@@ -1447,10 +1460,13 @@ def recognize_word_by_rare1():
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 	train_test_ratio = 0.8
-	num_epochs = 20
-	batch_size = 64
 	shuffle = True
 	num_workers = 8
+
+	loss_type = 'ctc' if decoder == 'CTC' else 'xent'  # {'ctc', 'xent', 'nll'}.
+	max_gradient_norm = 5  # Gradient clipping value.
+	num_epochs = 20
+	batch_size = 64
 	log_print_freq = 1000
 
 	is_trained = True
@@ -1462,12 +1478,15 @@ def recognize_word_by_rare1():
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_individual_pad_value_used else 'nopad'
-	if decoder == 'CTC':
-		model_filepath_base = './word_recognition_rare1_ctc_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	if loss_type == 'ctc':
+		model_filepath_base = './word_recognition_rare1_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	elif loss_type in ['xent', 'nll']:
+		model_filepath_base = './word_recognition_rare1_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	else:
-		model_filepath_base = './word_recognition_rare1_attn_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+		raise ValueError('Invalid loss type, {}'.format(loss_type))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	print('Model filepath: {}.'.format(model_filepath_format.format('')))
+
 	if is_model_loaded:
 		model_filepath_to_load = None
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
@@ -1488,14 +1507,14 @@ def recognize_word_by_rare1():
 	#--------------------
 	# Prepare data.
 
-	if decoder == 'CTC':
+	if loss_type == 'ctc':
 		BLANK_LABEL = '<BLANK>'  # The BLANK label for CTC.
 		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), pad_value=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
 		assert label_converter.encode([BLANK_LABEL], is_bare_output=True)[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL], is_bare_output=True)[0])
 		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL], is_bare_output=True)[0]
 		SOS_VALUE, EOS_VALUE = None, None
 		num_suffixes = 0
-	else:
+	elif loss_type in ['xent', 'nll']:
 		if is_individual_pad_value_used:
 			# When the pad value is the ID of a valid token.
 			PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
@@ -1539,7 +1558,6 @@ def recognize_word_by_rare1():
 	import rare.model
 	model = rare.model.Model(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, num_suffixes, SOS_VALUE, label_converter.pad_value, transformer, feature_extractor, sequence_model, decoder)
 
-	is_trained = True
 	if is_model_initialized:
 		# Initialize model weights.
 		for name, param in model.named_parameters():
@@ -1566,7 +1584,7 @@ def recognize_word_by_rare1():
 
 	if is_trained:
 		if is_all_model_params_optimized:
-			model_params = model.parameters()
+			model_params = list(model.parameters())
 		else:
 			# Filter model parameters only that require gradients.
 			#model_params = filter(lambda p: p.requires_grad, model.parameters())
@@ -1579,7 +1597,7 @@ def recognize_word_by_rare1():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define a loss function and optimizer.
-		if decoder == 'CTC':
+		if loss_type == 'ctc':
 			criterion = torch.nn.CTCLoss(blank=BLANK_LABEL_INT, zero_infinity=True).to(device)  # The BLANK label.
 			def forward(batch, device):
 				inputs, outputs, output_lens = batch
@@ -1596,9 +1614,11 @@ def recognize_word_by_rare1():
 				cost = criterion(model_outputs, outputs.to(device), model_output_lens, output_lens.to(device))
 				torch.backends.cudnn.enabled = True
 				return cost
-		else:
-			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
-			#criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
+		elif loss_type in ['xent', 'nll']:
+			if loss_type == 'xent':
+				criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
+			elif loss_type == 'nll':
+				criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
 			def forward(batch, device):
 				inputs, outputs, output_lens = batch
 				outputs = outputs.long()
@@ -1675,7 +1695,6 @@ def recognize_word_by_rare2():
 		hidden_size = 512  # The size of the LSTM hidden states.
 	else:
 		hidden_size = 256  # The size of the LSTM hidden states.
-	max_gradient_norm = 5  # Gradient clipping value.
 
 	# File-based words: 504,279.
 	is_mixed_words_used = True
@@ -1690,10 +1709,13 @@ def recognize_word_by_rare2():
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 	train_test_ratio = 0.8
-	num_epochs = 20
-	batch_size = 64
 	shuffle = True
 	num_workers = 8
+
+	loss_type = 'xent'  # {'xent', 'nll'}.
+	max_gradient_norm = 5  # Gradient clipping value.
+	num_epochs = 20
+	batch_size = 64
 	log_print_freq = 1000
 
 	is_trained = True
@@ -1705,9 +1727,10 @@ def recognize_word_by_rare2():
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_individual_pad_value_used else 'nopad'
-	model_filepath_base = './word_recognition_rare2_attn_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	model_filepath_base = './word_recognition_rare2_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	print('Model filepath: {}.'.format(model_filepath_format.format('')))
+
 	if is_model_loaded:
 		model_filepath_to_load = None
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
@@ -1811,7 +1834,7 @@ def recognize_word_by_rare2():
 
 	if is_trained:
 		if is_all_model_params_optimized:
-			model_params = model.parameters()
+			model_params = list(model.parameters())
 		else:
 			# Filter model parameters only that require gradients.
 			#model_params = filter(lambda p: p.requires_grad, model.parameters())
@@ -1824,8 +1847,12 @@ def recognize_word_by_rare2():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define a loss function and optimizer.
-		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
-		#criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
+		if loss_type == 'xent':
+			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
+		elif loss_type == 'nll':
+			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
+		else:
+			raise ValueError('Invalid loss type, {}'.format(loss_type))
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
@@ -1899,8 +1926,6 @@ def recognize_word_by_aster():
 		hidden_size = 512  # The size of the LSTM hidden states.
 	else:
 		hidden_size = 256  # The size of the LSTM hidden states.
-	#max_gradient_norm = 5  # Gradient clipping value.
-	max_gradient_norm = None
 
 	# File-based words: 504,279.
 	is_mixed_words_used = True
@@ -1915,10 +1940,14 @@ def recognize_word_by_aster():
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 	train_test_ratio = 0.8
-	num_epochs = 20
-	batch_size = 64
 	shuffle = True
 	num_workers = 8
+
+	#loss_type = 'seq_xent'
+	#max_gradient_norm = 5  # Gradient clipping value.
+	max_gradient_norm = None
+	num_epochs = 20
+	batch_size = 64
 	log_print_freq = 1000
 
 	is_trained = True
@@ -1933,6 +1962,7 @@ def recognize_word_by_aster():
 	model_filepath_base = './word_recognition_aster_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	print('Model filepath: {}.'.format(model_filepath_format.format('')))
+
 	if is_model_loaded:
 		model_filepath_to_load = None
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
@@ -1991,8 +2021,8 @@ def recognize_word_by_aster():
 
 			input_dict = dict()
 			input_dict['images'] = inputs.to(device)
-			input_dict['rec_targets'] = decoder_outputs.to(device)  # FIXME [check] >>
-			input_dict['rec_lengths'] = decoder_output_lens.to(device)  # FIXME [check] >>
+			input_dict['rec_targets'] = decoder_outputs.to(device)
+			input_dict['rec_lengths'] = decoder_output_lens.to(device)
 
 			output_dict = model(input_dict, device=device)
 
@@ -2049,7 +2079,7 @@ def recognize_word_by_aster():
 
 	if is_trained:
 		if is_all_model_params_optimized:
-			model_params = model.parameters()
+			model_params = list(model.parameters())
 		else:
 			# Filter model parameters only that require gradients.
 			#model_params = filter(lambda p: p.requires_grad, model.parameters())
@@ -2062,8 +2092,12 @@ def recognize_word_by_aster():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define a loss function and optimizer.
-		#criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
-		#criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
+		#if loss_type == 'xent':
+		#	criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
+		#elif loss_type == 'nll':
+		#	criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
+		#else:
+		#	raise ValueError('Invalid loss type, {}'.format(loss_type))
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 
@@ -2080,8 +2114,8 @@ def recognize_word_by_aster():
 
 			input_dict = dict()
 			input_dict['images'] = inputs.to(device)
-			input_dict['rec_targets'] = decoder_outputs.to(device)  # FIXME [check] >>
-			input_dict['rec_lengths'] = decoder_output_lens.to(device)  # FIXME [check] >>
+			input_dict['rec_targets'] = decoder_outputs.to(device)
+			input_dict['rec_lengths'] = decoder_output_lens.to(device)
 
 			output_dict = model(input_dict, device=device)
 
@@ -2185,8 +2219,6 @@ def recognize_word_by_opennmt():
 	else:
 		word_vec_size = 80
 		encoder_rnn_size, decoder_hidden_size = 512, 512
-	#max_gradient_norm = 20  # Gradient clipping value.
-	max_gradient_norm = None
 
 	# File-based words: 504,279.
 	is_mixed_words_used = True
@@ -2201,10 +2233,14 @@ def recognize_word_by_opennmt():
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 	train_test_ratio = 0.8
-	num_epochs = 20
-	batch_size = 64
 	shuffle = True
 	num_workers = 8
+
+	loss_type = 'xent'  # {'xent', 'nll'}.
+	#max_gradient_norm = 20  # Gradient clipping value.
+	max_gradient_norm = None
+	num_epochs = 20
+	batch_size = 64
 	log_print_freq = 1000
 
 	is_trained = True
@@ -2216,9 +2252,10 @@ def recognize_word_by_opennmt():
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_individual_pad_value_used else 'nopad'
-	model_filepath_base = './word_recognition_onmt_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	model_filepath_base = './word_recognition_onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	print('Model filepath: {}.'.format(model_filepath_format.format('')))
+
 	if is_model_loaded:
 		model_filepath_to_load = None
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
@@ -2317,7 +2354,7 @@ def recognize_word_by_opennmt():
 
 	if is_trained:
 		if is_all_model_params_optimized:
-			model_params = model.parameters()
+			model_params = list(model.parameters())
 		else:
 			# Filter model parameters only that require gradients.
 			#model_params = filter(lambda p: p.requires_grad, model.parameters())
@@ -2330,8 +2367,12 @@ def recognize_word_by_opennmt():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define a loss function and optimizer.
-		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
-		#criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
+		if loss_type == 'xent':
+			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
+		elif loss_type == 'nll':
+			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
+		else:
+			raise ValueError('Invalid loss type, {}'.format(loss_type))
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
@@ -2397,8 +2438,6 @@ def recognize_word_by_rare1_and_opennmt():
 	else:
 		word_vec_size = 80
 		encoder_rnn_size, decoder_hidden_size = 512, 512
-	#max_gradient_norm = 20  # Gradient clipping value.
-	max_gradient_norm = None
 
 	# File-based words: 504,279.
 	is_mixed_words_used = True
@@ -2413,10 +2452,14 @@ def recognize_word_by_rare1_and_opennmt():
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 	train_test_ratio = 0.8
-	num_epochs = 20
-	batch_size = 64
 	shuffle = True
 	num_workers = 8
+
+	loss_type = 'xent'  # {'xent', 'nll'}.
+	#max_gradient_norm = 20  # Gradient clipping value.
+	max_gradient_norm = None
+	num_epochs = 20
+	batch_size = 64
 	log_print_freq = 1000
 
 	is_trained = True
@@ -2428,9 +2471,10 @@ def recognize_word_by_rare1_and_opennmt():
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_individual_pad_value_used else 'nopad'
-	model_filepath_base = './word_recognition_rare1+onmt_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	model_filepath_base = './word_recognition_rare1+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	print('Model filepath: {}.'.format(model_filepath_format.format('')))
+
 	if is_model_loaded:
 		model_filepath_to_load = None
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
@@ -2608,7 +2652,7 @@ def recognize_word_by_rare1_and_opennmt():
 
 	if is_trained:
 		if is_all_model_params_optimized:
-			model_params = model.parameters()
+			model_params = list(model.parameters())
 		else:
 			# Filter model parameters only that require gradients.
 			#model_params = filter(lambda p: p.requires_grad, model.parameters())
@@ -2621,8 +2665,12 @@ def recognize_word_by_rare1_and_opennmt():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define a loss function and optimizer.
-		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
-		#criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
+		if loss_type == 'xent':
+			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
+		elif loss_type == 'nll':
+			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
+		else:
+			raise ValueError('Invalid loss type, {}'.format(loss_type))
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
@@ -2690,8 +2738,6 @@ def recognize_word_by_rare2_and_opennmt():
 	else:
 		word_vec_size = 80
 		encoder_rnn_size, decoder_hidden_size = 512, 512
-	#max_gradient_norm = 20  # Gradient clipping value.
-	max_gradient_norm = None
 
 	# File-based words: 504,279.
 	is_mixed_words_used = True
@@ -2706,10 +2752,14 @@ def recognize_word_by_rare2_and_opennmt():
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 	train_test_ratio = 0.8
-	num_epochs = 20
-	batch_size = 64
 	shuffle = True
 	num_workers = 8
+
+	loss_type = 'xent'  # {'xent', 'nll'}.
+	#max_gradient_norm = 20  # Gradient clipping value.
+	max_gradient_norm = None
+	num_epochs = 20
+	batch_size = 64
 	log_print_freq = 1000
 
 	is_trained = True
@@ -2721,9 +2771,10 @@ def recognize_word_by_rare2_and_opennmt():
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_individual_pad_value_used else 'nopad'
-	model_filepath_base = './word_recognition_rare2+onmt_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	model_filepath_base = './word_recognition_rare2+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	print('Model filepath: {}.'.format(model_filepath_format.format('')))
+
 	if is_model_loaded:
 		model_filepath_to_load = None
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
@@ -2879,7 +2930,7 @@ def recognize_word_by_rare2_and_opennmt():
 
 	if is_trained:
 		if is_all_model_params_optimized:
-			model_params = model.parameters()
+			model_params = list(model.parameters())
 		else:
 			# Filter model parameters only that require gradients.
 			#model_params = filter(lambda p: p.requires_grad, model.parameters())
@@ -2892,8 +2943,12 @@ def recognize_word_by_rare2_and_opennmt():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define a loss function and optimizer.
-		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
-		#criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
+		if loss_type == 'xent':
+			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
+		elif loss_type == 'nll':
+			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
+		else:
+			raise ValueError('Invalid loss type, {}'.format(loss_type))
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
@@ -2961,8 +3016,6 @@ def recognize_word_by_aster_and_opennmt():
 	else:
 		word_vec_size = 80
 		encoder_rnn_size, decoder_hidden_size = 512, 512
-	#max_gradient_norm = 20  # Gradient clipping value.
-	max_gradient_norm = None
 
 	# File-based words: 504,279.
 	is_mixed_words_used = True
@@ -2977,10 +3030,14 @@ def recognize_word_by_aster_and_opennmt():
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 	train_test_ratio = 0.8
-	num_epochs = 20
-	batch_size = 64
 	shuffle = True
 	num_workers = 8
+
+	loss_type = 'xent'  # {'xent', 'nll'}.
+	#max_gradient_norm = 20  # Gradient clipping value.
+	max_gradient_norm = None
+	num_epochs = 20
+	batch_size = 64
 	log_print_freq = 1000
 
 	is_trained = True
@@ -2992,9 +3049,10 @@ def recognize_word_by_aster_and_opennmt():
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_individual_pad_value_used else 'nopad'
-	model_filepath_base = './word_recognition_aster+onmt_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	model_filepath_base = './word_recognition_aster+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	print('Model filepath: {}.'.format(model_filepath_format.format('')))
+
 	if is_model_loaded:
 		model_filepath_to_load = None
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
@@ -3119,7 +3177,7 @@ def recognize_word_by_aster_and_opennmt():
 
 	if is_trained:
 		if is_all_model_params_optimized:
-			model_params = model.parameters()
+			model_params = list(model.parameters())
 		else:
 			# Filter model parameters only that require gradients.
 			#model_params = filter(lambda p: p.requires_grad, model.parameters())
@@ -3132,8 +3190,12 @@ def recognize_word_by_aster_and_opennmt():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define a loss function and optimizer.
-		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
-		#criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
+		if loss_type == 'xent':
+			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
+		elif loss_type == 'nll':
+			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
+		else:
+			raise ValueError('Invalid loss type, {}'.format(loss_type))
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
@@ -3198,7 +3260,6 @@ def recognize_word_using_mixup():
 	input_channel = image_channel  # The number of input channel of feature extractor.
 	output_channel = 512  # The number of output channel of feature extractor.
 	hidden_size = 256  # The size of the LSTM hidden states.
-	max_gradient_norm = 5  # Gradient clipping value.
 	transformer = 'TPS'  # The type of transformer. {None, 'TPS'}.
 	feature_extractor = 'VGG'  # The type of feature extractor. {'VGG', 'RCNN', 'ResNet'}.
 	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
@@ -3217,10 +3278,13 @@ def recognize_word_using_mixup():
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 	train_test_ratio = 0.8
-	num_epochs = 20
-	batch_size = 64
 	shuffle = True
 	num_workers = 8
+
+	loss_type = 'ctc' if decoder == 'CTC' else 'xent'  # {'ctc', 'xent', 'nll'}.
+	max_gradient_norm = 5  # Gradient clipping value.
+	num_epochs = 20
+	batch_size = 64
 	log_print_freq = 1000
 
 	mixup_input, mixup_hidden, mixup_alpha = True, True, 2.0
@@ -3235,12 +3299,15 @@ def recognize_word_using_mixup():
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_individual_pad_value_used else 'nopad'
-	if decoder == 'CTC':
-		model_filepath_base = './word_recognition_mixup_rare1_ctc_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	if loss_type == 'ctc':
+		model_filepath_base = './word_recognition_mixup_rare1_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	elif loss_type in ['xent', 'nll']:
+		model_filepath_base = './word_recognition_mixup_rare1_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	else:
-		model_filepath_base = './word_recognition_mixup_rare1_attn_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+		raise ValueError('Invalid loss type, {}'.format(loss_type))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	print('Model filepath: {}.'.format(model_filepath_format.format('')))
+
 	if is_model_loaded:
 		model_filepath_to_load = None
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
@@ -3261,14 +3328,14 @@ def recognize_word_using_mixup():
 	#--------------------
 	# Prepare data.
 
-	if decoder == 'CTC':
+	if loss_type == 'ctc':
 		BLANK_LABEL = '<BLANK>'  # The BLANK label for CTC.
 		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), pad_value=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
 		assert label_converter.encode([BLANK_LABEL], is_bare_output=True)[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL], is_bare_output=True)[0])
 		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL], is_bare_output=True)[0]
 		SOS_VALUE, EOS_VALUE = None, None
 		num_suffixes = 0
-	else:
+	elif loss_type in ['xent', 'nll']:
 		if is_individual_pad_value_used:
 			# When the pad value is the ID of a valid token.
 			PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
@@ -3339,7 +3406,7 @@ def recognize_word_using_mixup():
 
 	if is_trained:
 		if is_all_model_params_optimized:
-			model_params = model.parameters()
+			model_params = list(model.parameters())
 		else:
 			# Filter model parameters only that require gradients.
 			#model_params = filter(lambda p: p.requires_grad, model.parameters())
@@ -3352,7 +3419,7 @@ def recognize_word_using_mixup():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define a loss function and optimizer.
-		if decoder == 'CTC':
+		if loss_type == 'ctc':
 			criterion = torch.nn.CTCLoss(blank=BLANK_LABEL_INT, zero_infinity=True).to(device)  # The BLANK label.
 			def forward(batch, device):
 				inputs, outputs, output_lens = batch
@@ -3369,9 +3436,11 @@ def recognize_word_using_mixup():
 				cost = criterion(model_outputs, outputs.to(device), model_output_lens, output_lens.to(device))
 				torch.backends.cudnn.enabled = True
 				return cost
-		else:
-			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
-			#criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
+		elif loss_type in ['xent', 'nll']:
+			if loss_type == 'xent':
+				criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
+			elif loss_type == 'nll':
+				criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
 			def forward(batch, device):
 				inputs, outputs, output_lens = batch
 				outputs = outputs.long()
@@ -3616,9 +3685,8 @@ def evaluate_word_recognizer():
 
 		model = MyCompositeModel(image_height, image_width, image_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size)
 
-	if is_model_loaded:
-		# Load a model.
-		model = load_model(model_filepath_to_load, model, device=device)
+	# Load a model.
+	model = load_model(model_filepath_to_load, model, device=device)
 
 	model = model.to(device)
 
@@ -3645,8 +3713,6 @@ def recognize_text_by_opennmt():
 	else:
 		word_vec_size = 80
 		encoder_rnn_size, decoder_hidden_size = 512, 512
-	#max_gradient_norm = 20  # Gradient clipping value.
-	max_gradient_norm = None
 
 	is_mixed_texts_used = True
 	if is_mixed_texts_used:
@@ -3663,10 +3729,14 @@ def recognize_text_by_opennmt():
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 	train_test_ratio = 0.8
-	num_epochs = 20
-	batch_size = 64
 	shuffle = True
 	num_workers = 8
+
+	loss_type = 'xent'  # {'xent', 'nll'}.
+	#max_gradient_norm = 20  # Gradient clipping value.
+	max_gradient_norm = None
+	num_epochs = 20
+	batch_size = 64
 	log_print_freq = 1000
 
 	is_trained = True
@@ -3678,9 +3748,10 @@ def recognize_text_by_opennmt():
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_individual_pad_value_used else 'nopad'
-	model_filepath_base = './text_line_recognition_onmt_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_textline_len, image_height, image_width, image_channel)
+	model_filepath_base = './text_line_recognition_onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_textline_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	print('Model filepath: {}.'.format(model_filepath_format.format('')))
+
 	if is_model_loaded:
 		model_filepath_to_load = None
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
@@ -3779,7 +3850,7 @@ def recognize_text_by_opennmt():
 
 	if is_trained:
 		if is_all_model_params_optimized:
-			model_params = model.parameters()
+			model_params = list(model.parameters())
 		else:
 			# Filter model parameters only that require gradients.
 			#model_params = filter(lambda p: p.requires_grad, model.parameters())
@@ -3792,8 +3863,12 @@ def recognize_text_by_opennmt():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define a loss function and optimizer.
-		criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
-		#criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
+		if loss_type == 'xent':
+			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_value).to(device)  # Ignore the pad value.
+		elif loss_type == 'nll':
+			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
+		else:
+			raise ValueError('Invalid loss type, {}'.format(loss_type))
 		def forward(batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
@@ -3975,7 +4050,6 @@ def recognize_word_using_craft_and_word_recognizer():
 	input_channel = image_channel  # The number of input channel of feature extractor.
 	output_channel = 512  # The number of output channel of feature extractor.
 	hidden_size = 256  # The size of the LSTM hidden states.
-	max_gradient_norm = 5  # Gradient clipping value.
 	transformer = 'TPS'  # The type of transformer. {None, 'TPS'}.
 	feature_extractor = 'VGG'  # The type of feature extractor. {'VGG', 'RCNN', 'ResNet'}.
 	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
