@@ -884,6 +884,9 @@ def train_char_recognition_model(model, forward_functor, criterion, label_conver
 			if idx % log_print_freq == (log_print_freq - 1):
 				print('[{}, {:5d}] loss = {:.6g}: {:.3f} secs.'.format(epoch + 1, idx + 1, running_loss / log_print_freq, time.time() - start_time))
 				running_loss = 0.0
+
+			sys.stdout.flush()
+			time.sleep(0)
 		print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 		print('Start evaluating...')
@@ -903,7 +906,7 @@ def train_char_recognition_model(model, forward_functor, criterion, label_conver
 
 	return model, best_model_filepath
 
-def train_text_recognition_model(model, criterion, forward_functor, eval_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler=None, max_gradient_norm=None, model_params=None, device='cpu'):
+def train_text_recognition_model(model, criterion, forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler=None, max_gradient_norm=None, model_params=None, device='cpu'):
 	best_measure = 0.0
 	best_model_filepath = None
 	for epoch in range(num_epochs):  # Loop over the dataset multiple times.
@@ -925,12 +928,15 @@ def train_text_recognition_model(model, criterion, forward_functor, eval_functor
 			if idx % log_print_freq == (log_print_freq - 1):
 				print('[{}, {:5d}] loss = {:.6g}: {:.3f} secs.'.format(epoch + 1, idx + 1, running_loss / log_print_freq, time.time() - start_time))
 				running_loss = 0.0
+
+			sys.stdout.flush()
+			time.sleep(0)
 		print('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
 		print('Start evaluating...')
 		start_time = time.time()
 		model.eval()
-		acc = evaluate_text_recognition_model(model, eval_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False, device=device)
+		acc = evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False, device=device)
 		print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 		if scheduler: scheduler.step()
@@ -1016,7 +1022,7 @@ def evaluate_char_recognition_model(model, label_converter, dataloader, is_case_
 
 	return correct_char_count / total_char_count
 
-def evaluate_text_recognition_model(model, eval_functor, label_converter, dataloader, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False, device='cpu'):
+def evaluate_text_recognition_model(model, infer_functor, label_converter, dataloader, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False, device='cpu'):
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 
 	error_cases_dir_path = './text_error_cases'
@@ -1030,7 +1036,7 @@ def evaluate_text_recognition_model(model, eval_functor, label_converter, datalo
 	is_first = True
 	with torch.no_grad():
 		for images, labels, label_lens in dataloader:
-			gts, predictions = eval_functor(model, images, labels, label_lens, device)
+			predictions, gts = infer_functor(model, images, labels, label_lens, device)
 
 			images_np = images.numpy()
 			if images_np.ndim == 4: images_np = images_np.transpose(0, 2, 3, 1)
@@ -1091,6 +1097,102 @@ def evaluate_text_recognition_model(model, eval_functor, label_converter, datalo
 
 	return correct_char_count / total_char_count
 
+def infer_by_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=None, batch_size=None, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False, device='cpu'):
+	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+	if batch_size is None: batch_size = len(inputs)
+
+	EOS_VALUE = label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
+	with torch.no_grad():
+		predictions = list()
+		for idx in range(0, len(inputs), batch_size):
+			predictions.append(infer_functor(model, inputs[idx:idx+batch_size], device=device)[0])
+	predictions = np.stack(predictions)
+	print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(predictions.shape, predictions.dtype, np.min(predictions), np.max(predictions)))
+
+	if outputs is None:
+		num_iters = 0
+		for idx in range(0, len(predictions), batch_size):
+			# Show images.
+			show_image(torchvision.utils.make_grid(inputs[idx:idx+batch_size]))
+
+			print('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in predictions[idx:idx+batch_size]])))
+
+			num_iters += 1
+			if num_iters >= 5: break
+	else:
+		outputs = outputs.numpy()
+
+		num_iters = 0
+		for idx in range(0, len(predictions), batch_size):
+			inps, outps, preds = inputs[idx:idx+batch_size], outputs[idx:idx+batch_size], predictions[idx:idx+batch_size]
+
+			# Show images.
+			#show_image(torchvision.utils.make_grid(inps))
+
+			#print('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in outps])))
+			#print('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in preds])))
+			#for gt, pred in zip(outps, preds):
+			#	print('G/T - prediction: {}, {}.'.format(label_converter.decode(gt), label_converter.decode(pred)))
+			print('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(outps, preds)]))
+
+			num_iters += 1
+			if num_iters >= 5: break
+
+		#--------------------
+		error_cases_dir_path = './text_error_cases'
+		if is_error_cases_saved:
+			os.makedirs(error_cases_dir_path, exist_ok=True)
+
+		correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0, 0, 0
+		correct_char_class_count, total_char_class_count = [0] * num_classes, [0] * num_classes
+		error_cases = list()
+		error_idx = 0
+
+		inputs_np = inputs.numpy()
+		if inputs_np.ndim == 4: inputs_np = inputs_np.transpose(0, 2, 3, 1)
+		#minval, maxval = np.min(inputs_np), np.max(inputs_np)
+		minval, maxval = -1, 1
+		inputs_np = np.round((inputs_np - minval) * 255 / (maxval - minval)).astype(np.uint8)
+
+		total_text_count += len(outputs)
+		for img, gt, pred in zip(inputs_np, outputs, predictions):
+			for gl, pl in zip(gt, pred):
+				if gl == pl: correct_char_class_count[gl] += 1
+				total_char_class_count[gl] += 1
+
+			gt, pred = label_converter.decode(gt), label_converter.decode(pred)
+			gt_case, pred_case = (gt, pred) if is_case_sensitive else (gt.lower(), pred.lower())
+
+			if gt_case == pred_case:
+				correct_text_count += 1
+			elif is_error_cases_saved:
+				cv2.imwrite(os.path.join(error_cases_dir_path, 'image_{}.png'.format(error_idx)), img)
+				error_cases.append((gt, pred))
+				error_idx += 1
+
+			gt_words, pred_words = gt_case.split(' '), pred_case.split(' ')
+			total_word_count += max(len(gt_words), len(pred_words))
+			correct_word_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gt_words, pred_words))))
+
+			total_char_count += max(len(gt), len(pred))
+			correct_char_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gt_case, pred_case))))
+
+		if is_error_cases_saved:
+			err_fpath = os.path.join(error_cases_dir_path, 'error_cases.txt')
+			try:
+				with open(err_fpath, 'w', encoding='UTF8') as fd:
+					for idx, (gt, pred) in enumerate(error_cases):
+						fd.write('{}: {}\t{}\n'.format(idx, gt, pred))
+			except FileNotFoundError as ex:
+				print('File not found: {}.'.format(err_fpath))
+			except UnicodeDecodeError as ex:
+				print('Unicode decode error: {}.'.format(err_fpath))
+
+		show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char)
+		print('Text accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
+		print('Word accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
+		print('Char accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
+
 def build_char_model(label_converter, image_channel, loss_type, lang, device='cpu'):
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
@@ -1144,7 +1246,8 @@ def build_char_mixup_model(label_converter, image_channel, loss_type, lang, devi
 	return model, forward, criterion
 
 def build_rare1_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_text_len, num_suffixes, sos_value, blank_label=None, device='cpu'):
-	num_fiducials = 20  # The number of fiducial points of TPS-STN.
+	#num_fiducials = 20  # The number of fiducial points of TPS-STN.
+	num_fiducials = None
 	input_channel = image_channel  # The number of input channel of feature extractor.
 	output_channel = 512  # The number of output channel of feature extractor.
 	if lang == 'kor':
@@ -1179,7 +1282,7 @@ def build_rare1_model(label_converter, image_height, image_width, image_channel,
 			torch.backends.cudnn.enabled = True
 			return cost
 
-		def evaluate(model, inputs, outputs, output_lens, device):
+		def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 			raise NotImplementedError
 
 	elif loss_type in ['xent', 'nll']:
@@ -1218,19 +1321,23 @@ def build_rare1_model(label_converter, image_height, image_width, image_channel,
 				concat_decoder_outputs.append(do[:dl])
 			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
 
-		def evaluate(model, inputs, outputs, output_lens, device):
+		def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 			model_outputs = model(inputs.to(device), None, is_train=False, device=device)
 
-			_, model_outputs = torch.max(model_outputs, 2)
-			return outputs.numpy(), model_outputs.cpu().numpy()
+			_, model_outputs = torch.max(model_outputs, dim=-1)
+			if outputs is None or output_lens is None:
+				return model_outputs, None
+			else:
+				return model_outputs.cpu().numpy(), outputs.numpy()
 
 	import rare.model
-	model = rare.model.Model(image_height, image_width, label_converter.num_tokens, num_fiducials, input_channel, output_channel, hidden_size, max_text_len, num_suffixes, sos_value, label_converter.pad_value, transformer, feature_extractor, sequence_model, decoder)
+	model = rare.model.Model(image_height, image_width, label_converter.num_tokens, num_fiducials, input_channel, output_channel, hidden_size, max_text_len + num_suffixes, sos_value, label_converter.pad_value, transformer, feature_extractor, sequence_model, decoder)
 
-	return model, evaluate, forward, criterion
+	return model, infer, forward, criterion
 
 def build_rare1_mixup_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_text_len, num_suffixes, sos_value, blank_label=None, device='cpu'):
-	num_fiducials = 20  # The number of fiducial points of TPS-STN.
+	#num_fiducials = 20  # The number of fiducial points of TPS-STN.
+	num_fiducials = None
 	input_channel = image_channel  # The number of input channel of feature extractor.
 	output_channel = 512  # The number of output channel of feature extractor.
 	if lang == 'kor':
@@ -1268,7 +1375,7 @@ def build_rare1_mixup_model(label_converter, image_height, image_width, image_ch
 			torch.backends.cudnn.enabled = True
 			return cost
 
-		def evaluate(model, inputs, outputs, output_lens, device):
+		def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 			raise NotImplementedError
 
 	elif loss_type in ['xent', 'nll']:
@@ -1307,25 +1414,28 @@ def build_rare1_mixup_model(label_converter, image_height, image_width, image_ch
 				concat_decoder_outputs.append(do[:dl])
 			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
 
-		def evaluate(model, inputs, outputs, output_lens, device):
+		def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 			model_outputs = model(inputs.to(device), None, is_train=False, device=device)
 
-			_, model_outputs = torch.max(model_outputs, 2)
-			return outputs.numpy(), model_outputs.cpu().numpy()
+			_, model_outputs = torch.max(model_outputs, dim=-1)
+			if outputs is None or output_lens is None:
+				return model_outputs, None
+			else:
+				return model_outputs.cpu().numpy(), outputs.numpy()
 
 	# FIXME [error] >> rare.model.Model_MixUp is not working.
 	import rare.model
-	model = rare.model.Model_MixUp(image_height, image_width, label_converter.num_tokens, num_fiducials, input_channel, output_channel, hidden_size, max_text_len, num_suffixes, sos_value, label_converter.pad_value, transformer, feature_extractor, sequence_model, decoder)
+	model = rare.model.Model_MixUp(image_height, image_width, label_converter.num_tokens, num_fiducials, input_channel, output_channel, hidden_size, max_text_len + num_suffixes, sos_value, label_converter.pad_value, transformer, feature_extractor, sequence_model, decoder)
 
-	return model, evaluate, forward, criterion
+	return model, infer, forward, criterion
 
-def build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_text_len=0, sos_value=0, device='cpu'):
+def build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=0, sos_value=0, device='cpu'):
 	if lang == 'kor':
 		hidden_size = 512  # The size of the LSTM hidden states.
 	else:
 		hidden_size = 256  # The size of the LSTM hidden states.
 	num_rnns = 2
-	num_embeddings = 256
+	embedding_size = 256
 	use_leaky_relu = False
 
 	if loss_type is not None:
@@ -1376,37 +1486,40 @@ def build_rare2_model(label_converter, image_height, image_width, image_channel,
 		criterion = None
 		forward = None
 
-	def evaluate(model, inputs, outputs, output_lens, device):
-		outputs = outputs.long()
-
-		# Construct inputs for one-step look-ahead.
-		decoder_inputs = outputs[:,:-1]
-		decoder_input_lens = output_lens - 1
-		# Construct outputs for one-step look-ahead.
-		decoder_outputs = outputs[:,1:]  # Remove <SOS> token.
-		decoder_output_lens = output_lens - 1
-
+	def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 		#model_outputs = model(inputs.to(device), decoder_inputs.to(device), decoder_input_lens.to(device), device=device)
 		model_outputs = model(inputs.to(device), None, None, device=device)
 
-		_, model_outputs = torch.max(model_outputs, 1)
+		_, model_outputs = torch.max(model_outputs, dim=-1)
 		model_outputs = model_outputs.cpu().numpy()
 
-		"""
-		separated_model_outputs = np.zeros(decoder_outputs.shape, model_outputs.dtype)
-		start_idx = 0
-		for idx, dl in enumerate(decoder_output_lens):
-			end_idx = start_idx + dl
-			separated_model_outputs[idx,:dl] = model_outputs[start_idx:end_idx]
-			start_idx = end_idx
-		return decoder_outputs.numpy(), separated_model_outputs
-		"""
-		return decoder_outputs.numpy(), model_outputs
+		if outputs is None or output_lens is None:
+			return model_outputs, None
+		else:
+			outputs = outputs.long()
+
+			# Construct inputs for one-step look-ahead.
+			decoder_inputs = outputs[:,:-1]
+			decoder_input_lens = output_lens - 1
+			# Construct outputs for one-step look-ahead.
+			decoder_outputs = outputs[:,1:]  # Remove <SOS> token.
+			decoder_output_lens = output_lens - 1
+
+			"""
+			separated_model_outputs = np.zeros(decoder_outputs.shape, model_outputs.dtype)
+			start_idx = 0
+			for idx, dl in enumerate(decoder_output_lens):
+				end_idx = start_idx + dl
+				separated_model_outputs[idx,:dl] = model_outputs[start_idx:end_idx]
+				start_idx = end_idx
+			return separated_model_outputs, decoder_outputs.numpy()
+			"""
+			return model_outputs, decoder_outputs.numpy()
 
 	import rare.crnn_lang
-	model = rare.crnn_lang.CRNN(imgH=image_height, nc=image_channel, nclass=label_converter.num_tokens, nh=hidden_size, n_rnn=num_rnns, num_embeddings=num_embeddings, leakyRelu=use_leaky_relu, max_time_steps=max_text_len, sos_value=sos_value)
+	model = rare.crnn_lang.CRNN(imgH=image_height, nc=image_channel, nclass=label_converter.num_tokens, nh=hidden_size, n_rnn=num_rnns, num_embeddings=embedding_size, leakyRelu=use_leaky_relu, max_time_steps=max_time_steps, sos_value=sos_value)
 
-	return model, evaluate, forward, criterion
+	return model, infer, forward, criterion
 
 def build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_text_len, eos_value, device='cpu'):
 	if lang == 'kor':
@@ -1448,30 +1561,43 @@ def build_aster_model(label_converter, image_height, image_width, image_channel,
 		input_dict['rec_targets'] = decoder_outputs.to(device)
 		input_dict['rec_lengths'] = decoder_output_lens.to(device)
 
-		output_dict = model(input_dict, device=device)
+		model_output_dict = model(input_dict, device=device)
 
-		loss = output_dict['losses']['loss_rec']  # aster.sequence_cross_entropy_loss.SequenceCrossEntropyLoss.
+		loss = model_output_dict['losses']['loss_rec']  # aster.sequence_cross_entropy_loss.SequenceCrossEntropyLoss.
 		return loss
 
-	def evaluate(model, inputs, outputs, output_lens, device):
-		# Construct outputs for one-step look-ahead.
-		decoder_outputs = outputs[:,1:]  # Remove <SOS> token.
-		decoder_output_lens = output_lens - 1
+	def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
+		if outputs is None or output_lens is None:
+			input_dict = dict()
+			input_dict['images'] = inputs.to(device)
+			input_dict['rec_targets'] = None
+			input_dict['rec_lengths'] = None
 
-		input_dict = dict()
-		input_dict['images'] = inputs.to(device)
-		input_dict['rec_targets'] = decoder_outputs.to(device)
-		input_dict['rec_lengths'] = decoder_output_lens.to(device)
+			model_output_dict = model(input_dict, device=device)
 
-		output_dict = model(input_dict, device=device)
+			model_outputs = model_output_dict['output']['pred_rec']  # [batch size, max label len].
+			#model_output_scores = model_output_dict['output']['pred_rec_score']  # [batch size, max label len].
 
-		#loss = output_dict['losses']['loss_rec']
-		predictions = output_dict['output']['pred_rec']  # [batch size, max label len].
-		#prediction_scores = output_dict['output']['pred_rec_score']  # [batch size, max label len].
+			return model_outputs, None
+		else:
+			# Construct outputs for one-step look-ahead.
+			decoder_outputs = outputs[:,1:]  # Remove <SOS> token.
+			decoder_output_lens = output_lens - 1
 
-		# TODO [check] >>
-		#return outputs.numpy(), predictions.cpu().numpy()
-		return decoder_outputs.numpy(), predictions.cpu().numpy()
+			input_dict = dict()
+			input_dict['images'] = inputs.to(device)
+			input_dict['rec_targets'] = decoder_outputs.to(device)
+			input_dict['rec_lengths'] = decoder_output_lens.to(device)
+
+			model_output_dict = model(input_dict, device=device)
+
+			#loss = model_output_dict['losses']['loss_rec']
+			model_outputs = model_output_dict['output']['pred_rec']  # [batch size, max label len].
+			#model_output_scores = model_output_dict['output']['pred_rec_score']  # [batch size, max label len].
+
+			# TODO [check] >>
+			#return model_outputs.cpu().numpy(), outputs.numpy()
+			return model_outputs.cpu().numpy(), decoder_outputs.numpy()
 
 	import aster.model_builder
 	model = aster.model_builder.ModelBuilder(
@@ -1482,7 +1608,7 @@ def build_aster_model(label_converter, image_height, image_width, image_channel,
 		STN_ON=sys_args.STN_ON
 	)
 
-	return model, evaluate, forward, sys_args
+	return model, infer, forward, sys_args
 
 def build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size):
 	import onmt
@@ -1558,8 +1684,8 @@ def build_opennmt_model(label_converter, image_height, image_width, image_channe
 			outputs = torch.transpose(outputs, 0, 1)  # [B, T, F] -> [T, B, F].
 
 			model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
-			model_outputs = model.generator(model_output_tuple[0]).transpose(0, 1)  # [T, B, F] -> [B, T, F].
 
+			model_outputs = model.generator(model_output_tuple[0]).transpose(0, 1)  # [T, B, F] -> [B, T, F].
 			#attentions = model_output_tuple[1]['std']
 
 			# NOTE [info] >> All examples in a batch are concatenated together.
@@ -1569,24 +1695,27 @@ def build_opennmt_model(label_converter, image_height, image_width, image_channe
 		criterion = None
 		forward = None
 
-	def evaluate(model, inputs, outputs, output_lens, device):
-		deconder_outputs = outputs[:,1:]
-		outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
+	def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
+		if outputs is None or output_lens is None:
+			return model_outputs, None
+		else:
+			deconder_outputs = outputs[:,1:]
+			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
 
-		model_outputs = model(inputs.to(device), outputs.to(device), output_lens.to(device))
-		predictions = model.generator(model_outputs[0]).transpose(0, 1)  # [T, B, F] -> [B, T, F].
+			model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
 
-		#attentions = model_outputs[1]['std']
+			model_outputs = model.generator(model_output_tuple[0]).transpose(0, 1)  # [T, B, F] -> [B, T, F].
+			#attentions = model_output_tuple[1]['std']
 
-		_, predictions = torch.max(predictions, 2)
-		return deconder_outputs.numpy(), predictions.cpu().numpy()
+			_, model_outputs = torch.max(model_outputs, dim=-1)
+			return model_outputs.cpu().numpy(), deconder_outputs.numpy()
 
 	import onmt
 	encoder, decoder, generator = build_opennmt_submodels(image_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size)
 	model = onmt.models.NMTModel(encoder, decoder)
 	model.add_module('generator', generator)
 
-	return model, evaluate, forward, criterion
+	return model, infer, forward, criterion
 
 def build_rare1_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, device='cpu'):
 	#num_fiducials = 20  # The number of fiducial points of TPS-STN.
@@ -1622,8 +1751,8 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 			outputs = torch.transpose(outputs, 0, 1)  # [B, T, F] -> [T, B, F].
 
 			model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
-			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
 
+			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
 			#attentions = model_output_tuple[1]['std']
 
 			# NOTE [info] >> All examples in a batch are concatenated together.
@@ -1633,17 +1762,17 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 		criterion = None
 		forward = None
 
-	def evaluate(model, inputs, outputs, output_lens, device):
+	def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 		decoder_outputs = outputs[:,1:]
 		outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
 
-		model_outputs = model(inputs.to(device), outputs.to(device), output_lens.to(device))
+		model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
 
-		predictions = model_outputs[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
-		#attentions = model_outputs[1]['std']
+		model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+		#attentions = model_output_tuple[1]['std']
 
-		_, predictions = torch.max(predictions, 2)
-		return decoder_outputs.numpy(), predictions.cpu().numpy()
+		_, model_outputs = torch.max(model_outputs, dim=-1)
+		return model_outputs.cpu().numpy(), decoder_outputs.numpy()
 
 	class MyCompositeModel(torch.nn.Module):
 		def __init__(self, image_height, image_width, input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size):
@@ -1723,7 +1852,7 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 
 	model = MyCompositeModel(image_height, image_width, image_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size)
 
-	return model, evaluate, forward, criterion
+	return model, infer, forward, criterion
 
 def build_rare2_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, device='cpu'):
 	#num_fiducials = 20  # The number of fiducial points of TPS-STN.
@@ -1753,8 +1882,8 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 			outputs = torch.transpose(outputs, 0, 1)  # [B, T, F] -> [T, B, F].
 
 			model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
-			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
 
+			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
 			#attentions = model_output_tuple[1]['std']
 
 			# NOTE [info] >> All examples in a batch are concatenated together.
@@ -1764,17 +1893,17 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 		criterion = None
 		forward = None
 
-	def evaluate(model, inputs, outputs, output_lens, device):
+	def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 		decoder_outputs = outputs[:,1:]
 		outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
 
-		model_outputs = model(inputs.to(device), outputs.to(device), output_lens.to(device))
+		model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
 
-		predictions = model_outputs[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
-		#attentions = model_outputs[1]['std']
+		model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+		#attentions = model_output_tuple[1]['std']
 
-		_, predictions = torch.max(predictions, 2)
-		return decoder_outputs.numpy(), predictions.cpu().numpy()
+		_, model_outputs = torch.max(model_outputs, dim=-1)
+		return model_outputs.cpu().numpy(), decoder_outputs.numpy()
 
 	class MyCompositeModel(torch.nn.Module):
 		def __init__(self, image_height, image_width, input_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size):
@@ -1839,7 +1968,7 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 
 	model = MyCompositeModel(image_height, image_width, image_channel, label_converter.num_tokens, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size)
 
-	return model, evaluate, forward, criterion
+	return model, infer, forward, criterion
 
 def build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, device='cpu'):
 	#num_fiducials = 20  # The number of fiducial points of TPS-STN.
@@ -1869,8 +1998,8 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 			outputs = torch.transpose(outputs, 0, 1)  # [B, T, F] -> [T, B, F].
 
 			model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
-			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
 
+			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
 			#attentions = model_output_tuple[1]['std']
 
 			# NOTE [info] >> All examples in a batch are concatenated together.
@@ -1880,17 +2009,17 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 		criterion = None
 		forward = None
 
-	def evaluate(model, inputs, outputs, output_lens, device):
+	def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 		decoder_outputs = outputs[:,1:]
 		outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
 
-		model_outputs = model(inputs.to(device), outputs.to(device), output_lens.to(device))
+		model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
 
-		predictions = model_outputs[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
-		#attentions = model_outputs[1]['std']
+		model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+		#attentions = model_output_tuple[1]['std']
 
-		_, predictions = torch.max(predictions, 2)
-		return decoder_outputs.numpy(), predictions.cpu().numpy()
+		_, model_outputs = torch.max(model_outputs, dim=-1)
+		return model_outputs.cpu().numpy(), decoder_outputs.numpy()
 
 	class MyCompositeModel(torch.nn.Module):
 		def __init__(self, image_height, image_width, input_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size):
@@ -1924,7 +2053,7 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 
 	model = MyCompositeModel(image_height, image_width, image_channel, label_converter.num_tokens, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size)
 
-	return model, evaluate, forward, criterion
+	return model, infer, forward, criterion
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 def recognize_character():
@@ -2327,7 +2456,7 @@ def recognize_word_by_rare1():
 	#--------------------
 	# Build a model.
 
-	model, eval_functor, forward_functor, criterion = build_rare1_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_word_len, num_suffixes, SOS_VALUE, BLANK_LABEL if loss_type == 'ctc' else None, device)
+	model, infer_functor, forward_functor, criterion = build_rare1_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_word_len, num_suffixes, SOS_VALUE, BLANK_LABEL if loss_type == 'ctc' else None, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -2378,7 +2507,7 @@ def recognize_word_by_rare1():
 		#--------------------
 		print('Start training...')
 		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, eval_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
@@ -2400,7 +2529,7 @@ def recognize_word_by_rare1():
 	print('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, eval_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def recognize_word_by_rare2():
@@ -2495,7 +2624,7 @@ def recognize_word_by_rare2():
 	#--------------------
 	# Build a model.
 
-	model, eval_functor, forward_functor, criterion = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type, max_word_len + num_suffixes, SOS_VALUE, device)
+	model, infer_functor, forward_functor, criterion = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type, max_word_len + num_suffixes, SOS_VALUE, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -2546,7 +2675,7 @@ def recognize_word_by_rare2():
 		#--------------------
 		print('Start training...')
 		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, eval_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
@@ -2568,7 +2697,7 @@ def recognize_word_by_rare2():
 	print('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, eval_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def recognize_word_by_aster():
@@ -2663,7 +2792,7 @@ def recognize_word_by_aster():
 	#--------------------
 	# Build a model.
 
-	model, eval_functor, forward_functor, sys_args = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_word_len, EOS_VALUE, device)
+	model, infer_functor, forward_functor, sys_args = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_word_len, EOS_VALUE, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -2715,7 +2844,7 @@ def recognize_word_by_aster():
 		#--------------------
 		print('Start training...')
 		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, None, forward_functor, eval_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+		model, best_model_filepath = train_text_recognition_model(model, None, forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
@@ -2737,7 +2866,7 @@ def recognize_word_by_aster():
 	print('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, eval_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def recognize_word_by_opennmt():
@@ -2831,7 +2960,7 @@ def recognize_word_by_opennmt():
 	#--------------------
 	# Build a model.
 
-	model, eval_functor, forward_functor, criterion = build_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type, device)
+	model, infer_functor, forward_functor, criterion = build_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -2883,7 +3012,7 @@ def recognize_word_by_opennmt():
 		#--------------------
 		print('Start training...')
 		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, eval_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
@@ -2905,7 +3034,7 @@ def recognize_word_by_opennmt():
 	print('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, eval_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def recognize_word_by_rare1_and_opennmt():
@@ -2999,7 +3128,7 @@ def recognize_word_by_rare1_and_opennmt():
 	#--------------------
 	# Build a model.
 
-	model, eval_functor, forward_functor, criterion = build_rare1_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type, device)
+	model, infer_functor, forward_functor, criterion = build_rare1_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3050,7 +3179,7 @@ def recognize_word_by_rare1_and_opennmt():
 		#--------------------
 		print('Start training...')
 		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, eval_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
@@ -3072,7 +3201,7 @@ def recognize_word_by_rare1_and_opennmt():
 	print('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, eval_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def recognize_word_by_rare2_and_opennmt():
@@ -3166,7 +3295,7 @@ def recognize_word_by_rare2_and_opennmt():
 	#--------------------
 	# Build a model.
 
-	model, eval_functor, forward_functor, criterion = build_rare2_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type, device)
+	model, infer_functor, forward_functor, criterion = build_rare2_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3217,7 +3346,7 @@ def recognize_word_by_rare2_and_opennmt():
 		#--------------------
 		print('Start training...')
 		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, eval_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
@@ -3239,7 +3368,7 @@ def recognize_word_by_rare2_and_opennmt():
 	print('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, eval_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def recognize_word_by_aster_and_opennmt():
@@ -3333,7 +3462,7 @@ def recognize_word_by_aster_and_opennmt():
 	#--------------------
 	# Build a model.
 
-	model, eval_functor, forward_functor, criterion = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type, device)
+	model, infer_functor, forward_functor, criterion = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3384,7 +3513,7 @@ def recognize_word_by_aster_and_opennmt():
 		#--------------------
 		print('Start training...')
 		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, eval_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
@@ -3406,7 +3535,7 @@ def recognize_word_by_aster_and_opennmt():
 	print('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, eval_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def recognize_word_using_mixup():
@@ -3514,7 +3643,7 @@ def recognize_word_using_mixup():
 	#--------------------
 	# Build a model.
 
-	model, eval_functor, forward_functor, criterion = build_rare1_mixup_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_word_len, num_suffixes, SOS_VALUE, BLANK_LABEL if loss_type == 'ctc' else None, device)
+	model, infer_functor, forward_functor, criterion = build_rare1_mixup_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_word_len, num_suffixes, SOS_VALUE, BLANK_LABEL if loss_type == 'ctc' else None, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3565,7 +3694,7 @@ def recognize_word_using_mixup():
 		#--------------------
 		print('Start training...')
 		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, eval_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
@@ -3587,7 +3716,7 @@ def recognize_word_using_mixup():
 	print('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, eval_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def evaluate_word_recognizer():
@@ -3673,13 +3802,13 @@ def evaluate_word_recognizer():
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2_attn_gradclip_allparams_nopad_kor_large_ch50_64x1280x3_acc1.0000_epoch3.pth'
 		assert model_filepath_to_load is not None
 
-		model, eval_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_text_len=max_label_len + num_suffixes, sos_value=SOS_VALUE, device=device)
+		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_text_len=max_label_len + num_suffixes, sos_value=SOS_VALUE, device=device)
 	elif False:
 		# For ASTER + OpenNMT.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_nll_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.9203_epoch3.pth'
 		assert model_filepath_to_load is not None
 
-		model, eval_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, device=device)
+		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, device=device)
 
 	# Load a model.
 	model = load_model(model_filepath_to_load, model, device=device)
@@ -3692,8 +3821,120 @@ def evaluate_word_recognizer():
 	print('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, eval_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=True, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=True, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
+
+def infer_by_word_recognizer():
+	#image_height, image_width, image_channel = 32, 100, 3
+	image_height, image_width, image_channel = 64, 640, 3
+	#image_height, image_width, image_channel = 64, 1280, 3
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
+	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	lang = 'kor'  # {'kor', 'eng'}.
+	shuffle = True
+	num_workers = 8
+	batch_size = 64
+	is_individual_pad_value_used = False
+
+	if lang == 'kor':
+		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
+		font_list = construct_font(korean=True, english=False)
+	elif lang == 'eng':
+		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
+		font_list = construct_font(korean=False, english=True)
+	else:
+		raise ValueError('Invalid language, {}'.format(lang))
+
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	print('Device: {}.'.format(device))
+
+	#--------------------
+	# Prepare data.
+
+	if is_individual_pad_value_used:
+		# When the pad value is the ID of a valid token.
+		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
+		PAD_TOKEN = '<PAD>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
+		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
+	else:
+		# When the pad value = the ID of <SOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
+	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
+	num_suffixes = 1
+
+	import aihub_data
+
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+
+	aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
+	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
+
+	image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
+	max_label_len = 10
+	is_image_used = False
+
+	test_transform = torchvision.transforms.Compose([
+		ResizeImage(image_height, image_width),
+		#torchvision.transforms.Resize((image_height, image_width)),
+		#torchvision.transforms.CenterCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	])
+	test_target_transform = ToIntTensor()
+
+	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_image_used, transform=test_transform, target_transform=test_target_transform)
+	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+	print('#examples = {}.'.format(len(test_dataset)))
+	print('#classes = {}.'.format(num_classes))
+	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_value, SOS_VALUE, EOS_VALUE))
+
+	# Show data info.
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+
+	inputs, outputs = list(), list()
+	for images, labels, _ in test_dataloader:
+		inputs.append(images)
+		outputs.append(labels)
+	inputs = torch.cat(inputs)
+	outputs = torch.cat(outputs)
+
+	#--------------------
+	# Build a model.
+
+	if True:
+		# For RARE2.
+		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2_attn_gradclip_allparams_nopad_kor_large_ch50_64x1280x3_acc1.0000_epoch3.pth'
+		assert model_filepath_to_load is not None
+
+		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_text_len=max_label_len + num_suffixes, sos_value=SOS_VALUE, device=device)
+	elif False:
+		# For ASTER + OpenNMT.
+		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_nll_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.9203_epoch3.pth'
+		assert model_filepath_to_load is not None
+
+		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, device=device)
+
+	# Load a model.
+	model = load_model(model_filepath_to_load, model, device=device)
+
+	model = model.to(device)
+
+	#--------------------
+	# Infer by the model.
+
+	print('Start inferring...')
+	start_time = time.time()
+	model.eval()
+	infer_by_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=None, batch_size=batch_size, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=True, device=device)
+	print('End inferring: {} secs.'.format(time.time() - start_time))
 
 def recognize_text_by_opennmt():
 	#image_height, image_width, image_channel = 32, 100, 3
@@ -3788,7 +4029,7 @@ def recognize_text_by_opennmt():
 	#--------------------
 	# Build a model.
 
-	model, eval_functor, forward_functor, criterion = build_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type, device)
+	model, infer_functor, forward_functor, criterion = build_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3840,7 +4081,7 @@ def recognize_text_by_opennmt():
 		#--------------------
 		print('Start training...')
 		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, eval_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
@@ -3862,7 +4103,7 @@ def recognize_text_by_opennmt():
 	print('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, eval_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def recognize_text_using_craft_and_character_recognizer():
@@ -4055,7 +4296,7 @@ def recognize_word_using_craft_and_word_recognizer():
 	print('Start loading word recognizer...')
 	start_time = time.time()
 	import rare.model
-	recognizer = rare.model.Model(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len, num_suffixes, SOS_VALUE, label_converter.pad_value, transformer, feature_extractor, sequence_model, decoder)
+	recognizer = rare.model.Model(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len + num_suffixes, SOS_VALUE, label_converter.pad_value, transformer, feature_extractor, sequence_model, decoder)
 
 	recognizer = load_model(recognizer_model_filepath, recognizer, device=device)
 	recognizer = recognizer.to(device)
@@ -4142,7 +4383,9 @@ def main():
 	#recognize_word_by_aster_and_opennmt()  # Use ASTER (encoder) + OpenNMT (decoder).
 	#recognize_word_using_mixup()  # Use RARE #1. Not working.
 
-	evaluate_word_recognizer()
+	#evaluate_word_recognizer()
+
+	infer_by_word_recognizer()
 
 	# Recognize word using CRAFT (scene text detector) + word recognizer.
 	#recognize_word_using_craft_and_word_recognizer()  # Use RARE #1.
