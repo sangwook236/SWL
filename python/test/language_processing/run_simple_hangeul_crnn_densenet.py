@@ -474,21 +474,6 @@ class MyModel(object):
 		with tf.variable_scope('birnn_1', reuse=tf.AUTO_REUSE):
 			fw_cell_1, bw_cell_1 = MyModel._create_unit_cell(256, kernel_initializer, 'fw_cell'), MyModel._create_unit_cell(256, kernel_initializer, 'bw_cell')
 
-			# Attention.
-			num_attention_units = 128
-			# TODO [decide] >>
-			if True:
-				# Additive attention.
-				# REF [paper] >> "Neural Machine Translation by Jointly Learning to Align and Translate", arXiv 2016.
-				attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(num_attention_units, memory=inputs, memory_sequence_length=input_len)
-			else:
-				# Multiplicative attention.
-				# REF [paper] >> "Effective Approaches to Attention-based Neural Machine Translation", arXiv 2015.
-				attention_mechanism = tf.contrib.seq2seq.LuongAttention(num_attention_units, memory=inputs, memory_sequence_length=input_len)
-			# TODO [decide] >> Are different attention_mechanisms used for fw_cell_1 and bw_cell_1?
-			fw_cell_1 = tf.contrib.seq2seq.AttentionWrapper(fw_cell_1, attention_mechanism, attention_layer_size=num_attention_units)
-			bw_cell_1 = tf.contrib.seq2seq.AttentionWrapper(bw_cell_1, attention_mechanism, attention_layer_size=num_attention_units)
-
 			outputs_1, _ = tf.nn.bidirectional_dynamic_rnn(fw_cell_1, bw_cell_1, inputs, input_len, dtype=tf.float32)
 			outputs_1 = tf.concat(outputs_1, 2)
 			outputs_1 = tf.layers.batch_normalization(outputs_1, name='batchnorm')
@@ -571,16 +556,16 @@ class MyRunner(object):
 		#	REF [function] >> MyModel.create_model().
 		#width_downsample_factor = 4
 		if False:
-			image_height, image_width, image_channel = 32, 320, 3  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+			image_height, image_width, image_channel = 32, 320, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
 			model_output_time_steps = 39 #79
 		elif False:
-			image_height, image_width, image_channel = 64, 640, 3  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+			image_height, image_width, image_channel = 64, 640, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
 			model_output_time_steps = 79 #159
 		elif True:
-			image_height, image_width, image_channel = 64, 1280, 3  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+			image_height, image_width, image_channel = 64, 1280, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
 			model_output_time_steps = 99 #319
 		else:
-			image_height, image_width, image_channel = 64, 2560, 3  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+			image_height, image_width, image_channel = 64, 2560, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
 			model_output_time_steps = 99 #639
 		max_label_len = model_output_time_steps  # max_label_len <= model_output_time_steps.
 
@@ -1081,7 +1066,7 @@ def main():
 	#--------------------
 	is_trained, is_tested, is_inferred = True, True, True
 	is_training_resumed = False
-	initial_epoch, final_epoch, batch_size = 0, 50, 32
+	initial_epoch, final_epoch, batch_size = 0, 50, 64
 
 	is_dataset_generated_at_runtime = True
 	is_fine_tuned = False

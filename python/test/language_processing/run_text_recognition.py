@@ -13,8 +13,8 @@ from PIL import Image, ImageOps
 import cv2
 import matplotlib.pyplot as plt
 import swl.language_processing.util as swl_langproc_util
-import text_data
 import text_generation_util as tg_util
+import text_data
 #import mixup.vgg, mixup.resnet
 
 def save_model(model_filepath, model):
@@ -2109,7 +2109,7 @@ def recognize_character():
 		raise ValueError('Invalid language, {}'.format(lang))
 
 	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
 	print('Device: {}.'.format(device))
 
 	#--------------------
@@ -2257,7 +2257,7 @@ def recognize_character_using_mixup():
 		raise ValueError('Invalid language, {}'.format(lang))
 
 	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
 	print('Device: {}.'.format(device))
 
 	#--------------------
@@ -2413,7 +2413,7 @@ def recognize_word_by_rare1():
 		raise ValueError('Invalid language, {}'.format(lang))
 
 	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
 	print('Device: {}.'.format(device))
 
 	#--------------------
@@ -2498,7 +2498,7 @@ def recognize_word_by_rare1():
 
 		# Define an optimizer.
 		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
 		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
@@ -2589,7 +2589,7 @@ def recognize_word_by_rare2():
 		raise ValueError('Invalid language, {}'.format(lang))
 
 	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
 	print('Device: {}.'.format(device))
 
 	#--------------------
@@ -2666,7 +2666,7 @@ def recognize_word_by_rare2():
 
 		# Define an optimizer.
 		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
 		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
@@ -2724,7 +2724,7 @@ def recognize_word_by_aster():
 	shuffle = True
 	num_workers = 8
 
-	#loss_type = 'seq_xent'
+	#loss_type = 'sxent'  # Sequence cross entropy.
 	#max_gradient_norm = 5  # Gradient clipping value.
 	max_gradient_norm = None
 	num_epochs = 20
@@ -2758,7 +2758,7 @@ def recognize_word_by_aster():
 		raise ValueError('Invalid language, {}'.format(lang))
 
 	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
 	print('Device: {}.'.format(device))
 
 	#--------------------
@@ -2774,7 +2774,7 @@ def recognize_word_by_aster():
 	else:
 		# When the pad value = the ID of <SOS> token.
 		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
-	SOS_VALUE, EOS_VALUE = label_converter.pad_value, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
+	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if is_mixed_words_used:
@@ -2834,7 +2834,7 @@ def recognize_word_by_aster():
 
 		# Define an optimizer.
 		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
 		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
 		optimizer = torch.optim.Adadelta(model_params, lr=sys_args.lr, weight_decay=sys_args.weight_decay)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
@@ -2927,7 +2927,7 @@ def recognize_word_by_opennmt():
 		raise ValueError('Invalid language, {}'.format(lang))
 
 	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
 	print('Device: {}.'.format(device))
 
 	#--------------------
@@ -3003,7 +3003,7 @@ def recognize_word_by_opennmt():
 
 		# Define an optimizer.
 		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
 		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
@@ -3095,7 +3095,7 @@ def recognize_word_by_rare1_and_opennmt():
 		raise ValueError('Invalid language, {}'.format(lang))
 
 	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
 	print('Device: {}.'.format(device))
 
 	#--------------------
@@ -3170,7 +3170,7 @@ def recognize_word_by_rare1_and_opennmt():
 
 		# Define an optimizer.
 		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
 		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
@@ -3262,7 +3262,7 @@ def recognize_word_by_rare2_and_opennmt():
 		raise ValueError('Invalid language, {}'.format(lang))
 
 	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
 	print('Device: {}.'.format(device))
 
 	#--------------------
@@ -3337,7 +3337,7 @@ def recognize_word_by_rare2_and_opennmt():
 
 		# Define an optimizer.
 		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
 		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
@@ -3429,7 +3429,7 @@ def recognize_word_by_aster_and_opennmt():
 		raise ValueError('Invalid language, {}'.format(lang))
 
 	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
 	print('Device: {}.'.format(device))
 
 	#--------------------
@@ -3504,7 +3504,7 @@ def recognize_word_by_aster_and_opennmt():
 
 		# Define an optimizer.
 		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
 		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
@@ -3600,7 +3600,7 @@ def recognize_word_using_mixup():
 		raise ValueError('Invalid language, {}'.format(lang))
 
 	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
 	print('Device: {}.'.format(device))
 
 	#--------------------
@@ -3685,7 +3685,7 @@ def recognize_word_using_mixup():
 
 		# Define an optimizer.
 		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
 		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
@@ -3742,7 +3742,7 @@ def evaluate_word_recognizer():
 		raise ValueError('Invalid language, {}'.format(lang))
 
 	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
 	print('Device: {}.'.format(device))
 
 	#--------------------
@@ -3847,7 +3847,7 @@ def infer_by_word_recognizer():
 		raise ValueError('Invalid language, {}'.format(lang))
 
 	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
 	print('Device: {}.'.format(device))
 
 	#--------------------
@@ -3996,7 +3996,7 @@ def recognize_text_by_opennmt():
 		raise ValueError('Invalid language, {}'.format(lang))
 
 	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() else 'cpu')
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
 	print('Device: {}.'.format(device))
 
 	#--------------------
@@ -4072,7 +4072,7 @@ def recognize_text_by_opennmt():
 
 		# Define an optimizer.
 		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		#optimizer = torch.optim.Adam(model_params, lr=1.0, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
 		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
