@@ -1147,14 +1147,13 @@ def infer_by_text_recognition_model(model, infer_functor, label_converter, input
 		error_cases = list()
 		error_idx = 0
 
-		inputs_np = inputs.numpy()
-		if inputs_np.ndim == 4: inputs_np = inputs_np.transpose(0, 2, 3, 1)
-		#minval, maxval = np.min(inputs_np), np.max(inputs_np)
+		if inputs.ndim == 4: inputs = inputs.transpose(0, 2, 3, 1)
+		#minval, maxval = np.min(inputs), np.max(inputs)
 		minval, maxval = -1, 1
-		inputs_np = np.round((inputs_np - minval) * 255 / (maxval - minval)).astype(np.uint8)
+		inputs = np.round((inputs - minval) * 255 / (maxval - minval)).astype(np.uint8)
 
 		total_text_count += len(outputs)
-		for img, gt, pred in zip(inputs_np, outputs, predictions):
+		for img, gt, pred in zip(inputs, outputs, predictions):
 			for gl, pl in zip(gt, pred):
 				if gl == pl: correct_char_class_count[gl] += 1
 				total_char_class_count[gl] += 1
@@ -1325,7 +1324,7 @@ def build_rare1_model(label_converter, image_height, image_width, image_channel,
 
 			_, model_outputs = torch.max(model_outputs, dim=-1)
 			if outputs is None or output_lens is None:
-				return model_outputs, None
+				return model_outputs.cpu().numpy(), None
 			else:
 				return model_outputs.cpu().numpy(), outputs.numpy()
 
@@ -1418,7 +1417,7 @@ def build_rare1_mixup_model(label_converter, image_height, image_width, image_ch
 
 			_, model_outputs = torch.max(model_outputs, dim=-1)
 			if outputs is None or output_lens is None:
-				return model_outputs, None
+				return model_outputs.cpu().numpy(), None
 			else:
 				return model_outputs.cpu().numpy(), outputs.numpy()
 
@@ -1498,8 +1497,8 @@ def build_rare2_model(label_converter, image_height, image_width, image_channel,
 			outputs = outputs.long()
 
 			# Construct inputs for one-step look-ahead.
-			decoder_inputs = outputs[:,:-1]
-			decoder_input_lens = output_lens - 1
+			#decoder_inputs = outputs[:,:-1]
+			#decoder_input_lens = output_lens - 1
 			# Construct outputs for one-step look-ahead.
 			decoder_outputs = outputs[:,1:]  # Remove <SOS> token.
 			decoder_output_lens = output_lens - 1
@@ -1577,7 +1576,7 @@ def build_aster_model(label_converter, image_height, image_width, image_channel,
 			model_outputs = model_output_dict['output']['pred_rec']  # [batch size, max label len].
 			#model_output_scores = model_output_dict['output']['pred_rec_score']  # [batch size, max label len].
 
-			return model_outputs, None
+			return model_outputs.cpu().numpy(), None
 		else:
 			# Construct outputs for one-step look-ahead.
 			decoder_outputs = outputs[:,1:]  # Remove <SOS> token.
@@ -3770,6 +3769,10 @@ def evaluate_word_recognizer():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
+	max_label_len = 10
+	is_preloaded_image_used = False
+
 	lang = 'kor'  # {'kor', 'eng'}.
 	shuffle = True
 	num_workers = 8
@@ -3805,8 +3808,6 @@ def evaluate_word_recognizer():
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
-	import aihub_data
-
 	if 'posix' == os.name:
 		data_base_dir_path = '/home/sangwook/work/dataset'
 	else:
@@ -3814,10 +3815,6 @@ def evaluate_word_recognizer():
 
 	aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
 	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
-
-	image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
-	max_label_len = 10
-	is_preloaded_image_used = False
 
 	test_transform = torchvision.transforms.Compose([
 		ResizeImage(image_height, image_width),
@@ -3827,6 +3824,8 @@ def evaluate_word_recognizer():
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
 	test_target_transform = ToIntTensor()
+
+	import aihub_data
 
 	print('Start creating a dataset and a dataloader...')
 	start_time = time.time()
@@ -3892,6 +3891,10 @@ def infer_by_word_recognizer():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
+	max_label_len = 10
+	is_preloaded_image_used = False
+
 	lang = 'kor'  # {'kor', 'eng'}.
 	shuffle = True
 	num_workers = 8
@@ -3927,8 +3930,6 @@ def infer_by_word_recognizer():
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
-	import aihub_data
-
 	if 'posix' == os.name:
 		data_base_dir_path = '/home/sangwook/work/dataset'
 	else:
@@ -3936,10 +3937,6 @@ def infer_by_word_recognizer():
 
 	aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
 	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
-
-	image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
-	max_label_len = 10
-	is_preloaded_image_used = False
 
 	test_transform = torchvision.transforms.Compose([
 		ResizeImage(image_height, image_width),
@@ -3949,6 +3946,8 @@ def infer_by_word_recognizer():
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
 	test_target_transform = ToIntTensor()
+
+	import aihub_data
 
 	print('Start creating a dataset and a dataloader...')
 	start_time = time.time()

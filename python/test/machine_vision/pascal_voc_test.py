@@ -10,8 +10,8 @@ def load_pascal_voc_format_test():
 		data_base_dir_path = '/home/sangwook/work/dataset'
 	else:
 		data_base_dir_path = 'D:/work/dataset'
-	data_dir_path = data_base_dir_path + '/text/receipt_epapyrus/epapyrus_20190618/Reciept_1'
-	save_dir_path = data_base_dir_path + '/text/receipt_epapyrus/epapyrus_20190618/receipt_text_line'
+	data_dir_path = data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/Reciept_1'
+	save_dir_path = data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line'
 
 	xml_filepaths = sorted(glob.glob(os.path.join(data_dir_path, '*.xml')))
 	if not xml_filepaths:

@@ -111,6 +111,7 @@ def main():
 	#	- Greedy search.
 	#	- Beam search.
 
+	# Use an n-gram language model with prefix tree.
 	word_beam_search_test()
 
 #--------------------------------------------------------------------

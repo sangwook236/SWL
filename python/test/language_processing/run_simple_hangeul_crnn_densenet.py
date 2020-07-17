@@ -1083,7 +1083,7 @@ def main():
 				data_base_dir_path = 'D:/work/dataset'
 
 			# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_vision/pascal_voc_test.py
-			data_dir_path = data_base_dir_path + '/text/receipt_epapyrus/epapyrus_20190618/receipt_text_line'
+			data_dir_path = data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line'
 		else:
 			# Data generation.
 			#	REF [function] >> HangeulTextRecognitionDataGeneratorTextLineDataset_test() in TextRecognitionDataGenerator_data_test.py.

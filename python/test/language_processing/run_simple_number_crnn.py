@@ -1197,7 +1197,7 @@ def main():
 			data_base_dir_path = 'D:/work/dataset'
 
 		# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_vision/pascal_voc_test.py
-		data_dir_path = data_base_dir_path + '/text/receipt_epapyrus/epapyrus_20190618/receipt_text_line'
+		data_dir_path = data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line'
 
 		if not os.path.isdir(data_dir_path) or not os.path.exists(data_dir_path):
 			print('[SWL] Error: Data directory not found, {}.'.format(data_dir_path))
