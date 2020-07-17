@@ -409,28 +409,28 @@ def create_char_data_loaders(char_type, label_converter, charset, num_train_exam
 		if True:
 			# REF [function] >> generate_chars_from_chars74k_data() in chars74k_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/chars74k/English/Img/char_images.txt'
-			is_image_used = True
-			datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+			is_preloaded_image_used = True
+			datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
 		if True:
 			# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_kr.txt'
-			is_image_used = True
-			datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+			is_preloaded_image_used = True
+			datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
 		if True:
 			# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_en.txt'
-			is_image_used = True
-			datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+			is_preloaded_image_used = True
+			datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
 		if True:
 			# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_kr.txt'
-			is_image_used = True
-			datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+			is_preloaded_image_used = True
+			datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
 		if True:
 			# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_en.txt'
-			is_image_used = True
-			datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+			is_preloaded_image_used = True
+			datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
 		assert datasets, 'NO Dataset'
 
 		dataset = torch.utils.data.ConcatDataset(datasets)
@@ -495,28 +495,28 @@ def create_mixed_char_data_loaders(label_converter, charset, num_simple_char_exa
 	if True:
 		# REF [function] >> generate_chars_from_chars74k_data() in chars74k_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/chars74k/English/Img/char_images.txt'
-		is_image_used = True
-		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+		is_preloaded_image_used = True
+		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
 		# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_kr.txt'
-		is_image_used = True
-		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+		is_preloaded_image_used = True
+		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
 		# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_en.txt'
-		is_image_used = True
-		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+		is_preloaded_image_used = True
+		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
 		# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_kr.txt'
-		is_image_used = True
-		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+		is_preloaded_image_used = True
+		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
 		# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_en.txt'
-		is_image_used = True
-		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+		is_preloaded_image_used = True
+		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
 	assert datasets, 'NO Dataset'
 
 	dataset = torch.utils.data.ConcatDataset(datasets)
@@ -580,23 +580,23 @@ def create_word_data_loaders(word_type, label_converter, wordset, chars, num_tra
 		if True:
 			# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
-			is_image_used = False
-			datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+			is_preloaded_image_used = False
+			datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 		if True:
 			# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_en.txt'
-			is_image_used = False
-			datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+			is_preloaded_image_used = False
+			datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 		if True:
 			# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
-			is_image_used = True
-			datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+			is_preloaded_image_used = True
+			datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 		if True:
 			# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_en.txt'
-			is_image_used = True
-			datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+			is_preloaded_image_used = True
+			datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 		assert datasets, 'NO Dataset'
 
 		dataset = torch.utils.data.ConcatDataset(datasets)
@@ -659,23 +659,23 @@ def create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_e
 	if True:
 		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
-		is_image_used = False
-		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+		is_preloaded_image_used = False
+		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
 		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_en.txt'
-		is_image_used = False
-		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+		is_preloaded_image_used = False
+		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
 		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
-		is_image_used = True
-		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+		is_preloaded_image_used = True
+		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
 		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_en.txt'
-		is_image_used = True
-		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+		is_preloaded_image_used = True
+		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 	assert datasets, 'NO Dataset'
 
 	dataset = torch.utils.data.ConcatDataset(datasets)
@@ -1101,21 +1101,20 @@ def infer_by_text_recognition_model(model, infer_functor, label_converter, input
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	if batch_size is None: batch_size = len(inputs)
 
-	EOS_VALUE = label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	with torch.no_grad():
 		predictions = list()
 		for idx in range(0, len(inputs), batch_size):
 			predictions.append(infer_functor(model, inputs[idx:idx+batch_size], device=device)[0])
-	predictions = np.stack(predictions)
+	inputs, predictions = inputs.numpy(), np.vstack(predictions)
 	print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(predictions.shape, predictions.dtype, np.min(predictions), np.max(predictions)))
 
 	if outputs is None:
 		num_iters = 0
 		for idx in range(0, len(predictions), batch_size):
 			# Show images.
-			show_image(torchvision.utils.make_grid(inputs[idx:idx+batch_size]))
+			#show_image(torchvision.utils.make_grid(inputs[idx:idx+batch_size]))
 
-			print('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in predictions[idx:idx+batch_size]])))
+			print('Prediction:\n{}.'.format('\n'.join([label_converter.decode(pred) for pred in predictions[idx:idx+batch_size]])))
 
 			num_iters += 1
 			if num_iters >= 5: break
@@ -1697,7 +1696,14 @@ def build_opennmt_model(label_converter, image_height, image_width, image_channe
 
 	def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 		if outputs is None or output_lens is None:
-			return model_outputs, None
+			# FIXME [check] >>
+			model_output_tuple = model(inputs.to(device))
+
+			model_outputs = model.generator(model_output_tuple[0]).transpose(0, 1)  # [T, B, F] -> [B, T, F].
+			#attentions = model_output_tuple[1]['std']
+
+			_, model_outputs = torch.max(model_outputs, dim=-1)
+			return model_outputs.cpu().numpy(), None
 		else:
 			deconder_outputs = outputs[:,1:]
 			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
@@ -1763,16 +1769,26 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 		forward = None
 
 	def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
-		decoder_outputs = outputs[:,1:]
-		outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
+		if outputs is None or output_lens is None:
+			# FIXME [check] >>
+			model_output_tuple = model(inputs.to(device))
 
-		model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
+			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+			#attentions = model_output_tuple[1]['std']
 
-		model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
-		#attentions = model_output_tuple[1]['std']
+			_, model_outputs = torch.max(model_outputs, dim=-1)
+			return model_outputs.cpu().numpy(), None
+		else:
+			decoder_outputs = outputs[:,1:]
+			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
 
-		_, model_outputs = torch.max(model_outputs, dim=-1)
-		return model_outputs.cpu().numpy(), decoder_outputs.numpy()
+			model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
+
+			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+			#attentions = model_output_tuple[1]['std']
+
+			_, model_outputs = torch.max(model_outputs, dim=-1)
+			return model_outputs.cpu().numpy(), decoder_outputs.numpy()
 
 	class MyCompositeModel(torch.nn.Module):
 		def __init__(self, image_height, image_width, input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size):
@@ -1894,16 +1910,26 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 		forward = None
 
 	def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
-		decoder_outputs = outputs[:,1:]
-		outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
+		if outputs is None or output_lens is None:
+			# FIXME [check] >>
+			model_output_tuple = model(inputs.to(device))
 
-		model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
+			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+			#attentions = model_output_tuple[1]['std']
 
-		model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
-		#attentions = model_output_tuple[1]['std']
+			_, model_outputs = torch.max(model_outputs, dim=-1)
+			return model_outputs.cpu().numpy(), None
+		else:
+			decoder_outputs = outputs[:,1:]
+			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
 
-		_, model_outputs = torch.max(model_outputs, dim=-1)
-		return model_outputs.cpu().numpy(), decoder_outputs.numpy()
+			model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
+
+			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+			#attentions = model_output_tuple[1]['std']
+
+			_, model_outputs = torch.max(model_outputs, dim=-1)
+			return model_outputs.cpu().numpy(), decoder_outputs.numpy()
 
 	class MyCompositeModel(torch.nn.Module):
 		def __init__(self, image_height, image_width, input_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size):
@@ -2010,16 +2036,26 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 		forward = None
 
 	def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
-		decoder_outputs = outputs[:,1:]
-		outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
+		if outputs is None or output_lens is None:
+			# FIXME [check] >>
+			model_output_tuple = model(inputs.to(device))
 
-		model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
+			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+			#attentions = model_output_tuple[1]['std']
 
-		model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
-		#attentions = model_output_tuple[1]['std']
+			_, model_outputs = torch.max(model_outputs, dim=-1)
+			return model_outputs.cpu().numpy(), None
+		else:
+			decoder_outputs = outputs[:,1:]
+			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
 
-		_, model_outputs = torch.max(model_outputs, dim=-1)
-		return model_outputs.cpu().numpy(), decoder_outputs.numpy()
+			model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
+
+			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+			#attentions = model_output_tuple[1]['std']
+
+			_, model_outputs = torch.max(model_outputs, dim=-1)
+			return model_outputs.cpu().numpy(), decoder_outputs.numpy()
 
 	class MyCompositeModel(torch.nn.Module):
 		def __init__(self, image_height, image_width, input_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size):
@@ -2497,9 +2533,10 @@ def recognize_word_by_rare1():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define an optimizer.
-		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
+		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-6, weight_decay=0)
+		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = None
@@ -2665,9 +2702,10 @@ def recognize_word_by_rare2():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define an optimizer.
-		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
+		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-6, weight_decay=0)
+		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = None
@@ -2740,7 +2778,7 @@ def recognize_word_by_aster():
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_individual_pad_value_used else 'nopad'
-	model_filepath_base = './word_recognition_aster_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	model_filepath_base = './word_recognition_aster_sxent_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	print('Model filepath: {}.'.format(model_filepath_format.format('')))
 
@@ -2833,10 +2871,11 @@ def recognize_word_by_aster():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define an optimizer.
-		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
+		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-6, weight_decay=0)
 		optimizer = torch.optim.Adadelta(model_params, lr=sys_args.lr, weight_decay=sys_args.weight_decay)
+		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
@@ -3002,9 +3041,10 @@ def recognize_word_by_opennmt():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define an optimizer.
-		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
+		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-6, weight_decay=0)
+		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
@@ -3169,9 +3209,10 @@ def recognize_word_by_rare1_and_opennmt():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define an optimizer.
-		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
+		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-6, weight_decay=0)
+		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
@@ -3336,9 +3377,10 @@ def recognize_word_by_rare2_and_opennmt():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define an optimizer.
-		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
+		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-6, weight_decay=0)
+		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
@@ -3503,9 +3545,10 @@ def recognize_word_by_aster_and_opennmt():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define an optimizer.
-		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
+		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-6, weight_decay=0)
+		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
@@ -3684,9 +3727,10 @@ def recognize_word_using_mixup():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define an optimizer.
-		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
+		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-6, weight_decay=0)
+		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = None
@@ -3773,7 +3817,7 @@ def evaluate_word_recognizer():
 
 	image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
 	max_label_len = 10
-	is_image_used = False
+	is_preloaded_image_used = False
 
 	test_transform = torchvision.transforms.Compose([
 		ResizeImage(image_height, image_width),
@@ -3784,9 +3828,12 @@ def evaluate_word_recognizer():
 	])
 	test_target_transform = ToIntTensor()
 
-	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_image_used, transform=test_transform, target_transform=test_target_transform)
+	print('Start creating a dataset and a dataloader...')
+	start_time = time.time()
+	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+	print('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
 	print('#examples = {}.'.format(len(test_dataset)))
 	print('#classes = {}.'.format(num_classes))
 	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_value, SOS_VALUE, EOS_VALUE))
@@ -3797,21 +3844,35 @@ def evaluate_word_recognizer():
 	#--------------------
 	# Build a model.
 
+	print('Start building a model...')
+	start_time = time.time()
 	if True:
 		# For RARE2.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2_attn_gradclip_allparams_nopad_kor_large_ch50_64x1280x3_acc1.0000_epoch3.pth'
+		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2_attn_xent_gradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9514_epoch3.pth'
 		assert model_filepath_to_load is not None
 
-		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_text_len=max_label_len + num_suffixes, sos_value=SOS_VALUE, device=device)
+		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_value=SOS_VALUE, device=device)
 	elif False:
 		# For ASTER + OpenNMT.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_nll_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.9203_epoch3.pth'
+		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster_sxent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.8449_epoch3.pth'
+		assert model_filepath_to_load is not None
+
+		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_VALUE, device=device)
+	elif False:
+		# For ASTER + OpenNMT.
+		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_xent_nogradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9325_epoch2.pth'
 		assert model_filepath_to_load is not None
 
 		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, device=device)
+	else:
+		raise ValueError('Undefined model.')
+	print('End building a model: {} secs.'.format(time.time() - start_time))
 
 	# Load a model.
+	print('Start loading a pretrained model from {}.'.format(model_filepath_to_load))
+	start_time = time.time()
 	model = load_model(model_filepath_to_load, model, device=device)
+	print('End loading a pretrained model: {} secs.'.format(time.time() - start_time))
 
 	model = model.to(device)
 
@@ -3878,7 +3939,7 @@ def infer_by_word_recognizer():
 
 	image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
 	max_label_len = 10
-	is_image_used = False
+	is_preloaded_image_used = False
 
 	test_transform = torchvision.transforms.Compose([
 		ResizeImage(image_height, image_width),
@@ -3889,9 +3950,12 @@ def infer_by_word_recognizer():
 	])
 	test_target_transform = ToIntTensor()
 
-	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_image_used, transform=test_transform, target_transform=test_target_transform)
+	print('Start creating a dataset and a dataloader...')
+	start_time = time.time()
+	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+	print('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
 	print('#examples = {}.'.format(len(test_dataset)))
 	print('#classes = {}.'.format(num_classes))
 	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_value, SOS_VALUE, EOS_VALUE))
@@ -3900,30 +3964,47 @@ def infer_by_word_recognizer():
 	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
 
 	inputs, outputs = list(), list()
-	for images, labels, _ in test_dataloader:
-		inputs.append(images)
-		outputs.append(labels)
+	try:
+		for images, labels, _ in test_dataloader:
+			inputs.append(images)
+			outputs.append(labels)
+	except Exception as ex:
+		print('Exception raised: {}.'.format(ex))
 	inputs = torch.cat(inputs)
 	outputs = torch.cat(outputs)
 
 	#--------------------
 	# Build a model.
 
+	print('Start building a model...')
+	start_time = time.time()
 	if True:
 		# For RARE2.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2_attn_gradclip_allparams_nopad_kor_large_ch50_64x1280x3_acc1.0000_epoch3.pth'
+		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2_attn_xent_gradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9514_epoch3.pth'
 		assert model_filepath_to_load is not None
 
-		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_text_len=max_label_len + num_suffixes, sos_value=SOS_VALUE, device=device)
+		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_value=SOS_VALUE, device=device)
+	elif False:
+		# For ASTER.
+		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster_sxent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.8449_epoch3.pth'
+		assert model_filepath_to_load is not None
+
+		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_VALUE, device=device)
 	elif False:
 		# For ASTER + OpenNMT.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_nll_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.9203_epoch3.pth'
+		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_xent_nogradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9325_epoch2.pth'
 		assert model_filepath_to_load is not None
 
 		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, device=device)
+	else:
+		raise ValueError('Undefined model.')
+	print('End building a model: {} secs.'.format(time.time() - start_time))
 
 	# Load a model.
+	print('Start loading a pretrained model from {}.'.format(model_filepath_to_load))
+	start_time = time.time()
 	model = load_model(model_filepath_to_load, model, device=device)
+	print('End loading a pretrained model: {} secs.'.format(time.time() - start_time))
 
 	model = model.to(device)
 
@@ -4071,9 +4152,10 @@ def recognize_text_by_opennmt():
 			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 		# Define an optimizer.
-		#optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.95, eps=1e-8, weight_decay=0)
+		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-6, weight_decay=0)
+		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 		scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
@@ -4384,7 +4466,6 @@ def main():
 	#recognize_word_using_mixup()  # Use RARE #1. Not working.
 
 	#evaluate_word_recognizer()
-
 	infer_by_word_recognizer()
 
 	# Recognize word using CRAFT (scene text detector) + word recognizer.

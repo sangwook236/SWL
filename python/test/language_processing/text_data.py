@@ -23,7 +23,7 @@ class FileBasedTextDatasetBase(TextDatasetBase):
 		super().__init__(label_converter)
 
 	# REF [function] >> FileBasedTextLineDatasetBase._load_data_from_image_label_info() in text_line_data.py
-	def _load_data_from_image_label_info(self, image_label_info_filepath, image_height, image_width, image_channel, max_label_len, image_label_separator=' ', is_image_used=True):
+	def _load_data_from_image_label_info(self, image_label_info_filepath, image_height, image_width, image_channel, max_label_len, image_label_separator=' ', is_preloaded_image_used=True):
 		# In a image-label info file:
 		#	Each line consists of 'image-filepath + image-label-separator + label'.
 
@@ -72,7 +72,7 @@ class FileBasedTextDatasetBase(TextDatasetBase):
 				# TODO [check] >> I think such data should be used to deal with unknown characters (as negative data) in real data.
 				#continue
 
-			images.append(img if is_image_used else img_fpath)
+			images.append(img if is_preloaded_image_used else img_fpath)
 			labels_str.append(label_str)
 			labels_int.append(label_int)
 
@@ -83,7 +83,7 @@ class FileBasedTextDatasetBase(TextDatasetBase):
 		return images, labels_str, labels_int
 
 	# REF [function] >> FileBasedTextLineDatasetBase._load_data_from_image_and_label_files() in text_line_data.py
-	def _load_data_from_image_and_label_files(self, image_filepaths, label_filepaths, image_height, image_width, image_channel, max_label_len, is_image_used=True):
+	def _load_data_from_image_and_label_files(self, image_filepaths, label_filepaths, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used=True):
 		if len(image_filepaths) != len(label_filepaths):
 			print('[SWL] Error: Different lengths of image and label files, {} != {}.'.format(len(image_filepaths), len(label_filepaths)))
 			return
@@ -134,7 +134,7 @@ class FileBasedTextDatasetBase(TextDatasetBase):
 				# TODO [check] >> I think such data should be used to deal with unknown characters (as negative data) in real data.
 				#continue
 
-			images.append(img if is_image_used else img_fpath)
+			images.append(img if is_preloaded_image_used else img_fpath)
 			labels_str.append(label_str)
 			labels_int.append(label_int)
 
@@ -289,11 +289,11 @@ class NoisyCharacterDataset(TextDatasetBase):
 #--------------------------------------------------------------------
 
 class FileBasedCharacterDataset(FileBasedTextDatasetBase):
-	def __init__(self, label_converter, image_label_info_filepath, image_channel, is_image_used=True, transform=None, target_transform=None):
-	#def __init__(self, label_converter, image_filepaths, label_filepaths, image_channel, is_image_used=True, transform=None, target_transform=None):
+	def __init__(self, label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=True, transform=None, target_transform=None):
+	#def __init__(self, label_converter, image_filepaths, label_filepaths, image_channel, is_preloaded_image_used=True, transform=None, target_transform=None):
 		super().__init__(label_converter)
 
-		self.is_image_used = is_image_used
+		self.is_preloaded_image_used = is_preloaded_image_used
 		self.transform = transform
 		self.target_transform = target_transform
 
@@ -309,8 +309,8 @@ class FileBasedCharacterDataset(FileBasedTextDatasetBase):
 
 		image_label_separator = ','
 		self.data_dir_path = os.path.dirname(image_label_info_filepath)
-		self.images, self.labels_str, self.labels_int = self._load_data_from_image_label_info(image_label_info_filepath, None, None, image_channel, max_label_len=1, image_label_separator=image_label_separator, is_image_used=self.is_image_used)
-		#self.images, self.labels_str, self.labels_int = self._load_data_from_image_and_label_files(image_filepaths, label_filepaths, None, None, image_channel, max_label_len=1, is_image_used=self.is_image_used)
+		self.images, self.labels_str, self.labels_int = self._load_data_from_image_label_info(image_label_info_filepath, None, None, image_channel, max_label_len=1, image_label_separator=image_label_separator, is_preloaded_image_used=self.is_preloaded_image_used)
+		#self.images, self.labels_str, self.labels_int = self._load_data_from_image_and_label_files(image_filepaths, label_filepaths, None, None, image_channel, max_label_len=1, is_preloaded_image_used=self.is_preloaded_image_used)
 		assert len(self.images) == len(self.labels_str) == len(self.labels_int)
 
 	def __len__(self):
@@ -319,7 +319,7 @@ class FileBasedCharacterDataset(FileBasedTextDatasetBase):
 	def __getitem__(self, idx):
 		from PIL import Image
 
-		if self.is_image_used:
+		if self.is_preloaded_image_used:
 			image = Image.fromarray(self.images[idx])
 		else:
 			fpath = os.path.join(self.data_dir_path, self.images[idx])
@@ -474,12 +474,12 @@ class RandomWordDataset(TextDatasetBase):
 #--------------------------------------------------------------------
 
 class FileBasedWordDataset(FileBasedTextDatasetBase):
-	def __init__(self, label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=True, transform=None, target_transform=None):
-	#def __init__(self, label_converter, image_filepaths, label_filepaths, image_channel, max_word_len, is_image_used=True, transform=None, target_transform=None):
+	def __init__(self, label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=True, transform=None, target_transform=None):
+	#def __init__(self, label_converter, image_filepaths, label_filepaths, image_channel, max_word_len, is_preloaded_image_used=True, transform=None, target_transform=None):
 		super().__init__(label_converter)
 
 		self.max_word_len = max_word_len
-		self.is_image_used = is_image_used
+		self.is_preloaded_image_used = is_preloaded_image_used
 		self.transform = transform
 		self.target_transform = target_transform
 
@@ -495,8 +495,8 @@ class FileBasedWordDataset(FileBasedTextDatasetBase):
 
 		image_label_separator = ','
 		self.data_dir_path = os.path.dirname(image_label_info_filepath)
-		self.images, self.labels_str, self.labels_int = self._load_data_from_image_label_info(image_label_info_filepath, None, None, image_channel, max_label_len=self.max_word_len, image_label_separator=image_label_separator, is_image_used=self.is_image_used)
-		#self.images, self.labels_str, self.labels_int = self._load_data_from_image_and_label_files(image_filepaths, label_filepaths, None, None, image_channel, max_label_len=self.max_word_len, is_image_used=self.is_image_used)
+		self.images, self.labels_str, self.labels_int = self._load_data_from_image_label_info(image_label_info_filepath, None, None, image_channel, max_label_len=self.max_word_len, image_label_separator=image_label_separator, is_preloaded_image_used=self.is_preloaded_image_used)
+		#self.images, self.labels_str, self.labels_int = self._load_data_from_image_and_label_files(image_filepaths, label_filepaths, None, None, image_channel, max_label_len=self.max_word_len, is_preloaded_image_used=self.is_preloaded_image_used)
 		assert len(self.images) == len(self.labels_str) == len(self.labels_int)
 
 	def __len__(self):
@@ -505,7 +505,7 @@ class FileBasedWordDataset(FileBasedTextDatasetBase):
 	def __getitem__(self, idx):
 		from PIL import Image
 
-		if self.is_image_used:
+		if self.is_preloaded_image_used:
 			image = Image.fromarray(self.images[idx])
 		else:
 			fpath = os.path.join(self.data_dir_path, self.images[idx])

@@ -12,6 +12,8 @@ import os, time
 def sejong_sanitizer_test():
 	corpus_dir_path = '../../data/language_processing/sejong_corpus'
 
+	# File format.
+	#	Word\tPOS-results.
 	corpus_filepaths = [
 		#corpus_dir_path + '/colloquial_word_to_morph.txt',
 		corpus_dir_path + '/colloquial_word_to_morphpos.txt',
@@ -35,12 +37,15 @@ def sejong_sanitizer_test():
 	print('End loading Sejong corpus: {} secs.'.format(time.time() - start_time))
 
 	words = list()
+	#pos_results = list()
 	for line in lines:
 		pos = line.find('\t')
-		words.append(line[:pos])
+		words.append(line[:pos])  # Word.
+		#pos_results.append(line[pos+1:])  # POS results.
 	del lines
 
 	print('#words = {}.'.format(len(words)))
+	#print('#POS-results = {}.'.format(len(pos_results)))
 
 # REF [site] >> https://github.com/lovit/sejong_corpus_cleaner
 # REF [text] >> sejong_corpus_usage_guide.txt

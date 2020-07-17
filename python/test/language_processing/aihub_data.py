@@ -6,20 +6,20 @@ import cv2
 #--------------------------------------------------------------------
 
 class AiHubPrintedTextDataset(torch.utils.data.Dataset):
-	def __init__(self, label_converter, json_filepath, data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_image_used=True, transform=None, target_transform=None):
+	def __init__(self, label_converter, json_filepath, data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used=True, transform=None, target_transform=None):
 		super().__init__()
 
 		self._label_converter = label_converter
 		self.data_dir_path = data_dir_path
 		self.image_height, self.image_width, self.image_channel = image_height, image_width, image_channel
 		self.max_label_len = max_label_len
-		self.is_image_used = is_image_used
+		self.is_preloaded_image_used = is_preloaded_image_used
 		self.transform = transform
 		self.target_transform = target_transform
 
 		self.mode = 'RGB'
 
-		self.images, self.labels_str, self.labels_int = self._load_data_from_json(json_filepath, data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_image_used)
+		self.images, self.labels_str, self.labels_int = self._load_data_from_json(json_filepath, data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used)
 		assert len(self.images) == len(self.labels_str) == len(self.labels_int)
 
 	def __len__(self):
@@ -28,7 +28,7 @@ class AiHubPrintedTextDataset(torch.utils.data.Dataset):
 	def __getitem__(self, idx):
 		from PIL import Image
 
-		if self.is_image_used:
+		if self.is_preloaded_image_used:
 			image = Image.fromarray(self.images[idx])
 		else:
 			fpath = os.path.join(self.data_dir_path, self.images[idx])
@@ -63,7 +63,7 @@ class AiHubPrintedTextDataset(torch.utils.data.Dataset):
 		return self.image_height, self.image_width, self.image_channel
 
 	# REF [function] >> FileBasedTextLineDatasetBase._load_data_from_image_and_label_files() in text_line_data.py.
-	def _load_data_from_json(self, json_filepath, data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_image_used=True):
+	def _load_data_from_json(self, json_filepath, data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used=True):
 		try:
 			with open(json_filepath, encoding='UTF8') as fd:
 				json_data = json.load(fd)
@@ -104,7 +104,7 @@ class AiHubPrintedTextDataset(torch.utils.data.Dataset):
 			if len(label_str) > max_label_len:
 				print('[SWL] Warning: Too long label: {} > {}.'.format(len(label_str), max_label_len))
 				continue
-			if self.is_image_used:
+			if self.is_preloaded_image_used:
 				fpath = os.path.join(data_dir_path, img_fname)
 				img = cv2.imread(fpath)
 				if img is None:
@@ -125,7 +125,7 @@ class AiHubPrintedTextDataset(torch.utils.data.Dataset):
 				# TODO [check] >> I think such data should be used to deal with unknown characters (as negative data) in real data.
 				#continue
 
-			images.append(img if is_image_used else img_fname)
+			images.append(img if is_preloaded_image_used else img_fname)
 			labels_str.append(label_str)
 			labels_int.append(label_int)
 		print('[SWL] Info: End generating a dataset: {} secs.'.format(time.time() - start_time))
