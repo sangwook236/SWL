@@ -3,8 +3,9 @@
 
 import sys
 sys.path.append('../../src')
+sys.path.append('./src')
 
-import os, random, functools, time
+import os, random, functools, glob, time
 import numpy as np
 import torch, torchvision
 from PIL import Image, ImageOps
@@ -21,7 +22,7 @@ def construct_font(korean=True, english=True):
 		system_font_dir_path = 'C:/Windows/Fonts'
 		font_base_dir_path = 'D:/work/font'
 
-	font_dir_paths = []
+	font_dir_paths = list()
 	if korean:
 		font_dir_paths.append(font_base_dir_path + '/kor')
 	if english:
@@ -605,32 +606,32 @@ def FileBasedCharacterDataset_test():
 	start_time = time.time()
 	label_converter = swl_langproc_util.TokenConverter(list(charset))
 
-	datasets = []
+	datasets = list()
 	if True:
 		# REF [function] >> generate_chars_from_chars74k_data() in chars74k_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/chars74k/English/Img/char_images.txt'
-		is_image_used = True
-		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+		is_preloaded_image_used = True
+		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
 		# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_kr.txt'
-		is_image_used = True
-		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+		is_preloaded_image_used = True
+		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
 		# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_en.txt'
-		is_image_used = True
-		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+		is_preloaded_image_used = True
+		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
 		# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_kr.txt'
-		is_image_used = True
-		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+		is_preloaded_image_used = True
+		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
 		# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_en.txt'
-		is_image_used = True
-		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_image_used=is_image_used))
+		is_preloaded_image_used = True
+		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
 	assert datasets, 'NO Dataset'
 
 	dataset = torch.utils.data.ConcatDataset(datasets)
@@ -883,27 +884,27 @@ def FileBasedWordDataset_test():
 	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
 	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
 
-	datasets = []
+	datasets = list()
 	if True:
 		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
-		is_image_used = False
-		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+		is_preloaded_image_used = False
+		datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
 		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_en.txt'
-		is_image_used = False
-		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+		is_preloaded_image_used = False
+		datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
 		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
-		is_image_used = True
-		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+		is_preloaded_image_used = True
+		datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
 		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_en.txt'
-		is_image_used = True
-		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_image_used=is_image_used))
+		is_preloaded_image_used = True
+		datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 	assert datasets, 'NO Dataset'
 
 	dataset = torch.utils.data.ConcatDataset(datasets)
@@ -1117,6 +1118,119 @@ def RandomTextLineDataset_test():
 	visualize_data_with_length(train_dataloader, label_converter, num_data=10)
 	visualize_data_with_length(test_dataloader, label_converter, num_data=10)
 
+def FileBasedTextLineDataset_test():
+	image_height, image_width, image_channel = 64, 640, 3
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
+	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	charset = tg_util.construct_charset()
+
+	max_textline_len = 60
+	train_test_ratio = 0.8
+	batch_size = 64
+	shuffle = True
+	num_workers = 4
+
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+
+	#--------------------
+	train_transform = torchvision.transforms.Compose([
+		#RandomAugment(create_word_augmenter()),
+		RandomInvert(),
+		#ConvertPILMode(mode='RGB'),
+		ResizeImage(image_height_before_crop, image_width_before_crop),
+		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
+		#torchvision.transforms.RandomCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	])
+	train_target_transform = ToIntTensor()
+	test_transform = torchvision.transforms.Compose([
+		RandomInvert(),
+		#ConvertPILMode(mode='RGB'),
+		ResizeImage(image_height, image_width),
+		#torchvision.transforms.Resize((image_height, image_width)),
+		#torchvision.transforms.CenterCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	])
+	test_target_transform = ToIntTensor()
+
+	#--------------------
+	print('Start creating datasets...')
+	start_time = time.time()
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
+
+	datasets = list()
+	if True:
+		image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.png', recursive=False))
+		label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.txt', recursive=False))
+		is_preloaded_image_used = True
+		datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
+	if True:
+		image_label_info_filepath = data_base_dir_path + '/text/receipt/sminds/receipt_text_line/labels.txt'
+		is_preloaded_image_used = True
+		datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
+	if True:
+		# ICDAR 2019 SROIE.
+		is_preloaded_image_used = False
+		image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.jpg', recursive=False))
+		labels_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
+		datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, labels_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
+		image_label_info_filepath = data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_test_text_line/labels.txt'
+		datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
+	if False:
+		# TextRecognitionDataGenerator.
+		image_label_info_filepath = data_base_dir_path + '/text/TextRecognitionDataGenerator/word_images_en.txt'
+		is_preloaded_image_used = True
+		datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
+	assert datasets, 'NO Dataset'
+
+	dataset = torch.utils.data.ConcatDataset(datasets)
+	num_examples = len(dataset)
+	num_train_examples = int(num_examples * train_test_ratio)
+
+	train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+	train_dataset = MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform)
+	test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
+	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
+	print('#classes = {}.'.format(label_converter.num_tokens))
+
+	#--------------------
+	print('Start creating data loaders...')
+	start_time = time.time()
+	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
+
+	#--------------------
+	# Show data info.
+	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
+	data_iter = iter(train_dataloader)
+	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
+	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
+	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+	print('Train label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
+
+	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
+	data_iter = iter(test_dataloader)
+	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
+	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
+	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+	print('Test label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
+
+	#--------------------
+	# Visualize.
+	visualize_data_with_length(train_dataloader, label_converter, num_data=10)
+	visualize_data_with_length(test_dataloader, label_converter, num_data=10)
+
 def main():
 	#SimpleCharacterDataset_test()
 	#NoisyCharacterDataset_test()
@@ -1129,7 +1243,8 @@ def main():
 
 	#--------------------
 	#SimpleTextLineDataset_test()
-	RandomTextLineDataset_test()
+	#RandomTextLineDataset_test()
+	FileBasedTextLineDataset_test()
 
 #--------------------------------------------------------------------
 

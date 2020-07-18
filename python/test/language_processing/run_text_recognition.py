@@ -581,22 +581,22 @@ def create_word_data_loaders(word_type, label_converter, wordset, chars, num_tra
 			# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
 			is_preloaded_image_used = False
-			datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
+			datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 		if True:
 			# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_en.txt'
 			is_preloaded_image_used = False
-			datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
+			datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 		if True:
 			# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
 			is_preloaded_image_used = True
-			datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
+			datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 		if True:
 			# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_en.txt'
 			is_preloaded_image_used = True
-			datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
+			datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 		assert datasets, 'NO Dataset'
 
 		dataset = torch.utils.data.ConcatDataset(datasets)
@@ -660,22 +660,22 @@ def create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_e
 		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
 		is_preloaded_image_used = False
-		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
+		datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
 		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_en.txt'
 		is_preloaded_image_used = False
-		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
+		datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
 		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
 		is_preloaded_image_used = True
-		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
+		datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
 		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_en.txt'
 		is_preloaded_image_used = True
-		datasets.append(text_data.FileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
+		datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 	assert datasets, 'NO Dataset'
 
 	dataset = torch.utils.data.ConcatDataset(datasets)
@@ -697,7 +697,7 @@ def create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_e
 
 	return train_dataloader, test_dataloader
 
-def create_text_line_data_loaders(text_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers):
+def create_text_line_data_loaders(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers):
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(create_text_line_augmenter()),
@@ -723,14 +723,51 @@ def create_text_line_data_loaders(text_type, label_converter, wordset, chars, nu
 
 	print('Start creating datasets...')
 	start_time = time.time()
-	if text_type == 'simple_text':
+	if textline_type == 'simple_textline':
 		train_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_train_examples, image_channel, max_textline_len, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
 		test_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_test_examples, image_channel, max_textline_len, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
-	elif text_type == 'random_text':
+	elif textline_type == 'random_textline':
 		train_dataset = text_data.RandomTextLineDataset(label_converter, chars, num_train_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
 		test_dataset = text_data.RandomTextLineDataset(label_converter, chars, num_test_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
+	elif textline_type == 'file_based_textline':
+		if 'posix' == os.name:
+			data_base_dir_path = '/home/sangwook/work/dataset'
+		else:
+			data_base_dir_path = 'D:/work/dataset'
+
+		if True:
+			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.png', recursive=False))
+			label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.txt', recursive=False))
+			is_preloaded_image_used = True
+			datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
+		if True:
+			image_label_info_filepath = data_base_dir_path + '/text/receipt/sminds/receipt_text_line/labels.txt'
+			is_preloaded_image_used = True
+			datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
+		if True:
+			# ICDAR 2019 SROIE.
+			is_preloaded_image_used = False
+			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.jpg', recursive=False))
+			labels_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
+			datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, labels_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
+			image_label_info_filepath = data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_test_text_line/labels.txt'
+			datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
+		if False:
+			# TextRecognitionDataGenerator.
+			image_label_info_filepath = data_base_dir_path + '/text/TextRecognitionDataGenerator/word_images_en.txt'
+			is_preloaded_image_used = True
+			datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
+		assert datasets, 'NO Dataset'
+
+		dataset = torch.utils.data.ConcatDataset(datasets)
+		num_examples = len(dataset)
+		num_train_examples = int(num_examples * train_test_ratio)
+
+		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+		train_dataset = MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform)
+		test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
 	else:
-		raise ValueError('Invalid dataset type: {}'.format(text_type))
+		raise ValueError('Invalid dataset type: {}'.format(textline_type))
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
@@ -779,6 +816,28 @@ def create_mixed_text_line_data_loaders(label_converter, wordset, chars, num_sim
 		datasets.append(text_data.SimpleTextLineDataset(label_converter, wordset, num_simple_examples, image_channel, max_textline_len, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor))
 	if True:
 		datasets.append(text_data.RandomTextLineDataset(label_converter, chars, num_random_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor))
+	if True:
+		image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.png', recursive=False))
+		label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.txt', recursive=False))
+		is_preloaded_image_used = True
+		datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
+	if True:
+		image_label_info_filepath = data_base_dir_path + '/text/receipt/sminds/receipt_text_line/labels.txt'
+		is_preloaded_image_used = True
+		datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
+	if True:
+		# ICDAR 2019 SROIE.
+		is_preloaded_image_used = False
+		image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.jpg', recursive=False))
+		labels_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
+		datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, labels_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
+		image_label_info_filepath = data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_test_text_line/labels.txt'
+		datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
+	if False:
+		# TextRecognitionDataGenerator.
+		image_label_info_filepath = data_base_dir_path + '/text/TextRecognitionDataGenerator/word_images_en.txt'
+		is_preloaded_image_used = True
+		datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
 	assert datasets, 'NO Dataset'
 
 	dataset = torch.utils.data.ConcatDataset(datasets)
@@ -4016,18 +4075,18 @@ def infer_by_word_recognizer():
 	infer_by_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=None, batch_size=batch_size, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=True, device=device)
 	print('End inferring: {} secs.'.format(time.time() - start_time))
 
-def recognize_text_by_opennmt():
+def recognize_textline_by_opennmt():
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	is_mixed_texts_used = True
-	if is_mixed_texts_used:
+	is_mixed_textlines_used = True
+	if is_mixed_textlines_used:
 		num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed texts.
 	else:
-		text_type = 'simple_text'  # {'simple_text', 'random_text'}.
+		textline_type = 'simple_textline'  # {'simple_textline', 'random_textline', 'file_based_textline'}.
 		num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random texts.
 	max_textline_len = 80  # Max. text line length.
 	word_len_interval = (1, 20)
@@ -4094,10 +4153,10 @@ def recognize_text_by_opennmt():
 		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
-	if is_mixed_texts_used:
+	if is_mixed_textlines_used:
 		train_dataloader, test_dataloader = create_mixed_text_line_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
 	else:
-		train_dataloader, test_dataloader = create_text_line_data_loaders(text_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_text_line_data_loaders(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
 	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_value, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]))
@@ -4471,7 +4530,7 @@ def main():
 	#recognize_word_using_craft_and_word_recognizer()  # Use RARE #1.
 
 	#--------------------
-	#recognize_text_by_opennmt()  # Use OpenNMT.
+	#recognize_textline_by_opennmt()  # Use OpenNMT.
 
 #--------------------------------------------------------------------
 

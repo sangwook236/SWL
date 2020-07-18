@@ -473,9 +473,8 @@ class RandomWordDataset(TextDatasetBase):
 
 #--------------------------------------------------------------------
 
-class FileBasedWordDataset(FileBasedTextDatasetBase):
-	def __init__(self, label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=True, transform=None, target_transform=None):
-	#def __init__(self, label_converter, image_filepaths, label_filepaths, image_channel, max_word_len, is_preloaded_image_used=True, transform=None, target_transform=None):
+class FileBasedWordDatasetBase(FileBasedTextDatasetBase):
+	def __init__(self, label_converter, image_channel, max_word_len, is_preloaded_image_used=True, transform=None, target_transform=None):
 		super().__init__(label_converter)
 
 		self.max_word_len = max_word_len
@@ -493,14 +492,10 @@ class FileBasedWordDataset(FileBasedTextDatasetBase):
 		else:
 			raise ValueError('Invalid image channel, {}'.format(image_channel))
 
-		image_label_separator = ','
-		self.data_dir_path = os.path.dirname(image_label_info_filepath)
-		self.images, self.labels_str, self.labels_int = self._load_data_from_image_label_info(image_label_info_filepath, None, None, image_channel, max_label_len=self.max_word_len, image_label_separator=image_label_separator, is_preloaded_image_used=self.is_preloaded_image_used)
-		#self.images, self.labels_str, self.labels_int = self._load_data_from_image_and_label_files(image_filepaths, label_filepaths, None, None, image_channel, max_label_len=self.max_word_len, is_preloaded_image_used=self.is_preloaded_image_used)
-		assert len(self.images) == len(self.labels_str) == len(self.labels_int)
+		self.images = None
 
 	def __len__(self):
-		return len(self.images)
+		return len(self.images) if self.images is not None else 0
 
 	def __getitem__(self, idx):
 		from PIL import Image
@@ -508,7 +503,7 @@ class FileBasedWordDataset(FileBasedTextDatasetBase):
 		if self.is_preloaded_image_used:
 			image = Image.fromarray(self.images[idx])
 		else:
-			fpath = os.path.join(self.data_dir_path, self.images[idx])
+			fpath = self.images[idx] if self.data_dir_path is None else os.path.join(self.data_dir_path, self.images[idx])
 			try:
 				image = Image.open(fpath)
 			except IOError as ex:
@@ -530,6 +525,27 @@ class FileBasedWordDataset(FileBasedTextDatasetBase):
 		target_len = torch.tensor(target_len, dtype=torch.int32)
 
 		return image, target, target_len
+
+#--------------------------------------------------------------------
+
+class InfoFileBasedWordDataset(FileBasedWordDatasetBase):
+	def __init__(self, label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=True, transform=None, target_transform=None):
+		super().__init__(label_converter, image_channel, max_word_len, is_preloaded_image_used, transform, target_transform)
+
+		image_label_separator = ','
+		self.data_dir_path = os.path.dirname(image_label_info_filepath)
+		self.images, self.labels_str, self.labels_int = self._load_data_from_image_label_info(image_label_info_filepath, None, None, image_channel, max_label_len=self.max_word_len, image_label_separator=image_label_separator, is_preloaded_image_used=self.is_preloaded_image_used)
+		assert len(self.images) == len(self.labels_str) == len(self.labels_int)
+
+#--------------------------------------------------------------------
+
+class ImageLabelFileBasedWordDataset(FileBasedWordDatasetBase):
+	def __init__(self, label_converter, image_filepaths, label_filepaths, image_channel, max_word_len, is_preloaded_image_used=True, transform=None, target_transform=None):
+		super().__init__(label_converter, image_channel, max_word_len, is_preloaded_image_used, transform, target_transform)
+
+		self.data_dir_path = None
+		self.images, self.labels_str, self.labels_int = self._load_data_from_image_and_label_files(image_filepaths, label_filepaths, None, None, image_channel, max_label_len=self.max_word_len, is_preloaded_image_used=self.is_preloaded_image_used)
+		assert len(self.images) == len(self.labels_str) == len(self.labels_int)
 
 #--------------------------------------------------------------------
 
@@ -665,3 +681,79 @@ class RandomTextLineDataset(TextDatasetBase):
 		target_len = torch.tensor(target_len, dtype=torch.int32)
 
 		return image, target, target_len
+
+#--------------------------------------------------------------------
+
+class FileBasedTextLineDatasetBase(FileBasedTextDatasetBase):
+	def __init__(self, label_converter, image_channel, max_word_len, is_preloaded_image_used=True, transform=None, target_transform=None):
+		super().__init__(label_converter)
+
+		self.max_word_len = max_word_len
+		self.is_preloaded_image_used = is_preloaded_image_used
+		self.transform = transform
+		self.target_transform = target_transform
+
+		if image_channel == 1:
+			self.mode = 'L'
+			#self.mode = '1'
+		elif image_channel == 3:
+			self.mode = 'RGB'
+		elif image_channel == 4:
+			self.mode = 'RGBA'
+		else:
+			raise ValueError('Invalid image channel, {}'.format(image_channel))
+
+		self.images = None
+
+	def __len__(self):
+		return len(self.images) if self.images is not None else 0
+
+	def __getitem__(self, idx):
+		from PIL import Image
+
+		if self.is_preloaded_image_used:
+			image = Image.fromarray(self.images[idx])
+		else:
+			fpath = self.images[idx] if self.data_dir_path is None else os.path.join(self.data_dir_path, self.images[idx])
+			try:
+				image = Image.open(fpath)
+			except IOError as ex:
+				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
+				image = None
+		target = [self.label_converter.pad_value] * (self.max_word_len + self.label_converter.num_affixes)
+		word_ext_int = self.labels_int[idx]  # Decorated/undecorated integer label.
+		target_len = len(word_ext_int)
+		target[:target_len] = word_ext_int
+
+		if image and image.mode != self.mode:
+			image = image.convert(self.mode)
+		#image = np.array(image, np.uint8)
+
+		if self.transform:
+			image = self.transform(image)
+		if self.target_transform:
+			target = self.target_transform(target)
+		target_len = torch.tensor(target_len, dtype=torch.int32)
+
+		return image, target, target_len
+
+#--------------------------------------------------------------------
+
+class InfoFileBasedTextLineDataset(FileBasedTextLineDatasetBase):
+	def __init__(self, label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=True, transform=None, target_transform=None):
+		super().__init__(label_converter, image_channel, max_word_len, is_preloaded_image_used, transform, target_transform)
+
+		image_label_separator = ','
+		self.data_dir_path = os.path.dirname(image_label_info_filepath)
+		self.images, self.labels_str, self.labels_int = self._load_data_from_image_label_info(image_label_info_filepath, None, None, image_channel, max_label_len=self.max_word_len, image_label_separator=image_label_separator, is_preloaded_image_used=self.is_preloaded_image_used)
+		assert len(self.images) == len(self.labels_str) == len(self.labels_int)
+
+#--------------------------------------------------------------------
+
+class ImageLabelFileBasedTextLineDataset(FileBasedTextLineDatasetBase):
+	def __init__(self, label_converter, image_filepaths, label_filepaths, image_channel, max_word_len, is_preloaded_image_used=True, transform=None, target_transform=None):
+		super().__init__(label_converter, image_channel, max_word_len, is_preloaded_image_used, transform, target_transform)
+
+		self.data_dir_path = None
+		self.images, self.labels_str, self.labels_int = self._load_data_from_image_and_label_files(image_filepaths, label_filepaths, None, None, image_channel, max_label_len=self.max_word_len, is_preloaded_image_used=self.is_preloaded_image_used)
+		assert len(self.images) == len(self.labels_str) == len(self.labels_int)

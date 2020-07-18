@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
+
 if [ $# -eq 2 ]
 then
 	if [ "$1" = "kr" ]
@@ -18,8 +20,8 @@ then
 	fi
 	VERSION=$(printf %02d $2)
 
-	TRAIN_DATA_DIR=text_line_samples_${LANG}_train_v${VERSION}
-	TEST_DATA_DIR=text_line_samples_${LANG}_test_v${VERSION}
+	TRAIN_DATA_DIR=trdg_${LANG}_train_v${VERSION}
+	TEST_DATA_DIR=trdg_${LANG}_test_v${VERSION}
 
 	OPT="-b 1"
 	#OPT="-k 5 -rk -d 1 -do 2 -b 1"

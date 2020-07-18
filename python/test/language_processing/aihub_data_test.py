@@ -214,7 +214,7 @@ def AiHubPrintedTextDataset_test():
 
 	image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
 	max_label_len = 10
-	is_image_used = False
+	is_preloaded_image_used = False
 
 	charset = tg_util.construct_charset()
 
@@ -246,7 +246,7 @@ def AiHubPrintedTextDataset_test():
 	start_time = time.time()
 	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
 	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
-	dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_image_used)
+	dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used)
 
 	num_examples = len(dataset)
 	num_train_examples = int(num_examples * train_test_ratio)

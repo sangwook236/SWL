@@ -518,7 +518,7 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 				break
 			start_idx = end_idx
 
-	def _load_data_from_image_and_label_files(self, image_filepaths, label_filepaths, image_height, image_width, image_channel, max_label_len, is_image_used=True):
+	def _load_data_from_image_and_label_files(self, image_filepaths, label_filepaths, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used=True):
 		if len(image_filepaths) != len(label_filepaths):
 			print('[SWL] Error: Different lengths of image and label files, {} != {}.'.format(len(image_filepaths), len(label_filepaths)))
 			return
@@ -569,7 +569,7 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 				# TODO [check] >> I think such data should be used to deal with unknown characters (as negative data) in real data.
 				#continue
 
-			images.append(img if is_image_used else img_fpath)
+			images.append(img if is_preloaded_image_used else img_fpath)
 			labels_str.append(label_str)
 			labels_int.append(label_int)
 
@@ -579,7 +579,7 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 
 		return images, labels_str, labels_int
 
-	def _load_data_from_image_label_info(self, image_label_info_filepath, image_height, image_width, image_channel, max_label_len, image_label_separator=' ', is_image_used=True):
+	def _load_data_from_image_label_info(self, image_label_info_filepath, image_height, image_width, image_channel, max_label_len, image_label_separator=' ', is_preloaded_image_used=True):
 		# In a image-label info file:
 		#	Each line consists of 'image-filepath + image-label-separator + label'.
 
@@ -628,7 +628,7 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 				# TODO [check] >> I think such data should be used to deal with unknown characters (as negative data) in real data.
 				#continue
 
-			images.append(img if is_image_used else img_fpath)
+			images.append(img if is_preloaded_image_used else img_fpath)
 			labels_str.append(label_str)
 			labels_int.append(label_int)
 
