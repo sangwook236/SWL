@@ -85,7 +85,7 @@ def construct_charset(digit=True, alphabet_uppercase=True, alphabet_lowercase=Tr
 	return charset
 
 def construct_word_set(korean=True, english=True, korean_dictionary_filepath=None, english_dictionary_filepath=None):
-	words = []
+	words = list()
 	if korean:
 		if korean_dictionary_filepath is None:
 			korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
@@ -140,7 +140,7 @@ def generate_hangeul_font_list(font_filepaths):
 	return font_list
 
 def construct_font(font_dir_paths):
-	font_list = []
+	font_list = list()
 	for dir_path in font_dir_paths:
 		font_filepaths = glob.glob(os.path.join(dir_path, '*.ttf'))
 		#font_list = generate_hangeul_font_list(font_filepaths)

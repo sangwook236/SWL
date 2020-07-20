@@ -442,9 +442,10 @@ def SimpleCharacterDataset_test():
 	])
 
 	#--------------------
+	label_converter = swl_langproc_util.TokenConverter(list(charset))
+
 	print('Start creating datasets...')
 	start_time = time.time()
-	label_converter = swl_langproc_util.TokenConverter(list(charset))
 	chars = list(charset * num_train_examples_per_class)
 	random.shuffle(chars)
 	train_dataset = text_data.SimpleCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=train_transform)
@@ -522,9 +523,10 @@ def NoisyCharacterDataset_test():
 	])
 
 	#--------------------
+	label_converter = swl_langproc_util.TokenConverter(list(charset))
+
 	print('Start creating datasets...')
 	start_time = time.time()
-	label_converter = swl_langproc_util.TokenConverter(list(charset))
 	chars = list(charset * num_train_examples_per_class)
 	random.shuffle(chars)
 	train_dataset = text_data.NoisyCharacterDataset(label_converter, chars, image_channel, char_clipping_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform)
@@ -602,10 +604,10 @@ def FileBasedCharacterDataset_test():
 	])
 
 	#--------------------
-	print('Start creating datasets...')
-	start_time = time.time()
 	label_converter = swl_langproc_util.TokenConverter(list(charset))
 
+	print('Start creating datasets...')
+	start_time = time.time()
 	datasets = list()
 	if True:
 		# REF [function] >> generate_chars_from_chars74k_data() in chars74k_data_test.py
@@ -714,10 +716,11 @@ def SimpleWordDataset_test():
 	test_target_transform = ToIntTensor()
 
 	#--------------------
-	print('Start creating datasets...')
-	start_time = time.time()
 	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
 	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
+
+	print('Start creating datasets...')
+	start_time = time.time()
 	train_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_train_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
 	test_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_test_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
@@ -796,10 +799,11 @@ def RandomWordDataset_test():
 	test_target_transform = ToIntTensor()
 
 	#--------------------
-	print('Start creating datasets...')
-	start_time = time.time()
 	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
 	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
+
+	print('Start creating datasets...')
+	start_time = time.time()
 	chars = charset  # Can make the number of each character different.
 	train_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
 	test_dataset = text_data.RandomWordDataset(label_converter, chars, num_test_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
@@ -879,11 +883,11 @@ def FileBasedWordDataset_test():
 	test_target_transform = ToIntTensor()
 
 	#--------------------
-	print('Start creating datasets...')
-	start_time = time.time()
 	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
 	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
 
+	print('Start creating datasets...')
+	start_time = time.time()
 	datasets = list()
 	if True:
 		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
@@ -992,10 +996,11 @@ def SimpleTextLineDataset_test():
 	test_target_transform = ToIntTensor()
 
 	#--------------------
-	print('Start creating datasets...')
-	start_time = time.time()
 	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
 	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
+
+	print('Start creating datasets...')
+	start_time = time.time()
 	train_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_train_examples, image_channel, max_textline_len, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, transform=train_transform, target_transform=train_target_transform)
 	test_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_test_examples, image_channel, max_textline_len, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
@@ -1077,10 +1082,11 @@ def RandomTextLineDataset_test():
 	test_target_transform = ToIntTensor()
 
 	#--------------------
-	print('Start creating datasets...')
-	start_time = time.time()
 	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
 	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
+
+	print('Start creating datasets...')
+	start_time = time.time()
 	charset_without_space = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	train_dataset = text_data.RandomTextLineDataset(label_converter, charset_without_space, num_train_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, transform=train_transform, target_transform=train_target_transform)
 	test_dataset = text_data.RandomTextLineDataset(label_converter, charset_without_space, num_test_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, transform=test_transform, target_transform=test_target_transform)
@@ -1160,12 +1166,21 @@ def FileBasedTextLineDataset_test():
 	test_target_transform = ToIntTensor()
 
 	#--------------------
-	print('Start creating datasets...')
-	start_time = time.time()
 	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
 	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
 
+	print('Start creating datasets...')
+	start_time = time.time()
 	datasets = list()
+	if True:
+		# ICDAR 2019 SROIE dataset.
+		is_preloaded_image_used = False
+		image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.jpg', recursive=False))
+		labels_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
+		datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, labels_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
+		if True:
+			image_label_info_filepath = data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_test_text_line/labels.txt'
+			datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
 		image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.png', recursive=False))
 		label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.txt', recursive=False))
@@ -1173,19 +1188,6 @@ def FileBasedTextLineDataset_test():
 		datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
 		image_label_info_filepath = data_base_dir_path + '/text/receipt/sminds/receipt_text_line/labels.txt'
-		is_preloaded_image_used = True
-		datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
-	if True:
-		# ICDAR 2019 SROIE.
-		is_preloaded_image_used = False
-		image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.jpg', recursive=False))
-		labels_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
-		datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, labels_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
-		image_label_info_filepath = data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_test_text_line/labels.txt'
-		datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
-	if False:
-		# TextRecognitionDataGenerator.
-		image_label_info_filepath = data_base_dir_path + '/text/TextRecognitionDataGenerator/word_images_en.txt'
 		is_preloaded_image_used = True
 		datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
 	assert datasets, 'NO Dataset'
@@ -1197,6 +1199,119 @@ def FileBasedTextLineDataset_test():
 	train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
 	train_dataset = MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform)
 	test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
+	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
+	print('#classes = {}.'.format(label_converter.num_tokens))
+
+	#--------------------
+	print('Start creating data loaders...')
+	start_time = time.time()
+	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
+
+	#--------------------
+	# Show data info.
+	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
+	data_iter = iter(train_dataloader)
+	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
+	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
+	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+	print('Train label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
+
+	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
+	data_iter = iter(test_dataloader)
+	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
+	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
+	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
+	print('Test label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
+
+	#--------------------
+	# Visualize.
+	visualize_data_with_length(train_dataloader, label_converter, num_data=10)
+	visualize_data_with_length(test_dataloader, label_converter, num_data=10)
+
+def TextRecognitionDataGeneratorTextLineDataset_test():
+	image_height, image_width, image_channel = 64, 1280, 3
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
+	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
+	font_list = construct_font(korean=True, english=False)
+
+	lang = 'en'  # {'ar', 'cn', 'de', 'en', 'es', 'fr', 'hi', 'kr'}.
+	num_train_examples, num_test_examples = int(1e6), int(1e4)
+	max_textline_len = 80
+	if lang == 'kr':
+		font_filepaths = construct_font(korean=True, english=False)
+		font_filepaths, _ = zip(*font_filepaths)
+	else:
+		#font_filepaths = trdg.utils.load_fonts(lang)
+		font_filepaths = list()
+	font_size = image_height
+	num_words = 5
+	is_variable_length = True
+	is_randomly_generated = False
+
+	generator_kwargs = {
+		'skewing_angle': 0, 'random_skew': False,  # In degrees counter clockwise.
+		#'blur': 0, 'random_blur': False,  # Blur radius.
+		'blur': 2, 'random_blur': True,  # Blur radius.
+		#'distorsion_type': 0, 'distorsion_orientation': 0,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+		'distorsion_type': 3, 'distorsion_orientation': 2,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+		'background_type': 0,  # background_type = 0 (Gaussian noise), 1 (plain white), 2 (quasicrystal), 3 (image).
+		'width': -1,  # Specify a background width when width > 0.
+		'alignment': 1,  # Align an image in a background image. alignment = 0 (left), 1 (center), the rest (right).
+		'image_dir': None,  # Background image directory which is used when background_type = 3.
+		'is_handwritten': False,
+		#'text_color': '#282828',
+		'text_color': '#000000,#FFFFFF',  # (0x00, 0x00, 0x00) ~ (0xFF, 0xFF, 0xFF).
+		'orientation': 0,  # orientation = 0 (horizontal), 1 (vertical).
+		'space_width': 1.0,  # The ratio of space width.
+		'character_spacing': 0,  # Control space between characters (in pixels).
+		'margins': (5, 5, 5, 5),  # For finer layout control. (top, left, bottom, right).
+		'fit': False,  # For finer layout control. Specify if images and masks are cropped or not.
+		'output_mask': False,  # Specify if a character-level mask for each image is outputted or not.
+		'word_split': False  # Split on word instead of per-character. This is useful for ligature-based languages.
+	}
+
+	batch_size = 64
+	shuffle = True
+	num_workers = 4
+
+	#--------------------
+	train_transform = torchvision.transforms.Compose([
+		RandomAugment(create_text_line_augmenter()),
+		RandomInvert(),
+		#ConvertPILMode(mode='RGB'),
+		ResizeImage(image_height_before_crop, image_width_before_crop),
+		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
+		#torchvision.transforms.RandomCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	])
+	train_target_transform = ToIntTensor()
+	test_transform = torchvision.transforms.Compose([
+		RandomInvert(),
+		#ConvertPILMode(mode='RGB'),
+		ResizeImage(image_height, image_width),
+		#torchvision.transforms.Resize((image_height, image_width)),
+		#torchvision.transforms.CenterCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	])
+	test_target_transform = ToIntTensor()
+
+	#--------------------
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
+
+	print('Start creating datasets...')
+	start_time = time.time()
+	train_dataset = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs)
+	test_dataset = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 	print('#classes = {}.'.format(label_converter.num_tokens))
@@ -1244,7 +1359,9 @@ def main():
 	#--------------------
 	#SimpleTextLineDataset_test()
 	#RandomTextLineDataset_test()
-	FileBasedTextLineDataset_test()
+	#FileBasedTextLineDataset_test()
+
+	TextRecognitionDataGeneratorTextLineDataset_test()
 
 #--------------------------------------------------------------------
 

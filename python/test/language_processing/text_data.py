@@ -757,3 +757,158 @@ class ImageLabelFileBasedTextLineDataset(FileBasedTextLineDatasetBase):
 		self.data_dir_path = None
 		self.images, self.labels_str, self.labels_int = self._load_data_from_image_and_label_files(image_filepaths, label_filepaths, None, None, image_channel, max_label_len=self.max_word_len, is_preloaded_image_used=self.is_preloaded_image_used)
 		assert len(self.images) == len(self.labels_str) == len(self.labels_int)
+
+#--------------------------------------------------------------------
+
+class TextRecognitionDataGeneratorTextLineDataset(TextDatasetBase):
+	def __init__(self, label_converter, lang, num_examples, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated=False, transform=None, target_transform=None, **kwargs):
+		super().__init__(label_converter)
+
+		self.num_examples = num_examples
+		self.max_textline_len = max_textline_len
+		self.transform = transform
+		self.target_transform = target_transform
+
+		import trdg.generators, trdg.string_generator, trdg.utils
+
+		if lang == 'kr':
+			# REF [function] >> korean_example() in ${SWDT_PYTHON_HOME}/rnd/test/language_processing/TextRecognitionDataGenerator_test.py
+
+			num_strings_to_generate = num_examples
+
+			if is_randomly_generated:
+				use_letters, use_numbers, use_symbols = True, True, True
+
+				# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator/blob/master/trdg/generators/from_random.py
+				# NOTE [warning] >> trdg.string_generator.create_strings_randomly() does not support Korean.
+				#	In order to support Korean in the function, we have to change it.
+				#strings = trdg.string_generator.create_strings_randomly(length=num_words, allow_variable=is_variable_length, count=num_strings_to_generate, let=use_letters, num=use_numbers, sym=use_symbols, lang=lang)
+				strings = self._create_strings_randomly(length=num_words, allow_variable=is_variable_length, count=num_strings_to_generate, let=use_letters, num=use_numbers, sym=use_symbols, lang=lang)
+			else:
+				import text_generation_util as tg_util
+
+				dictionary = list(tg_util.construct_word_set(korean=True, english=False))
+
+				# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator/blob/master/trdg/generators/from_dict.py
+				strings = trdg.string_generator.create_strings_from_dict(length=num_words, allow_variable=is_variable_length, count=num_strings_to_generate, lang_dict=dictionary)
+
+			self.generator = trdg.generators.GeneratorFromStrings(
+				strings=strings,
+				language=lang,
+				count=num_examples,
+				fonts=font_filepaths, size=font_size,
+				**kwargs
+			)
+		else:
+			# REF [function] >> basic_example() in ${SWDT_PYTHON_HOME}/rnd/test/language_processing/TextRecognitionDataGenerator_test.py
+
+			if is_randomly_generated:
+				use_letters, use_numbers, use_symbols = True, True, True
+				self.generator = trdg.generators.GeneratorFromRandom(
+					length=num_words,
+					allow_variable=is_variable_length,
+					use_letters=use_letters, use_numbers=use_numbers, use_symbols=use_symbols,
+					language=lang,
+					count=num_examples,
+					fonts=font_filepaths, size=font_size,
+					**kwargs
+				)
+			else:
+				self.generator = trdg.generators.GeneratorFromDict(
+					length=num_words,
+					allow_variable=is_variable_length,
+					language=lang,
+					count=num_examples,
+					fonts=font_filepaths, size=font_size,
+					**kwargs
+				)
+
+		if image_channel == 1:
+			self.mode = 'L'
+			#self.mode = '1'
+		elif image_channel == 3:
+			self.mode = 'RGB'
+		elif image_channel == 4:
+			self.mode = 'RGBA'
+		else:
+			raise ValueError('Invalid image channel, {}'.format(image_channel))
+
+	def __len__(self):
+		return self.num_examples
+
+	def __getitem__(self, idx):
+		while True:
+			image, text = next(self.generator)
+			#(image, mask), text = next(self.generator)
+
+			target = [self.label_converter.pad_value] * (self.max_textline_len + self.label_converter.num_affixes)
+			#target[:len(text)] = self.label_converter.encode(text)  # Undecorated integer label.
+			text_int_ext = self.label_converter.encode(text)  # Decorated/undecorated integer label.
+			target_len = len(text_int_ext)
+			target[:target_len] = text_int_ext
+
+			if image and image.mode != self.mode:
+				image = image.convert(self.mode)
+			#image = np.array(image, np.uint8)
+
+			#if image: break
+			if image.height * image.width > 0: break
+			else:
+				print('[SWL] Warning: Text line generation failed, font: {}, font index: {}.'.format(font_type, font_index))
+
+		if self.transform:
+			image = self.transform(image)
+		if self.target_transform:
+			target = self.target_transform(target)
+		target_len = torch.tensor(target_len, dtype=torch.int32)
+
+		return image, target, target_len
+
+	# REF [function] >> create_strings_randomly() in https://github.com/Belval/TextRecognitionDataGenerator/blob/master/trdg/string_generator.py.
+	@staticmethod
+	def _create_strings_randomly(length, allow_variable, count, let, num, sym, lang):
+		"""
+			Create all strings by randomly sampling from a pool of characters.
+		"""
+
+		import text_generation_util as tg_util
+
+		# If none specified, use all three
+		if True not in (let, num, sym):
+			let, num, sym = True, True, True
+
+		pool = ""
+		if let:
+			if lang == "kr":
+				pool += tg_util.construct_charset(digit=False, alphabet_uppercase=False, alphabet_lowercase=False, punctuation=False, space=False, hangeul=True)
+				#pool += tg_util.construct_charset(digit=False, alphabet_uppercase=True, alphabet_lowercase=True, punctuation=False, space=False, hangeul=True)
+			elif lang == "cn":
+				pool += "".join(
+					[chr(i) for i in range(19968, 40908)]
+				)  # Unicode range of CHK characters
+			else:
+				pool += string.ascii_letters
+		if num:
+			pool += "0123456789"
+		if sym:
+			pool += "!\"#$%&'()*+,-./:;?@[\\]^_`{|}~"
+
+		if lang == "kr":
+			min_seq_len = 2
+			max_seq_len = 10
+		elif lang == "cn":
+			min_seq_len = 1
+			max_seq_len = 2
+		else:
+			min_seq_len = 2
+			max_seq_len = 10
+
+		strings = []
+		for _ in range(0, count):
+			current_string = ""
+			for _ in range(0, random.randint(1, length) if allow_variable else length):
+				seq_len = random.randint(min_seq_len, max_seq_len)
+				current_string += "".join([random.choice(pool) for _ in range(seq_len)])
+				current_string += " "
+			strings.append(current_string[:-1])
+		return strings
