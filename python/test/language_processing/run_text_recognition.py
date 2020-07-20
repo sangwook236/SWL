@@ -5,7 +5,7 @@ import sys
 sys.path.append('../../src')
 sys.path.append('./src')
 
-import os, random, functools, itertools, shutil, datetime, time
+import os, random, functools, itertools, shutil, glob, datetime, time
 import numpy as np
 import torch
 import torchvision
@@ -729,12 +729,73 @@ def create_text_line_data_loaders(textline_type, label_converter, wordset, chars
 	elif textline_type == 'random_textline':
 		train_dataset = text_data.RandomTextLineDataset(label_converter, chars, num_train_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
 		test_dataset = text_data.RandomTextLineDataset(label_converter, chars, num_test_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
+	elif textline_type == 'trdg_textline':
+		font_size = image_height
+		num_words = word_count_interval[1]  # TODO [check] >>
+		is_variable_length = True
+
+		generator_kwargs = {
+			'skewing_angle': 0, 'random_skew': False,  # In degrees counter clockwise.
+			#'blur': 0, 'random_blur': False,  # Blur radius.
+			'blur': 2, 'random_blur': True,  # Blur radius.
+			#'distorsion_type': 0, 'distorsion_orientation': 0,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+			'distorsion_type': 3, 'distorsion_orientation': 2,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+			'background_type': 0,  # background_type = 0 (Gaussian noise), 1 (plain white), 2 (quasicrystal), 3 (image).
+			'width': -1,  # Specify a background width when width > 0.
+			'alignment': 1,  # Align an image in a background image. alignment = 0 (left), 1 (center), the rest (right).
+			'image_dir': None,  # Background image directory which is used when background_type = 3.
+			'is_handwritten': False,
+			#'text_color': '#282828',
+			'text_color': '#000000,#FFFFFF',  # (0x00, 0x00, 0x00) ~ (0xFF, 0xFF, 0xFF).
+			'orientation': 0,  # orientation = 0 (horizontal), 1 (vertical).
+			'space_width': 1.0,  # The ratio of space width.
+			'character_spacing': 0,  # Control space between characters (in pixels).
+			'margins': (5, 5, 5, 5),  # For finer layout control. (top, left, bottom, right).
+			'fit': False,  # For finer layout control. Specify if images and masks are cropped or not.
+			'output_mask': False,  # Specify if a character-level mask for each image is outputted or not.
+			'word_split': False  # Split on word instead of per-character. This is useful for ligature-based languages.
+		}
+
+		if True:
+			lang = 'en'  # {'ar', 'cn', 'de', 'en', 'es', 'fr', 'hi'}.
+			#font_filepaths = trdg.utils.load_fonts(lang)
+			font_filepaths = list()
+
+			is_randomly_generated = False
+			train_dataset_en = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs)
+			test_dataset_en = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs)
+			is_randomly_generated = True
+			train_dataset_en_rnd = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs)
+			test_dataset_en_rnd = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs)
+		if True:
+			lang = 'kr'
+			font_filepaths = construct_font(korean=True, english=False)
+			font_filepaths, _ = zip(*font_filepaths)
+
+			is_randomly_generated = False
+			train_dataset_kr = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs)
+			test_dataset_kr = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs)
+			is_randomly_generated = True
+			train_dataset_kr_rnd = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs)
+			test_dataset_kr_rnd = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs)
+		train_dataset = torch.utils.data.ConcatDataset([train_dataset_en, train_dataset_en_rnd, train_dataset_kr, train_dataset_kr_rnd])
+		test_dataset = torch.utils.data.ConcatDataset([test_dataset_en, test_dataset_en_rnd, test_dataset_kr, test_dataset_kr_rnd])
 	elif textline_type == 'file_based_textline':
 		if 'posix' == os.name:
 			data_base_dir_path = '/home/sangwook/work/dataset'
 		else:
 			data_base_dir_path = 'D:/work/dataset'
 
+		datasets = list()
+		if True:
+			# ICDAR 2019 SROIE dataset.
+			is_preloaded_image_used = False
+			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.jpg', recursive=False))
+			labels_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
+			datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, labels_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
+			if True:
+				image_label_info_filepath = data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_test_text_line/labels.txt'
+				datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
 		if True:
 			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.png', recursive=False))
 			label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.txt', recursive=False))
@@ -742,19 +803,6 @@ def create_text_line_data_loaders(textline_type, label_converter, wordset, chars
 			datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
 		if True:
 			image_label_info_filepath = data_base_dir_path + '/text/receipt/sminds/receipt_text_line/labels.txt'
-			is_preloaded_image_used = True
-			datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
-		if True:
-			# ICDAR 2019 SROIE.
-			is_preloaded_image_used = False
-			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.jpg', recursive=False))
-			labels_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
-			datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, labels_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
-			image_label_info_filepath = data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_test_text_line/labels.txt'
-			datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
-		if False:
-			# TextRecognitionDataGenerator.
-			image_label_info_filepath = data_base_dir_path + '/text/TextRecognitionDataGenerator/word_images_en.txt'
 			is_preloaded_image_used = True
 			datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
 		assert datasets, 'NO Dataset'
@@ -780,7 +828,7 @@ def create_text_line_data_loaders(textline_type, label_converter, wordset, chars
 
 	return train_dataloader, test_dataloader
 
-def create_mixed_text_line_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers):
+def create_mixed_text_line_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers):
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(create_text_line_augmenter()),
@@ -817,25 +865,67 @@ def create_mixed_text_line_data_loaders(label_converter, wordset, chars, num_sim
 	if True:
 		datasets.append(text_data.RandomTextLineDataset(label_converter, chars, num_random_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor))
 	if True:
+		font_size = image_height
+		num_words = word_count_interval[1]  # TODO [check] >>
+		is_variable_length = True
+
+		generator_kwargs = {
+			'skewing_angle': 0, 'random_skew': False,  # In degrees counter clockwise.
+			#'blur': 0, 'random_blur': False,  # Blur radius.
+			'blur': 2, 'random_blur': True,  # Blur radius.
+			#'distorsion_type': 0, 'distorsion_orientation': 0,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+			'distorsion_type': 3, 'distorsion_orientation': 2,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+			'background_type': 0,  # background_type = 0 (Gaussian noise), 1 (plain white), 2 (quasicrystal), 3 (image).
+			'width': -1,  # Specify a background width when width > 0.
+			'alignment': 1,  # Align an image in a background image. alignment = 0 (left), 1 (center), the rest (right).
+			'image_dir': None,  # Background image directory which is used when background_type = 3.
+			'is_handwritten': False,
+			#'text_color': '#282828',
+			'text_color': '#000000,#FFFFFF',  # (0x00, 0x00, 0x00) ~ (0xFF, 0xFF, 0xFF).
+			'orientation': 0,  # orientation = 0 (horizontal), 1 (vertical).
+			'space_width': 1.0,  # The ratio of space width.
+			'character_spacing': 0,  # Control space between characters (in pixels).
+			'margins': (5, 5, 5, 5),  # For finer layout control. (top, left, bottom, right).
+			'fit': False,  # For finer layout control. Specify if images and masks are cropped or not.
+			'output_mask': False,  # Specify if a character-level mask for each image is outputted or not.
+			'word_split': False  # Split on word instead of per-character. This is useful for ligature-based languages.
+		}
+
+		if True:
+			lang = 'en'  # {'ar', 'cn', 'de', 'en', 'es', 'fr', 'hi'}.
+			#font_filepaths = trdg.utils.load_fonts(lang)
+			font_filepaths = list()
+
+			is_randomly_generated = False
+			dataset_en = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_trdg_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=None, target_transform=None, **generator_kwargs)
+			is_randomly_generated = True
+			dataset_en_rnd = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_trdg_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=None, target_transform=None, **generator_kwargs)
+		if True:
+			lang = 'kr'
+			font_filepaths = construct_font(korean=True, english=False)
+			font_filepaths, _ = zip(*font_filepaths)
+
+			is_randomly_generated = False
+			dataset_kr = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_trdg_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=None, target_transform=None, **generator_kwargs)
+			is_randomly_generated = True
+			dataset_kr_rnd = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_trdg_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=None, target_transform=None, **generator_kwargs)
+		datasets.append(torch.utils.data.ConcatDataset([dataset_en, dataset_en_rnd, dataset_kr, dataset_kr_rnd]))
+	if True:
+		# ICDAR 2019 SROIE dataset.
+		is_preloaded_image_used = False
+		image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.jpg', recursive=False))
+		labels_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
+		datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, labels_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
+		if True:
+			image_label_info_filepath = data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_test_text_line/labels.txt'
+			datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
+	if True:
 		image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.png', recursive=False))
 		label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.txt', recursive=False))
 		is_preloaded_image_used = True
 		datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
 		image_label_info_filepath = data_base_dir_path + '/text/receipt/sminds/receipt_text_line/labels.txt'
-		is_preloaded_image_used = True
-		datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
-	if True:
-		# ICDAR 2019 SROIE.
-		is_preloaded_image_used = False
-		image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.jpg', recursive=False))
-		labels_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
-		datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, labels_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
-		image_label_info_filepath = data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_test_text_line/labels.txt'
-		datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
-	if False:
-		# TextRecognitionDataGenerator.
-		image_label_info_filepath = data_base_dir_path + '/text/TextRecognitionDataGenerator/word_images_en.txt'
 		is_preloaded_image_used = True
 		datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
 	assert datasets, 'NO Dataset'
@@ -902,7 +992,7 @@ def show_text_data_info(dataloader, label_converter, visualize=True, mode='Train
 	if visualize:
 		#print('Labels: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in images_np])))
 		for idx, (lbl, ll) in enumerate(zip(labels_np, label_lens_np)):
-			print('Label #{} (len = {}): (str) {}, (int) {}.'.format(idx, ll, label_converter.decode(lbl), lbl))
+			print('Label #{} (len = {}): {} (int), {} (str).'.format(idx, ll, lbl, label_converter.decode(lbl)))
 		show_image(torchvision.utils.make_grid(images))
 
 def show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char=False):
@@ -4084,11 +4174,11 @@ def recognize_textline_by_opennmt():
 
 	is_mixed_textlines_used = True
 	if is_mixed_textlines_used:
-		num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed texts.
+		num_simple_examples, num_random_examples, num_trdg_examples = int(5e5), int(5e5), int(5e5)  # For mixed text lines.
 	else:
-		textline_type = 'simple_textline'  # {'simple_textline', 'random_textline', 'file_based_textline'}.
-		num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random texts.
-	max_textline_len = 80  # Max. text line length.
+		textline_type = 'simple_textline'  # {'simple_textline', 'random_textline', 'trdg_textline', 'file_based_textline'}.
+		num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple, random, and TRDG text lines.
+	max_textline_len = 50  # Max. text line length.
 	word_len_interval = (1, 20)
 	word_count_interval = (1, 5)
 	space_count_interval = (1, 3)
@@ -4154,7 +4244,7 @@ def recognize_textline_by_opennmt():
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if is_mixed_textlines_used:
-		train_dataloader, test_dataloader = create_mixed_text_line_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_mixed_text_line_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
 	else:
 		train_dataloader, test_dataloader = create_text_line_data_loaders(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
