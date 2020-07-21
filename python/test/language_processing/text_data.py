@@ -765,10 +765,12 @@ class TextRecognitionDataGeneratorTextLineDataset(TextDatasetBase):
 			image, text = next(self.generator)
 			#(image, mask), text = next(self.generator)
 
-			target = [self.label_converter.pad_value] * (self.max_textline_len + self.label_converter.num_affixes)
-			#target[:len(text)] = self.label_converter.encode(text)  # Undecorated integer label.
 			text_int_ext = self.label_converter.encode(text)  # Decorated/undecorated integer label.
 			target_len = len(text_int_ext)
+			if target_len > self.max_textline_len + self.label_converter.num_affixes:
+				continue
+			target = [self.label_converter.pad_value] * (self.max_textline_len + self.label_converter.num_affixes)
+			#target[:len(text)] = self.label_converter.encode(text)  # Undecorated integer label.
 			target[:target_len] = text_int_ext
 
 			if image and image.mode != self.mode:

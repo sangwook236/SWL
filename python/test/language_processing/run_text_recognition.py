@@ -730,6 +730,7 @@ def create_text_line_data_loaders(textline_type, label_converter, wordset, chars
 		train_dataset = text_data.RandomTextLineDataset(label_converter, chars, num_train_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
 		test_dataset = text_data.RandomTextLineDataset(label_converter, chars, num_test_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
 	elif textline_type == 'trdg_textline':
+		# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
 		font_size = image_height
 		num_words = word_count_interval[1]  # TODO [check] >>
 		is_variable_length = True
@@ -865,6 +866,7 @@ def create_mixed_text_line_data_loaders(label_converter, wordset, chars, num_sim
 	if True:
 		datasets.append(text_data.RandomTextLineDataset(label_converter, chars, num_random_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor))
 	if True:
+		# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
 		font_size = image_height
 		num_words = word_count_interval[1]  # TODO [check] >>
 		is_variable_length = True
@@ -897,19 +899,18 @@ def create_mixed_text_line_data_loaders(label_converter, wordset, chars, num_sim
 			font_filepaths = list()
 
 			is_randomly_generated = False
-			dataset_en = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_trdg_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=None, target_transform=None, **generator_kwargs)
+			datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_trdg_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=None, target_transform=None, **generator_kwargs))
 			is_randomly_generated = True
-			dataset_en_rnd = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_trdg_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=None, target_transform=None, **generator_kwargs)
+			datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_trdg_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=None, target_transform=None, **generator_kwargs))
 		if True:
 			lang = 'kr'
 			font_filepaths = construct_font(korean=True, english=False)
 			font_filepaths, _ = zip(*font_filepaths)
 
 			is_randomly_generated = False
-			dataset_kr = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_trdg_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=None, target_transform=None, **generator_kwargs)
+			datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_trdg_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=None, target_transform=None, **generator_kwargs))
 			is_randomly_generated = True
-			dataset_kr_rnd = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_trdg_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=None, target_transform=None, **generator_kwargs)
-		datasets.append(torch.utils.data.ConcatDataset([dataset_en, dataset_en_rnd, dataset_kr, dataset_kr_rnd]))
+			datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_trdg_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=None, target_transform=None, **generator_kwargs))
 	if True:
 		# ICDAR 2019 SROIE dataset.
 		is_preloaded_image_used = False
@@ -4167,17 +4168,18 @@ def infer_by_word_recognizer():
 
 def recognize_textline_by_opennmt():
 	#image_height, image_width, image_channel = 32, 100, 3
-	image_height, image_width, image_channel = 64, 640, 3
-	#image_height, image_width, image_channel = 64, 1280, 3
+	#image_height, image_width, image_channel = 64, 640, 3
+	image_height, image_width, image_channel = 64, 1280, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	# File-based text lines: 55,835.
 	is_mixed_textlines_used = True
 	if is_mixed_textlines_used:
-		num_simple_examples, num_random_examples, num_trdg_examples = int(5e5), int(5e5), int(5e5)  # For mixed text lines.
+		num_simple_examples, num_random_examples, num_trdg_examples = int(5e4), int(5e4), int(5e4)  # For mixed text lines.
 	else:
 		textline_type = 'simple_textline'  # {'simple_textline', 'random_textline', 'trdg_textline', 'file_based_textline'}.
-		num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple, random, and TRDG text lines.
+		num_train_examples, num_test_examples = int(2e5), int(2e3)  # For simple, random, and TRDG text lines.
 	max_textline_len = 50  # Max. text line length.
 	word_len_interval = (1, 20)
 	word_count_interval = (1, 5)
