@@ -203,7 +203,7 @@ def main():
 
 	# REF [file] >> ${SWDT_PYTHON_HOME}/rnd/test/language_processing/nltk_test.py
 
-	# Suppport unigram and bigram language models.
+	# Support unigram and bigram language models.
 	n_gram_language_model_with_prefix_tree_test()
 
 	#--------------------

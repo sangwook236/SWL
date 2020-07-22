@@ -1758,10 +1758,9 @@ def build_aster_model(label_converter, image_height, image_width, image_channel,
 
 	return model, infer, forward, sys_args
 
-def build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size):
+def build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size, bidirectional_encoder=True):
 	import onmt
 
-	bidirectional_encoder = True
 	embedding_dropout = 0.3
 	encoder_num_layers = 2
 	encoder_rnn_size = encoder_rnn_size
@@ -1769,6 +1768,7 @@ def build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_r
 	decoder_rnn_type = 'LSTM'
 	decoder_num_layers = 2
 	decoder_hidden_size = decoder_hidden_size
+	#decoder_hidden_size = encoder_rnn_size * 2 if bidirectional_encoder else encoder_rnn_size
 	decoder_dropout = 0.3
 
 	src_embeddings = None
@@ -1866,7 +1866,7 @@ def build_opennmt_model(label_converter, image_height, image_width, image_channe
 			return model_outputs.cpu().numpy(), deconder_outputs.numpy()
 
 	import onmt
-	encoder, decoder, generator = build_opennmt_submodels(image_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size)
+	encoder, decoder, generator = build_opennmt_submodels(image_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size, bidirectional_encoder=True)
 	model = onmt.models.NMTModel(encoder, decoder)
 	model.add_module('generator', generator)
 
@@ -1883,10 +1883,16 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 
 	if lang == 'kor':
 		word_vec_size = 80
-		encoder_rnn_size, decoder_hidden_size = 1024, 1024
+		bidirectional_encoder = True
+		encoder_rnn_size = 512
+		decoder_hidden_size = encoder_rnn_size * 2 if bidirectional_encoder else encoder_rnn_size
+		num_encoder_layers = 2
 	else:
 		word_vec_size = 80
-		encoder_rnn_size, decoder_hidden_size = 512, 512
+		bidirectional_encoder = True
+		encoder_rnn_size = 256
+		decoder_hidden_size = encoder_rnn_size * 2 if bidirectional_encoder else encoder_rnn_size
+		num_encoder_layers = 2
 
 	if loss_type is not None:
 		# Define a loss function.
@@ -1940,13 +1946,48 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 			return model_outputs.cpu().numpy(), decoder_outputs.numpy()
 
 	class MyCompositeModel(torch.nn.Module):
-		def __init__(self, image_height, image_width, input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size):
+		def __init__(self, image_height, image_width, input_channel, output_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers=2, bidirectional_encoder=True):
 			super().__init__()
 
-			self.encoder = self._create_encoder(image_height, image_width, input_channel, encoder_rnn_size // 2)
-			_, self.decoder, self.generator = build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size)
+			self.encoder = self._create_encoder(image_height, image_width, input_channel, output_channel, encoder_rnn_size, num_layers=num_encoder_layers, bidirectional=bidirectional_encoder)
+			_, self.decoder, self.generator = build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size, bidirectional_encoder)
 
-		def _create_encoder(self, image_height, image_width, input_channel, hidden_size):
+		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
+		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
+			# Transform.
+			if self.transformer: src = self.transformer(src, device)  # [b, c, h, w].
+
+			# Extract feature.
+			visual_feature = self.feature_extractor(src)  # [b, c_out, h/32, w/4-1].
+			visual_feature = self.avg_pool(visual_feature.permute(0, 3, 1, 2))  # [b, w/4-1, c_out, 1].
+			#visual_feature = visual_feature.permute(0, 3, 1, 2)  # [b, w/4-1, c_out, h/32].
+			assert visual_feature.shape[3] == 1
+			visual_feature = visual_feature.squeeze(3)  # [b, w/4-1, c_out].
+			#visual_feature = visual_feature.reshape(visual_feature.shape[0], visual_feature.shape[1], -1)  # [b, w/4-1, c_out * h/32].
+
+			# When batch is not in the first order.
+			#visual_feature = visual_feature.transpose(0, 1)  # [w/4-1, b, c_out * h/32].
+
+			# Sequence model.
+			# TODO [check] >> The hidden size is too small?
+			#enc_outputs, enc_hiddens = self.sequence_model((visual_feature, None))  # [b, w/4-1, #directions * hidden size] or [w/4-1, b, #directions * hidden size], ([#directions, b, hidden size], [#directions, b, hidden size]).
+			enc_outputs, enc_hiddens = self.sequence_rnn(visual_feature)  # [b, w/4-1, #directions * hidden size], ([#layers * #directions, b, hidden size], [#layers * #directions, b, hidden size]).
+			enc_outputs = self.sequence_projector(enc_outputs)  # [b, w/4-1, hidden size].
+			enc_outputs = enc_outputs.transpose(0, 1)  # [w/4-1, b, hidden size]
+
+			if outputs is None or output_lens is None:
+				raise NotImplementedError
+			else:
+				dec_in = tgt[:-1]  # Exclude last target from inputs.
+
+				# TODO [check] >> Is it proper to use enc_outputs & enc_hiddens?
+				if bptt is False:
+					self.decoder.init_state(src, enc_outputs, enc_hiddens)
+				dec_outs, attns = self.decoder(dec_in, enc_outputs, memory_lengths=lengths, with_align=with_align)
+				outs = self.generator(dec_outs)
+				return outs, attns
+
+		def _create_encoder(self, image_height, image_width, input_channel, output_channel, hidden_size, num_layers=2, bidirectional=True):
 			from rare.modules.transformation import TPS_SpatialTransformerNetwork
 			from rare.modules.feature_extraction import VGG_FeatureExtractor, RCNN_FeatureExtractor, ResNet_FeatureExtractor
 			from rare.modules.feature_extraction import VGG_FeatureExtractor_MixUp, RCNN_FeatureExtractor_MixUp, ResNet_FeatureExtractor_MixUp
@@ -1977,45 +2018,16 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 				#	BidirectionalLSTM(feature_extractor_output_size, hidden_size, hidden_size, batch_first=True),
 				#	BidirectionalLSTM(hidden_size, hidden_size, hidden_size, batch_first=True)
 				#)
-				self.sequence_rnn = torch.nn.LSTM(feature_extractor_output_size, hidden_size, num_layers=2, bidirectional=True, batch_first=True)
-				self.sequence_projector = torch.nn.Linear(hidden_size * 2, hidden_size * 2)
+				self.sequence_rnn = torch.nn.LSTM(feature_extractor_output_size, hidden_size, num_layers=num_layers, bidirectional=bidirectional, batch_first=True)
+				if bidirectional:
+					self.sequence_projector = torch.nn.Linear(hidden_size * 2, hidden_size * 2)
+				else:
+					self.sequence_projector = torch.nn.Linear(hidden_size, hidden_size)
 			else:
 				print('No sequence model specified.')
 				self.sequence_model = None
 
-		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
-		def forward(self, src, tgt, lengths, bptt=False, with_align=False):
-			# Transform.
-			if self.transformer: src = self.transformer(src, device)  # [b, c, h, w].
-
-			# Extract feature.
-			visual_feature = self.feature_extractor(src)  # [b, c_out, h/32, w/4-1].
-			visual_feature = self.avg_pool(visual_feature.permute(0, 3, 1, 2))  # [b, w/4-1, c_out, 1].
-			#visual_feature = visual_feature.permute(0, 3, 1, 2)  # [b, w/4-1, c_out, h/32].
-			assert visual_feature.shape[3] == 1
-			visual_feature = visual_feature.squeeze(3)  # [b, w/4-1, c_out].
-			#visual_feature = visual_feature.reshape(visual_feature.shape[0], visual_feature.shape[1], -1)  # [b, w/4-1, c_out * h/32].
-
-			# When batch is not in the first order.
-			#visual_feature = visual_feature.transpose(0, 1)  # [w/4-1, b, c_out * h/32].
-
-			# Sequence model.
-			# TODO [check] >> The hidden size is too small?
-			#enc_outputs, enc_hiddens = self.sequence_model((visual_feature, None))  # [b, w/4-1, #directions * hidden size] or [w/4-1, b, #directions * hidden size], ([#directions, b, hidden size], [#directions, b, hidden size]).
-			enc_outputs, enc_hiddens = self.sequence_rnn(visual_feature)  # [b, w/4-1, #directions * hidden size], ([#layers * #directions, b, hidden size], [#layers * #directions, b, hidden size]).
-			enc_outputs = self.sequence_projector(enc_outputs)  # [b, w/4-1, hidden size].
-			enc_outputs = enc_outputs.transpose(0, 1)  # [w/4-1, b, hidden size]
-
-			dec_in = tgt[:-1]  # Exclude last target from inputs.
-
-			# TODO [check] >> Is it proper to use enc_outputs & enc_hiddens?
-			if bptt is False:
-				self.decoder.init_state(src, enc_outputs, enc_hiddens)
-			dec_outs, attns = self.decoder(dec_in, enc_outputs, memory_lengths=lengths, with_align=with_align)
-			outs = self.generator(dec_outs)
-			return outs, attns
-
-	model = MyCompositeModel(image_height, image_width, image_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size)
+	model = MyCompositeModel(image_height, image_width, image_channel, output_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, bidirectional_encoder)
 
 	return model, infer, forward, criterion
 
@@ -2024,10 +2036,16 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 	num_fiducials = None
 	if lang == 'kor':
 		word_vec_size = 80
-		encoder_rnn_size, decoder_hidden_size = 1024, 1024
+		bidirectional_encoder = True
+		encoder_rnn_size = 512
+		decoder_hidden_size = encoder_rnn_size * 2 if bidirectional_encoder else encoder_rnn_size
+		num_encoder_layers = 2
 	else:
 		word_vec_size = 80
-		encoder_rnn_size, decoder_hidden_size = 512, 512
+		bidirectional_encoder = True
+		encoder_rnn_size = 256
+		decoder_hidden_size = encoder_rnn_size * 2 if bidirectional_encoder else encoder_rnn_size
+		num_encoder_layers = 2
 
 	if loss_type is not None:
 		# Define a loss function.
@@ -2081,7 +2099,7 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 			return model_outputs.cpu().numpy(), decoder_outputs.numpy()
 
 	class MyCompositeModel(torch.nn.Module):
-		def __init__(self, image_height, image_width, input_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size):
+		def __init__(self, image_height, image_width, input_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, bidirectional_encoder):
 			super().__init__()
 
 			if num_fiducials:
@@ -2090,10 +2108,39 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 			else:
 				self.transformer = None
 
-			self.encoder = self._create_encoder(image_height, image_width, input_channel, encoder_rnn_size // 2)
-			_, self.decoder, self.generator = build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size)
+			self.encoder = self._create_encoder(image_height, image_width, input_channel, encoder_rnn_size, num_layers=num_encoder_layers, bidirectional=bidirectional_encoder)
+			_, self.decoder, self.generator = build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size, bidirectional_encoder)
 
-		def _create_encoder(self, image_height, image_width, input_channel, hidden_size):
+		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
+		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
+			if self.transformer: src = self.transformer(src, device)  # [B, C, H, W].
+
+			# Conv features.
+			conv = self.cnn(src)  # [b, c_out, h/16-1, w/4+1].
+			b, c, h, w = conv.size()
+			#assert h == 1, 'The height of conv must be 1'
+			#conv = conv.squeeze(2)  # [b, c_out, w/4+1].
+			conv = conv.reshape(b, -1, w)  # [b, c_out * h/16-1, w/4+1].
+			conv = conv.permute(2, 0, 1)  # [w/4+1, b, c_out * h/16-1].
+
+			# RNN features.
+			#enc_outputs, enc_hiddens = self.rnn((conv, None))  # [w/4+1, b, hidden size], ([#directions, b, hidden size], [#directions, b, hidden size]).
+			enc_outputs, enc_hiddens = self.sequence_rnn(conv)  # [w/4+1, b, #directions * hidden size], ([#layers * #directions, b, hidden size], [#layers * #directions, b, hidden size]).
+			enc_outputs = self.sequence_projector(enc_outputs)  # [w/4+1, b, hidden size].
+
+			if outputs is None or output_lens is None:
+				raise NotImplementedError
+			else:
+				dec_in = tgt[:-1]  # Exclude last target from inputs.
+
+				# TODO [check] >> Is it proper to use enc_outputs & enc_hiddens?
+				if bptt is False:
+					self.decoder.init_state(src, enc_outputs, enc_hiddens)
+				dec_outs, attns = self.decoder(dec_in, enc_outputs, memory_lengths=lengths, with_align=with_align)
+				outs = self.generator(dec_outs)
+				return outs, attns
+
+		def _create_encoder(self, image_height, image_width, image_channel, hidden_size, num_layers=2, bidirectional=True):
 			assert image_height % 16 == 0, 'image_height has to be a multiple of 16'
 
 			# This implementation assumes that input size is h x w.
@@ -2112,36 +2159,13 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 			#	rare.crnn_lang.BidirectionalLSTM(num_features, hidden_size, hidden_size),
 			#	rare.crnn_lang.BidirectionalLSTM(hidden_size, hidden_size, hidden_size)
 			#)
-			self.sequence_rnn = torch.nn.LSTM(num_features, hidden_size, num_layers=2, bidirectional=True, batch_first=False)
-			self.sequence_projector = torch.nn.Linear(hidden_size * 2, hidden_size * 2)
+			self.sequence_rnn = torch.nn.LSTM(num_features, hidden_size, num_layers, bidirectional, batch_first=False)
+			if bidirectional:
+				self.sequence_projector = torch.nn.Linear(hidden_size * 2, hidden_size * 2)
+			else:
+				self.sequence_projector = torch.nn.Linear(hidden_size, hidden_size)
 
-		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
-		def forward(self, src, tgt, lengths, bptt=False, with_align=False):
-			if self.transformer: src = self.transformer(src, device)  # [B, C, H, W].
-
-			# Conv features.
-			conv = self.cnn(src)  # [b, c_out, h/16-1, w/4+1].
-			b, c, h, w = conv.size()
-			#assert h == 1, 'The height of conv must be 1'
-			#conv = conv.squeeze(2)  # [b, c_out, w/4+1].
-			conv = conv.reshape(b, -1, w)  # [b, c_out * h/16-1, w/4+1].
-			conv = conv.permute(2, 0, 1)  # [w/4+1, b, c_out * h/16-1].
-
-			# RNN features.
-			#enc_outputs, enc_hiddens = self.rnn((conv, None))  # [w/4+1, b, hidden size], ([#directions, b, hidden size], [#directions, b, hidden size]).
-			enc_outputs, enc_hiddens = self.sequence_rnn(conv)  # [w/4+1, b, #directions * hidden size], ([#layers * #directions, b, hidden size], [#layers * #directions, b, hidden size]).
-			enc_outputs = self.sequence_projector(enc_outputs)  # [w/4+1, b, hidden size].
-
-			dec_in = tgt[:-1]  # Exclude last target from inputs.
-
-			# TODO [check] >> Is it proper to use enc_outputs & enc_hiddens?
-			if bptt is False:
-				self.decoder.init_state(src, enc_outputs, enc_hiddens)
-			dec_outs, attns = self.decoder(dec_in, enc_outputs, memory_lengths=lengths, with_align=with_align)
-			outs = self.generator(dec_outs)
-			return outs, attns
-
-	model = MyCompositeModel(image_height, image_width, image_channel, label_converter.num_tokens, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size)
+	model = MyCompositeModel(image_height, image_width, image_channel, label_converter.num_tokens, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, bidirectional_encoder)
 
 	return model, infer, forward, criterion
 
@@ -2150,10 +2174,14 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 	num_fiducials = None
 	if lang == 'kor':
 		word_vec_size = 80
-		encoder_rnn_size, decoder_hidden_size = 1024, 1024
+		bidirectional_encoder = True
+		encoder_rnn_size = 512
+		decoder_hidden_size = encoder_rnn_size * 2 if bidirectional_encoder else encoder_rnn_size
 	else:
 		word_vec_size = 80
-		encoder_rnn_size, decoder_hidden_size = 512, 512
+		bidirectional_encoder = True
+		encoder_rnn_size = 256
+		decoder_hidden_size = encoder_rnn_size * 2 if bidirectional_encoder else encoder_rnn_size
 
 	if loss_type is not None:
 		# Define a loss function.
@@ -2207,7 +2235,7 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 			return model_outputs.cpu().numpy(), decoder_outputs.numpy()
 
 	class MyCompositeModel(torch.nn.Module):
-		def __init__(self, image_height, image_width, input_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size):
+		def __init__(self, image_height, image_width, input_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size, bidirectional_encoder):
 			super().__init__()
 
 			if num_fiducials:
@@ -2217,26 +2245,29 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 				self.transformer = None
 
 			import aster.resnet_aster
-			self.encoder = aster.resnet_aster.ResNet_ASTER(with_lstm=True, in_height=image_height, in_channels=input_channel, hidden_size=encoder_rnn_size // 2)
-			_, self.decoder, self.generator = build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size)
+			self.encoder = aster.resnet_aster.ResNet_ASTER(with_lstm=True, in_height=image_height, in_channels=input_channel, hidden_size=encoder_rnn_size)
+			_, self.decoder, self.generator = build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size, bidirectional_encoder)
 
 		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
-		def forward(self, src, tgt, lengths, bptt=False, with_align=False):
-			dec_in = tgt[:-1]  # Exclude last target from inputs.
-
+		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
 			if self.transformer: src = self.transformer(src, device)  # [B, C, H, W].
 
 			enc_outputs, enc_hiddens = self.encoder(src)
 			enc_outputs = enc_outputs.transpose(0, 1)  # [B, T, F] -> [T, B, F].
 
-			# TODO [check] >> Is it proper to use enc_outputs & enc_hiddens?
-			if bptt is False:
-				self.decoder.init_state(src, enc_outputs, enc_hiddens)
-			dec_outs, attns = self.decoder(dec_in, enc_outputs, memory_lengths=lengths, with_align=with_align)
-			outs = self.generator(dec_outs)
-			return outs, attns
+			if outputs is None or output_lens is None:
+				raise NotImplementedError
+			else:
+				dec_in = tgt[:-1]  # Exclude last target from inputs.
 
-	model = MyCompositeModel(image_height, image_width, image_channel, label_converter.num_tokens, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size)
+				# TODO [check] >> Is it proper to use enc_outputs & enc_hiddens?
+				if bptt is False:
+					self.decoder.init_state(src, enc_outputs, enc_hiddens)
+				dec_outs, attns = self.decoder(dec_in, enc_outputs, memory_lengths=lengths, with_align=with_align)
+				outs = self.generator(dec_outs)
+				return outs, attns
+
+	model = MyCompositeModel(image_height, image_width, image_channel, label_converter.num_tokens, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size, bidirectional_encoder)
 
 	return model, infer, forward, criterion
 
@@ -2684,7 +2715,7 @@ def recognize_word_by_rare1():
 		# Define an optimizer.
 		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-6, weight_decay=0)
+		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
 		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
@@ -2853,7 +2884,7 @@ def recognize_word_by_rare2():
 		# Define an optimizer.
 		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-6, weight_decay=0)
+		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
 		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
@@ -3022,7 +3053,7 @@ def recognize_word_by_aster():
 		# Define an optimizer.
 		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-6, weight_decay=0)
+		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
 		optimizer = torch.optim.Adadelta(model_params, lr=sys_args.lr, weight_decay=sys_args.weight_decay)
 		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
@@ -3192,7 +3223,7 @@ def recognize_word_by_opennmt():
 		# Define an optimizer.
 		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-6, weight_decay=0)
+		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
 		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
@@ -3360,7 +3391,7 @@ def recognize_word_by_rare1_and_opennmt():
 		# Define an optimizer.
 		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-6, weight_decay=0)
+		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
 		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
@@ -3528,7 +3559,7 @@ def recognize_word_by_rare2_and_opennmt():
 		# Define an optimizer.
 		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-6, weight_decay=0)
+		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
 		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
@@ -3696,7 +3727,7 @@ def recognize_word_by_aster_and_opennmt():
 		# Define an optimizer.
 		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-6, weight_decay=0)
+		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
 		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
@@ -3878,7 +3909,7 @@ def recognize_word_using_mixup():
 		# Define an optimizer.
 		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-6, weight_decay=0)
+		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
 		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
@@ -4304,7 +4335,7 @@ def recognize_textline_by_opennmt():
 		# Define an optimizer.
 		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-6, weight_decay=0)
+		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
 		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
