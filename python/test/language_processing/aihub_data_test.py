@@ -244,8 +244,8 @@ def AiHubPrintedTextDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
 	dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used)
 
 	num_examples = len(dataset)

@@ -295,7 +295,7 @@ class MyRunner(object):
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
 
-		self._label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		self._label_converter = swl_langproc_util.TokenConverter(labels, pad=None)
 		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 		print('[SWL] Info: Labels = {}.'.format(self._label_converter.tokens))
 		print('[SWL] Info: #labels = {}.'.format(self._label_converter.num_tokens))

@@ -716,8 +716,8 @@ def SimpleWordDataset_test():
 	test_target_transform = ToIntTensor()
 
 	#--------------------
-	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
 
 	print('Start creating datasets...')
 	start_time = time.time()
@@ -799,8 +799,8 @@ def RandomWordDataset_test():
 	test_target_transform = ToIntTensor()
 
 	#--------------------
-	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
 
 	print('Start creating datasets...')
 	start_time = time.time()
@@ -883,8 +883,8 @@ def FileBasedWordDataset_test():
 	test_target_transform = ToIntTensor()
 
 	#--------------------
-	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
 
 	print('Start creating datasets...')
 	start_time = time.time()
@@ -996,8 +996,8 @@ def SimpleTextLineDataset_test():
 	test_target_transform = ToIntTensor()
 
 	#--------------------
-	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
 
 	print('Start creating datasets...')
 	start_time = time.time()
@@ -1082,8 +1082,8 @@ def RandomTextLineDataset_test():
 	test_target_transform = ToIntTensor()
 
 	#--------------------
-	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
 
 	print('Start creating datasets...')
 	start_time = time.time()
@@ -1195,8 +1195,8 @@ def TextRecognitionDataGeneratorTextLineDataset_test():
 	test_target_transform = ToIntTensor()
 
 	#--------------------
-	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
 
 	print('Start creating datasets...')
 	start_time = time.time()
@@ -1278,8 +1278,8 @@ def FileBasedTextLineDataset_test():
 	test_target_transform = ToIntTensor()
 
 	#--------------------
-	label_converter = swl_langproc_util.TokenConverter(list(charset), pad_value=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=None)
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
 
 	print('Start creating datasets...')
 	start_time = time.time()

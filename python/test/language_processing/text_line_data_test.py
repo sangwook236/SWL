@@ -102,7 +102,7 @@ def BasicRunTimeTextLineDataset_test():
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
 
-		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		label_converter = swl_langproc_util.TokenConverter(labels, pad=None)
 		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
 		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
@@ -132,7 +132,7 @@ def BasicRunTimeTextLineDataset_test():
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
 
-		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		label_converter = swl_langproc_util.TokenConverter(labels, pad=None)
 		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
 		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
@@ -164,7 +164,7 @@ def BasicRunTimeTextLineDataset_test():
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
 
-		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		label_converter = swl_langproc_util.TokenConverter(labels, pad=None)
 		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
 		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
@@ -205,7 +205,7 @@ def RunTimeAlphaMatteTextLineDataset_test():
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
 
-		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		label_converter = swl_langproc_util.TokenConverter(labels, pad=None)
 		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
 		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
@@ -236,7 +236,7 @@ def RunTimeAlphaMatteTextLineDataset_test():
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
 
-		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		label_converter = swl_langproc_util.TokenConverter(labels, pad=None)
 		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
 		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
@@ -269,7 +269,7 @@ def RunTimeAlphaMatteTextLineDataset_test():
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
 
-		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		label_converter = swl_langproc_util.TokenConverter(labels, pad=None)
 		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
 		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
@@ -297,10 +297,13 @@ def RunTimeHangeulJamoAlphaMatteTextLineDataset_test():
 		system_font_dir_path = 'C:/Windows/Fonts'
 		font_base_dir_path = 'D:/work/font'
 
+	#SOJ, EOJ = '<SOJ>', '<EOJ>'
+	EOJ = '<EOJ>'
+
 	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
-	hangeul2jamo_functor = lambda hangeul_str: hg_util.hangeul2jamo(hangeul_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
+	hangeul2jamo_functor = lambda hangeul_str: hg_util.hangeul2jamo(hangeul_str, eojc_str=EOJ, use_separate_consonants=False, use_separate_vowels=True)
 	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
-	jamo2hangeul_functor = lambda jamo_str: hg_util.jamo2hangeul(jamo_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
+	jamo2hangeul_functor = lambda jamo_str: hg_util.jamo2hangeul(jamo_str, eojc_str=EOJ, use_separate_consonants=False, use_separate_vowels=True)
 
 	if False:
 		font_dir_path = font_base_dir_path + '/kor'
@@ -314,11 +317,11 @@ def RunTimeHangeulJamoAlphaMatteTextLineDataset_test():
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 		labels = functools.reduce(lambda x, txt: x.union(hangeul2jamo_functor(txt)), korean_word_set, set())
-		labels.remove(swl_langproc_util.JamoTokenConverter.EOJ)
+		labels.remove(EOJ)
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
 
-		label_converter = swl_langproc_util.JamoTokenConverter(labels, hangeul2jamo_functor, jamo2hangeul_functor, pad_value=None)
+		label_converter = swl_langproc_util.JamoTokenConverter(labels, hangeul2jamo_functor, jamo2hangeul_functor, eoj=EOJ, pad=None)
 		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
 		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
@@ -348,11 +351,11 @@ def RunTimeHangeulJamoAlphaMatteTextLineDataset_test():
 		color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
 		labels = functools.reduce(lambda x, txt: x.union(hangeul2jamo_functor(txt)), all_word_set, set())
-		labels.remove(swl_langproc_util.JamoTokenConverter.EOJ)
+		labels.remove(EOJ)
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
 
-		label_converter = swl_langproc_util.JamoTokenConverter(labels, hangeul2jamo_functor, jamo2hangeul_functor, pad_value=None)
+		label_converter = swl_langproc_util.JamoTokenConverter(labels, hangeul2jamo_functor, jamo2hangeul_functor, eoj=EOJ, pad=None)
 		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
 		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
@@ -385,7 +388,7 @@ def JsonBasedTextLineDataset_test():
 	labels = sorted(labels)
 	#labels = ''.join(sorted(labels))
 
-	label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+	label_converter = swl_langproc_util.TokenConverter(labels, pad=None)
 	# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 	print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
 	print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
@@ -410,10 +413,13 @@ def JsonBasedHangeulJamoTextLineDataset_test():
 
 	image_height, image_width, image_channel = 64, 640, 1
 
+	#SOJ, EOJ = '<SOJ>', '<EOJ>'
+	EOJ = '<EOJ>'
+
 	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
-	hangeul2jamo_functor = lambda hangeul_str: hg_util.hangeul2jamo(hangeul_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
+	hangeul2jamo_functor = lambda hangeul_str: hg_util.hangeul2jamo(hangeul_str, eojc_str=EOJ, use_separate_consonants=False, use_separate_vowels=True)
 	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
-	jamo2hangeul_functor = lambda jamo_str: hg_util.jamo2hangeul(jamo_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
+	jamo2hangeul_functor = lambda jamo_str: hg_util.jamo2hangeul(jamo_str, eojc_str=EOJ, use_separate_consonants=False, use_separate_vowels=True)
 
 	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
@@ -430,7 +436,7 @@ def JsonBasedHangeulJamoTextLineDataset_test():
 	labels = sorted(labels)
 	#labels = ''.join(sorted(labels))  # Error.
 
-	label_converter = swl_langproc_util.JamoTokenConverter(labels, hangeul2jamo_functor, jamo2hangeul_functor, pad_value=None)
+	label_converter = swl_langproc_util.JamoTokenConverter(labels, hangeul2jamo_functor, jamo2hangeul_functor, eoj=EOJ, pad=None)
 	# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 	print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
 	print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
@@ -545,7 +551,7 @@ def RunTimeCorruptedTextLinePairDataset_test():
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
 
-		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		label_converter = swl_langproc_util.TokenConverter(labels, pad=None)
 		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
 		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
@@ -578,7 +584,7 @@ def RunTimeCorruptedTextLinePairDataset_test():
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
 
-		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		label_converter = swl_langproc_util.TokenConverter(labels, pad=None)
 		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
 		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
@@ -614,7 +620,7 @@ def RunTimeCorruptedTextLinePairDataset_test():
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
 
-		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		label_converter = swl_langproc_util.TokenConverter(labels, pad=None)
 		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
 		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
@@ -678,7 +684,7 @@ def RunTimeSuperResolvedTextLinePairDataset_test():
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
 
-		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		label_converter = swl_langproc_util.TokenConverter(labels, pad=None)
 		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
 		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
@@ -713,7 +719,7 @@ def RunTimeSuperResolvedTextLinePairDataset_test():
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
 
-		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		label_converter = swl_langproc_util.TokenConverter(labels, pad=None)
 		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
 		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))
@@ -751,7 +757,7 @@ def RunTimeSuperResolvedTextLinePairDataset_test():
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
 
-		label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+		label_converter = swl_langproc_util.TokenConverter(labels, pad=None)
 		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 		print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
 		print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))

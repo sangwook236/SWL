@@ -758,7 +758,7 @@ def Icdar2019SroieTextLineDataset_test():
 	labels = sorted(labels)
 	#labels = ''.join(sorted(labels))
 
-	label_converter = swl_langproc_util.TokenConverter(labels, pad_value=None)
+	label_converter = swl_langproc_util.TokenConverter(labels, pad=None)
 	# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 	print('[SWL] Info: Labels = {}.'.format(label_converter.tokens))
 	print('[SWL] Info: #labels = {}.'.format(label_converter.num_tokens))

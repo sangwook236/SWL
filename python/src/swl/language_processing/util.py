@@ -6,54 +6,56 @@ import cv2
 #--------------------------------------------------------------------
 
 class TokenConverterBase(object):
-	UNKNOWN = '<UNK>'  # Unknown token.
-	SOS = '<SOS>'  # All token sequences may start with the Start-Of-Sequence (SOS) token.
-	EOS = '<EOS>'  # All token sequences may end with the End-Of-Sequence (EOS) token.
-
-	def __init__(self, tokens, use_sos=False, use_eos=False, prefixes=None, suffixes=None, pad_value=None, additional_tokens=None):
+	def __init__(self, tokens, unknown='<UNK>', sos=None, eos=None, pad=None, prefixes=None, suffixes=None, additional_tokens=None):
 		"""
 		Inputs:
 			tokens (list of tokens): Tokens to be regarded as individual units.
-			use_sos (bool): Specifies whether <SOS> token is used or not.
-			use_eos (bool): Specifies whether <EOS> token is used or not.
+			unknown (token): Unknown token.
+			sos (token or None): A special token to use as <SOS> token. If None, <SOS> token is not used.
+				All token sequences may start with the Start-Of-Sequence (SOS) token.
+			eos (token or None): A special token to use as <EOS> token. If None, <EOS> token is not used.
+				All token sequences may end with the End-Of-Sequence (EOS) token.
+			pad (token, int, or None): A special token or integer for padding, which may be not an actual token. If None, the pad token is not used.
 			prefixes (list of tokens): Special tokens to be used as prefix.
 			suffixes (list of tokens): Special tokens to be used as suffix.
-			pad_value (int, token, or None): A special value for a padding, which may be not an actual token.
 		"""
 
+		assert unknown is not None
+
+		self.unknown, self.sos, self.eos = unknown, sos, eos
 		if prefixes is None: prefixes = []
 		if suffixes is None: suffixes = []
-		if use_sos: prefixes = [self.SOS] + prefixes
-		if use_eos: suffixes += [self.EOS]
+		if self.sos: prefixes = self.sos + prefixes
+		if self.eos: suffixes += self.eos
 		self._num_affixes = len(prefixes + suffixes)
 
 		if additional_tokens:
-			extended_tokens = tokens + additional_tokens + prefixes + suffixes + [self.UNKNOWN]
+			extended_tokens = tokens + additional_tokens + prefixes + suffixes + [self.unknown]
 		else:
-			extended_tokens = tokens + prefixes + suffixes + [self.UNKNOWN]
+			extended_tokens = tokens + prefixes + suffixes + [self.unknown]
 		#self._tokens = tokens
 		self._tokens = extended_tokens
 
-		self.UNKNOWN_int = extended_tokens.index(self.UNKNOWN)
+		self.UNKNOWN_int = extended_tokens.index(self.unknown)
 		prefixes_int, suffixes_int = [extended_tokens.index(tok) for tok in prefixes], [extended_tokens.index(tok) for tok in suffixes]
 
 		default_pad_value = -1 #len(extended_tokens)
-		if pad_value is None:
+		if pad is None:
 			self._pad_value = default_pad_value
-		elif isinstance(pad_value, int):
-			self._pad_value = pad_value
+		elif isinstance(pad, int):
+			self._pad_value = pad
 		else:
 			try:
-				self._pad_value = extended_tokens.index(pad_value)
+				self._pad_value = extended_tokens.index(pad)
 			except ValueError:
 				self._pad_value = default_pad_value
 
 		self.auxiliary_tokens_int = [self._pad_value] + prefixes_int + suffixes_int
 		self.decoration_functor = lambda x: prefixes_int + x + suffixes_int
 
-		if use_eos:
-			EOS_int = extended_tokens.index(self.EOS)
-			#self.auxiliary_tokens_int.remove(self.EOS)  # TODO [decide] >>
+		if self.eos:
+			EOS_int = extended_tokens.index(self.eos)
+			#self.auxiliary_tokens_int.remove(self.eos)  # TODO [decide] >>
 			self.decode_functor = functools.partial(self._decode_with_eos, EOS_int=EOS_int)
 		else:
 			self.decode_functor = self._decode
@@ -65,6 +67,18 @@ class TokenConverterBase(object):
 	@property
 	def tokens(self):
 		return self._tokens
+
+	@property
+	def UNKNOWN(self):
+		return self.unknown
+
+	@property
+	def SOS(self):
+		return self.sos
+
+	@property
+	def EOS(self):
+		return self.eos
 
 	@property
 	def pad_value(self):
@@ -107,7 +121,7 @@ class TokenConverterBase(object):
 				return self._tokens[tok]
 			except IndexError:
 				#print('[SWL] Error: Failed to decode an integer token, {} in {}.'.format(tok, integer_seq))
-				return self.UNKNOWN  # TODO [check] >> Is it correct?
+				return self.unknown  # TODO [check] >> Is it correct?
 		seq = [int2tok(tok) for tok in integer_seq if tok not in self.auxiliary_tokens_int]
 		return ''.join(seq) if is_string_output else seq
 
@@ -118,7 +132,7 @@ class TokenConverterBase(object):
 				return self._tokens[tok]
 			except IndexError:
 				#print('[SWL] Error: Failed to decode an integer token, {} in {}.'.format(tok, integer_seq))
-				return self.UNKNOWN  # TODO [check] >> Is it correct?
+				return self.unknown  # TODO [check] >> Is it correct?
 		"""
 		try:
 			integer_seq = integer_seq[:integer_seq.index(EOS_int)]  # NOTE [info] >> It is applied to list only.
@@ -145,16 +159,39 @@ class TokenConverterBase(object):
 		"""
 
 class TokenConverter(TokenConverterBase):
-	def __init__(self, tokens, use_sos=False, use_eos=False, prefixes=None, suffixes=None, pad_value=None):
-		super().__init__(tokens, use_sos, use_eos, prefixes, suffixes, pad_value)
+	def __init__(self, tokens, unknown='<UNK>', sos=None, eos=None, pad=None, prefixes=None, suffixes=None):
+		super().__init__(tokens, unknown, sos, eos, pad, prefixes, suffixes)
 
 class JamoTokenConverter(TokenConverterBase):
-	SOJ = '<SOJ>'  # All Hangeul jamo sequences may start with the Start-Of-Jamo-Sequence (SOJ) token.
-	EOJ = '<EOJ>'  # All Hangeul jamo sequences may end with the End-Of-Jamo-Sequence (EOJ) token.
+	#def __init__(self, tokens, hangeul2jamo_functor, jamo2hangeul_functor, unknown='<UNK>', sos=None, eos=None, soj=None, eoj='<EOJ>', pad=None, prefixes=None, suffixes=None):
+	def __init__(self, tokens, hangeul2jamo_functor, jamo2hangeul_functor, unknown='<UNK>', sos=None, eos=None, eoj='<EOJ>', pad=None, prefixes=None, suffixes=None):
+		"""
+		Inputs:
+			tokens (list of tokens): Tokens to be regarded as individual units.
+			hangeul2jamo_functor (functor): A functor to convert a Hangeul letter to a sequence of Jamos.
+			jamo2hangeul_functor (functor): A functor to convert a sequence of Jamos to a Hangeul letter.
+			unknown (token): Unknown token.
+			sos (token or None): A special token to use as <SOS> token. If None, <SOS> token is not used.
+				All token sequences may start with the Start-Of-Sequence (SOS) token.
+			eos (token or None): A special token to use as <EOS> token. If None, <EOS> token is not used.
+				All token sequences may end with the End-Of-Sequence (EOS) token.
+			soj (token or None): A special token to use as <SOJ> token. If None, <SOJ> token is not used.
+				All Hangeul jamo sequences may start with the Start-Of-Jamo-Sequence (SOJ) token.
+			eoj (token or None): A special token to use as <EOJ> token. If None, <EOJ> token is not used.
+				All Hangeul jamo sequences may end with the End-Of-Jamo-Sequence (EOJ) token.
+			pad (token, int, or None): A special token or integer for padding, which may be not an actual token. If None, the pad token is not used.
+			prefixes (list of tokens): Special tokens to be used as prefix.
+			suffixes (list of tokens): Special tokens to be used as suffix.
+		"""
 
-	def __init__(self, tokens, hangeul2jamo_functor, jamo2hangeul_functor, use_sos=False, use_eos=False, prefixes=None, suffixes=None, pad_value=None):
-		#super().__init__(tokens, use_sos, use_eos, prefixes, suffixes, pad_value, additional_tokens=[self.SOJ, self.EOJ])
-		super().__init__(tokens, use_sos, use_eos, prefixes, suffixes, pad_value, additional_tokens=[self.EOJ])
+		#assert soj is not None and eoj is not None
+		assert eoj is not None
+
+		#super().__init__(tokens, unknown, sos, eos, pad, prefixes, suffixes, additional_tokens=[soj, eoj])
+		super().__init__(tokens, unknown, sos, eos, pad, prefixes, suffixes, additional_tokens=[eoj])
+
+		#self.soj, self.eoj = soj, eoj
+		self.soj, self.eoj = None, eoj
 
 		# TODO [check] >> This implementation using itertools.chain() may be slow.
 		import itertools
@@ -162,6 +199,14 @@ class JamoTokenConverter(TokenConverterBase):
 		self.hangeul2jamo_functor = lambda hgstr: list(itertools.chain(*[[tt] if len(tt) > 1 else hangeul2jamo_functor(tt) for tt in hgstr]))
 		self.jamo2hangeul_functor = jamo2hangeul_functor
 		#self.jamo2hangeul_functor = lambda jmstr: list(itertools.chain(*[[tt] if len(tt) > 1 else jamo2hangeul_functor(tt) for tt in jmstr]))
+
+	@property
+	def SOJ(self):
+		return self.soj
+
+	@property
+	def EOJ(self):
+		return self.eoj
 
 	# Token sequence -> integer token sequence.
 	def encode(self, seq, is_bare_output=False, *args, **kwargs):

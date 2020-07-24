@@ -462,13 +462,16 @@ class MyRunner(object):
 			model_output_time_steps = 640  # (image_height / width_downsample_factor) * (image_width / width_downsample_factor).
 		max_label_len = 80 #model_output_time_steps  # max_label_len <= model_output_time_steps.
 
+		#SOJ, EOJ = '<SOJ>', '<EOJ>'
+		EOJ = '<EOJ>'
+
 		#--------------------
 		# Create a dataset.
 		import hangeul_util as hg_util
 		# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
-		hangeul2jamo_functor = lambda hangeul_str: hg_util.hangeul2jamo(hangeul_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
+		hangeul2jamo_functor = lambda hangeul_str: hg_util.hangeul2jamo(hangeul_str, eojc_str=EOJ, use_separate_consonants=False, use_separate_vowels=True)
 		# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
-		jamo2hangeul_functor = lambda jamo_str: hg_util.jamo2hangeul(jamo_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
+		jamo2hangeul_functor = lambda jamo_str: hg_util.jamo2hangeul(jamo_str, eojc_str=EOJ, use_separate_consonants=False, use_separate_vowels=True)
 
 		if is_dataset_generated_at_runtime:
 			import text_generation_util as tg_util
@@ -495,11 +498,11 @@ class MyRunner(object):
 				draw_character_histogram(texts, charset=None)
 
 			labels = functools.reduce(lambda x, txt: x.union(hangeul2jamo_functor(txt)), texts, set())
-			labels.remove(swl_langproc_util.JamoTokenConverter.EOJ)
+			labels.remove(EOJ)
 			labels = sorted(labels)
 			#labels = ''.join(sorted(labels))
 
-			self._label_converter = swl_langproc_util.JamoTokenConverter(labels, hangeul2jamo_functor, jamo2hangeul_functor, pad_value=None)
+			self._label_converter = swl_langproc_util.JamoTokenConverter(labels, hangeul2jamo_functor, jamo2hangeul_functor, eoj=EOJ, pad=None)
 			# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 			print('[SWL] Info: Labels = {}.'.format(self._label_converter.tokens))
 			print('[SWL] Info: #labels = {}.'.format(self._label_converter.num_tokens))
@@ -540,11 +543,11 @@ class MyRunner(object):
 				' '
 			# There are words of Unicode Hangeul letters besides KS X 1001.
 			labels = functools.reduce(lambda x, fpath: x.union(hangeul2jamo_functor(fpath.split('_')[0])), os.listdir(data_dir_path), set(labels))
-			labels.remove(swl_langproc_util.JamoTokenConverter.EOJ)
+			labels.remove(EOJ)
 			labels = sorted(labels)
 			#labels = ''.join(sorted(labels))
 
-			self._label_converter = swl_langproc_util.JamoTokenConverter(labels, hangeul2jamo_functor, jamo2hangeul_functor, pad_value=None)
+			self._label_converter = swl_langproc_util.JamoTokenConverter(labels, hangeul2jamo_functor, jamo2hangeul_functor, eoj=EOJ, pad=None)
 			# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 			print('[SWL] Info: Labels = {}.'.format(self._label_converter.tokens))
 			print('[SWL] Info: #labels = {}.'.format(self._label_converter.num_tokens))
@@ -903,11 +906,14 @@ def check_data(dataset, label_converter, batch_size):
 	train_steps_per_epoch = None if train_examples_per_epoch is None else math.ceil(train_examples_per_epoch / batch_size)
 	test_steps_per_epoch = None if test_examples_per_epoch is None else math.ceil(test_examples_per_epoch / batch_size)
 
+	#SOJ, EOJ = '<SOJ>', '<EOJ>'
+	EOJ = '<EOJ>'
+
 	import hangeul_util as hg_util
 	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
-	hangeul2jamo_functor = lambda hangeul_str: hg_util.hangeul2jamo(hangeul_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
+	hangeul2jamo_functor = lambda hangeul_str: hg_util.hangeul2jamo(hangeul_str, eojc_str=EOJ, use_separate_consonants=False, use_separate_vowels=True)
 	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
-	jamo2hangeul_functor = lambda jamo_str: hg_util.jamo2hangeul(jamo_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
+	jamo2hangeul_functor = lambda jamo_str: hg_util.jamo2hangeul(jamo_str, eojc_str=EOJ, use_separate_consonants=False, use_separate_vowels=True)
 
 	generator = runner.dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=False)
 	for batch_step, (batch_data, num_batch_examples) in enumerate(generator):

@@ -20,7 +20,7 @@ def TokenConverter_test():
 
 	#--------------------
 	print('---------- Basic.')
-	converter = swl_langproc_util.TokenConverter(list(charset), use_sos=False, use_eos=False, prefixes=None, suffixes=None, pad_value=None)
+	converter = swl_langproc_util.TokenConverter(list(charset), unknown='<UNK>', sos=None, eos=None, pad=None, prefixes=None, suffixes=None)
 	print('Tokens = {}.'.format(converter.tokens))
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
 	print('Pad value = {}.'.format(converter.pad_value))
@@ -34,7 +34,7 @@ def TokenConverter_test():
 
 	#--------------------
 	print('---------- SOS + EOS.')
-	converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, prefixes=None, suffixes=None, pad_value=None)
+	converter = swl_langproc_util.TokenConverter(list(charset), unknown='<UNK>', sos='<SOS>', eos='<EOS>', pad=None, prefixes=None, suffixes=None)
 	print('Tokens = {}.'.format(converter.tokens))
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
 	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
@@ -76,7 +76,7 @@ def TokenConverter_test():
 
 	#--------------------
 	print('---------- SOS + EOS & pad value = SOS.')
-	converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, prefixes=None, suffixes=None, pad_value=swl_langproc_util.TokenConverter.SOS)
+	converter = swl_langproc_util.TokenConverter(list(charset), unknown='<UNK>', sos='<SOS>', eos='<EOS>', pad='<SOS>', prefixes=None, suffixes=None)
 	print('Tokens = {}.'.format(converter.tokens))
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
 	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
@@ -90,7 +90,7 @@ def TokenConverter_test():
 
 	#--------------------
 	print('---------- SOS + EOS + prefix + suffix.')
-	converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, prefixes=['<HEAD>'], suffixes=['<TAIL>'], pad_value=None)
+	converter = swl_langproc_util.TokenConverter(list(charset), unknown='<UNK>', sos='<SOS>', eos='<EOS>', pad=None, prefixes=['<HEAD>'], suffixes=['<TAIL>'])
 	print('Tokens = {}.'.format(converter.tokens))
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
 	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
@@ -106,10 +106,13 @@ def JamoTokenConverter_test():
 	import hangeul_util as hg_util
 	import text_generation_util as tg_util
 
+	#SOJ, EOJ = '<SOJ>', '<EOJ>'
+	EOJ = '<EOJ>'
+
 	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
-	hangeul2jamo_functor = lambda hangeul_str: hg_util.hangeul2jamo(hangeul_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
+	hangeul2jamo_functor = lambda hangeul_str: hg_util.hangeul2jamo(hangeul_str, eojc_str=EOJ, use_separate_consonants=False, use_separate_vowels=True)
 	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
-	jamo2hangeul_functor = lambda jamo_str: hg_util.jamo2hangeul(jamo_str, eojc_str=swl_langproc_util.JamoTokenConverter.EOJ, use_separate_consonants=False, use_separate_vowels=True)
+	jamo2hangeul_functor = lambda jamo_str: hg_util.jamo2hangeul(jamo_str, eojc_str=EOJ, use_separate_consonants=False, use_separate_vowels=True)
 
 	charset = string.digits
 	charset += string.ascii_uppercase
@@ -119,7 +122,7 @@ def JamoTokenConverter_test():
 
 	#--------------------
 	print('---------- Basic.')
-	converter = swl_langproc_util.JamoTokenConverter(list(charset), hangeul2jamo_functor, jamo2hangeul_functor, use_sos=False, use_eos=False, prefixes=None, suffixes=None, pad_value=None)
+	converter = swl_langproc_util.JamoTokenConverter(list(charset), hangeul2jamo_functor, jamo2hangeul_functor, eoj=EOJ, sos=None, eos=None, pad=None, prefixes=None, suffixes=None)
 	print('Tokens = {}.'.format(converter.tokens))
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
 	print('Pad value = {}.'.format(converter.pad_value))
@@ -133,7 +136,7 @@ def JamoTokenConverter_test():
 
 	#--------------------
 	print('---------- SOS + EOS.')
-	converter = swl_langproc_util.JamoTokenConverter(list(charset), hangeul2jamo_functor, jamo2hangeul_functor, use_sos=True, use_eos=True, prefixes=None, suffixes=None, pad_value=None)
+	converter = swl_langproc_util.JamoTokenConverter(list(charset), hangeul2jamo_functor, jamo2hangeul_functor, eoj=EOJ, sos='<SOS>', eos='<EOS>', pad=None, prefixes=None, suffixes=None)
 	print('Tokens = {}.'.format(converter.tokens))
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
 	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
@@ -175,7 +178,7 @@ def JamoTokenConverter_test():
 
 	#--------------------
 	print('---------- SOS + EOS & pad value = SOS.')
-	converter = swl_langproc_util.JamoTokenConverter(list(charset), hangeul2jamo_functor, jamo2hangeul_functor, use_sos=True, use_eos=True, prefixes=None, suffixes=None, pad_value=swl_langproc_util.TokenConverter.SOS)
+	converter = swl_langproc_util.JamoTokenConverter(list(charset), hangeul2jamo_functor, jamo2hangeul_functor, eoj=EOJ, sos='<SOS>', eos='<EOS>', pad='<SOS>', prefixes=None, suffixes=None)
 	print('Tokens = {}.'.format(converter.tokens))
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
 	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
@@ -189,7 +192,7 @@ def JamoTokenConverter_test():
 
 	#--------------------
 	print('---------- SOS + EOS + prefix + suffix.')
-	converter = swl_langproc_util.JamoTokenConverter(list(charset), hangeul2jamo_functor, jamo2hangeul_functor, use_sos=True, use_eos=True, prefixes=['<HEAD>'], suffixes=['<TAIL>'], pad_value=None)
+	converter = swl_langproc_util.JamoTokenConverter(list(charset), hangeul2jamo_functor, jamo2hangeul_functor, eoj=EOJ, sos='<SOS>', eos='<EOS>', pad=None, prefixes=['<HEAD>'], suffixes=['<TAIL>'])
 	print('Tokens = {}.'.format(converter.tokens))
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
 	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
