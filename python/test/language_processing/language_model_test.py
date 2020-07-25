@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
+import sys
+sys.path.append('../../src')
+sys.path.append('./src')
+
 import time
 import numpy as np
 #import pandas as pd
 
-# REF [function] >> sejong_sanitizer_test() in corpus_test.py.
+# REF [function] >> load_sejong_corpus() in corpus_test.py.
 def load_sejong_corpus():
 	corpus_dir_path = '../../data/language_processing/sejong_corpus'
 
@@ -48,8 +52,9 @@ def n_gram_language_model_with_prefix_tree_test():
 	print('Start loading Sejong corpus...')
 	start_time = time.time()
 	words = load_sejong_corpus()
-	words = '\n'.join(words)
 	print('End loading Sejong corpus: {} secs.'.format(time.time() - start_time))
+
+	words = '\n'.join(words)
 
 	# #classes = #chars + blank label.
 	chars = tg_util.construct_charset(space=False)
@@ -201,7 +206,9 @@ def main():
 	#--------------------
 	# n-gram language model.
 
-	# REF [file] >> ${SWDT_PYTHON_HOME}/rnd/test/language_processing/nltk_test.py
+	# NLTK library.
+		# REF [function] >> n_gram_example() in ${SWDT_PYTHON_HOME}/rnd/test/language_processing/nltk_test.py.
+		# REF [function] >> extract_bigram_or_trigram_with_nltk() in ${SWDT_PYTHON_HOME}/rnd/test/language_processing/konlpy_test.py.
 
 	# Support unigram and bigram language models.
 	n_gram_language_model_with_prefix_tree_test()

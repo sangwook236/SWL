@@ -1,15 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-import sys
-sys.path.append('../../src')
-sys.path.append('./src')
+import time
 
-import os, time
-
-# REF [site] >> https://github.com/konlpy/sejong-sanitizer
-# REF [text] >> sejong_corpus_usage_guide.txt
-def sejong_sanitizer_test():
+def load_sejong_corpus():
 	corpus_dir_path = '../../data/language_processing/sejong_corpus'
 
 	# File format.
@@ -21,7 +15,6 @@ def sejong_sanitizer_test():
 		corpus_dir_path + '/written_word_to_morphpos.txt'
 	]
 
-	print('Start loading Sejong corpus...')
 	start_time = time.time()
 	lines = list()
 	for fpath in corpus_filepaths:
@@ -34,18 +27,29 @@ def sejong_sanitizer_test():
 		except UnicodeDecodeError as ex:
 			print('Unicode decode error: {}.'.format(fpath))
 			raise
-	print('End loading Sejong corpus: {} secs.'.format(time.time() - start_time))
 
 	words = list()
-	#pos_results = list()
+	#pos_tags = list()
 	for line in lines:
 		pos = line.find('\t')
 		words.append(line[:pos])  # Word.
-		#pos_results.append(line[pos+1:])  # POS results.
+		#pos_tags.append(line[pos+1:])  # POS tag.
 	del lines
 
+	return words
+	#return words, pos_tags
+
+# REF [site] >> https://github.com/konlpy/sejong-sanitizer
+# REF [text] >> sejong_corpus_usage_guide.txt
+def sejong_sanitizer_test():
+	print('Start loading Sejong corpus...')
+	start_time = time.time()
+	words = load_sejong_corpus()
+	#words, pos_tags = load_sejong_corpus()
+	print('End loading Sejong corpus: {} secs.'.format(time.time() - start_time))
+
 	print('#words = {}.'.format(len(words)))
-	#print('#POS-results = {}.'.format(len(pos_results)))
+	#print('#POS tags = {}.'.format(len(pos_tags)))
 
 # REF [site] >> https://github.com/lovit/sejong_corpus_cleaner
 # REF [text] >> sejong_corpus_usage_guide.txt
@@ -164,76 +168,68 @@ def sejong_corpus_cleaner_test():
 	print('sorted(counter.items(), key=lambda x: -x[1])[:5] = {}.'.format(sorted(counter.items(), key=lambda x: -x[1])[:5]))
 
 def construct_dictionary_from_sejong_corpus():
-	# REF [function] >> sejong_sanitizer_test()
-
-	corpus_dir_path = '../../data/language_processing/sejong_corpus'
-
-	# File format.
-	#	Word\tPOS-results.
-	corpus_filepaths = [
-		#corpus_dir_path + '/colloquial_word_to_morph.txt',
-		corpus_dir_path + '/colloquial_word_to_morphpos.txt',
-		#corpus_dir_path + '/written_word_to_morph.txt',
-		corpus_dir_path + '/written_word_to_morphpos.txt'
-	]
-
-	print('Start loading Sejong corpus...')
-	start_time = time.time()
-	lines = list()
-	for fpath in corpus_filepaths:
-		try:
-			with open(fpath, 'r', encoding='utf8') as fd:
-				lines.extend(fd.read().splitlines())  # A list of strings.
-		except FileNotFoundError as ex:
-			print('File not found: {}.'.format(fpath))
-			raise
-		except UnicodeDecodeError as ex:
-			print('Unicode decode error: {}.'.format(fpath))
-			raise
-	print('End loading Sejong corpus: {} secs.'.format(time.time() - start_time))
-
-	words = list()
-	#pos_results = list()
-	for line in lines:
-		pos = line.find('\t')
-		words.append(line[:pos])  # Word.
-		#pos_results.append(line[pos+1:])  # POS results.
-	del lines
-
-	print('#words = {}.'.format(len(words)))
-	#print('#POS-results = {}.'.format(len(pos_results)))
-
-	#--------------------
-	# REF [function] >> construct_korean_dictionary_example() in ${SWDT_PYTHON_HOME}/rnd/test/language_processing/pyspellchecker_test.py.
-
 	import spellchecker
-	import konlpy
-	#import nltk
 
 	dictionary_filepath = './sejong_corpus_dictionary.json'
+	is_dictionary_constructed = False
 
-	text_data = ' '.join(words)
+	if is_dictionary_constructed:
+		# REF [function] >> construct_korean_dictionary_example() in ${SWDT_PYTHON_HOME}/rnd/test/language_processing/pyspellchecker_test.py.
 
-	print('Start constructing a dictionary...')
-	start_time = time.time()
-	#kkma = konlpy.tag.Kkma()
-	#text_data = kkma.nouns(text_data)
-	okt = konlpy.tag.Okt()
-	text_data = okt.nouns(text_data)
-	print('End constructing a dictionary: {} secs.'.format(time.time() - start_time))
+		print('Start loading Sejong corpus...')
+		start_time = time.time()
+		words = load_sejong_corpus()
+		#words, pos_tags = load_sejong_corpus()
+		print('End loading Sejong corpus: {} secs.'.format(time.time() - start_time))
 
-	print('Start saving a dictionary...')
-	start_time = time.time()
-	spell = spellchecker.SpellChecker(language=None)
-	text_data = ' '.join(text_data)
-	spell.word_frequency.load_text(text_data)
-	spell.export(dictionary_filepath, encoding='UTF-8', gzipped=True)
-	print('End saving a dictionary: {} secs.'.format(time.time() - start_time))
+		print('#words = {}.'.format(len(words)))
+		#print('#POS tags = {}.'.format(len(pos_tags)))
+
+		text_data = ' '.join(words)
+		del words
+
+		if False:
+			# NOTE [error] >> Out-of-memory.
+
+			import konlpy
+			#import nltk
+
+			# Initialize the Java virtual machine (JVM).
+			konlpy.jvm.init_jvm(jvmpath=None, max_heap_size=4096)
+
+			# TODO [check] >> Is it good to extract nouns or do POS tagging?
+			print('Start preprocessing Sejong corpus...')
+			start_time = time.time()
+			kkma = konlpy.tag.Kkma()
+			text_data = kkma.nouns(text_data)
+			#okt = konlpy.tag.Okt()
+			#text_data = okt.nouns(text_data)
+			print('End preprocessing Sejong corpus: {} secs.'.format(time.time() - start_time))
+
+			text_data = ' '.join(text_data)
+
+		print('Start saving a dictionary to {}...'.format(dictionary_filepath))
+		start_time = time.time()
+		spell = spellchecker.SpellChecker(language=None)
+		spell.word_frequency.load_text(text_data)
+		spell.export(dictionary_filepath, encoding='UTF-8', gzipped=True)
+		print('End saving a dictionary: {} secs.'.format(time.time() - start_time))
+	else:
+		# REF [function] >> simple_korean_example() in ${SWDT_PYTHON_HOME}/rnd/test/language_processing/pyspellchecker_test.py.
+
+		print('Start loading a dictionary from {}...'.format(dictionary_filepath))
+		start_time = time.time()
+		spell = spellchecker.SpellChecker(language=None)
+		spell.word_frequency.load_dictionary(dictionary_filepath, encoding='UTF-8')
+		print('End loading a dictionary: {} secs.'.format(time.time() - start_time))
+
+	print('type(spell.word_frequency.dictionary) = {}.'.format(type(spell.word_frequency.dictionary)))
+	print('type(spell.word_frequency.letters) = {}.'.format(type(spell.word_frequency.letters)))
 
 	print('len(spell.word_frequency.dictionary) = {}.'.format(len(spell.word_frequency.dictionary)))
+	print('len(spell.word_frequency.letters) = {}.'.format(len(spell.word_frequency.letters)))
 	print('spell.word_frequency.total_words = {}.'.format(spell.word_frequency.total_words))
 	print('spell.word_frequency.unique_words = {}.'.format(spell.word_frequency.unique_words))
-	print('len(spell.word_frequency.letters) = {}.'.format(len(spell.word_frequency.letters)))
 	print('spell.word_frequency.longest_word_length = {}.'.format(spell.word_frequency.longest_word_length))
 
 def main():

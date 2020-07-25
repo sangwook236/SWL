@@ -92,7 +92,7 @@ def word_beam_search_test():
 		decoded = ctc_word_beam_search.WordBeamSearch.wordBeamSearch(mat, beamWidth, langModel, useNGrams)
 		print('End decoding by word beam search: {} secs.'.format(time.time() - start_time))
 
-		print('Sample: {}.'.format(idx + 1))
+		print('Sample: #{}.'.format(idx + 1))
 		print('Decoded: {}.'.format(decoded))
 		print('G/T:     {}.'.format(gt))
 
@@ -108,8 +108,14 @@ def main():
 	#ibm_top_k_decoding_test()  # Not yet implemented.
 
 	# OpenNMT.
-	#	- Greedy search.
-	#	- Beam search.
+	#	- Greedy search: onmt.translate.greedy_search.GreedySearch.
+	#		create_greedy_search_strategy() in ${SWDT_PYTHON_HOME}/rnd/test/language_processing/opennmt_py_test.py
+	#	- Beam search: onmt.translate.beam_search.BeamSearch.
+	#		create_beam_search_strategy() in ${SWDT_PYTHON_HOME}/rnd/test/language_processing/opennmt_py_test.py
+	#
+	#	Usage:
+	# 		Translator._translate_batch_with_strategy() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/translate/translator.py
+	#		translate_batch_with_strategy() in ${SWDT_PYTHON_HOME}/rnd/test/language_processing/opennmt_py_test.py
 
 	# Use an n-gram language model with prefix tree.
 	word_beam_search_test()

@@ -23,10 +23,10 @@ class TokenConverterBase(object):
 		assert unknown is not None
 
 		self.unknown, self.sos, self.eos = unknown, sos, eos
-		if prefixes is None: prefixes = []
-		if suffixes is None: suffixes = []
-		if self.sos: prefixes = self.sos + prefixes
-		if self.eos: suffixes += self.eos
+		if prefixes is None: prefixes = list()
+		if suffixes is None: suffixes = list()
+		if self.sos: prefixes = [self.sos] + prefixes
+		if self.eos: suffixes += [self.eos]
 		self._num_affixes = len(prefixes + suffixes)
 
 		if additional_tokens:
@@ -42,13 +42,20 @@ class TokenConverterBase(object):
 		default_pad_value = -1 #len(extended_tokens)
 		if pad is None:
 			self._pad_value = default_pad_value
+			self.pad = None
 		elif isinstance(pad, int):
 			self._pad_value = pad
+			try:
+				self.pad = extended_tokens[pad]
+			except IndexError:
+				self.pad = None
 		else:
 			try:
 				self._pad_value = extended_tokens.index(pad)
+				self.pad = pad
 			except ValueError:
 				self._pad_value = default_pad_value
+				self.pad = None
 
 		self.auxiliary_tokens_int = [self._pad_value] + prefixes_int + suffixes_int
 		self.decoration_functor = lambda x: prefixes_int + x + suffixes_int
@@ -79,6 +86,10 @@ class TokenConverterBase(object):
 	@property
 	def EOS(self):
 		return self.eos
+
+	@property
+	def PAD(self):
+		return self.pad
 
 	@property
 	def pad_value(self):

@@ -1394,14 +1394,6 @@ def build_char_mixup_model(label_converter, image_channel, loss_type, lang, devi
 	return model, forward, criterion
 
 def build_rare1_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_text_len, num_suffixes, sos_value, blank_label=None, device='cpu'):
-	#num_fiducials = 20  # The number of fiducial points of TPS-STN.
-	num_fiducials = None
-	input_channel = image_channel  # The number of input channel of feature extractor.
-	output_channel = 512  # The number of output channel of feature extractor.
-	if lang == 'kor':
-		hidden_size = 1024  # The size of the LSTM hidden states.
-	else:
-		hidden_size = 512  # The size of the LSTM hidden states.
 	transformer = None  # The type of transformer. {None, 'TPS'}.
 	feature_extractor = 'VGG'  # The type of feature extractor. {'VGG', 'RCNN', 'ResNet'}.
 	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
@@ -1409,6 +1401,14 @@ def build_rare1_model(label_converter, image_height, image_width, image_channel,
 		decoder = 'CTC'  # The type of decoder. {'CTC', 'Attn'}.
 	elif loss_type in ['xent', 'nll']:
 		decoder = 'Attn'  # The type of decoder. {'CTC', 'Attn'}.
+
+	num_fiducials = 20  # The number of fiducial points of TPS-STN.
+	input_channel = image_channel  # The number of input channel of feature extractor.
+	output_channel = 512  # The number of output channel of feature extractor.
+	if lang == 'kor':
+		hidden_size = 1024  # The size of the LSTM hidden states.
+	else:
+		hidden_size = 512  # The size of the LSTM hidden states.
 
 	if loss_type == 'ctc':
 		# Define a loss function.
@@ -1484,14 +1484,6 @@ def build_rare1_model(label_converter, image_height, image_width, image_channel,
 	return model, infer, forward, criterion
 
 def build_rare1_mixup_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_text_len, num_suffixes, sos_value, blank_label=None, device='cpu'):
-	#num_fiducials = 20  # The number of fiducial points of TPS-STN.
-	num_fiducials = None
-	input_channel = image_channel  # The number of input channel of feature extractor.
-	output_channel = 512  # The number of output channel of feature extractor.
-	if lang == 'kor':
-		hidden_size = 1024  # The size of the LSTM hidden states.
-	else:
-		hidden_size = 512  # The size of the LSTM hidden states.
 	transformer = None  # The type of transformer. {None, 'TPS'}.
 	feature_extractor = 'VGG'  # The type of feature extractor. {'VGG', 'RCNN', 'ResNet'}.
 	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
@@ -1499,6 +1491,14 @@ def build_rare1_mixup_model(label_converter, image_height, image_width, image_ch
 		decoder = 'CTC'  # The type of decoder. {'CTC', 'Attn'}.
 	elif loss_type in ['xent', 'nll']:
 		decoder = 'Attn'  # The type of decoder. {'CTC', 'Attn'}.
+
+	num_fiducials = 20  # The number of fiducial points of TPS-STN.
+	input_channel = image_channel  # The number of input channel of feature extractor.
+	output_channel = 512  # The number of output channel of feature extractor.
+	if lang == 'kor':
+		hidden_size = 1024  # The size of the LSTM hidden states.
+	else:
+		hidden_size = 512  # The size of the LSTM hidden states.
 
 	mixup_input, mixup_hidden, mixup_alpha = True, True, 2.0
 	cutout, cutout_size = True, 4
@@ -1758,20 +1758,15 @@ def build_aster_model(label_converter, image_height, image_width, image_channel,
 
 	return model, infer, forward, sys_args
 
-def build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size, bidirectional_encoder=True):
+def build_decoder_and_generator_for_opennmt(num_classes, word_vec_size, hidden_size, num_layers=2, bidirectional_encoder=True):
 	import onmt
 
 	embedding_dropout = 0.3
-	encoder_num_layers = 2
-	encoder_rnn_size = encoder_rnn_size
-	encoder_dropout = 0.3
-	decoder_rnn_type = 'LSTM'
-	decoder_num_layers = 2
-	decoder_hidden_size = decoder_hidden_size
-	#decoder_hidden_size = encoder_rnn_size * 2 if bidirectional_encoder else encoder_rnn_size
-	decoder_dropout = 0.3
+	rnn_type = 'LSTM'
+	num_layers = num_layers
+	#hidden_size = hidden_size
+	dropout = 0.3
 
-	src_embeddings = None
 	tgt_embeddings = onmt.modules.Embeddings(
 		word_vec_size=word_vec_size,
 		word_vocab_size=num_classes,
@@ -1787,26 +1782,24 @@ def build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_r
 		fix_word_vecs=False
 	)
 
-	encoder = onmt.encoders.ImageEncoder(
-		num_layers=encoder_num_layers, bidirectional=bidirectional_encoder,
-		rnn_size=encoder_rnn_size, dropout=encoder_dropout, image_chanel_size=input_channel
-	)
 	decoder = onmt.decoders.InputFeedRNNDecoder(
-		rnn_type=decoder_rnn_type, bidirectional_encoder=bidirectional_encoder,
-		num_layers=decoder_num_layers, hidden_size=decoder_hidden_size,
+		rnn_type=rnn_type, bidirectional_encoder=bidirectional_encoder,
+		num_layers=num_layers, hidden_size=hidden_size,
 		attn_type='general', attn_func='softmax',
 		coverage_attn=False, context_gate=None,
-		copy_attn=False, dropout=decoder_dropout, embeddings=tgt_embeddings,
+		copy_attn=False, dropout=dropout, embeddings=tgt_embeddings,
 		reuse_copy_attn=False, copy_attn_type='general'
 	)
 	generator = torch.nn.Sequential(
-		torch.nn.Linear(in_features=decoder_hidden_size, out_features=num_classes, bias=True),
+		torch.nn.Linear(in_features=hidden_size, out_features=num_classes, bias=True),
 		onmt.modules.util_class.Cast(dtype=torch.float32),
 		torch.nn.LogSoftmax(dim=-1)
 	)
-	return encoder, decoder, generator
+	return decoder, generator
 
-def build_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, device='cpu'):
+def build_opennmt_model(encoder_type, label_converter, image_height, image_width, image_channel, lang, loss_type=None, device='cpu'):
+	bidirectional_encoder = True
+	num_encoder_layers, num_decoder_layers = 2, 2
 	if lang == 'kor':
 		word_vec_size = 80
 		encoder_rnn_size, decoder_hidden_size = 1024, 1024
@@ -1843,8 +1836,72 @@ def build_opennmt_model(label_converter, image_height, image_width, image_channe
 		criterion = None
 		forward = None
 
+	#-----
+	import torchtext
+
+	tgt_field = torchtext.data.Field(
+		sequential=True, use_vocab=True, init_token=label_converter.SOS, eos_token=label_converter.EOS, fix_length=None,
+		dtype=torch.int64, preprocessing=None, postprocessing=None, lower=False,
+		tokenize=None, tokenizer_language='en',
+		#tokenize=functools.partial(onmt.inputters.inputter._feature_tokenize, layer=0, feat_delim=None, truncate=None), tokenizer_language='en',
+		include_lengths=False, batch_first=False, pad_token=label_converter.PAD, pad_first=False, unk_token=label_converter.UNKNOWN,
+		truncate_first=False, stop_words=None, is_target=False
+	)
+	#tgt_field.build_vocab([label_converter.tokens], specials=[label_converter.UNKNOWN, label_converter.PAD], specials_first=False)  # Sort vocabulary + add special tokens, <unknown>, <pad>, <bos>, and <eos>.
+	import torchtext_util
+	if label_converter.PAD in [label_converter.SOS, label_converter.EOS, label_converter.UNKNOWN]:
+		tgt_field.vocab = torchtext_util.build_vocab_from_lexicon(label_converter.tokens, specials=[label_converter.SOS, label_converter.EOS, label_converter.UNKNOWN], specials_first=False, sort=False)
+	else:
+		tgt_field.vocab = torchtext_util.build_vocab_from_lexicon(label_converter.tokens, specials=[label_converter.PAD, label_converter.SOS, label_converter.EOS, label_converter.UNKNOWN], specials_first=False, sort=False)
+	assert label_converter.num_tokens == len(tgt_field.vocab.itos)
+	assert len(list(filter(lambda pair: pair[0] != pair[1], zip(label_converter.tokens, tgt_field.vocab.itos)))) == 0
+
+	tgt_vocab = tgt_field.vocab
+	tgt_unk = tgt_vocab.stoi[tgt_field.unk_token]
+	tgt_bos = tgt_vocab.stoi[tgt_field.init_token]
+	tgt_eos = tgt_vocab.stoi[tgt_field.eos_token]
+	tgt_pad = tgt_vocab.stoi[tgt_field.pad_token]
+
+	is_beam_search_used = True
+	if is_beam_search_used:
+		beam_size = 30
+		n_best = 1
+		ratio = 0.0
+	else:
+		beam_size = 1
+		random_sampling_topk, random_sampling_temp = 1, 1
+	min_length, max_length = 0, 100
+	block_ngram_repeat = 0
+	#ignore_when_blocking = frozenset()
+	#exclusion_idxs = {tgt_vocab.stoi[t] for t in ignore_when_blocking}
+	exclusion_idxs = set()
+
 	def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 		if outputs is None or output_lens is None:
+			batch_size = len(src_batch)
+
+			if is_beam_search_used:
+				decode_strategy = create_beam_search_strategy(batch_size, scorer, beam_size, n_best, ratio, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
+			else:
+				decode_strategy = create_greedy_search_strategy(batch_size, random_sampling_topk, random_sampling_temp, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
+
+			print('Start translating...')
+			start_time = time.time()
+			trans_batch = translate_batch_with_strategy(model, decode_strategy, src_batch, batch_size, beam_size, tgt_unk, tgt_vocab, src_vocabs=[])
+			print('End translating: {} secs.'.format(time.time() - start_time))
+
+			for idx, (gt, pred, score, attn, alignment) in enumerate(zip(tgt_batch, trans_batch['predictions'], trans_batch['scores'], trans_batch['attention'], trans_batch['alignment'])):
+				print('ID #{}:'.format(idx))
+				print('\tG/T        = {}.'.format(gt))
+				try:
+					print('\tPrediction = {}.'.format(' '.join([tgt_vocab.itos[elem] for elem in pred[0].cpu().numpy() if elem < len(tgt_vocab.itos)])))
+				except IndexError as ex:
+					print('\tDecoding error: {}.'.format(pred[0]))
+				print('\tScore      = {}.'.format(score[0].cpu().item()))
+				#print('\tAttention  = {}.'.format(attn[0].cpu().numpy()))
+				#print('\tAlignment  = {}.'.format(alignment[0].cpu().item()))  # Empty.
+
+			#-----
 			# FIXME [check] >>
 			model_output_tuple = model(inputs.to(device))
 
@@ -1854,7 +1911,7 @@ def build_opennmt_model(label_converter, image_height, image_width, image_channe
 			_, model_outputs = torch.max(model_outputs, dim=-1)
 			return model_outputs.cpu().numpy(), None
 		else:
-			deconder_outputs = outputs[:,1:]
+			decoder_outputs = outputs[:,1:]
 			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
 
 			model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
@@ -1863,36 +1920,88 @@ def build_opennmt_model(label_converter, image_height, image_width, image_channe
 			#attentions = model_output_tuple[1]['std']
 
 			_, model_outputs = torch.max(model_outputs, dim=-1)
-			return model_outputs.cpu().numpy(), deconder_outputs.numpy()
+			return model_outputs.cpu().numpy(), decoder_outputs.numpy()
+
+	if encoder_type == 'onmt':
+		#embedding_dropout = 0.3
+		dropout = 0.3
+
+		#src_embeddings = None
+
+		import onmt
+		encoder = onmt.encoders.ImageEncoder(
+			num_layers=num_encoder_layers, bidirectional=bidirectional_encoder,
+			rnn_size=encoder_rnn_size, dropout=dropout, image_chanel_size=image_channel
+		)
+	elif encoder_type == 'rare1':
+		transformer = None  # The type of transformer. {None, 'TPS'}.
+		feature_extractor = 'VGG'  # The type of feature extractor. {'VGG', 'RCNN', 'ResNet'}.
+		sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
+
+		num_fiducials = 20  # The number of fiducial points of TPS-STN.
+		output_channel = 512  # The number of output channel of feature extractor.
+
+		import opennmt_util
+		encoder = opennmt_util.Rare1ImageEncoder(
+			image_height, image_width, image_channel, output_channel,
+			hidden_size=encoder_rnn_size, num_layers=num_encoder_layers, bidirectional=bidirectional_encoder,
+			transformer=transformer, feature_extractor=feature_extractor, sequence_model=sequence_model,
+			num_fiducials=num_fiducials
+		)
+	elif encoder_type == 'rare2':
+		is_stn_used = False
+		if is_stn_used:
+			num_fiducials = 20  # The number of fiducial points of TPS-STN.
+		else:
+			num_fiducials = 0  # No TPS-STN.
+
+		import opennmt_util
+		encoder = opennmt_util.Rare2ImageEncoder(
+			image_height, image_width, image_channel,
+			hidden_size=encoder_rnn_size, num_layers=num_encoder_layers, bidirectional=bidirectional_encoder,
+			num_fiducials=num_fiducials
+		)
+	elif encoder_type == 'aster':
+		is_stn_used = False
+		if is_stn_used:
+			num_fiducials = 20  # The number of fiducial points of TPS-STN.
+		else:
+			num_fiducials = 0  # No TPS-STN.
+
+		import opennmt_util
+		encoder = opennmt_util.AsterImageEncoder(
+			image_height, image_width, image_channel, num_classes,
+			hidden_size=encoder_rnn_size,
+			num_fiducials=num_fiducials
+		)
+	else:
+		raise ValueError('Invalid encoder type: {}'.format(encoder_type))
+	decoder, generator = build_decoder_and_generator_for_opennmt(label_converter.num_tokens, word_vec_size, hidden_size=decoder_hidden_size, num_layers=num_decoder_layers, bidirectional_encoder=bidirectional_encoder)
 
 	import onmt
-	encoder, decoder, generator = build_opennmt_submodels(image_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size, bidirectional_encoder=True)
 	model = onmt.models.NMTModel(encoder, decoder)
 	model.add_module('generator', generator)
 
 	return model, infer, forward, criterion
 
 def build_rare1_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, device='cpu'):
-	#num_fiducials = 20  # The number of fiducial points of TPS-STN.
-	num_fiducials = None
-	#input_channel = image_channel  # The number of input channel of feature extractor.
-	output_channel = 512  # The number of output channel of feature extractor.
 	transformer = None  # The type of transformer. {None, 'TPS'}.
 	feature_extractor = 'VGG'  # The type of feature extractor. {'VGG', 'RCNN', 'ResNet'}.
 	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
 
+	num_fiducials = 20  # The number of fiducial points of TPS-STN.
+	#input_channel = image_channel  # The number of input channel of feature extractor.
+	output_channel = 512  # The number of output channel of feature extractor.
+	bidirectional_encoder = True
+	num_encoder_layers = 2
 	if lang == 'kor':
 		word_vec_size = 80
-		bidirectional_encoder = True
 		encoder_rnn_size = 512
 		decoder_hidden_size = encoder_rnn_size * 2 if bidirectional_encoder else encoder_rnn_size
-		num_encoder_layers = 2
 	else:
 		word_vec_size = 80
-		bidirectional_encoder = True
 		encoder_rnn_size = 256
 		decoder_hidden_size = encoder_rnn_size * 2 if bidirectional_encoder else encoder_rnn_size
-		num_encoder_layers = 2
 
 	if loss_type is not None:
 		# Define a loss function.
@@ -1950,7 +2059,7 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 			super().__init__()
 
 			self.encoder = self._create_encoder(image_height, image_width, input_channel, output_channel, encoder_rnn_size, num_layers=num_encoder_layers, bidirectional=bidirectional_encoder)
-			_, self.decoder, self.generator = build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size, bidirectional_encoder)
+			self.decoder, self.generator = build_decoder_and_generator_for_opennmt(num_classes, word_vec_size, hidden_size=decoder_hidden_size, num_layers=num_decoder_layers, bidirectional_encoder=bidirectional_encoder)
 
 		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
 		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
@@ -1970,7 +2079,7 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 
 			# Sequence model.
 			# TODO [check] >> The hidden size is too small?
-			#enc_outputs, enc_hiddens = self.sequence_model((visual_feature, None))  # [b, w/4-1, #directions * hidden size] or [w/4-1, b, #directions * hidden size], ([#directions, b, hidden size], [#directions, b, hidden size]).
+			#enc_outputs, enc_hiddens = self.sequence_rnn((visual_feature, None))  # [b, w/4-1, #directions * hidden size] or [w/4-1, b, #directions * hidden size], ([#directions, b, hidden size], [#directions, b, hidden size]).
 			enc_outputs, enc_hiddens = self.sequence_rnn(visual_feature)  # [b, w/4-1, #directions * hidden size], ([#layers * #directions, b, hidden size], [#layers * #directions, b, hidden size]).
 			enc_outputs = self.sequence_projector(enc_outputs)  # [b, w/4-1, hidden size].
 			enc_outputs = enc_outputs.transpose(0, 1)  # [w/4-1, b, hidden size]
@@ -2014,7 +2123,7 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 
 			# Sequence model.
 			if sequence_model == 'BiLSTM':
-				#self.sequence_model = torch.nn.Sequential(
+				#self.sequence_rnn = torch.nn.Sequential(
 				#	BidirectionalLSTM(feature_extractor_output_size, hidden_size, hidden_size, batch_first=True),
 				#	BidirectionalLSTM(hidden_size, hidden_size, hidden_size, batch_first=True)
 				#)
@@ -2025,27 +2134,28 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 					self.sequence_projector = torch.nn.Linear(hidden_size, hidden_size)
 			else:
 				print('No sequence model specified.')
-				self.sequence_model = None
+				self.sequence_rnn = None
 
 	model = MyCompositeModel(image_height, image_width, image_channel, output_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, bidirectional_encoder)
 
 	return model, infer, forward, criterion
 
 def build_rare2_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, device='cpu'):
-	#num_fiducials = 20  # The number of fiducial points of TPS-STN.
-	num_fiducials = None
+	is_stn_used = False
+	if is_stn_used:
+		num_fiducials = 20  # The number of fiducial points of TPS-STN.
+	else:
+		num_fiducials = 0  # No TPS-STN.
+	bidirectional_encoder = True
+	num_encoder_layers = 2
 	if lang == 'kor':
 		word_vec_size = 80
-		bidirectional_encoder = True
 		encoder_rnn_size = 512
 		decoder_hidden_size = encoder_rnn_size * 2 if bidirectional_encoder else encoder_rnn_size
-		num_encoder_layers = 2
 	else:
 		word_vec_size = 80
-		bidirectional_encoder = True
 		encoder_rnn_size = 256
 		decoder_hidden_size = encoder_rnn_size * 2 if bidirectional_encoder else encoder_rnn_size
-		num_encoder_layers = 2
 
 	if loss_type is not None:
 		# Define a loss function.
@@ -2102,14 +2212,14 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 		def __init__(self, image_height, image_width, input_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, bidirectional_encoder):
 			super().__init__()
 
-			if num_fiducials:
+			if num_fiducials and num_fiducials > 0:
 				import rare.modules.transformation
 				self.transformer = rare.modules.transformation.TPS_SpatialTransformerNetwork(F=num_fiducials, I_size=(image_height, image_width), I_r_size=(image_height, image_width), I_channel_num=input_channel)
 			else:
 				self.transformer = None
 
-			self.encoder = self._create_encoder(image_height, image_width, input_channel, encoder_rnn_size, num_layers=num_encoder_layers, bidirectional=bidirectional_encoder)
-			_, self.decoder, self.generator = build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size, bidirectional_encoder)
+			self.encoder = self._create_encoder(image_height, input_channel, encoder_rnn_size, num_layers=num_encoder_layers, bidirectional=bidirectional_encoder)
+			self.decoder, self.generator = build_decoder_and_generator_for_opennmt(num_classes, word_vec_size, hidden_size=decoder_hidden_size, num_layers=num_decoder_layers, bidirectional_encoder=bidirectional_encoder)
 
 		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
 		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
@@ -2140,7 +2250,7 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 				outs = self.generator(dec_outs)
 				return outs, attns
 
-		def _create_encoder(self, image_height, image_width, image_channel, hidden_size, num_layers=2, bidirectional=True):
+		def _create_encoder(self, image_height, image_channel, hidden_size, num_layers=2, bidirectional=True):
 			assert image_height % 16 == 0, 'image_height has to be a multiple of 16'
 
 			# This implementation assumes that input size is h x w.
@@ -2170,16 +2280,18 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 	return model, infer, forward, criterion
 
 def build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, device='cpu'):
-	#num_fiducials = 20  # The number of fiducial points of TPS-STN.
-	num_fiducials = None
+	is_stn_used = False
+	if is_stn_used:
+		num_fiducials = 20  # The number of fiducial points of TPS-STN.
+	else:
+		num_fiducials = 0  # No TPS-STN.
+	bidirectional_encoder = True
 	if lang == 'kor':
 		word_vec_size = 80
-		bidirectional_encoder = True
 		encoder_rnn_size = 512
 		decoder_hidden_size = encoder_rnn_size * 2 if bidirectional_encoder else encoder_rnn_size
 	else:
 		word_vec_size = 80
-		bidirectional_encoder = True
 		encoder_rnn_size = 256
 		decoder_hidden_size = encoder_rnn_size * 2 if bidirectional_encoder else encoder_rnn_size
 
@@ -2238,7 +2350,7 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 		def __init__(self, image_height, image_width, input_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size, bidirectional_encoder):
 			super().__init__()
 
-			if num_fiducials:
+			if num_fiducials and num_fiducials > 0:
 				import rare.modules.transformation
 				self.transformer = rare.modules.transformation.TPS_SpatialTransformerNetwork(F=num_fiducials, I_size=(image_height, image_width), I_r_size=(image_height, image_width), I_channel_num=input_channel)
 			else:
@@ -2246,7 +2358,7 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 
 			import aster.resnet_aster
 			self.encoder = aster.resnet_aster.ResNet_ASTER(with_lstm=True, in_height=image_height, in_channels=input_channel, hidden_size=encoder_rnn_size)
-			_, self.decoder, self.generator = build_opennmt_submodels(input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size, bidirectional_encoder)
+			self.decoder, self.generator = build_decoder_and_generator_for_opennmt(num_classes, word_vec_size, hidden_size=decoder_hidden_size, num_layers=num_decoder_layers, bidirectional_encoder=bidirectional_encoder)
 
 		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
 		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
@@ -2637,7 +2749,7 @@ def recognize_word_by_rare1():
 
 	if loss_type == 'ctc':
 		BLANK_LABEL = '<BLANK>'  # The BLANK label for CTC.
-		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), pad_value=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
+		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), pad=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
 		assert label_converter.encode([BLANK_LABEL], is_bare_output=True)[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL], is_bare_output=True)[0])
 		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL], is_bare_output=True)[0]
 		SOS_VALUE, EOS_VALUE = None, None
@@ -2647,12 +2759,12 @@ def recognize_word_by_rare1():
 			# When the pad value is the ID of a valid token.
 			PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
 			PAD_TOKEN = '<PAD>'
-			label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+			label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_VALUE)
 			assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
 			assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
 		else:
 			# When the pad value = the ID of <SOS> token.
-			label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
+			label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
 		SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 		num_suffixes = 1
 
@@ -2816,12 +2928,12 @@ def recognize_word_by_rare2():
 		# When the pad value is the ID of a valid token.
 		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
 		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_VALUE)
 		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
 	else:
 		# When the pad value = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
@@ -2986,12 +3098,12 @@ def recognize_word_by_aster():
 		# When the pad value is the ID of a valid token.
 		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
 		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_VALUE)
 		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
 	else:
 		# When the pad value = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
@@ -3156,12 +3268,13 @@ def recognize_word_by_opennmt():
 		# When the pad value is the ID of a valid token.
 		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
 		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_VALUE)
 		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
 	else:
 		# When the pad value = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+	assert label_converter.PAD is not None
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if is_mixed_words_used:
@@ -3179,7 +3292,8 @@ def recognize_word_by_opennmt():
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, forward_functor, criterion = build_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type, device)
+	encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
+	model, infer_functor, forward_functor, criterion = build_opennmt_model(encoder_type, label_converter, image_height, image_width, image_channel, lang, loss_type, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3325,12 +3439,12 @@ def recognize_word_by_rare1_and_opennmt():
 		# When the pad value is the ID of a valid token.
 		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
 		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_VALUE)
 		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
 	else:
 		# When the pad value = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if is_mixed_words_used:
@@ -3493,12 +3607,12 @@ def recognize_word_by_rare2_and_opennmt():
 		# When the pad value is the ID of a valid token.
 		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
 		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_VALUE)
 		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
 	else:
 		# When the pad value = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if is_mixed_words_used:
@@ -3661,12 +3775,12 @@ def recognize_word_by_aster_and_opennmt():
 		# When the pad value is the ID of a valid token.
 		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
 		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_VALUE)
 		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
 	else:
 		# When the pad value = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if is_mixed_words_used:
@@ -3831,7 +3945,7 @@ def recognize_word_using_mixup():
 
 	if loss_type == 'ctc':
 		BLANK_LABEL = '<BLANK>'  # The BLANK label for CTC.
-		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), pad_value=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
+		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), pad=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
 		assert label_converter.encode([BLANK_LABEL], is_bare_output=True)[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL], is_bare_output=True)[0])
 		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL], is_bare_output=True)[0]
 		SOS_VALUE, EOS_VALUE = None, None
@@ -3841,12 +3955,12 @@ def recognize_word_using_mixup():
 			# When the pad value is the ID of a valid token.
 			PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
 			PAD_TOKEN = '<PAD>'
-			label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+			label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_VALUE)
 			assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
 			assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
 		else:
 			# When the pad value = the ID of <SOS> token.
-			label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
+			label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
 		SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 		num_suffixes = 1
 
@@ -3980,12 +4094,12 @@ def evaluate_word_recognizer():
 		# When the pad value is the ID of a valid token.
 		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
 		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_VALUE)
 		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
 	else:
 		# When the pad value = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
@@ -4102,12 +4216,12 @@ def infer_by_word_recognizer():
 		# When the pad value is the ID of a valid token.
 		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
 		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_VALUE)
 		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
 	else:
 		# When the pad value = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
@@ -4268,12 +4382,13 @@ def recognize_textline_by_opennmt():
 		# When the pad value is the ID of a valid token.
 		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
 		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_VALUE)
 		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
 	else:
 		# When the pad value = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+	assert label_converter.PAD is not None
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if is_mixed_textlines_used:
@@ -4291,7 +4406,8 @@ def recognize_textline_by_opennmt():
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, forward_functor, criterion = build_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type, device)
+	encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
+	model, infer_functor, forward_functor, criterion = build_opennmt_model(encoder_type, label_converter, image_height, image_width, image_channel, lang, loss_type, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -4530,7 +4646,7 @@ def recognize_word_using_craft_and_word_recognizer():
 	#--------------------
 	if decoder == 'CTC':
 		BLANK_LABEL = '<BLANK>'  # The BLANK label for CTC.
-		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), pad_value=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
+		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), pad=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
 		assert label_converter.encode([BLANK_LABEL], is_bare_output=True)[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL], is_bare_output=True)[0])
 		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL], is_bare_output=True)[0]
 		SOS_VALUE, EOS_VALUE = None, None
@@ -4541,12 +4657,12 @@ def recognize_word_using_craft_and_word_recognizer():
 			# When the pad value is the ID of a valid token.
 			PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
 			PAD_TOKEN = '<PAD>'
-			label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], use_sos=True, use_eos=True, pad_value=PAD_VALUE)
+			label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_VALUE)
 			assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
 			assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
 		else:
 			# When the pad value = the ID of <SOS> token.
-			label_converter = swl_langproc_util.TokenConverter(list(charset), use_sos=True, use_eos=True, pad_value=swl_langproc_util.TokenConverter.SOS)
+			label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
 		SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 		num_suffixes = 1
 	num_classes = label_converter.num_tokens
@@ -4640,10 +4756,13 @@ def main():
 	#recognize_word_by_rare1()  # Use RARE #1.
 	#recognize_word_by_rare2()  # Use RARE #2.
 	#recognize_word_by_aster()  # Use ASTER.
+
 	#recognize_word_by_opennmt()  # Use OpenNMT.
+
 	#recognize_word_by_rare1_and_opennmt()  # Use RARE #1 (encoder) + OpenNMT (decoder).
 	#recognize_word_by_rare2_and_opennmt()  # Use RARE #2 (encoder) + OpenNMT (decoder).
 	#recognize_word_by_aster_and_opennmt()  # Use ASTER (encoder) + OpenNMT (decoder).
+
 	#recognize_word_using_mixup()  # Use RARE #1. Not working.
 
 	#evaluate_word_recognizer()
