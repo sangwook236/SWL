@@ -38,8 +38,54 @@ def create_beam_search_strategy(batch_size, scorer, beam_size, n_best, ratio, mi
 		ratio=ratio
 	)
 
+# REF [function] >> decode_and_generate() in ${SWDT_PYTHON_HOME}/rnd/test/language_processing/opennmt_py_test.py.
+def decode_and_generate(model, decoder_in, memory_bank, batch, src_vocabs, memory_lengths, beam_size, copy_attn, tgt_vocab, tgt_unk_idx, src_map=None, step=None, batch_offset=None):
+	if copy_attn:
+		# Turn any copied words into UNKs.
+		decoder_in = decoder_in.masked_fill(decoder_in.gt(len(tgt_vocab) - 1), tgt_unk_idx)
+
+	# Decoder forward, takes [tgt_len, batch, nfeats] as input
+	# and [src_len, batch, hidden] as memory_bank
+	# in case of inference tgt_len = 1, batch = beam times batch_size
+	# in case of Gold Scoring tgt_len = actual length, batch = 1 batch
+	dec_out, dec_attn = model.decoder(decoder_in, memory_bank, memory_lengths=memory_lengths, step=step)
+
+	# Generator forward.
+	if not copy_attn:
+		if 'std' in dec_attn:
+			attn = dec_attn['std']
+		else:
+			attn = None
+		log_probs = model.generator(dec_out.squeeze(0))
+		# returns [(batch_size x beam_size) , vocab ] when 1 step
+		# or [ tgt_len, batch_size, vocab ] when full sentence
+	else:
+		attn = dec_attn['copy']
+		scores = model.generator(dec_out.view(-1, dec_out.size(2)), attn.view(-1, attn.size(2)), src_map)
+		# here we have scores [tgt_lenxbatch, vocab] or [beamxbatch, vocab]
+		if batch_offset is None:
+			scores = scores.view(-1, batch.batch_size, scores.size(-1))
+			scores = scores.transpose(0, 1).contiguous()
+		else:
+			scores = scores.view(-1, beam_size, scores.size(-1))
+		scores = onmt.modules.copy_generator.collapse_copy_scores(
+			scores,
+			batch,
+			tgt_vocab,
+			src_vocabs,
+			batch_dim=0,
+			batch_offset=batch_offset
+		)
+		scores = scores.view(decoder_in.size(0), -1, scores.size(-1))
+		log_probs = scores.squeeze(0).log()
+		# returns [(batch_size x beam_size) , vocab ] when 1 step
+		# or [ tgt_len, batch_size, vocab ] when full sentence
+	return log_probs, attn
+
 # REF [function] >> translate_batch_with_strategy() in ${SWDT_PYTHON_HOME}/rnd/test/language_processing/opennmt_py_test.py.
-def translate_batch_with_strategy(model, decode_strategy, src, beam_size, unk_index, tgt_vocab, src_vocabs=[]):
+def translate_batch_with_strategy(model, decode_strategy, src, batch_size, beam_size, unk_index, tgt_vocab, src_vocabs=[]):
+	import torch
+
 	copy_attn = False  # Fixed.
 	report_align = False  # Fixed.
 

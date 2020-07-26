@@ -570,6 +570,21 @@ def create_word_data_loaders(word_type, label_converter, wordset, chars, num_tra
 	elif word_type == 'random_word':
 		train_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
 		test_dataset = text_data.RandomWordDataset(label_converter, chars, num_test_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
+	elif textline_type == 'aihub_word':
+		# AI-Hub printed text dataset.
+		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
+		aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
+
+		image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
+		is_preloaded_image_used = False
+		dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_word_len, is_preloaded_image_used)
+
+		num_examples = len(dataset)
+		num_train_examples = int(num_examples * train_test_ratio)
+
+		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+		train_dataset = MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform)
+		test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
 	elif word_type == 'file_based_word':
 		if 'posix' == os.name:
 			data_base_dir_path = '/home/sangwook/work/dataset'
@@ -656,6 +671,14 @@ def create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_e
 		datasets.append(text_data.SimpleWordDataset(label_converter, wordset, num_simple_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor))
 	if True:
 		datasets.append(text_data.RandomWordDataset(label_converter, chars, num_random_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor))
+	if True:
+		# AI-Hub printed text dataset.
+		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
+		aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
+
+		image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
+		is_preloaded_image_used = False
+		datasets.append(aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_word_len, is_preloaded_image_used))
 	if True:
 		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
@@ -781,6 +804,22 @@ def create_text_line_data_loaders(textline_type, label_converter, wordset, chars
 			test_dataset_kr_rnd = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs)
 		train_dataset = torch.utils.data.ConcatDataset([train_dataset_en, train_dataset_en_rnd, train_dataset_kr, train_dataset_kr_rnd])
 		test_dataset = torch.utils.data.ConcatDataset([test_dataset_en, test_dataset_en_rnd, test_dataset_kr, test_dataset_kr_rnd])
+	elif textline_type == 'aihub_textline':
+		# AI-Hub printed text dataset.
+		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
+		aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
+
+		image_types_to_load = ['sentence']  # {'syllable', 'word', 'sentence'}.
+		#image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
+		is_preloaded_image_used = False
+		dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_textline_len, is_preloaded_image_used)
+
+		num_examples = len(dataset)
+		num_train_examples = int(num_examples * train_test_ratio)
+
+		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+		train_dataset = MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform)
+		test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
 	elif textline_type == 'file_based_textline':
 		if 'posix' == os.name:
 			data_base_dir_path = '/home/sangwook/work/dataset'
@@ -911,6 +950,15 @@ def create_mixed_text_line_data_loaders(label_converter, wordset, chars, num_sim
 			datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_trdg_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=None, target_transform=None, **generator_kwargs))
 			is_randomly_generated = True
 			datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_trdg_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=None, target_transform=None, **generator_kwargs))
+	if True:
+		# AI-Hub printed text dataset.
+		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
+		aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
+
+		image_types_to_load = ['sentence']  # {'syllable', 'word', 'sentence'}.
+		#image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
+		is_preloaded_image_used = False
+		datasets.append(aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_textline_len, is_preloaded_image_used))
 	if True:
 		# ICDAR 2019 SROIE dataset.
 		is_preloaded_image_used = False
@@ -1797,7 +1845,7 @@ def build_decoder_and_generator_for_opennmt(num_classes, word_vec_size, hidden_s
 	)
 	return decoder, generator
 
-def build_opennmt_model(encoder_type, label_converter, image_height, image_width, image_channel, lang, loss_type=None, device='cpu'):
+def build_opennmt_model(label_converter, image_height, image_width, image_channel, encoder_type, lang, loss_type=None, device='cpu'):
 	bidirectional_encoder = True
 	num_encoder_layers, num_decoder_layers = 2, 2
 	if lang == 'kor':
@@ -1836,19 +1884,20 @@ def build_opennmt_model(encoder_type, label_converter, image_height, image_width
 		criterion = None
 		forward = None
 
-	#-----
+	#--------------------
+	import onmt, onmt.translate
 	import torchtext
+	import torchtext_util
 
 	tgt_field = torchtext.data.Field(
 		sequential=True, use_vocab=True, init_token=label_converter.SOS, eos_token=label_converter.EOS, fix_length=None,
 		dtype=torch.int64, preprocessing=None, postprocessing=None, lower=False,
-		tokenize=None, tokenizer_language='en',
+		tokenize=None, tokenizer_language='kr',  # TODO [check] >> tokenizer_language is not valid.
 		#tokenize=functools.partial(onmt.inputters.inputter._feature_tokenize, layer=0, feat_delim=None, truncate=None), tokenizer_language='en',
 		include_lengths=False, batch_first=False, pad_token=label_converter.PAD, pad_first=False, unk_token=label_converter.UNKNOWN,
 		truncate_first=False, stop_words=None, is_target=False
 	)
 	#tgt_field.build_vocab([label_converter.tokens], specials=[label_converter.UNKNOWN, label_converter.PAD], specials_first=False)  # Sort vocabulary + add special tokens, <unknown>, <pad>, <bos>, and <eos>.
-	import torchtext_util
 	if label_converter.PAD in [label_converter.SOS, label_converter.EOS, label_converter.UNKNOWN]:
 		tgt_field.vocab = torchtext_util.build_vocab_from_lexicon(label_converter.tokens, specials=[label_converter.SOS, label_converter.EOS, label_converter.UNKNOWN], specials_first=False, sort=False)
 	else:
@@ -1862,6 +1911,8 @@ def build_opennmt_model(encoder_type, label_converter, image_height, image_width
 	tgt_eos = tgt_vocab.stoi[tgt_field.eos_token]
 	tgt_pad = tgt_vocab.stoi[tgt_field.pad_token]
 
+	scorer = onmt.translate.GNMTGlobalScorer(alpha=0.7, beta=0.0, length_penalty='avg', coverage_penalty='none')
+
 	is_beam_search_used = True
 	if is_beam_search_used:
 		beam_size = 30
@@ -1870,45 +1921,33 @@ def build_opennmt_model(encoder_type, label_converter, image_height, image_width
 	else:
 		beam_size = 1
 		random_sampling_topk, random_sampling_temp = 1, 1
+		n_best = 1  # Fixed. For handling translation results.
 	min_length, max_length = 0, 100
 	block_ngram_repeat = 0
 	#ignore_when_blocking = frozenset()
 	#exclusion_idxs = {tgt_vocab.stoi[t] for t in ignore_when_blocking}
 	exclusion_idxs = set()
 
+	import opennmt_util
 	def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 		if outputs is None or output_lens is None:
-			batch_size = len(src_batch)
+			batch_size = len(inputs)
 
 			if is_beam_search_used:
-				decode_strategy = create_beam_search_strategy(batch_size, scorer, beam_size, n_best, ratio, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
+				decode_strategy = opennmt_util.create_beam_search_strategy(batch_size, scorer, beam_size, n_best, ratio, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
 			else:
-				decode_strategy = create_greedy_search_strategy(batch_size, random_sampling_topk, random_sampling_temp, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
+				decode_strategy = opennmt_util.create_greedy_search_strategy(batch_size, random_sampling_topk, random_sampling_temp, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
 
-			print('Start translating...')
-			start_time = time.time()
-			trans_batch = translate_batch_with_strategy(model, decode_strategy, src_batch, batch_size, beam_size, tgt_unk, tgt_vocab, src_vocabs=[])
-			print('End translating: {} secs.'.format(time.time() - start_time))
+			model_output_dict = opennmt_util.translate_batch_with_strategy(model, decode_strategy, inputs.to(device), batch_size, beam_size, tgt_unk, tgt_vocab, src_vocabs=[])
 
-			for idx, (gt, pred, score, attn, alignment) in enumerate(zip(tgt_batch, trans_batch['predictions'], trans_batch['scores'], trans_batch['attention'], trans_batch['alignment'])):
-				print('ID #{}:'.format(idx))
-				print('\tG/T        = {}.'.format(gt))
-				try:
-					print('\tPrediction = {}.'.format(' '.join([tgt_vocab.itos[elem] for elem in pred[0].cpu().numpy() if elem < len(tgt_vocab.itos)])))
-				except IndexError as ex:
-					print('\tDecoding error: {}.'.format(pred[0]))
-				print('\tScore      = {}.'.format(score[0].cpu().item()))
-				#print('\tAttention  = {}.'.format(attn[0].cpu().numpy()))
-				#print('\tAlignment  = {}.'.format(alignment[0].cpu().item()))  # Empty.
+			model_outputs = model_output_dict['predictions']
+			#scores = model_output_dict['scores']
+			#attentions = model_output_dict['attention']
+			#alignment = model_output_dict['alignment']
 
-			#-----
-			# FIXME [check] >>
-			model_output_tuple = model(inputs.to(device))
+			rank_id = 0  # rank_id < n_best.
+			model_outputs = torch.stack([tt[rank_id] for tt in model_outputs])
 
-			model_outputs = model.generator(model_output_tuple[0]).transpose(0, 1)  # [T, B, F] -> [B, T, F].
-			#attentions = model_output_tuple[1]['std']
-
-			_, model_outputs = torch.max(model_outputs, dim=-1)
 			return model_outputs.cpu().numpy(), None
 		else:
 			decoder_outputs = outputs[:,1:]
@@ -1928,7 +1967,6 @@ def build_opennmt_model(encoder_type, label_converter, image_height, image_width
 
 		#src_embeddings = None
 
-		import onmt
 		encoder = onmt.encoders.ImageEncoder(
 			num_layers=num_encoder_layers, bidirectional=bidirectional_encoder,
 			rnn_size=encoder_rnn_size, dropout=dropout, image_chanel_size=image_channel
@@ -1993,7 +2031,7 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 	#input_channel = image_channel  # The number of input channel of feature extractor.
 	output_channel = 512  # The number of output channel of feature extractor.
 	bidirectional_encoder = True
-	num_encoder_layers = 2
+	num_encoder_layers, num_decoder_layers = 2, 2
 	if lang == 'kor':
 		word_vec_size = 80
 		encoder_rnn_size = 512
@@ -2055,7 +2093,7 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 			return model_outputs.cpu().numpy(), decoder_outputs.numpy()
 
 	class MyCompositeModel(torch.nn.Module):
-		def __init__(self, image_height, image_width, input_channel, output_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers=2, bidirectional_encoder=True):
+		def __init__(self, image_height, image_width, input_channel, output_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, num_decoder_layers, bidirectional_encoder):
 			super().__init__()
 
 			self.encoder = self._create_encoder(image_height, image_width, input_channel, output_channel, encoder_rnn_size, num_layers=num_encoder_layers, bidirectional=bidirectional_encoder)
@@ -2136,7 +2174,7 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 				print('No sequence model specified.')
 				self.sequence_rnn = None
 
-	model = MyCompositeModel(image_height, image_width, image_channel, output_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, bidirectional_encoder)
+	model = MyCompositeModel(image_height, image_width, image_channel, output_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, num_decoder_layers, bidirectional_encoder)
 
 	return model, infer, forward, criterion
 
@@ -2147,7 +2185,7 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 	else:
 		num_fiducials = 0  # No TPS-STN.
 	bidirectional_encoder = True
-	num_encoder_layers = 2
+	num_encoder_layers, num_decoder_layers = 2, 2
 	if lang == 'kor':
 		word_vec_size = 80
 		encoder_rnn_size = 512
@@ -2209,7 +2247,7 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 			return model_outputs.cpu().numpy(), decoder_outputs.numpy()
 
 	class MyCompositeModel(torch.nn.Module):
-		def __init__(self, image_height, image_width, input_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, bidirectional_encoder):
+		def __init__(self, image_height, image_width, input_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, num_decoder_layers, bidirectional_encoder):
 			super().__init__()
 
 			if num_fiducials and num_fiducials > 0:
@@ -2275,7 +2313,7 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 			else:
 				self.sequence_projector = torch.nn.Linear(hidden_size, hidden_size)
 
-	model = MyCompositeModel(image_height, image_width, image_channel, label_converter.num_tokens, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, bidirectional_encoder)
+	model = MyCompositeModel(image_height, image_width, image_channel, label_converter.num_tokens, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, num_decoder_layers, bidirectional_encoder)
 
 	return model, infer, forward, criterion
 
@@ -2286,6 +2324,7 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 	else:
 		num_fiducials = 0  # No TPS-STN.
 	bidirectional_encoder = True
+	num_decoder_layers = 2
 	if lang == 'kor':
 		word_vec_size = 80
 		encoder_rnn_size = 512
@@ -2324,15 +2363,70 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 		criterion = None
 		forward = None
 
+	#--------------------
+	import onmt, onmt.translate
+	import torchtext
+	import torchtext_util
+
+	tgt_field = torchtext.data.Field(
+		sequential=True, use_vocab=True, init_token=label_converter.SOS, eos_token=label_converter.EOS, fix_length=None,
+		dtype=torch.int64, preprocessing=None, postprocessing=None, lower=False,
+		tokenize=None, tokenizer_language='kr',
+		#tokenize=functools.partial(onmt.inputters.inputter._feature_tokenize, layer=0, feat_delim=None, truncate=None), tokenizer_language='en',
+		include_lengths=False, batch_first=False, pad_token=label_converter.PAD, pad_first=False, unk_token=label_converter.UNKNOWN,
+		truncate_first=False, stop_words=None, is_target=False
+	)
+	#tgt_field.build_vocab([label_converter.tokens], specials=[label_converter.UNKNOWN, label_converter.PAD], specials_first=False)  # Sort vocabulary + add special tokens, <unknown>, <pad>, <bos>, and <eos>.
+	if label_converter.PAD in [label_converter.SOS, label_converter.EOS, label_converter.UNKNOWN]:
+		tgt_field.vocab = torchtext_util.build_vocab_from_lexicon(label_converter.tokens, specials=[label_converter.SOS, label_converter.EOS, label_converter.UNKNOWN], specials_first=False, sort=False)
+	else:
+		tgt_field.vocab = torchtext_util.build_vocab_from_lexicon(label_converter.tokens, specials=[label_converter.PAD, label_converter.SOS, label_converter.EOS, label_converter.UNKNOWN], specials_first=False, sort=False)
+	assert label_converter.num_tokens == len(tgt_field.vocab.itos)
+	assert len(list(filter(lambda pair: pair[0] != pair[1], zip(label_converter.tokens, tgt_field.vocab.itos)))) == 0
+
+	tgt_vocab = tgt_field.vocab
+	tgt_unk = tgt_vocab.stoi[tgt_field.unk_token]
+	tgt_bos = tgt_vocab.stoi[tgt_field.init_token]
+	tgt_eos = tgt_vocab.stoi[tgt_field.eos_token]
+	tgt_pad = tgt_vocab.stoi[tgt_field.pad_token]
+
+	scorer = onmt.translate.GNMTGlobalScorer(alpha=0.7, beta=0.0, length_penalty='avg', coverage_penalty='none')
+
+	is_beam_search_used = True
+	if is_beam_search_used:
+		beam_size = 30
+		n_best = 1
+		ratio = 0.0
+	else:
+		beam_size = 1
+		random_sampling_topk, random_sampling_temp = 1, 1
+		n_best = 1  # Fixed. For handling translation results.
+	min_length, max_length = 0, 100
+	block_ngram_repeat = 0
+	#ignore_when_blocking = frozenset()
+	#exclusion_idxs = {tgt_vocab.stoi[t] for t in ignore_when_blocking}
+	exclusion_idxs = set()
+
+	import opennmt_util
 	def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 		if outputs is None or output_lens is None:
-			# FIXME [check] >>
-			model_output_tuple = model(inputs.to(device))
+			batch_size = len(inputs)
 
-			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
-			#attentions = model_output_tuple[1]['std']
+			if is_beam_search_used:
+				decode_strategy = opennmt_util.create_beam_search_strategy(batch_size, scorer, beam_size, n_best, ratio, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
+			else:
+				decode_strategy = opennmt_util.create_greedy_search_strategy(batch_size, random_sampling_topk, random_sampling_temp, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
 
-			_, model_outputs = torch.max(model_outputs, dim=-1)
+			model_output_dict = opennmt_util.translate_batch_with_strategy(model, decode_strategy, inputs.to(device), batch_size, beam_size, tgt_unk, tgt_vocab, src_vocabs=[])
+
+			model_outputs = model_output_dict['predictions']
+			#scores = model_output_dict['scores']
+			#attentions = model_output_dict['attention']
+			#alignment = model_output_dict['alignment']
+
+			rank_id = 0  # rank_id < n_best.
+			model_outputs = torch.stack([tt[rank_id] for tt in model_outputs])
+
 			return model_outputs.cpu().numpy(), None
 		else:
 			decoder_outputs = outputs[:,1:]
@@ -2347,7 +2441,7 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 			return model_outputs.cpu().numpy(), decoder_outputs.numpy()
 
 	class MyCompositeModel(torch.nn.Module):
-		def __init__(self, image_height, image_width, input_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size, bidirectional_encoder):
+		def __init__(self, image_height, image_width, input_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_decoder_layers, bidirectional_encoder):
 			super().__init__()
 
 			if num_fiducials and num_fiducials > 0:
@@ -2364,10 +2458,10 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
 			if self.transformer: src = self.transformer(src, device)  # [B, C, H, W].
 
-			enc_outputs, enc_hiddens = self.encoder(src)
+			enc_hiddens, enc_outputs, _ = self.encoder(src)
 			enc_outputs = enc_outputs.transpose(0, 1)  # [B, T, F] -> [T, B, F].
 
-			if outputs is None or output_lens is None:
+			if tgt is None or lengths is None:
 				raise NotImplementedError
 			else:
 				dec_in = tgt[:-1]  # Exclude last target from inputs.
@@ -2379,7 +2473,7 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 				outs = self.generator(dec_outs)
 				return outs, attns
 
-	model = MyCompositeModel(image_height, image_width, image_channel, label_converter.num_tokens, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size, bidirectional_encoder)
+	model = MyCompositeModel(image_height, image_width, image_channel, label_converter.num_tokens, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_decoder_layers, bidirectional_encoder)
 
 	return model, infer, forward, criterion
 
@@ -2691,7 +2785,7 @@ def recognize_word_by_rare1():
 	if is_mixed_words_used:
 		num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed words.
 	else:
-		word_type = 'simple_word'  # {'simple_word', 'random_word', 'file_based_word'}.
+		word_type = 'simple_word'  # {'simple_word', 'random_word', 'aihub_word', 'file_based_word'}.
 		num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
 	max_word_len = 5  # Max. word length.
 	word_len_interval = (1, max_word_len)
@@ -2765,6 +2859,7 @@ def recognize_word_by_rare1():
 		else:
 			# When the pad value = the ID of <SOS> token.
 			label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		assert label_converter.PAD is not None
 		SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 		num_suffixes = 1
 
@@ -2873,7 +2968,7 @@ def recognize_word_by_rare2():
 	if is_mixed_words_used:
 		num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed words.
 	else:
-		word_type = 'simple_word'  # {'simple_word', 'random_word', 'file_based_word'}.
+		word_type = 'simple_word'  # {'simple_word', 'random_word', 'aihub_word', 'file_based_word'}.
 		num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
 	max_word_len = 5  # Max. word length.
 	word_len_interval = (1, max_word_len)
@@ -2934,6 +3029,7 @@ def recognize_word_by_rare2():
 	else:
 		# When the pad value = the ID of <SOS> token.
 		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+	assert label_converter.PAD is not None
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
@@ -3042,7 +3138,7 @@ def recognize_word_by_aster():
 	if is_mixed_words_used:
 		num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed words.
 	else:
-		word_type = 'simple_word'  # {'simple_word', 'random_word', 'file_based_word'}.
+		word_type = 'simple_word'  # {'simple_word', 'random_word', 'aihub_word', 'file_based_word'}.
 		num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
 	max_word_len = 5  # Max. word length.
 	word_len_interval = (1, max_word_len)
@@ -3104,6 +3200,7 @@ def recognize_word_by_aster():
 	else:
 		# When the pad value = the ID of <SOS> token.
 		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+	assert label_converter.PAD is not None
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
@@ -3207,12 +3304,14 @@ def recognize_word_by_opennmt():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
+
 	# File-based words: 504,279.
 	is_mixed_words_used = True
 	if is_mixed_words_used:
 		num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed words.
 	else:
-		word_type = 'simple_word'  # {'simple_word', 'random_word', 'file_based_word'}.
+		word_type = 'simple_word'  # {'simple_word', 'random_word', 'aihub_word', 'file_based_word'}.
 		num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
 	max_word_len = 5  # Max. word length.
 	word_len_interval = (1, max_word_len)
@@ -3292,8 +3391,7 @@ def recognize_word_by_opennmt():
 	#--------------------
 	# Build a model.
 
-	encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
-	model, infer_functor, forward_functor, criterion = build_opennmt_model(encoder_type, label_converter, image_height, image_width, image_channel, lang, loss_type, device)
+	model, infer_functor, forward_functor, criterion = build_opennmt_model(label_converter, image_height, image_width, image_channel, encoder_type, lang, loss_type, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3383,7 +3481,7 @@ def recognize_word_by_rare1_and_opennmt():
 	if is_mixed_words_used:
 		num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed words.
 	else:
-		word_type = 'simple_word'  # {'simple_word', 'random_word', 'file_based_word'}.
+		word_type = 'simple_word'  # {'simple_word', 'random_word', 'aihub_word', 'file_based_word'}.
 		num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
 	max_word_len = 5  # Max. word length.
 	word_len_interval = (1, max_word_len)
@@ -3445,6 +3543,7 @@ def recognize_word_by_rare1_and_opennmt():
 	else:
 		# When the pad value = the ID of <SOS> token.
 		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+	assert label_converter.PAD is not None
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if is_mixed_words_used:
@@ -3551,7 +3650,7 @@ def recognize_word_by_rare2_and_opennmt():
 	if is_mixed_words_used:
 		num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed words.
 	else:
-		word_type = 'simple_word'  # {'simple_word', 'random_word', 'file_based_word'}.
+		word_type = 'simple_word'  # {'simple_word', 'random_word', 'aihub_word', 'file_based_word'}.
 		num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
 	max_word_len = 5  # Max. word length.
 	word_len_interval = (1, max_word_len)
@@ -3613,6 +3712,7 @@ def recognize_word_by_rare2_and_opennmt():
 	else:
 		# When the pad value = the ID of <SOS> token.
 		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+	assert label_converter.PAD is not None
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if is_mixed_words_used:
@@ -3719,7 +3819,7 @@ def recognize_word_by_aster_and_opennmt():
 	if is_mixed_words_used:
 		num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed words.
 	else:
-		word_type = 'simple_word'  # {'simple_word', 'random_word', 'file_based_word'}.
+		word_type = 'simple_word'  # {'simple_word', 'random_word', 'aihub_word', 'file_based_word'}.
 		num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
 	max_word_len = 5  # Max. word length.
 	word_len_interval = (1, max_word_len)
@@ -3781,6 +3881,7 @@ def recognize_word_by_aster_and_opennmt():
 	else:
 		# When the pad value = the ID of <SOS> token.
 		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+	assert label_converter.PAD is not None
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if is_mixed_words_used:
@@ -3887,7 +3988,7 @@ def recognize_word_using_mixup():
 	if is_mixed_words_used:
 		num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed words.
 	else:
-		word_type = 'simple_word'  # {'simple_word', 'random_word', 'file_based_word'}.
+		word_type = 'simple_word'  # {'simple_word', 'random_word', 'aihub_word', 'file_based_word'}.
 		num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
 	max_word_len = 25  # Max. word length.
 	word_len_interval = (1, max_word_len)
@@ -3961,6 +4062,7 @@ def recognize_word_using_mixup():
 		else:
 			# When the pad value = the ID of <SOS> token.
 			label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		assert label_converter.PAD is not None
 		SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 		num_suffixes = 1
 
@@ -4100,6 +4202,7 @@ def evaluate_word_recognizer():
 	else:
 		# When the pad value = the ID of <SOS> token.
 		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+	assert label_converter.PAD is not None
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
@@ -4222,6 +4325,7 @@ def infer_by_word_recognizer():
 	else:
 		# When the pad value = the ID of <SOS> token.
 		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+	assert label_converter.PAD is not None
 	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
@@ -4272,7 +4376,7 @@ def infer_by_word_recognizer():
 
 	print('Start building a model...')
 	start_time = time.time()
-	if True:
+	if False:
 		# For RARE2.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2_attn_xent_gradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9514_epoch3.pth'
 		assert model_filepath_to_load is not None
@@ -4284,6 +4388,13 @@ def infer_by_word_recognizer():
 		assert model_filepath_to_load is not None
 
 		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_VALUE, device=device)
+	elif True:
+		# For OpenNMT.
+		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_onmt_xent_nogradclip_allparams_nopad_kor_ch5_64x640x3_best_20200725T115106.pth'
+		assert model_filepath_to_load is not None
+
+		encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
+		model, infer_functor, _, _ = build_opennmt_model(label_converter, image_height, image_width, image_channel, encoder_type, lang, loss_type=None, device=device)
 	elif False:
 		# For ASTER + OpenNMT.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_xent_nogradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9325_epoch2.pth'
@@ -4318,12 +4429,14 @@ def recognize_textline_by_opennmt():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
+
 	# File-based text lines: 55,835.
 	is_mixed_textlines_used = True
 	if is_mixed_textlines_used:
 		num_simple_examples, num_random_examples, num_trdg_examples = int(5e4), int(5e4), int(5e4)  # For mixed text lines.
 	else:
-		textline_type = 'simple_textline'  # {'simple_textline', 'random_textline', 'trdg_textline', 'file_based_textline'}.
+		textline_type = 'simple_textline'  # {'simple_textline', 'random_textline', 'trdg_textline', 'aihub_textline', 'file_based_textline'}.
 		num_train_examples, num_test_examples = int(2e5), int(2e3)  # For simple, random, and TRDG text lines.
 	max_textline_len = 50  # Max. text line length.
 	word_len_interval = (1, 20)
@@ -4406,8 +4519,7 @@ def recognize_textline_by_opennmt():
 	#--------------------
 	# Build a model.
 
-	encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
-	model, infer_functor, forward_functor, criterion = build_opennmt_model(encoder_type, label_converter, image_height, image_width, image_channel, lang, loss_type, device)
+	model, infer_functor, forward_functor, criterion = build_opennmt_model(label_converter, image_height, image_width, image_channel, encoder_type, lang, loss_type, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -4663,6 +4775,7 @@ def recognize_word_using_craft_and_word_recognizer():
 		else:
 			# When the pad value = the ID of <SOS> token.
 			label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		assert label_converter.PAD is not None
 		SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 		num_suffixes = 1
 	num_classes = label_converter.num_tokens
