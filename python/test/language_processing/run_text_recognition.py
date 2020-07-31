@@ -14,7 +14,7 @@ import cv2
 import matplotlib.pyplot as plt
 import swl.language_processing.util as swl_langproc_util
 import text_generation_util as tg_util
-import text_data
+import text_data, aihub_data
 #import mixup.vgg, mixup.resnet
 
 def save_model(model_filepath, model):
@@ -571,6 +571,11 @@ def create_word_data_loaders(word_type, label_converter, wordset, chars, num_tra
 		train_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
 		test_dataset = text_data.RandomWordDataset(label_converter, chars, num_test_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
 	elif textline_type == 'aihub_word':
+		if 'posix' == os.name:
+			data_base_dir_path = '/home/sangwook/work/dataset'
+		else:
+			data_base_dir_path = 'D:/work/dataset'
+
 		# AI-Hub printed text dataset.
 		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
 		aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'

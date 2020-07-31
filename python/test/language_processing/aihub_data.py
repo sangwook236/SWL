@@ -5,6 +5,8 @@ import cv2
 
 #--------------------------------------------------------------------
 
+# REF [site] >> http://www.aihub.or.kr/ai_data
+#	#syllables = 558,600, #words = 277,150, #sentences = 42,350.
 class AiHubPrintedTextDataset(torch.utils.data.Dataset):
 	def __init__(self, label_converter, json_filepath, data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used=True, transform=None, target_transform=None):
 		super().__init__()
