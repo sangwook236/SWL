@@ -300,7 +300,7 @@ class AsterImageEncoder(onmt.encoders.encoder.EncoderBase):
 	def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
 		if self.transformer: src = self.transformer(src, device)  # [B, C, H, W].
 
-		outputs, hiddens = self.aster(src)
+		hiddens, outputs, lengths = self.aster(src, lengths)
 		outputs = outputs.transpose(0, 1)  # [B, T, F] -> [T, B, F].
 
 		return hiddens, outputs, lengths
