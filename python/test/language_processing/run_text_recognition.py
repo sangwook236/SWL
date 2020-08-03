@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import swl.language_processing.util as swl_langproc_util
 import text_generation_util as tg_util
 import text_data, aihub_data
+import opennmt_util
 #import mixup.vgg, mixup.resnet
 
 def save_model(model_filepath, model):
@@ -1850,7 +1851,7 @@ def build_decoder_and_generator_for_opennmt(num_classes, word_vec_size, hidden_s
 	)
 	return decoder, generator
 
-def build_opennmt_model(label_converter, image_height, image_width, image_channel, encoder_type, lang, loss_type=None, device='cpu'):
+def build_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, encoder_type, lang, loss_type=None, device='cpu'):
 	bidirectional_encoder = True
 	num_encoder_layers, num_decoder_layers = 2, 2
 	if lang == 'kor':
@@ -1927,13 +1928,13 @@ def build_opennmt_model(label_converter, image_height, image_width, image_channe
 		beam_size = 1
 		random_sampling_topk, random_sampling_temp = 1, 1
 		n_best = 1  # Fixed. For handling translation results.
-	min_length, max_length = 0, 100
+	max_time_steps = max_label_len + label_converter.num_affixes
+	min_length, max_length = 0, max_time_steps
 	block_ngram_repeat = 0
 	#ignore_when_blocking = frozenset()
 	#exclusion_idxs = {tgt_vocab.stoi[t] for t in ignore_when_blocking}
 	exclusion_idxs = set()
 
-	import opennmt_util
 	def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 		if outputs is None or output_lens is None:
 			batch_size = len(inputs)
@@ -1951,9 +1952,12 @@ def build_opennmt_model(label_converter, image_height, image_width, image_channe
 			#alignment = model_output_dict['alignment']
 
 			rank_id = 0  # rank_id < n_best.
-			model_outputs = torch.stack([tt[rank_id] for tt in model_outputs])
+			#max_time_steps = functools.reduce(lambda x, y: x if x >= len(y[rank_id]) else len(y[rank_id]), model_outputs, 0)
+			new_model_outputs = torch.full((len(model_outputs), max_time_steps), tgt_pad, dtype=torch.int)
+			for idx, tt in enumerate(model_outputs):
+				new_model_outputs[idx,:len(tt[rank_id])] = tt[rank_id]
 
-			return model_outputs.cpu().numpy(), None
+			return new_model_outputs.cpu().numpy(), None
 		else:
 			decoder_outputs = outputs[:,1:]
 			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
@@ -1984,7 +1988,6 @@ def build_opennmt_model(label_converter, image_height, image_width, image_channe
 		num_fiducials = 20  # The number of fiducial points of TPS-STN.
 		output_channel = 512  # The number of output channel of feature extractor.
 
-		import opennmt_util
 		encoder = opennmt_util.Rare1ImageEncoder(
 			image_height, image_width, image_channel, output_channel,
 			hidden_size=encoder_rnn_size, num_layers=num_encoder_layers, bidirectional=bidirectional_encoder,
@@ -1998,7 +2001,6 @@ def build_opennmt_model(label_converter, image_height, image_width, image_channe
 		else:
 			num_fiducials = 0  # No TPS-STN.
 
-		import opennmt_util
 		encoder = opennmt_util.Rare2ImageEncoder(
 			image_height, image_width, image_channel,
 			hidden_size=encoder_rnn_size, num_layers=num_encoder_layers, bidirectional=bidirectional_encoder,
@@ -2011,7 +2013,6 @@ def build_opennmt_model(label_converter, image_height, image_width, image_channe
 		else:
 			num_fiducials = 0  # No TPS-STN.
 
-		import opennmt_util
 		encoder = opennmt_util.AsterImageEncoder(
 			image_height, image_width, image_channel, num_classes,
 			hidden_size=encoder_rnn_size,
@@ -2027,7 +2028,7 @@ def build_opennmt_model(label_converter, image_height, image_width, image_channe
 
 	return model, infer, forward, criterion
 
-def build_rare1_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, device='cpu'):
+def build_rare1_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device='cpu'):
 	transformer = None  # The type of transformer. {None, 'TPS'}.
 	feature_extractor = 'VGG'  # The type of feature extractor. {'VGG', 'RCNN', 'ResNet'}.
 	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
@@ -2075,16 +2076,74 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 		criterion = None
 		forward = None
 
+	#--------------------
+	import onmt, onmt.translate
+	import torchtext
+	import torchtext_util
+
+	tgt_field = torchtext.data.Field(
+		sequential=True, use_vocab=True, init_token=label_converter.SOS, eos_token=label_converter.EOS, fix_length=None,
+		dtype=torch.int64, preprocessing=None, postprocessing=None, lower=False,
+		tokenize=None, tokenizer_language='kr',  # TODO [check] >> tokenizer_language is not valid.
+		#tokenize=functools.partial(onmt.inputters.inputter._feature_tokenize, layer=0, feat_delim=None, truncate=None), tokenizer_language='en',
+		include_lengths=False, batch_first=False, pad_token=label_converter.PAD, pad_first=False, unk_token=label_converter.UNKNOWN,
+		truncate_first=False, stop_words=None, is_target=False
+	)
+	#tgt_field.build_vocab([label_converter.tokens], specials=[label_converter.UNKNOWN, label_converter.PAD], specials_first=False)  # Sort vocabulary + add special tokens, <unknown>, <pad>, <bos>, and <eos>.
+	if label_converter.PAD in [label_converter.SOS, label_converter.EOS, label_converter.UNKNOWN]:
+		tgt_field.vocab = torchtext_util.build_vocab_from_lexicon(label_converter.tokens, specials=[label_converter.SOS, label_converter.EOS, label_converter.UNKNOWN], specials_first=False, sort=False)
+	else:
+		tgt_field.vocab = torchtext_util.build_vocab_from_lexicon(label_converter.tokens, specials=[label_converter.PAD, label_converter.SOS, label_converter.EOS, label_converter.UNKNOWN], specials_first=False, sort=False)
+	assert label_converter.num_tokens == len(tgt_field.vocab.itos)
+	assert len(list(filter(lambda pair: pair[0] != pair[1], zip(label_converter.tokens, tgt_field.vocab.itos)))) == 0
+
+	tgt_vocab = tgt_field.vocab
+	tgt_unk = tgt_vocab.stoi[tgt_field.unk_token]
+	tgt_bos = tgt_vocab.stoi[tgt_field.init_token]
+	tgt_eos = tgt_vocab.stoi[tgt_field.eos_token]
+	tgt_pad = tgt_vocab.stoi[tgt_field.pad_token]
+
+	scorer = onmt.translate.GNMTGlobalScorer(alpha=0.7, beta=0.0, length_penalty='avg', coverage_penalty='none')
+
+	is_beam_search_used = True
+	if is_beam_search_used:
+		beam_size = 30
+		n_best = 1
+		ratio = 0.0
+	else:
+		beam_size = 1
+		random_sampling_topk, random_sampling_temp = 1, 1
+		n_best = 1  # Fixed. For handling translation results.
+	max_time_steps = max_label_len + label_converter.num_affixes
+	min_length, max_length = 0, max_time_steps
+	block_ngram_repeat = 0
+	#ignore_when_blocking = frozenset()
+	#exclusion_idxs = {tgt_vocab.stoi[t] for t in ignore_when_blocking}
+	exclusion_idxs = set()
+
 	def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 		if outputs is None or output_lens is None:
-			# FIXME [check] >>
-			model_output_tuple = model(inputs.to(device))
+			batch_size = len(inputs)
 
-			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
-			#attentions = model_output_tuple[1]['std']
+			if is_beam_search_used:
+				decode_strategy = opennmt_util.create_beam_search_strategy(batch_size, scorer, beam_size, n_best, ratio, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
+			else:
+				decode_strategy = opennmt_util.create_greedy_search_strategy(batch_size, random_sampling_topk, random_sampling_temp, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
 
-			_, model_outputs = torch.max(model_outputs, dim=-1)
-			return model_outputs.cpu().numpy(), None
+			model_output_dict = opennmt_util.translate_batch_with_strategy(model, decode_strategy, inputs.to(device), batch_size, beam_size, tgt_unk, tgt_vocab, src_vocabs=[])
+
+			model_outputs = model_output_dict['predictions']
+			#scores = model_output_dict['scores']
+			#attentions = model_output_dict['attention']
+			#alignment = model_output_dict['alignment']
+
+			rank_id = 0  # rank_id < n_best.
+			#max_time_steps = functools.reduce(lambda x, y: x if x >= len(y[rank_id]) else len(y[rank_id]), model_outputs, 0)
+			new_model_outputs = torch.full((len(model_outputs), max_time_steps), tgt_pad, dtype=torch.int)
+			for idx, tt in enumerate(model_outputs):
+				new_model_outputs[idx,:len(tt[rank_id])] = tt[rank_id]
+
+			return new_model_outputs.cpu().numpy(), None
 		else:
 			decoder_outputs = outputs[:,1:]
 			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
@@ -2098,36 +2157,17 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 			return model_outputs.cpu().numpy(), decoder_outputs.numpy()
 
 	class MyCompositeModel(torch.nn.Module):
-		def __init__(self, image_height, image_width, input_channel, output_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, num_decoder_layers, bidirectional_encoder):
+		def __init__(self, image_height, image_width, input_channel, output_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, num_decoder_layers, bidirectional_encoder, transformer=None, feature_extractor='VGG', sequence_model='BiLSTM', num_fiducials=0):
 			super().__init__()
 
-			self.encoder = self._create_encoder(image_height, image_width, input_channel, output_channel, encoder_rnn_size, num_layers=num_encoder_layers, bidirectional=bidirectional_encoder)
+			self.encoder = opennmt_util.Rare1ImageEncoder(image_height, image_width, input_channel, output_channel, hidden_size=encoder_rnn_size, num_layers=num_encoder_layers, bidirectional=bidirectional_encoder, transformer=transformer, feature_extractor=feature_extractor, sequence_model=sequence_model, num_fiducials=num_fiducials)
 			self.decoder, self.generator = build_decoder_and_generator_for_opennmt(num_classes, word_vec_size, hidden_size=decoder_hidden_size, num_layers=num_decoder_layers, bidirectional_encoder=bidirectional_encoder)
 
 		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
 		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
-			# Transform.
-			if self.transformer: src = self.transformer(src, device)  # [b, c, h, w].
+			enc_hiddens, enc_outputs, lengths = self.encoder(src, lengths)
 
-			# Extract feature.
-			visual_feature = self.feature_extractor(src)  # [b, c_out, h/32, w/4-1].
-			visual_feature = self.avg_pool(visual_feature.permute(0, 3, 1, 2))  # [b, w/4-1, c_out, 1].
-			#visual_feature = visual_feature.permute(0, 3, 1, 2)  # [b, w/4-1, c_out, h/32].
-			assert visual_feature.shape[3] == 1
-			visual_feature = visual_feature.squeeze(3)  # [b, w/4-1, c_out].
-			#visual_feature = visual_feature.reshape(visual_feature.shape[0], visual_feature.shape[1], -1)  # [b, w/4-1, c_out * h/32].
-
-			# When batch is not in the first order.
-			#visual_feature = visual_feature.transpose(0, 1)  # [w/4-1, b, c_out * h/32].
-
-			# Sequence model.
-			# TODO [check] >> The hidden size is too small?
-			#enc_outputs, enc_hiddens = self.sequence_rnn((visual_feature, None))  # [b, w/4-1, #directions * hidden size] or [w/4-1, b, #directions * hidden size], ([#directions, b, hidden size], [#directions, b, hidden size]).
-			enc_outputs, enc_hiddens = self.sequence_rnn(visual_feature)  # [b, w/4-1, #directions * hidden size], ([#layers * #directions, b, hidden size], [#layers * #directions, b, hidden size]).
-			enc_outputs = self.sequence_projector(enc_outputs)  # [b, w/4-1, hidden size].
-			enc_outputs = enc_outputs.transpose(0, 1)  # [w/4-1, b, hidden size]
-
-			if outputs is None or output_lens is None:
+			if tgt is None or lengths is None:
 				raise NotImplementedError
 			else:
 				dec_in = tgt[:-1]  # Exclude last target from inputs.
@@ -2139,51 +2179,11 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 				outs = self.generator(dec_outs)
 				return outs, attns
 
-		def _create_encoder(self, image_height, image_width, input_channel, output_channel, hidden_size, num_layers=2, bidirectional=True):
-			from rare.modules.transformation import TPS_SpatialTransformerNetwork
-			from rare.modules.feature_extraction import VGG_FeatureExtractor, RCNN_FeatureExtractor, ResNet_FeatureExtractor
-			from rare.modules.feature_extraction import VGG_FeatureExtractor_MixUp, RCNN_FeatureExtractor_MixUp, ResNet_FeatureExtractor_MixUp
-			from rare.modules.sequence_modeling import BidirectionalLSTM
-
-			# Transformer.
-			if transformer == 'TPS':
-				self.transformer = TPS_SpatialTransformerNetwork(F=num_fiducials, I_size=(image_height, image_width), I_r_size=(image_height, image_width), I_channel_num=input_channel)
-			else:
-				print('No transformer specified.')
-				self.transformer = None
-
-			# Feature extraction.
-			if feature_extractor == 'VGG':
-				self.feature_extractor = VGG_FeatureExtractor(input_channel, output_channel)
-			elif feature_extractor == 'RCNN':
-				self.feature_extractor = RCNN_FeatureExtractor(input_channel, output_channel)
-			elif feature_extractor == 'ResNet':
-				self.feature_extractor = ResNet_FeatureExtractor(input_channel, output_channel)
-			else:
-				raise ValueError("The argument, feature_extractor has to be one of 'VGG', 'RCNN', or 'ResNet': {}".format(feature_extractor))
-			feature_extractor_output_size = output_channel  # int(image_height / 16 - 1) * output_channel.
-			self.avg_pool = torch.nn.AdaptiveAvgPool2d((None, 1))  # Transform final (image_height / 16 - 1) -> 1.
-
-			# Sequence model.
-			if sequence_model == 'BiLSTM':
-				#self.sequence_rnn = torch.nn.Sequential(
-				#	BidirectionalLSTM(feature_extractor_output_size, hidden_size, hidden_size, batch_first=True),
-				#	BidirectionalLSTM(hidden_size, hidden_size, hidden_size, batch_first=True)
-				#)
-				self.sequence_rnn = torch.nn.LSTM(feature_extractor_output_size, hidden_size, num_layers=num_layers, bidirectional=bidirectional, batch_first=True)
-				if bidirectional:
-					self.sequence_projector = torch.nn.Linear(hidden_size * 2, hidden_size * 2)
-				else:
-					self.sequence_projector = torch.nn.Linear(hidden_size, hidden_size)
-			else:
-				print('No sequence model specified.')
-				self.sequence_rnn = None
-
-	model = MyCompositeModel(image_height, image_width, image_channel, output_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, num_decoder_layers, bidirectional_encoder)
+	model = MyCompositeModel(image_height, image_width, image_channel, output_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, num_decoder_layers, bidirectional_encoder, transformer=transformer, feature_extractor=feature_extractor, sequence_model=sequence_model, num_fiducials=num_fiducials)
 
 	return model, infer, forward, criterion
 
-def build_rare2_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, device='cpu'):
+def build_rare2_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device='cpu'):
 	is_stn_used = False
 	if is_stn_used:
 		num_fiducials = 20  # The number of fiducial points of TPS-STN.
@@ -2229,16 +2229,74 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 		criterion = None
 		forward = None
 
+	#--------------------
+	import onmt, onmt.translate
+	import torchtext
+	import torchtext_util
+
+	tgt_field = torchtext.data.Field(
+		sequential=True, use_vocab=True, init_token=label_converter.SOS, eos_token=label_converter.EOS, fix_length=None,
+		dtype=torch.int64, preprocessing=None, postprocessing=None, lower=False,
+		tokenize=None, tokenizer_language='kr',  # TODO [check] >> tokenizer_language is not valid.
+		#tokenize=functools.partial(onmt.inputters.inputter._feature_tokenize, layer=0, feat_delim=None, truncate=None), tokenizer_language='en',
+		include_lengths=False, batch_first=False, pad_token=label_converter.PAD, pad_first=False, unk_token=label_converter.UNKNOWN,
+		truncate_first=False, stop_words=None, is_target=False
+	)
+	#tgt_field.build_vocab([label_converter.tokens], specials=[label_converter.UNKNOWN, label_converter.PAD], specials_first=False)  # Sort vocabulary + add special tokens, <unknown>, <pad>, <bos>, and <eos>.
+	if label_converter.PAD in [label_converter.SOS, label_converter.EOS, label_converter.UNKNOWN]:
+		tgt_field.vocab = torchtext_util.build_vocab_from_lexicon(label_converter.tokens, specials=[label_converter.SOS, label_converter.EOS, label_converter.UNKNOWN], specials_first=False, sort=False)
+	else:
+		tgt_field.vocab = torchtext_util.build_vocab_from_lexicon(label_converter.tokens, specials=[label_converter.PAD, label_converter.SOS, label_converter.EOS, label_converter.UNKNOWN], specials_first=False, sort=False)
+	assert label_converter.num_tokens == len(tgt_field.vocab.itos)
+	assert len(list(filter(lambda pair: pair[0] != pair[1], zip(label_converter.tokens, tgt_field.vocab.itos)))) == 0
+
+	tgt_vocab = tgt_field.vocab
+	tgt_unk = tgt_vocab.stoi[tgt_field.unk_token]
+	tgt_bos = tgt_vocab.stoi[tgt_field.init_token]
+	tgt_eos = tgt_vocab.stoi[tgt_field.eos_token]
+	tgt_pad = tgt_vocab.stoi[tgt_field.pad_token]
+
+	scorer = onmt.translate.GNMTGlobalScorer(alpha=0.7, beta=0.0, length_penalty='avg', coverage_penalty='none')
+
+	is_beam_search_used = True
+	if is_beam_search_used:
+		beam_size = 30
+		n_best = 1
+		ratio = 0.0
+	else:
+		beam_size = 1
+		random_sampling_topk, random_sampling_temp = 1, 1
+		n_best = 1  # Fixed. For handling translation results.
+	max_time_steps = max_label_len + label_converter.num_affixes
+	min_length, max_length = 0, max_time_steps
+	block_ngram_repeat = 0
+	#ignore_when_blocking = frozenset()
+	#exclusion_idxs = {tgt_vocab.stoi[t] for t in ignore_when_blocking}
+	exclusion_idxs = set()
+
 	def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 		if outputs is None or output_lens is None:
-			# FIXME [check] >>
-			model_output_tuple = model(inputs.to(device))
+			batch_size = len(inputs)
 
-			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
-			#attentions = model_output_tuple[1]['std']
+			if is_beam_search_used:
+				decode_strategy = opennmt_util.create_beam_search_strategy(batch_size, scorer, beam_size, n_best, ratio, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
+			else:
+				decode_strategy = opennmt_util.create_greedy_search_strategy(batch_size, random_sampling_topk, random_sampling_temp, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
 
-			_, model_outputs = torch.max(model_outputs, dim=-1)
-			return model_outputs.cpu().numpy(), None
+			model_output_dict = opennmt_util.translate_batch_with_strategy(model, decode_strategy, inputs.to(device), batch_size, beam_size, tgt_unk, tgt_vocab, src_vocabs=[])
+
+			model_outputs = model_output_dict['predictions']
+			#scores = model_output_dict['scores']
+			#attentions = model_output_dict['attention']
+			#alignment = model_output_dict['alignment']
+
+			rank_id = 0  # rank_id < n_best.
+			#max_time_steps = functools.reduce(lambda x, y: x if x >= len(y[rank_id]) else len(y[rank_id]), model_outputs, 0)
+			new_model_outputs = torch.full((len(model_outputs), max_time_steps), tgt_pad, dtype=torch.int)
+			for idx, tt in enumerate(model_outputs):
+				new_model_outputs[idx,:len(tt[rank_id])] = tt[rank_id]
+
+			return new_model_outputs.cpu().numpy(), None
 		else:
 			decoder_outputs = outputs[:,1:]
 			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
@@ -2252,36 +2310,17 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 			return model_outputs.cpu().numpy(), decoder_outputs.numpy()
 
 	class MyCompositeModel(torch.nn.Module):
-		def __init__(self, image_height, image_width, input_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, num_decoder_layers, bidirectional_encoder):
+		def __init__(self, image_height, image_width, input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, num_decoder_layers, bidirectional_encoder, num_fiducials):
 			super().__init__()
 
-			if num_fiducials and num_fiducials > 0:
-				import rare.modules.transformation
-				self.transformer = rare.modules.transformation.TPS_SpatialTransformerNetwork(F=num_fiducials, I_size=(image_height, image_width), I_r_size=(image_height, image_width), I_channel_num=input_channel)
-			else:
-				self.transformer = None
-
-			self.encoder = self._create_encoder(image_height, input_channel, encoder_rnn_size, num_layers=num_encoder_layers, bidirectional=bidirectional_encoder)
+			self.encoder = opennmt_util.Rare2ImageEncoder(image_height, image_width, input_channel, hidden_size=encoder_rnn_size, num_layers=num_encoder_layers, bidirectional=bidirectional_encoder, num_fiducials=num_fiducials)
 			self.decoder, self.generator = build_decoder_and_generator_for_opennmt(num_classes, word_vec_size, hidden_size=decoder_hidden_size, num_layers=num_decoder_layers, bidirectional_encoder=bidirectional_encoder)
 
 		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
 		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
-			if self.transformer: src = self.transformer(src, device)  # [B, C, H, W].
+			hiddens, outputs, lengths = self.encoder(src, lengths)
 
-			# Conv features.
-			conv = self.cnn(src)  # [b, c_out, h/16-1, w/4+1].
-			b, c, h, w = conv.size()
-			#assert h == 1, 'The height of conv must be 1'
-			#conv = conv.squeeze(2)  # [b, c_out, w/4+1].
-			conv = conv.reshape(b, -1, w)  # [b, c_out * h/16-1, w/4+1].
-			conv = conv.permute(2, 0, 1)  # [w/4+1, b, c_out * h/16-1].
-
-			# RNN features.
-			#enc_outputs, enc_hiddens = self.rnn((conv, None))  # [w/4+1, b, hidden size], ([#directions, b, hidden size], [#directions, b, hidden size]).
-			enc_outputs, enc_hiddens = self.sequence_rnn(conv)  # [w/4+1, b, #directions * hidden size], ([#layers * #directions, b, hidden size], [#layers * #directions, b, hidden size]).
-			enc_outputs = self.sequence_projector(enc_outputs)  # [w/4+1, b, hidden size].
-
-			if outputs is None or output_lens is None:
+			if tgt is None or lengths is None:
 				raise NotImplementedError
 			else:
 				dec_in = tgt[:-1]  # Exclude last target from inputs.
@@ -2293,36 +2332,11 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 				outs = self.generator(dec_outs)
 				return outs, attns
 
-		def _create_encoder(self, image_height, image_channel, hidden_size, num_layers=2, bidirectional=True):
-			assert image_height % 16 == 0, 'image_height has to be a multiple of 16'
-
-			# This implementation assumes that input size is h x w.
-			self.cnn = torch.nn.Sequential(
-				torch.nn.Conv2d(image_channel, 64, 3, 1, 1), torch.nn.ReLU(True), torch.nn.MaxPool2d(2, 2),  # 64 x h/2 x w/2.
-				torch.nn.Conv2d(64, 128, 3, 1, 1), torch.nn.ReLU(True), torch.nn.MaxPool2d(2, 2),  # 128 x h/4 x w/4.
-				torch.nn.Conv2d(128, 256, 3, 1, 1), torch.nn.BatchNorm2d(256), torch.nn.ReLU(True),  # 256 x h/4 x w/4.
-				torch.nn.Conv2d(256, 256, 3, 1, 1), torch.nn.ReLU(True), torch.nn.MaxPool2d((2, 2), (2, 1), (0, 1)),  # 256 x h/8 x w/4+1.
-				torch.nn.Conv2d(256, 512, 3, 1, 1), torch.nn.BatchNorm2d(512), torch.nn.ReLU(True),  # 512 x h/8 x w/4+1.
-				torch.nn.Conv2d(512, 512, 3, 1, 1), torch.nn.ReLU(True), torch.nn.MaxPool2d((2, 2), (2, 1), (0, 1)),  # 512 x h/16 x w/4+2.
-				torch.nn.Conv2d(512, 512, 2, 1, 0), torch.nn.BatchNorm2d(512), torch.nn.ReLU(True)  # 512 x h/16-1 x w/4+1.
-			)
-			num_features = (image_height // 16 - 1) * 512
-			#import rare.crnn_lang
-			#self.rnn = torch.nn.Sequential(
-			#	rare.crnn_lang.BidirectionalLSTM(num_features, hidden_size, hidden_size),
-			#	rare.crnn_lang.BidirectionalLSTM(hidden_size, hidden_size, hidden_size)
-			#)
-			self.sequence_rnn = torch.nn.LSTM(num_features, hidden_size, num_layers, bidirectional, batch_first=False)
-			if bidirectional:
-				self.sequence_projector = torch.nn.Linear(hidden_size * 2, hidden_size * 2)
-			else:
-				self.sequence_projector = torch.nn.Linear(hidden_size, hidden_size)
-
-	model = MyCompositeModel(image_height, image_width, image_channel, label_converter.num_tokens, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, num_decoder_layers, bidirectional_encoder)
+	model = MyCompositeModel(image_height, image_width, image_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, num_decoder_layers, bidirectional_encoder, num_fiducials)
 
 	return model, infer, forward, criterion
 
-def build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, device='cpu'):
+def build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device='cpu'):
 	is_stn_used = False
 	if is_stn_used:
 		num_fiducials = 20  # The number of fiducial points of TPS-STN.
@@ -2406,13 +2420,13 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 		beam_size = 1
 		random_sampling_topk, random_sampling_temp = 1, 1
 		n_best = 1  # Fixed. For handling translation results.
-	min_length, max_length = 0, 100
+	max_time_steps = max_label_len + label_converter.num_affixes
+	min_length, max_length = 0, max_time_steps
 	block_ngram_repeat = 0
 	#ignore_when_blocking = frozenset()
 	#exclusion_idxs = {tgt_vocab.stoi[t] for t in ignore_when_blocking}
 	exclusion_idxs = set()
 
-	import opennmt_util
 	def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 		if outputs is None or output_lens is None:
 			batch_size = len(inputs)
@@ -2430,9 +2444,12 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 			#alignment = model_output_dict['alignment']
 
 			rank_id = 0  # rank_id < n_best.
-			model_outputs = torch.stack([tt[rank_id] for tt in model_outputs])
+			#max_time_steps = functools.reduce(lambda x, y: x if x >= len(y[rank_id]) else len(y[rank_id]), model_outputs, 0)
+			new_model_outputs = torch.full((len(model_outputs), max_time_steps), tgt_pad, dtype=torch.int)
+			for idx, tt in enumerate(model_outputs):
+				new_model_outputs[idx,:len(tt[rank_id])] = tt[rank_id]
 
-			return model_outputs.cpu().numpy(), None
+			return new_model_outputs.cpu().numpy(), None
 		else:
 			decoder_outputs = outputs[:,1:]
 			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
@@ -2446,25 +2463,15 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 			return model_outputs.cpu().numpy(), decoder_outputs.numpy()
 
 	class MyCompositeModel(torch.nn.Module):
-		def __init__(self, image_height, image_width, input_channel, num_classes, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_decoder_layers, bidirectional_encoder):
+		def __init__(self, image_height, image_width, input_channel, num_classes, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_decoder_layers, bidirectional_encoder, num_fiducials):
 			super().__init__()
 
-			if num_fiducials and num_fiducials > 0:
-				import rare.modules.transformation
-				self.transformer = rare.modules.transformation.TPS_SpatialTransformerNetwork(F=num_fiducials, I_size=(image_height, image_width), I_r_size=(image_height, image_width), I_channel_num=input_channel)
-			else:
-				self.transformer = None
-
-			import aster.resnet_aster
-			self.encoder = aster.resnet_aster.ResNet_ASTER(with_lstm=True, in_height=image_height, in_channels=input_channel, hidden_size=encoder_rnn_size)
+			self.encoder = opennmt_util.AsterImageEncoder(image_height, image_width, input_channel, num_classes, hidden_size=encoder_rnn_size, num_fiducials=num_fiducials)
 			self.decoder, self.generator = build_decoder_and_generator_for_opennmt(num_classes, word_vec_size, hidden_size=decoder_hidden_size, num_layers=num_decoder_layers, bidirectional_encoder=bidirectional_encoder)
 
 		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
 		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
-			if self.transformer: src = self.transformer(src, device)  # [B, C, H, W].
-
-			enc_hiddens, enc_outputs, _ = self.encoder(src)
-			enc_outputs = enc_outputs.transpose(0, 1)  # [B, T, F] -> [T, B, F].
+			enc_hiddens, enc_outputs, lengths = self.encoder(src, lengths)
 
 			if tgt is None or lengths is None:
 				raise NotImplementedError
@@ -2478,7 +2485,7 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 				outs = self.generator(dec_outs)
 				return outs, attns
 
-	model = MyCompositeModel(image_height, image_width, image_channel, label_converter.num_tokens, num_fiducials, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_decoder_layers, bidirectional_encoder)
+	model = MyCompositeModel(image_height, image_width, image_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_decoder_layers, bidirectional_encoder, num_fiducials)
 
 	return model, infer, forward, criterion
 
@@ -3396,7 +3403,7 @@ def recognize_word_by_opennmt():
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, forward_functor, criterion = build_opennmt_model(label_converter, image_height, image_width, image_channel, encoder_type, lang, loss_type, device)
+	model, infer_functor, forward_functor, criterion = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_word_len, encoder_type, lang, loss_type, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3566,7 +3573,7 @@ def recognize_word_by_rare1_and_opennmt():
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, forward_functor, criterion = build_rare1_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type, device)
+	model, infer_functor, forward_functor, criterion = build_rare1_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_word_len, lang, loss_type, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3735,7 +3742,7 @@ def recognize_word_by_rare2_and_opennmt():
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, forward_functor, criterion = build_rare2_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type, device)
+	model, infer_functor, forward_functor, criterion = build_rare2_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_word_len, lang, loss_type, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3904,7 +3911,7 @@ def recognize_word_by_aster_and_opennmt():
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, forward_functor, criterion = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type, device)
+	model, infer_functor, forward_functor, criterion = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_word_len, lang, loss_type, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -4228,8 +4235,6 @@ def evaluate_word_recognizer():
 	])
 	test_target_transform = ToIntTensor()
 
-	import aihub_data
-
 	print('Start creating a dataset and a dataloader...')
 	start_time = time.time()
 	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
@@ -4265,9 +4270,9 @@ def evaluate_word_recognizer():
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_xent_nogradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9325_epoch2.pth'
 		assert model_filepath_to_load is not None
 
-		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, device=device)
+		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
 	else:
-		raise ValueError('Undefined model.')
+		raise ValueError('Undefined model')
 	print('End building a model: {} secs.'.format(time.time() - start_time))
 
 	# Load a model.
@@ -4351,8 +4356,6 @@ def infer_by_word_recognizer():
 	])
 	test_target_transform = ToIntTensor()
 
-	import aihub_data
-
 	print('Start creating a dataset and a dataloader...')
 	start_time = time.time()
 	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
@@ -4399,15 +4402,15 @@ def infer_by_word_recognizer():
 		assert model_filepath_to_load is not None
 
 		encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
-		model, infer_functor, _, _ = build_opennmt_model(label_converter, image_height, image_width, image_channel, encoder_type, lang, loss_type=None, device=device)
+		model, infer_functor, _, _ = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, encoder_type, lang, loss_type=None, device=device)
 	elif False:
 		# For ASTER + OpenNMT.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_xent_nogradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9325_epoch2.pth'
 		assert model_filepath_to_load is not None
 
-		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, device=device)
+		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
 	else:
-		raise ValueError('Undefined model.')
+		raise ValueError('Undefined model')
 	print('End building a model: {} secs.'.format(time.time() - start_time))
 
 	# Load a model.
@@ -4524,7 +4527,7 @@ def recognize_textline_by_opennmt():
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, forward_functor, criterion = build_opennmt_model(label_converter, image_height, image_width, image_channel, encoder_type, lang, loss_type, device)
+	model, infer_functor, forward_functor, criterion = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_textline_len, encoder_type, lang, loss_type, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
