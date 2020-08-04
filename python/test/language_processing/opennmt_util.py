@@ -158,6 +158,7 @@ class Rare1ImageEncoder(onmt.encoders.encoder.EncoderBase):
 	def __init__(self, image_height, image_width, input_channel, output_channel, hidden_size, num_layers=2, bidirectional=True, transformer=None, feature_extractor='VGG', sequence_model='BiLSTM', num_fiducials=0):
 		super().__init__()
 
+		import torch
 		from rare.modules.transformation import TPS_SpatialTransformerNetwork
 		from rare.modules.feature_extraction import VGG_FeatureExtractor, RCNN_FeatureExtractor, ResNet_FeatureExtractor
 		from rare.modules.feature_extraction import VGG_FeatureExtractor_MixUp, RCNN_FeatureExtractor_MixUp, ResNet_FeatureExtractor_MixUp
@@ -227,6 +228,8 @@ class Rare1ImageEncoder(onmt.encoders.encoder.EncoderBase):
 class Rare2ImageEncoder(onmt.encoders.encoder.EncoderBase):
 	def __init__(self, image_height, image_width, input_channel, hidden_size, num_layers, bidirectional=False, num_fiducials=0):
 		super().__init__()
+
+		import torch
 
 		assert image_height % 16 == 0, 'image_height has to be a multiple of 16'
 		self.image_height = image_height
