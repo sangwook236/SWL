@@ -287,9 +287,12 @@ class ConvertNumpyToRGB(object):
 		else: raise ValueError('Invalid dimension, {}.'.format(x.ndim))
 
 class ResizeImage(object):
-	def __init__(self, height, width, is_pil=True):
+	def __init__(self, height, width, is_pil=True, warn_abount_small_image=False):
 		self.height, self.width = height, width
 		self.resize_functor = self._resize_by_pil if is_pil else self._resize_by_opencv
+
+		self.height_threshold, self.width_threshold = 20, 20
+		self.warn = self._warn_about_small_image if warn_abount_small_image else lambda *args, **kwargs: None
 
 	def __call__(self, x):
 		return self.resize_functor(x, self.height, self.width)
@@ -315,6 +318,7 @@ class ResizeImage(object):
 				return input
 		"""
 		hi, wi = input.shape[:2]
+		self.warn(hi, wi)
 		aspect_ratio = height / hi
 		#min_width = min(width, int(wi * aspect_ratio))
 		min_width = max(min(width, int(wi * aspect_ratio)), height // 2)
@@ -330,6 +334,7 @@ class ResizeImage(object):
 	def _resize_by_pil(self, input, height, width, *args, **kwargs):
 		interpolation = Image.BICUBIC
 		wi, hi = input.size
+		self.warn(hi, wi)
 		aspect_ratio = height / hi
 		#min_width = min(width, int(wi * aspect_ratio))
 		min_width = max(min(width, int(wi * aspect_ratio)), height // 2)
@@ -340,6 +345,12 @@ class ResizeImage(object):
 		"""
 		return input.resize((width, height), resample=interpolation)
 		"""
+
+	def _warn_about_small_image(self, height, width):
+		if height < self.height_threshold:
+			print('Too small image: The image height {} should be larger than or equal to {}.'.format(height, self.height_threshold))
+		#if width < self.width_threshold:
+		#	print('Too small image: The image width {} should be larger than or equal to {}.'.format(width, self.width_threshold))
 
 class ToIntTensor(object):
 	def __call__(self, lst):
@@ -2165,7 +2176,7 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 
 		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
 		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
-			enc_hiddens, enc_outputs, lengths = self.encoder(src, lengths)
+			enc_hiddens, enc_outputs, lengths = self.encoder(src, lengths=lengths, device=device)
 
 			if tgt is None or lengths is None:
 				raise NotImplementedError
@@ -2318,7 +2329,7 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 
 		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
 		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
-			hiddens, outputs, lengths = self.encoder(src, lengths)
+			enc_hiddens, enc_outputs, lengths = self.encoder(src, lengths=lengths, device=device)
 
 			if tgt is None or lengths is None:
 				raise NotImplementedError
@@ -2471,7 +2482,7 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 
 		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
 		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
-			enc_hiddens, enc_outputs, lengths = self.encoder(src, lengths)
+			enc_hiddens, enc_outputs, lengths = self.encoder(src, lengths=lengths, device=device)
 
 			if tgt is None or lengths is None:
 				raise NotImplementedError
@@ -2490,7 +2501,7 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 	return model, infer, forward, criterion
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
-def recognize_character():
+def train_character_recognizer():
 	image_height, image_width, image_channel = 64, 64, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
@@ -2638,7 +2649,7 @@ def recognize_character():
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
-def recognize_character_using_mixup():
+def train_character_recognizer_using_mixup():
 	image_height, image_width, image_channel = 64, 64, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
@@ -2785,7 +2796,7 @@ def recognize_character_using_mixup():
 	evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def recognize_word_by_rare1():
+def train_word_recognizer_based_on_rare1():
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -2968,7 +2979,7 @@ def recognize_word_by_rare1():
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def recognize_word_by_rare2():
+def train_word_recognizer_based_on_rare2():
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3138,7 +3149,7 @@ def recognize_word_by_rare2():
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def recognize_word_by_aster():
+def train_word_recognizer_based_on_aster():
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3309,7 +3320,7 @@ def recognize_word_by_aster():
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def recognize_word_by_opennmt():
+def train_word_recognizer_based_on_opennmt():
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3481,7 +3492,7 @@ def recognize_word_by_opennmt():
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def recognize_word_by_rare1_and_opennmt():
+def train_word_recognizer_based_on_rare1_and_opennmt():
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3650,7 +3661,7 @@ def recognize_word_by_rare1_and_opennmt():
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def recognize_word_by_rare2_and_opennmt():
+def train_word_recognizer_based_on_rare2_and_opennmt():
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3819,7 +3830,7 @@ def recognize_word_by_rare2_and_opennmt():
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def recognize_word_by_aster_and_opennmt():
+def train_word_recognizer_based_on_aster_and_opennmt():
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3988,7 +3999,7 @@ def recognize_word_by_aster_and_opennmt():
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def recognize_word_using_mixup():
+def train_word_recognizer_using_mixup():
 	image_height, image_width, image_channel = 32, 100, 3
 	#image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -4227,11 +4238,11 @@ def evaluate_word_recognizer():
 	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
 
 	test_transform = torchvision.transforms.Compose([
-		ResizeImage(image_height, image_width),
+		ResizeImage(image_height, image_width, warn_abount_small_image=True),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+		torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
 	test_target_transform = ToIntTensor()
 
@@ -4292,7 +4303,7 @@ def evaluate_word_recognizer():
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=True, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def infer_by_word_recognizer():
+def recognize_word():
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -4348,11 +4359,11 @@ def infer_by_word_recognizer():
 	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
 
 	test_transform = torchvision.transforms.Compose([
-		ResizeImage(image_height, image_width),
+		ResizeImage(image_height, image_width, warn_abount_small_image=True),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+		torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
 	test_target_transform = ToIntTensor()
 
@@ -4404,8 +4415,14 @@ def infer_by_word_recognizer():
 		encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
 		model, infer_functor, _, _ = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, encoder_type, lang, loss_type=None, device=device)
 	elif False:
+		# For RARE2 + OpenNMT.
+		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2+onmt_xent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.9441_epoch20_new.pth'
+		assert model_filepath_to_load is not None
+
+		model, infer_functor, _, _ = build_rare2_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
+	elif False:
 		# For ASTER + OpenNMT.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_xent_nogradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9325_epoch2.pth'
+		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_xent_nogradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9325_epoch2_new.pth'
 		assert model_filepath_to_load is not None
 
 		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
@@ -4427,10 +4444,11 @@ def infer_by_word_recognizer():
 	print('Start inferring...')
 	start_time = time.time()
 	model.eval()
-	infer_by_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=None, batch_size=batch_size, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=True, device=device)
+	#outputs = None
+	infer_by_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, batch_size=batch_size, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=True, device=device)
 	print('End inferring: {} secs.'.format(time.time() - start_time))
 
-def recognize_textline_by_opennmt():
+def train_textline_recognizer_based_on_opennmt():
 	#image_height, image_width, image_channel = 32, 100, 3
 	#image_height, image_width, image_channel = 64, 640, 3
 	image_height, image_width, image_channel = 64, 1280, 3
@@ -4867,33 +4885,33 @@ def recognize_word_using_craft_and_word_recognizer():
 		print('No text detected.')
 
 def main():
-	#recognize_character()
-	#recognize_character_using_mixup()
+	#train_character_recognizer()
+	#train_character_recognizer_using_mixup()
 
 	# Recognize text using CRAFT (scene text detector) + character recognizer.
 	#recognize_text_using_craft_and_character_recognizer()
 
 	#--------------------
-	#recognize_word_by_rare1()  # Use RARE #1.
-	#recognize_word_by_rare2()  # Use RARE #2.
-	#recognize_word_by_aster()  # Use ASTER.
+	#train_word_recognizer_based_on_rare1()  # Use RARE #1.
+	#train_word_recognizer_based_on_rare2()  # Use RARE #2.
+	#train_word_recognizer_based_on_aster()  # Use ASTER.
 
-	#recognize_word_by_opennmt()  # Use OpenNMT.
+	#train_word_recognizer_based_on_opennmt()  # Use OpenNMT.
 
-	#recognize_word_by_rare1_and_opennmt()  # Use RARE #1 (encoder) + OpenNMT (decoder).
-	#recognize_word_by_rare2_and_opennmt()  # Use RARE #2 (encoder) + OpenNMT (decoder).
-	#recognize_word_by_aster_and_opennmt()  # Use ASTER (encoder) + OpenNMT (decoder).
+	#train_word_recognizer_based_on_rare1_and_opennmt()  # Use RARE #1 (encoder) + OpenNMT (decoder).
+	#train_word_recognizer_based_on_rare2_and_opennmt()  # Use RARE #2 (encoder) + OpenNMT (decoder).
+	#train_word_recognizer_based_on_aster_and_opennmt()  # Use ASTER (encoder) + OpenNMT (decoder).
 
-	#recognize_word_using_mixup()  # Use RARE #1. Not working.
+	#train_word_recognizer_using_mixup()  # Use RARE #1. Not working.
 
 	#evaluate_word_recognizer()
-	infer_by_word_recognizer()
+	recognize_word()
 
 	# Recognize word using CRAFT (scene text detector) + word recognizer.
 	#recognize_word_using_craft_and_word_recognizer()  # Use RARE #1.
 
 	#--------------------
-	#recognize_textline_by_opennmt()  # Use OpenNMT.
+	#train_textline_recognizer_based_on_opennmt()  # Use OpenNMT.
 
 #--------------------------------------------------------------------
 

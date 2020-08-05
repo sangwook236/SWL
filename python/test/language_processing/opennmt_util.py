@@ -199,7 +199,7 @@ class Rare1ImageEncoder(onmt.encoders.encoder.EncoderBase):
 			self.sequence_rnn = None
 
 	# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
-	def forward(self, src, lengths=None):
+	def forward(self, src, lengths=None, device='cpu'):
 		# Transform.
 		if self.transformer: src = self.transformer(src, device)  # [b, c, h, w].
 
@@ -266,7 +266,7 @@ class Rare2ImageEncoder(onmt.encoders.encoder.EncoderBase):
 			self.sequence_projector = torch.nn.Linear(hidden_size, hidden_size)
 
 	# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
-	def forward(self, src, lengths=None):
+	def forward(self, src, lengths=None, device='cpu'):
 		if self.transformer: src = self.transformer(src, device)  # [B, C, H, W].
 
 		# Conv features.
@@ -300,7 +300,7 @@ class AsterImageEncoder(onmt.encoders.encoder.EncoderBase):
 		self.aster = aster.resnet_aster.ResNet_ASTER(with_lstm=True, in_height=image_height, in_channels=image_channel, hidden_size=hidden_size)
 
 	# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
-	def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
+	def forward(self, src, lengths=None, device='cpu'):
 		if self.transformer: src = self.transformer(src, device)  # [B, C, H, W].
 
 		hiddens, outputs, lengths = self.aster(src, lengths)
