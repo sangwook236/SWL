@@ -700,6 +700,8 @@ class MyRunner(object):
 				system_font_dir_path = 'C:/Windows/Fonts'
 				font_base_dir_path = 'D:/work/font'
 			font_dir_path = font_base_dir_path + '/kor'
+			#font_dir_path = font_base_dir_path + '/kor_small'
+			#font_dir_path = font_base_dir_path + '/kor_large'
 
 			font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 			font_list = tg_util.generate_hangeul_font_list(font_filepaths)
@@ -858,7 +860,8 @@ class MyRunner(object):
 					num_examples += num_batch_examples
 
 					if (batch_step + 1) % 100 == 0:
-						print('\tStep {}: {} secs.'.format(batch_step + 1, time.time() - start_time))
+						print('\tStep {}: Loss = {:.6f}: {} secs.'.format(batch_step + 1, batch_loss, time.time() - start_time))
+						sys.stdout.flush()
 				train_loss /= num_examples
 				train_acc /= num_examples
 				print('\tTrain:      Loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
@@ -878,9 +881,10 @@ class MyRunner(object):
 					num_examples += num_batch_examples
 
 					if (batch_step + 1) % 100 == 0:
-						print('\tStep {}: {} secs.'.format(batch_step + 1, time.time() - start_time))
+						print('\tStep {}: Loss = {:.6f}: {} secs.'.format(batch_step + 1, batch_loss, time.time() - start_time))
+						sys.stdout.flush()
 				train_loss /= num_examples
-				print('\tTrain:      loss = {:.6f}, accuracy = {}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
+				print('\tTrain:      Loss = {:.6f}, accuracy = {}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
 
 				history['loss'].append(train_loss)
 				#history['acc'].append(train_acc)

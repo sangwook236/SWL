@@ -370,7 +370,7 @@ class MyModel(object):
 			# TODO [decide] >>
 			rnn_input = tf.layers.dense(rnn_input, 64, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
 
-			rnn_output = MyModel._create_bidirectionnal_rnn(rnn_input, self._model_output_len_ph, kernel_initializer)
+			rnn_output = MyModel._create_bidirectionnal_rnn(rnn_input, self._model_output_len_ph, kernel_initializer, use_attention=False)
 
 		with tf.variable_scope('transcription', reuse=tf.AUTO_REUSE):
 			if self._is_sparse_output:
@@ -470,9 +470,26 @@ class MyModel(object):
 		return model(inputs)
 
 	@staticmethod
-	def _create_bidirectionnal_rnn(inputs, input_len=None, kernel_initializer=None):
+	def _create_bidirectionnal_rnn(inputs, input_len=None, kernel_initializer=None, use_attention=False):
 		with tf.variable_scope('birnn_1', reuse=tf.AUTO_REUSE):
 			fw_cell_1, bw_cell_1 = MyModel._create_unit_cell(256, kernel_initializer, 'fw_cell'), MyModel._create_unit_cell(256, kernel_initializer, 'bw_cell')
+
+			if use_attention:
+				# Attention.
+				num_attention_units = 128
+				# TODO [decide] >>
+				if True:
+					# Additive attention.
+					# REF [paper] >> "Neural Machine Translation by Jointly Learning to Align and Translate", arXiv 2016.
+					attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(num_attention_units, memory=inputs, memory_sequence_length=input_len)
+				else:
+					# Multiplicative attention.
+					# REF [paper] >> "Effective Approaches to Attention-based Neural Machine Translation", arXiv 2015.
+					attention_mechanism = tf.contrib.seq2seq.LuongAttention(num_attention_units, memory=inputs, memory_sequence_length=input_len)
+
+				# TODO [decide] >> Are different attention_mechanisms used for fw_cell_1 and bw_cell_1?
+				fw_cell_1 = tf.contrib.seq2seq.AttentionWrapper(fw_cell_1, attention_mechanism, attention_layer_size=num_attention_units)
+				bw_cell_1 = tf.contrib.seq2seq.AttentionWrapper(bw_cell_1, attention_mechanism, attention_layer_size=num_attention_units)
 
 			outputs_1, _ = tf.nn.bidirectional_dynamic_rnn(fw_cell_1, bw_cell_1, inputs, input_len, dtype=tf.float32)
 			outputs_1 = tf.concat(outputs_1, 2)
@@ -558,10 +575,10 @@ class MyRunner(object):
 		if False:
 			image_height, image_width, image_channel = 32, 320, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
 			model_output_time_steps = 39 #79
-		elif False:
+		elif True:
 			image_height, image_width, image_channel = 64, 640, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
 			model_output_time_steps = 79 #159
-		elif True:
+		elif False:
 			image_height, image_width, image_channel = 64, 1280, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
 			model_output_time_steps = 99 #319
 		else:
@@ -618,7 +635,9 @@ class MyRunner(object):
 			else:
 				system_font_dir_path = 'C:/Windows/Fonts'
 				font_base_dir_path = 'D:/work/font'
-			font_dir_path = font_base_dir_path + '/kor'
+			#font_dir_path = font_base_dir_path + '/kor'
+			#font_dir_path = font_base_dir_path + '/kor_small'
+			font_dir_path = font_base_dir_path + '/kor_large'
 			#font_dir_path = font_base_dir_path + '/kor_receipt'
 
 			font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
@@ -685,8 +704,11 @@ class MyRunner(object):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_value)
-			model_output, loss, accuracy = model.create_model(self._label_converter.num_tokens + 1, is_training=True)
+			#model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_value)
+			#model_output, loss, accuracy = model.create_model(self._label_converter.num_tokens + 1, is_training=True)
+			# Ignore <UNKNOWN> token.
+			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens - 1, default_value=self._label_converter.pad_value)
+			model_output, loss, accuracy = model.create_model(self._label_converter.num_tokens, is_training=True)
 
 			# Create a trainer.
 			global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
@@ -781,7 +803,8 @@ class MyRunner(object):
 					num_examples += num_batch_examples
 
 					if (batch_step + 1) % 100 == 0:
-						print('\tStep {}: {} secs.'.format(batch_step + 1, time.time() - start_time))
+						print('\tStep {}: Loss = {:.6f}: {} secs.'.format(batch_step + 1, batch_loss, time.time() - start_time))
+						sys.stdout.flush()
 				train_loss /= num_examples
 				train_acc /= num_examples
 				print('\tTrain:      Loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
@@ -801,9 +824,10 @@ class MyRunner(object):
 					num_examples += num_batch_examples
 
 					if (batch_step + 1) % 100 == 0:
-						print('\tStep {}: {} secs.'.format(batch_step + 1, time.time() - start_time))
+						print('\tStep {}: Loss = {:.6f}: {} secs.'.format(batch_step + 1, batch_loss, time.time() - start_time))
+						sys.stdout.flush()
 				train_loss /= num_examples
-				print('\tTrain:      loss = {:.6f}, accuracy = {}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
+				print('\tTrain:      Loss = {:.6f}, accuracy = {}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
 
 				history['loss'].append(train_loss)
 				#history['acc'].append(train_acc)
@@ -889,8 +913,11 @@ class MyRunner(object):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_value)
-			model_output = model.create_model(self._label_converter.num_tokens + 1, is_training=False)
+			#model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_value)
+			#model_output = model.create_model(self._label_converter.num_tokens + 1, is_training=False)
+			# Ignore <UNKNOWN> token.
+			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens - 1, default_value=self._label_converter.pad_value)
+			model_output = model.create_model(self._label_converter.num_tokens, is_training=False)
 
 			# Create a saver.
 			saver = tf.train.Saver()
@@ -963,8 +990,11 @@ class MyRunner(object):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_value)
-			model_output = model.create_model(self._label_converter.num_tokens + 1, is_training=False)
+			#model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_value)
+			#model_output = model.create_model(self._label_converter.num_tokens + 1, is_training=False)
+			# Ignore <UNKNOWN> token.
+			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens - 1, default_value=self._label_converter.pad_value)
+			model_output = model.create_model(self._label_converter.num_tokens, is_training=False)
 
 			# Create a saver.
 			saver = tf.train.Saver()

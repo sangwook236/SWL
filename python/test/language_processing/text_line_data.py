@@ -379,11 +379,14 @@ class RunTimeHangeulJamoAlphaMatteTextLineDataset(RunTimeAlphaMatteTextLineDatas
 #--------------------------------------------------------------------
 
 class FileBasedTextLineDatasetBase(TextLineDatasetBase):
-	def __init__(self, label_converter, image_height, image_width, image_channel, use_NWHC=True):
+	def __init__(self, label_converter, image_height, image_width, image_channel, use_NWHC=True, warn_about_small_image=True):
 		super().__init__(label_converter, use_NWHC)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 		self._train_data, self._test_data = None, None
+
+		self.height_threshold, self.width_threshold = 20, 20
+		self.warn = self._warn_about_small_image if warn_about_small_image else lambda *args, **kwargs: None
 
 	@property
 	def shape(self):
@@ -557,6 +560,7 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 			if img is None:
 				print('[SWL] Error: Failed to load an image: {}.'.format(img_fpath))
 				continue
+			self.warn(img.shape[0], img.shape[1])
 
 			#img = self.resize(img, None, image_height, image_width)
 			try:
@@ -616,6 +620,7 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 			if img is None:
 				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
 				continue
+			self.warn(img.shape[0], img.shape[1])
 
 			#img = self.resize(img, None, image_height, image_width)
 			try:
@@ -637,6 +642,12 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 		#images, _ = self.preprocess(images, None)
 
 		return images, labels_str, labels_int
+
+	def _warn_about_small_image(self, height, width):
+		if height < self.height_threshold:
+			print('Too small image: The image height {} should be larger than or equal to {}.'.format(height, self.height_threshold))
+		#if width < self.width_threshold:
+		#	print('Too small image: The image width {} should be larger than or equal to {}.'.format(width, self.width_threshold))
 
 #--------------------------------------------------------------------
 

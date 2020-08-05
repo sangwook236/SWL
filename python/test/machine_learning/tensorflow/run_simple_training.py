@@ -334,7 +334,7 @@ class MyRunner(object):
 
 					train_summary_writer.add_summary(summary, epoch * batch_size + batch_step)
 					if (batch_step + 1) % 100 == 0:
-						self._logger.info('\tStep {}: {} secs.'.format(batch_step + 1, time.time() - start_time))
+						self._logger.info('\tStep {}: loss = {:.6f}: {} secs.'.format(batch_step + 1, batch_loss, time.time() - start_time))
 				train_loss /= num_examples
 				train_acc /= num_examples
 				self._logger.info('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))

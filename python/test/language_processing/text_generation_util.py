@@ -630,10 +630,16 @@ class SimpleCharacterAlphaMatteGenerator(object):
 
 		if use_printed_letter:
 			#print('Generate a printed letter.')
-			font_type, font_index = random.choice(self._font_list)
 			font_color, bg_color = 255, 0
 
-			alpha = swl_langproc_util.generate_text_image(char, font_type, font_index, font_size, font_color, bg_color, image_size, self._text_offset, self._crop_text_area, self._draw_text_border, mode=self._alpha_matte_mode)
+			while True:
+				font_type, font_index = random.choice(self._font_list)
+				try:
+					alpha = swl_langproc_util.generate_text_image(char, font_type, font_index, font_size, font_color, bg_color, image_size, self._text_offset, self._crop_text_area, self._draw_text_border, mode=self._alpha_matte_mode)
+					break
+				except OSError as ex:
+					print('Warning: Font = {}, Index = {}: {}.'.format(font_type, font_index, ex))
+
 			if '1' == self._alpha_matte_mode:
 				return np.array(alpha, dtype=np.float32)
 			else:
@@ -710,12 +716,16 @@ class BasicPrintedTextGenerator(object):
 		#image_size = (math.ceil(len(text) * font_size * 2), math.ceil(font_size * 2))
 		image_size = None
 
-		font_type, font_index = random.choice(self._font_list)
-
 		font_size = random.randint(*self._font_size_interval)
 		char_space_ratio = None if self._char_space_ratio_interval is None else random.uniform(*self._char_space_ratio_interval)
 
-		text_image, text_mask = swl_langproc_util.generate_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size, self._text_offset, self._crop_text_area, self._draw_text_border, char_space_ratio, mode=self._mode, mask=True, mask_mode=self._mask_mode)
+		while True:
+			font_type, font_index = random.choice(self._font_list)
+			try:
+				text_image, text_mask = swl_langproc_util.generate_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size, self._text_offset, self._crop_text_area, self._draw_text_border, char_space_ratio, mode=self._mode, mask=True, mask_mode=self._mask_mode)
+				break
+			except OSError as ex:
+				print('Warning: Font = {}, Index = {}: {}.'.format(font_type, font_index, ex))
 
 		#return np.array(text_image), np.array(text_mask)  # text_mask: np.bool.
 		return np.array(text_image), np.array(text_mask, dtype=np.uint8)
@@ -813,8 +823,6 @@ class BasicTextAlphaMatteGenerator(object):
 				A text line can be constructed by constructTextLine().
 		"""
 
-		font_type, font_index = random.choice(self._font_list)
-
 		font_size = random.randint(*self._font_size_interval)
 		char_space_ratio = None if self._char_space_ratio_interval is None else random.uniform(*self._char_space_ratio_interval)
 
@@ -823,6 +831,15 @@ class BasicTextAlphaMatteGenerator(object):
 		#image_size = None
 
 		font_color, bg_color = 255, 0
+
+		while True:
+			font_type, font_index = random.choice(self._font_list)
+			try:
+				# For testing fonts.
+				swl_langproc_util.generate_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size, self._text_offset, self._crop_text_area, self._draw_text_border, mode=self._alpha_matte_mode)
+				break
+			except OSError as ex:
+				print('Warning: Font = {}, Index = {}: {}.'.format(font_type, font_index, ex))
 
 		char_alpha_list = list()
 		for ch in text:
