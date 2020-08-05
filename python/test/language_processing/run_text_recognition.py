@@ -173,7 +173,7 @@ def create_word_augmenter():
 
 	return augmenter
 
-def create_text_line_augmenter():
+def create_textline_augmenter():
 	#import imgaug as ia
 	from imgaug import augmenters as iaa
 
@@ -737,10 +737,10 @@ def create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_e
 
 	return train_dataloader, test_dataloader
 
-def create_text_line_data_loaders(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers):
+def create_textline_data_loaders(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers):
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
-		RandomAugment(create_text_line_augmenter()),
+		RandomAugment(create_textline_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
 		ResizeImage(image_height_before_crop, image_width_before_crop),
@@ -885,10 +885,10 @@ def create_text_line_data_loaders(textline_type, label_converter, wordset, chars
 
 	return train_dataloader, test_dataloader
 
-def create_mixed_text_line_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers):
+def create_mixed_textline_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers):
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
-		RandomAugment(create_text_line_augmenter()),
+		RandomAugment(create_textline_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
 		ResizeImage(image_height_before_crop, image_width_before_crop),
@@ -1077,7 +1077,7 @@ def show_per_char_accuracy(correct_char_class_count, total_char_class_count, cla
 		acc_thresh = 98
 		print('Per-character accuracy (< {}) = {}.'.format(acc_thresh, {classes[idx]: round(acc, 2) for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]) if acc < acc_thresh}))
 
-def train_char_recognition_model(model, forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler=None, max_gradient_norm=None, model_params=None, device='cpu'):
+def train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler=None, max_gradient_norm=None, model_params=None, device='cpu'):
 	best_measure = 0.0
 	best_model_filepath = None
 	for epoch in range(num_epochs):  # Loop over the dataset multiple times.
@@ -1089,7 +1089,7 @@ def train_char_recognition_model(model, forward_functor, criterion, label_conver
 			optimizer.zero_grad()
 
 			# Forward + backward + optimize.
-			loss = forward_functor(model, batch, device)
+			loss = train_forward_functor(model, batch, device)
 			loss.backward()
 			if max_gradient_norm: torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
 			optimizer.step()
@@ -1121,7 +1121,7 @@ def train_char_recognition_model(model, forward_functor, criterion, label_conver
 
 	return model, best_model_filepath
 
-def train_text_recognition_model(model, criterion, forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler=None, max_gradient_norm=None, model_params=None, device='cpu'):
+def train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler=None, max_gradient_norm=None, model_params=None, device='cpu'):
 	best_measure = 0.0
 	best_model_filepath = None
 	for epoch in range(num_epochs):  # Loop over the dataset multiple times.
@@ -1133,7 +1133,7 @@ def train_text_recognition_model(model, criterion, forward_functor, infer_functo
 			optimizer.zero_grad()
 
 			# Forward + backward + optimize.
-			loss = forward_functor(model, criterion, batch, device)
+			loss = train_forward_functor(model, criterion, batch, device)
 			loss.backward()
 			if max_gradient_norm: torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
 			optimizer.step()
@@ -1418,7 +1418,7 @@ def build_char_model(label_converter, image_channel, loss_type, lang, device='cp
 	else:
 		raise ValueError('Invalid loss type, {}'.format(loss_type))
 
-	def forward(model, criterion, batch, device):
+	def train_forward(model, criterion, batch, device):
 		inputs, outputs = batch
 		inputs, outputs = inputs.to(device), outputs.to(device)
 
@@ -1428,7 +1428,7 @@ def build_char_model(label_converter, image_channel, loss_type, lang, device='cp
 	import rare.model_char
 	model = rare.model_char.create_model(model_name, input_channel, output_channel, label_converter.num_tokens)
 
-	return model, forward, criterion
+	return model, train_forward, criterion
 
 def build_char_mixup_model(label_converter, image_channel, loss_type, lang, device='cpu'):
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
@@ -1445,7 +1445,7 @@ def build_char_mixup_model(label_converter, image_channel, loss_type, lang, devi
 	else:
 		raise ValueError('Invalid loss type, {}'.format(loss_type))
 
-	def forward(model, criterion, batch, device):
+	def train_forward(model, criterion, batch, device):
 		inputs, outputs = batch
 		inputs, outputs = inputs.to(device), outputs.to(device)
 
@@ -1456,7 +1456,7 @@ def build_char_mixup_model(label_converter, image_channel, loss_type, lang, devi
 	import rare.model_char
 	model = rare.model_char.create_mixup_model(model_name, input_channel, output_channel, label_converter.num_tokens)
 
-	return model, forward, criterion
+	return model, train_forward, criterion
 
 def build_rare1_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_text_len, num_suffixes, sos_value, blank_label=None, device='cpu'):
 	transformer = None  # The type of transformer. {None, 'TPS'}.
@@ -1479,7 +1479,7 @@ def build_rare1_model(label_converter, image_height, image_width, image_channel,
 		# Define a loss function.
 		criterion = torch.nn.CTCLoss(blank=blank_label, zero_infinity=True).to(device)  # The BLANK label.
 
-		def forward(model, criterion, batch, device):
+		def train_forward(model, criterion, batch, device):
 			inputs, outputs, output_lens = batch
 
 			model_outputs = model(inputs.to(device), None, is_train=True, device=device).log_softmax(2)
@@ -1505,7 +1505,7 @@ def build_rare1_model(label_converter, image_height, image_width, image_channel,
 		elif loss_type == 'nll':
 			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
 
-		def forward(model, criterion, batch, device):
+		def train_forward(model, criterion, batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
 
@@ -1546,7 +1546,7 @@ def build_rare1_model(label_converter, image_height, image_width, image_channel,
 	import rare.model
 	model = rare.model.Model(image_height, image_width, label_converter.num_tokens, num_fiducials, input_channel, output_channel, hidden_size, max_text_len + num_suffixes, sos_value, label_converter.pad_value, transformer, feature_extractor, sequence_model, decoder)
 
-	return model, infer, forward, criterion
+	return model, infer, train_forward, criterion
 
 def build_rare1_mixup_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_text_len, num_suffixes, sos_value, blank_label=None, device='cpu'):
 	transformer = None  # The type of transformer. {None, 'TPS'}.
@@ -1572,7 +1572,7 @@ def build_rare1_mixup_model(label_converter, image_height, image_width, image_ch
 		# Define a loss function.
 		criterion = torch.nn.CTCLoss(blank=blank_label, zero_infinity=True).to(device)  # The BLANK label.
 
-		def forward(model, criterion, batch, device):
+		def train_forward(model, criterion, batch, device):
 			inputs, outputs, output_lens = batch
 
 			model_outputs = model(inputs.to(device), None, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, is_train=True, device=device).log_softmax(2)
@@ -1598,7 +1598,7 @@ def build_rare1_mixup_model(label_converter, image_height, image_width, image_ch
 		elif loss_type == 'nll':
 			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_value, reduction='sum').to(device)  # Ignore the pad value.
 
-		def forward(model, criterion, batch, device):
+		def train_forward(model, criterion, batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
 
@@ -1640,7 +1640,7 @@ def build_rare1_mixup_model(label_converter, image_height, image_width, image_ch
 	import rare.model
 	model = rare.model.Model_MixUp(image_height, image_width, label_converter.num_tokens, num_fiducials, input_channel, output_channel, hidden_size, max_text_len + num_suffixes, sos_value, label_converter.pad_value, transformer, feature_extractor, sequence_model, decoder)
 
-	return model, infer, forward, criterion
+	return model, infer, train_forward, criterion
 
 def build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=0, sos_value=0, device='cpu'):
 	if lang == 'kor':
@@ -1660,7 +1660,7 @@ def build_rare2_model(label_converter, image_height, image_width, image_channel,
 		else:
 			raise ValueError('Invalid loss type, {}'.format(loss_type))
 
-		def forward(model, criterion, batch, device):
+		def train_forward(model, criterion, batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
 
@@ -1697,7 +1697,7 @@ def build_rare2_model(label_converter, image_height, image_width, image_channel,
 			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
 	else:
 		criterion = None
-		forward = None
+		train_forward = None
 
 	def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 		#model_outputs = model(inputs.to(device), decoder_inputs.to(device), decoder_input_lens.to(device), device=device)
@@ -1732,7 +1732,7 @@ def build_rare2_model(label_converter, image_height, image_width, image_channel,
 	import rare.crnn_lang
 	model = rare.crnn_lang.CRNN(imgH=image_height, nc=image_channel, nclass=label_converter.num_tokens, nh=hidden_size, n_rnn=num_rnns, num_embeddings=embedding_size, leakyRelu=use_leaky_relu, max_time_steps=max_time_steps, sos_value=sos_value)
 
-	return model, infer, forward, criterion
+	return model, infer, train_forward, criterion
 
 def build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_text_len, eos_value, device='cpu'):
 	if lang == 'kor':
@@ -1755,7 +1755,7 @@ def build_aster_model(label_converter, image_height, image_width, image_channel,
 	#else:
 	#	raise ValueError('Invalid loss type, {}'.format(loss_type))
 
-	def forward(model, criterion, batch, device):
+	def train_forward(model, criterion, batch, device):
 		inputs, outputs, output_lens = batch
 
 		"""
@@ -1821,7 +1821,7 @@ def build_aster_model(label_converter, image_height, image_width, image_channel,
 		STN_ON=sys_args.STN_ON
 	)
 
-	return model, infer, forward, sys_args
+	return model, infer, train_forward, sys_args
 
 def build_decoder_and_generator_for_opennmt(num_classes, word_vec_size, hidden_size, num_layers=2, bidirectional_encoder=True):
 	import onmt
@@ -1881,7 +1881,7 @@ def build_opennmt_model(label_converter, image_height, image_width, image_channe
 		else:
 			raise ValueError('Invalid loss type, {}'.format(loss_type))
 
-		def forward(model, criterion, batch, device):
+		def train_forward(model, criterion, batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
 
@@ -1899,7 +1899,7 @@ def build_opennmt_model(label_converter, image_height, image_width, image_channe
 			return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
 	else:
 		criterion = None
-		forward = None
+		train_forward = None
 
 	#--------------------
 	import onmt, onmt.translate
@@ -2037,7 +2037,7 @@ def build_opennmt_model(label_converter, image_height, image_width, image_channe
 	model = onmt.models.NMTModel(encoder, decoder)
 	model.add_module('generator', generator)
 
-	return model, infer, forward, criterion
+	return model, infer, train_forward, criterion
 
 def build_rare1_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device='cpu'):
 	transformer = None  # The type of transformer. {None, 'TPS'}.
@@ -2067,7 +2067,7 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 		else:
 			raise ValueError('Invalid loss type, {}'.format(loss_type))
 
-		def forward(model, criterion, batch, device):
+		def train_forward(model, criterion, batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
 
@@ -2085,7 +2085,7 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 			return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
 	else:
 		criterion = None
-		forward = None
+		train_forward = None
 
 	#--------------------
 	import onmt, onmt.translate
@@ -2175,7 +2175,7 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 			self.decoder, self.generator = build_decoder_and_generator_for_opennmt(num_classes, word_vec_size, hidden_size=decoder_hidden_size, num_layers=num_decoder_layers, bidirectional_encoder=bidirectional_encoder)
 
 		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
-		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
+		def train_forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
 			enc_hiddens, enc_outputs, lengths = self.encoder(src, lengths=lengths, device=device)
 
 			if tgt is None or lengths is None:
@@ -2220,7 +2220,7 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 		else:
 			raise ValueError('Invalid loss type, {}'.format(loss_type))
 
-		def forward(model, criterion, batch, device):
+		def train_forward(model, criterion, batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
 
@@ -2238,7 +2238,7 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 			return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
 	else:
 		criterion = None
-		forward = None
+		train_forward = None
 
 	#--------------------
 	import onmt, onmt.translate
@@ -2328,7 +2328,7 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 			self.decoder, self.generator = build_decoder_and_generator_for_opennmt(num_classes, word_vec_size, hidden_size=decoder_hidden_size, num_layers=num_decoder_layers, bidirectional_encoder=bidirectional_encoder)
 
 		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
-		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
+		def train_forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
 			enc_hiddens, enc_outputs, lengths = self.encoder(src, lengths=lengths, device=device)
 
 			if tgt is None or lengths is None:
@@ -2345,7 +2345,7 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 
 	model = MyCompositeModel(image_height, image_width, image_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, num_decoder_layers, bidirectional_encoder, num_fiducials)
 
-	return model, infer, forward, criterion
+	return model, infer, train_forward, criterion
 
 def build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device='cpu'):
 	is_stn_used = False
@@ -2373,7 +2373,7 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 		else:
 			raise ValueError('Invalid loss type, {}'.format(loss_type))
 
-		def forward(model, criterion, batch, device):
+		def train_forward(model, criterion, batch, device):
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
 
@@ -2391,7 +2391,7 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 			return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
 	else:
 		criterion = None
-		forward = None
+		train_forward = None
 
 	#--------------------
 	import onmt, onmt.translate
@@ -2481,7 +2481,7 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 			self.decoder, self.generator = build_decoder_and_generator_for_opennmt(num_classes, word_vec_size, hidden_size=decoder_hidden_size, num_layers=num_decoder_layers, bidirectional_encoder=bidirectional_encoder)
 
 		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
-		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
+		def train_forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
 			enc_hiddens, enc_outputs, lengths = self.encoder(src, lengths=lengths, device=device)
 
 			if tgt is None or lengths is None:
@@ -2498,7 +2498,71 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 
 	model = MyCompositeModel(image_height, image_width, image_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_decoder_layers, bidirectional_encoder, num_fiducials)
 
-	return model, infer, forward, criterion
+	return model, infer, train_forward, criterion
+
+# REF [site] >> https://github.com/fengxinjie/Transformer-OCR
+def build_transformer_ocr_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, is_train=False, device='cpu'):
+	import transformer_ocr.model, transformer_ocr.train, transformer_ocr.predict, transformer_ocr.dataset
+
+	num_layers = 4
+	num_heads = 8  # The number of head for MultiHeadedAttention.
+	dropout = 0.1  # Dropout probability. [0, 1.0].
+	if lang == 'kor':
+		d_model = 256  # The dimension of keys/values/queries in MultiHeadedAttention, also the input size of the first-layer of the PositionwiseFeedForward.
+		d_ff = 1024  # The second-layer of the PositionwiseFeedForward.
+		d_feature = 1024  # The dimension of features in FeatureExtractor.
+	else:
+		d_model = 256  # The dimension of keys/values/queries in MultiHeadedAttention, also the input size of the first-layer of the PositionwiseFeedForward.
+		d_ff = 1024  # The second-layer of the PositionwiseFeedForward.
+		d_feature = 1024  # The dimension of features in FeatureExtractor.
+	smoothing = 0.1
+	# TODO [check] >> Check if PAD value or PAD index is used.
+	#pad_value = 0
+	pad_value = label_converter.pad_value
+	sos_value, eos_value = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
+	max_time_steps = max_label_len + label_converter.num_affixes
+
+	if is_train:
+		# Define a loss function.
+		criterion = transformer_ocr.train.LabelSmoothing(size=label_converter.num_tokens, padding_idx=pad_value, smoothing=smoothing)
+
+		def train_forward(model, criterion, batch, device):
+			inputs, outputs, _ = batch
+			outputs = outputs.long()
+
+			# Construct inputs for one-step look-ahead.
+			decoder_inputs = outputs[:,:-1]
+			decoder_inputs[decoder_inputs == eos_value] = pad_value  # Remove <EOS> token.
+			# Construct outputs for one-step look-ahead.
+			decoder_outputs = outputs[:,1:]  # Remove <SOS> token.
+
+			batch = transformer_ocr.dataset.Batch(inputs, decoder_inputs, decoder_outputs, pad=pad_value, device=device)
+			model_outputs = model(batch.src, batch.tgt_input, batch.src_mask, batch.tgt_input_mask)
+
+			# REF [function] >> transformer_ocr.train.SimpleLossCompute.__call__().
+			model_outputs = model.generator(model_outputs)
+			return criterion(model_outputs.contiguous().view(-1, model_outputs.size(-1)), batch.tgt_output.contiguous().view(-1)) / batch.num_tokens
+	else:
+		criterion = None
+		train_forward = None
+
+	def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
+		# Predict a single input.
+		#src_mask = torch.autograd.Variable(torch.from_numpy(np.ones([1, 1, 36], dtype=np.bool)).to(device))
+		src_mask = torch.autograd.Variable(torch.full([1, 1, 320], True, dtype=torch.bool)).to(device)
+
+		inputs = inputs.to(device)
+		model_outputs = np.full((len(inputs), max_time_steps), pad_value, dtype=np.int)
+		for idx, src in enumerate(inputs):
+			src = src.unsqueeze(dim=0)
+			model_outp = transformer_ocr.predict.greedy_decode(model, src, src_mask, max_len=max_time_steps, sos=sos_value, eos=eos_value, device=device)
+			model_outputs[idx,:len(model_outp)] = model_outp
+
+		return model_outputs, None if outputs is None else outputs[:,1:].numpy()
+
+	model = transformer_ocr.model.make_model(label_converter.num_tokens, N=num_layers, d_model=d_model, d_ff=d_ff, d_feature=d_feature, h=num_heads, dropout=dropout)
+
+	return model, infer, train_forward, criterion
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 def train_character_recognizer():
@@ -2575,7 +2639,7 @@ def train_character_recognizer():
 	#--------------------
 	# Build a model.
 
-	model, forward_functor, criterion = build_char_model(label_converter, image_channel, loss_type, lang, device)
+	model, train_forward_functor, criterion = build_char_model(label_converter, image_channel, loss_type, lang, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -2623,7 +2687,7 @@ def train_character_recognizer():
 		#--------------------
 		print('Start training...')
 		start_time = time.time()
-		model, best_model_filepath = train_char_recognition_model(model, forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+		model, best_model_filepath = train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
@@ -2723,7 +2787,7 @@ def train_character_recognizer_using_mixup():
 	#--------------------
 	# Build a model.
 
-	model, forward_functor, criterion = build_char_mixup_model(label_converter, image_channel, loss_type, lang, device)
+	model, train_forward_functor, criterion = build_char_mixup_model(label_converter, image_channel, loss_type, lang, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -2771,7 +2835,7 @@ def train_character_recognizer_using_mixup():
 		#--------------------
 		print('Start training...')
 		start_time = time.time()
-		model, best_model_filepath = train_char_recognition_model(model, forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+		model, best_model_filepath = train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
@@ -2902,7 +2966,7 @@ def train_word_recognizer_based_on_rare1():
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, forward_functor, criterion = build_rare1_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_word_len, num_suffixes, SOS_VALUE, BLANK_LABEL if loss_type == 'ctc' else None, device)
+	model, infer_functor, train_forward_functor, criterion = build_rare1_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_word_len, num_suffixes, SOS_VALUE, BLANK_LABEL if loss_type == 'ctc' else None, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -2954,7 +3018,7 @@ def train_word_recognizer_based_on_rare1():
 		#--------------------
 		print('Start training...')
 		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+		model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
@@ -3072,7 +3136,7 @@ def train_word_recognizer_based_on_rare2():
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, forward_functor, criterion = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type, max_word_len + num_suffixes, SOS_VALUE, device)
+	model, infer_functor, train_forward_functor, criterion = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type, max_word_len + num_suffixes, SOS_VALUE, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3124,7 +3188,7 @@ def train_word_recognizer_based_on_rare2():
 		#--------------------
 		print('Start training...')
 		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+		model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
@@ -3242,7 +3306,7 @@ def train_word_recognizer_based_on_aster():
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, forward_functor, sys_args = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_word_len, EOS_VALUE, device)
+	model, infer_functor, train_forward_functor, sys_args = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_word_len, EOS_VALUE, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3295,7 +3359,7 @@ def train_word_recognizer_based_on_aster():
 		#--------------------
 		print('Start training...')
 		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, None, forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+		model, best_model_filepath = train_text_recognition_model(model, None, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
@@ -3414,7 +3478,7 @@ def train_word_recognizer_based_on_opennmt():
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, forward_functor, criterion = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_word_len, encoder_type, lang, loss_type, device)
+	model, infer_functor, train_forward_functor, criterion = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_word_len, encoder_type, lang, loss_type, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3467,7 +3531,7 @@ def train_word_recognizer_based_on_opennmt():
 		#--------------------
 		print('Start training...')
 		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+		model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
@@ -3584,7 +3648,7 @@ def train_word_recognizer_based_on_rare1_and_opennmt():
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, forward_functor, criterion = build_rare1_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_word_len, lang, loss_type, device)
+	model, infer_functor, train_forward_functor, criterion = build_rare1_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_word_len, lang, loss_type, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3636,7 +3700,7 @@ def train_word_recognizer_based_on_rare1_and_opennmt():
 		#--------------------
 		print('Start training...')
 		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+		model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
@@ -3753,7 +3817,7 @@ def train_word_recognizer_based_on_rare2_and_opennmt():
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, forward_functor, criterion = build_rare2_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_word_len, lang, loss_type, device)
+	model, infer_functor, train_forward_functor, criterion = build_rare2_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_word_len, lang, loss_type, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3805,7 +3869,7 @@ def train_word_recognizer_based_on_rare2_and_opennmt():
 		#--------------------
 		print('Start training...')
 		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+		model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
@@ -3922,7 +3986,7 @@ def train_word_recognizer_based_on_aster_and_opennmt():
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, forward_functor, criterion = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_word_len, lang, loss_type, device)
+	model, infer_functor, train_forward_functor, criterion = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_word_len, lang, loss_type, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3974,7 +4038,7 @@ def train_word_recognizer_based_on_aster_and_opennmt():
 		#--------------------
 		print('Start training...')
 		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+		model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
@@ -4105,7 +4169,7 @@ def train_word_recognizer_using_mixup():
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, forward_functor, criterion = build_rare1_mixup_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_word_len, num_suffixes, SOS_VALUE, BLANK_LABEL if loss_type == 'ctc' else None, device)
+	model, infer_functor, train_forward_functor, criterion = build_rare1_mixup_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_word_len, num_suffixes, SOS_VALUE, BLANK_LABEL if loss_type == 'ctc' else None, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -4157,7 +4221,7 @@ def train_word_recognizer_using_mixup():
 		#--------------------
 		print('Start training...')
 		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+		model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
@@ -4182,7 +4246,7 @@ def train_word_recognizer_using_mixup():
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def evaluate_word_recognizer():
+def evaluate_word_recognizer_using_aihub_data(max_label_len, batch_size, is_individual_pad_value_used=False):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -4190,14 +4254,11 @@ def evaluate_word_recognizer():
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
-	max_label_len = 10
 	is_preloaded_image_used = False
 
 	lang = 'kor'  # {'kor', 'eng'}.
-	shuffle = True
+	shuffle = False
 	num_workers = 8
-	batch_size = 64
-	is_individual_pad_value_used = False
 
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
@@ -4303,151 +4364,6 @@ def evaluate_word_recognizer():
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=True, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def recognize_word():
-	#image_height, image_width, image_channel = 32, 100, 3
-	image_height, image_width, image_channel = 64, 640, 3
-	#image_height, image_width, image_channel = 64, 1280, 3
-	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
-	image_height_before_crop, image_width_before_crop = image_height, image_width
-
-	image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
-	max_label_len = 10
-	is_preloaded_image_used = False
-
-	lang = 'kor'  # {'kor', 'eng'}.
-	shuffle = True
-	num_workers = 8
-	batch_size = 64
-	is_individual_pad_value_used = False
-
-	if lang == 'kor':
-		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
-	elif lang == 'eng':
-		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
-	else:
-		raise ValueError('Invalid language, {}'.format(lang))
-
-	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
-	print('Device: {}.'.format(device))
-
-	#--------------------
-	# Prepare data.
-
-	if is_individual_pad_value_used:
-		# When the pad value is the ID of a valid token.
-		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
-		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_VALUE)
-		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
-		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
-	else:
-		# When the pad value = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
-	assert label_converter.PAD is not None
-	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
-	num_suffixes = 1
-
-	if 'posix' == os.name:
-		data_base_dir_path = '/home/sangwook/work/dataset'
-	else:
-		data_base_dir_path = 'D:/work/dataset'
-
-	aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
-	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
-
-	test_transform = torchvision.transforms.Compose([
-		ResizeImage(image_height, image_width, warn_abount_small_image=True),
-		#torchvision.transforms.Resize((image_height, image_width)),
-		#torchvision.transforms.CenterCrop((image_height, image_width)),
-		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-	])
-	test_target_transform = ToIntTensor()
-
-	print('Start creating a dataset and a dataloader...')
-	start_time = time.time()
-	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
-	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	print('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
-	print('#examples = {}.'.format(len(test_dataset)))
-	print('#classes = {}.'.format(num_classes))
-	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_value, SOS_VALUE, EOS_VALUE))
-
-	# Show data info.
-	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
-
-	inputs, outputs = list(), list()
-	try:
-		for images, labels, _ in test_dataloader:
-			inputs.append(images)
-			outputs.append(labels)
-	except Exception as ex:
-		print('Exception raised: {}.'.format(ex))
-	inputs = torch.cat(inputs)
-	outputs = torch.cat(outputs)
-
-	#--------------------
-	# Build a model.
-
-	print('Start building a model...')
-	start_time = time.time()
-	if False:
-		# For RARE2.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2_attn_xent_gradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9514_epoch3.pth'
-		assert model_filepath_to_load is not None
-
-		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_value=SOS_VALUE, device=device)
-	elif False:
-		# For ASTER.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster_sxent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.8449_epoch3.pth'
-		assert model_filepath_to_load is not None
-
-		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_VALUE, device=device)
-	elif True:
-		# For OpenNMT.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_onmt_xent_nogradclip_allparams_nopad_kor_ch5_64x640x3_best_20200725T115106.pth'
-		assert model_filepath_to_load is not None
-
-		encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
-		model, infer_functor, _, _ = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, encoder_type, lang, loss_type=None, device=device)
-	elif False:
-		# For RARE2 + OpenNMT.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2+onmt_xent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.9441_epoch20_new.pth'
-		assert model_filepath_to_load is not None
-
-		model, infer_functor, _, _ = build_rare2_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
-	elif False:
-		# For ASTER + OpenNMT.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_xent_nogradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9325_epoch2_new.pth'
-		assert model_filepath_to_load is not None
-
-		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
-	else:
-		raise ValueError('Undefined model')
-	print('End building a model: {} secs.'.format(time.time() - start_time))
-
-	# Load a model.
-	print('Start loading a pretrained model from {}.'.format(model_filepath_to_load))
-	start_time = time.time()
-	model = load_model(model_filepath_to_load, model, device=device)
-	print('End loading a pretrained model: {} secs.'.format(time.time() - start_time))
-
-	model = model.to(device)
-
-	#--------------------
-	# Infer by the model.
-
-	print('Start inferring...')
-	start_time = time.time()
-	model.eval()
-	#outputs = None
-	infer_by_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, batch_size=batch_size, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=True, device=device)
-	print('End inferring: {} secs.'.format(time.time() - start_time))
-
 def train_textline_recognizer_based_on_opennmt():
 	#image_height, image_width, image_channel = 32, 100, 3
 	#image_height, image_width, image_channel = 64, 640, 3
@@ -4493,7 +4409,7 @@ def train_textline_recognizer_based_on_opennmt():
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_individual_pad_value_used else 'nopad'
-	model_filepath_base = './text_line_recognition_onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_textline_len, image_height, image_width, image_channel)
+	model_filepath_base = './textline_recognition_onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_textline_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	print('Model filepath: {}.'.format(model_filepath_format.format('')))
 
@@ -4531,9 +4447,9 @@ def train_textline_recognizer_based_on_opennmt():
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if is_mixed_textlines_used:
-		train_dataloader, test_dataloader = create_mixed_text_line_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_mixed_textline_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
 	else:
-		train_dataloader, test_dataloader = create_text_line_data_loaders(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_textline_data_loaders(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	print('#classes = {}.'.format(num_classes))
 	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_value, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]))
@@ -4545,7 +4461,7 @@ def train_textline_recognizer_based_on_opennmt():
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, forward_functor, criterion = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_textline_len, encoder_type, lang, loss_type, device)
+	model, infer_functor, train_forward_functor, criterion = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_textline_len, encoder_type, lang, loss_type, device)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -4598,7 +4514,7 @@ def train_textline_recognizer_based_on_opennmt():
 		#--------------------
 		print('Start training...')
 		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+		model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		# Save a model.
@@ -4623,7 +4539,182 @@ def train_textline_recognizer_based_on_opennmt():
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	print('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def recognize_text_using_craft_and_character_recognizer():
+def train_textline_recognizer_based_on_transformer():
+	#image_height, image_width, image_channel = 32, 100, 3
+	#image_height, image_width, image_channel = 64, 640, 3
+	image_height, image_width, image_channel = 64, 1280, 3
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
+	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	# File-based text lines: 55,835.
+	is_mixed_textlines_used = True
+	if is_mixed_textlines_used:
+		num_simple_examples, num_random_examples, num_trdg_examples = int(5e4), int(5e4), int(5e4)  # For mixed text lines.
+	else:
+		textline_type = 'simple_textline'  # {'simple_textline', 'random_textline', 'trdg_textline', 'aihub_textline', 'file_based_textline'}.
+		num_train_examples, num_test_examples = int(2e5), int(2e3)  # For simple, random, and TRDG text lines.
+	max_textline_len = 50  # Max. text line length.
+	word_len_interval = (1, 20)
+	word_count_interval = (1, 5)
+	space_count_interval = (1, 3)
+	char_space_ratio_interval = (0.8, 1.25)
+	font_size_interval = (10, 100)
+	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
+
+	lang = 'kor'  # {'kor', 'eng'}.
+	train_test_ratio = 0.8
+	shuffle = True
+	num_workers = 8
+
+	loss_type = 'kldiv'  # {'kldiv'}.
+	#max_gradient_norm = 20  # Gradient clipping value.
+	max_gradient_norm = None
+	num_epochs = 20
+	batch_size = 64
+	log_print_freq = 1000
+
+	is_trained = True
+	is_model_loaded = False
+	is_model_initialized = True
+	is_all_model_params_optimized = True
+	is_individual_pad_value_used = True
+
+	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
+	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
+	pad_nopad = 'pad' if is_individual_pad_value_used else 'nopad'
+	model_filepath_base = './textline_recognition_transformer_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_textline_len, image_height, image_width, image_channel)
+	model_filepath_format = model_filepath_base + '{}.pth'
+	print('Model filepath: {}.'.format(model_filepath_format.format('')))
+
+	if is_model_loaded:
+		model_filepath_to_load = None
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
+
+	if lang == 'kor':
+		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
+		font_list = construct_font(korean=True, english=False)
+	elif lang == 'eng':
+		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
+		font_list = construct_font(korean=False, english=True)
+	else:
+		raise ValueError('Invalid language, {}'.format(lang))
+
+	gpu = 1
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
+	print('Device: {}.'.format(device))
+
+	#--------------------
+	# Prepare data.
+
+	if is_individual_pad_value_used:
+		# When the pad value is the ID of a valid token.
+		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
+		PAD_TOKEN = '<PAD>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_VALUE)
+		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
+		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
+	else:
+		# When the pad value = the ID of <SOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+	assert label_converter.PAD is not None
+
+	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
+	if is_mixed_textlines_used:
+		train_dataloader, test_dataloader = create_mixed_textline_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+	else:
+		train_dataloader, test_dataloader = create_textline_data_loaders(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+	print('#classes = {}.'.format(num_classes))
+	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_value, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]))
+
+	# Show data info.
+	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+
+	#--------------------
+	# Build a model.
+
+	model, infer_functor, train_forward_functor, criterion = build_transformer_ocr_model(label_converter, image_height, image_width, image_channel, max_textline_len, lang, is_train=True, device=device)
+
+	if is_model_initialized:
+		# Initialize model weights.
+		for name, param in model.named_parameters():
+			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
+			#	print(f'Skip {name} as it has already been initialized.')
+			#	continue
+			try:
+				if 'bias' in name:
+					torch.nn.init.constant_(param, 0.0)
+				elif 'weight' in name:
+					torch.nn.init.kaiming_normal_(param)
+			except Exception as ex:  # For batch normalization.
+				if 'weight' in name:
+					param.data.fill_(1)
+				continue
+	if is_model_loaded:
+		# Load a model.
+		model = load_model(model_filepath_to_load, model, device=device)
+
+	model = model.to(device)
+
+	#--------------------
+	# Train the model.
+
+	if is_trained:
+		if is_all_model_params_optimized:
+			model_params = list(model.parameters())
+		else:
+			# Filter model parameters only that require gradients.
+			#model_params = filter(lambda p: p.requires_grad, model.parameters())
+			model_params, num_model_params = list(), 0
+			for p in filter(lambda p: p.requires_grad, model.parameters()):
+				model_params.append(p)
+				num_model_params += np.prod(p.size())
+			print('#trainable model parameters = {}.'.format(num_model_params))
+			#print('Trainable model parameters:')
+			#[print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+
+		# Define an optimizer.
+		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
+		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
+		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
+		import transformer_ocr.train
+		optimizer = torch.optim.Adam(model_params, lr=0, betas=(0.9, 0.98), eps=1e-09, weight_decay=0, amsgrad=False)
+		optimizer = transformer_ocr.train.NoamOpt(model.tgt_embed[0].d_model, factor=1, warmup=2000, optimizer=optimizer)
+		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+		scheduler = None
+
+		#--------------------
+		print('Start training...')
+		start_time = time.time()
+		model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+		print('End training: {} secs.'.format(time.time() - start_time))
+
+		# Save a model.
+		if best_model_filepath:
+			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			try:
+				shutil.copyfile(best_model_filepath, model_filepath)
+				print('Copied the best trained model to {}.'.format(model_filepath))
+			except (FileNotFoundError, PermissionError) as ex:
+				print('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+		else:
+			if model:
+				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+				save_model(model_filepath, model)
+
+	#--------------------
+	# Evaluate the model.
+
+	print('Start evaluating...')
+	start_time = time.time()
+	model.eval()
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	print('End evaluating: {} secs.'.format(time.time() - start_time))
+
+def recognize_character_using_craft():
 	import craft.imgproc as imgproc
 	#import craft.file_utils as file_utils
 	import craft.test_utils as test_utils
@@ -4742,7 +4833,7 @@ def recognize_text_using_craft_and_character_recognizer():
 	else:
 		print('No text detected.')
 
-def recognize_word_using_craft_and_word_recognizer():
+def recognize_word_using_craft():
 	import craft.imgproc as imgproc
 	#import craft.file_utils as file_utils
 	import craft.test_utils as test_utils
@@ -4884,12 +4975,150 @@ def recognize_word_using_craft_and_word_recognizer():
 	else:
 		print('No text detected.')
 
+def recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_size, is_individual_pad_value_used=False):
+	#image_height, image_width, image_channel = 32, 100, 3
+	image_height, image_width, image_channel = 64, 640, 3
+	#image_height, image_width, image_channel = 64, 1280, 3
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
+	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	is_preloaded_image_used = False
+
+	lang = 'kor'  # {'kor', 'eng'}.
+	shuffle = False
+	num_workers = 8
+
+	if lang == 'kor':
+		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
+		font_list = construct_font(korean=True, english=False)
+	elif lang == 'eng':
+		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
+		font_list = construct_font(korean=False, english=True)
+	else:
+		raise ValueError('Invalid language, {}'.format(lang))
+
+	gpu = 0
+	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
+	print('Device: {}.'.format(device))
+
+	#--------------------
+	# Prepare data.
+
+	if is_individual_pad_value_used:
+		# When the pad value is the ID of a valid token.
+		PAD_VALUE = len(charset)  # NOTE [info] >> It's a trick which makes the pad value the ID of a valid token.
+		PAD_TOKEN = '<PAD>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_VALUE)
+		assert label_converter.pad_value == PAD_VALUE, '{} != {}'.format(label_converter.pad_value, PAD_VALUE)
+		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_VALUE, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_VALUE)
+	else:
+		# When the pad value = the ID of <SOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+	assert label_converter.PAD is not None
+	SOS_VALUE, EOS_VALUE = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
+	num_suffixes = 1
+
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+
+	aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
+	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
+
+	test_transform = torchvision.transforms.Compose([
+		ResizeImage(image_height, image_width, warn_abount_small_image=True),
+		#torchvision.transforms.Resize((image_height, image_width)),
+		#torchvision.transforms.CenterCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	])
+	test_target_transform = ToIntTensor()
+
+	print('Start creating a dataset and a dataloader...')
+	start_time = time.time()
+	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
+	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+	print('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
+	print('#examples = {}.'.format(len(test_dataset)))
+	print('#classes = {}.'.format(num_classes))
+	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_value, SOS_VALUE, EOS_VALUE))
+
+	# Show data info.
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+
+	inputs, outputs = list(), list()
+	try:
+		for images, labels, _ in test_dataloader:
+			inputs.append(images)
+			outputs.append(labels)
+	except Exception as ex:
+		print('Exception raised: {}.'.format(ex))
+	inputs = torch.cat(inputs)
+	outputs = torch.cat(outputs)
+
+	#--------------------
+	# Build a model.
+
+	print('Start building a model...')
+	start_time = time.time()
+	if False:
+		# For RARE2.
+		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2_attn_xent_gradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9514_epoch3.pth'
+		assert model_filepath_to_load is not None
+
+		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_value=SOS_VALUE, device=device)
+	elif False:
+		# For ASTER.
+		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster_sxent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.8449_epoch3.pth'
+		assert model_filepath_to_load is not None
+
+		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_VALUE, device=device)
+	elif True:
+		# For OpenNMT.
+		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_onmt_xent_nogradclip_allparams_nopad_kor_ch5_64x640x3_best_20200725T115106.pth'
+		assert model_filepath_to_load is not None
+
+		encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
+		model, infer_functor, _, _ = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, encoder_type, lang, loss_type=None, device=device)
+	elif False:
+		# For RARE2 + OpenNMT.
+		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2+onmt_xent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.9441_epoch20_new.pth'
+		assert model_filepath_to_load is not None
+
+		model, infer_functor, _, _ = build_rare2_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
+	elif False:
+		# For ASTER + OpenNMT.
+		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_xent_nogradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9325_epoch2_new.pth'
+		assert model_filepath_to_load is not None
+
+		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
+	else:
+		raise ValueError('Undefined model')
+	print('End building a model: {} secs.'.format(time.time() - start_time))
+
+	# Load a model.
+	print('Start loading a pretrained model from {}.'.format(model_filepath_to_load))
+	start_time = time.time()
+	model = load_model(model_filepath_to_load, model, device=device)
+	print('End loading a pretrained model: {} secs.'.format(time.time() - start_time))
+
+	model = model.to(device)
+
+	#--------------------
+	# Infer by the model.
+
+	print('Start inferring...')
+	start_time = time.time()
+	model.eval()
+	#outputs = None
+	infer_by_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, batch_size=batch_size, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=True, device=device)
+	print('End inferring: {} secs.'.format(time.time() - start_time))
+
 def main():
 	#train_character_recognizer()
 	#train_character_recognizer_using_mixup()
-
-	# Recognize text using CRAFT (scene text detector) + character recognizer.
-	#recognize_text_using_craft_and_character_recognizer()
 
 	#--------------------
 	#train_word_recognizer_based_on_rare1()  # Use RARE #1.
@@ -4904,14 +5133,29 @@ def main():
 
 	#train_word_recognizer_using_mixup()  # Use RARE #1. Not working.
 
-	#evaluate_word_recognizer()
-	recognize_word()
-
-	# Recognize word using CRAFT (scene text detector) + word recognizer.
-	#recognize_word_using_craft_and_word_recognizer()  # Use RARE #1.
+	#evaluate_word_recognizer_using_aihub_data(max_label_len=10, batch_size=64, is_individual_pad_value_used=False)
 
 	#--------------------
 	#train_textline_recognizer_based_on_opennmt()  # Use OpenNMT.
+
+	train_textline_recognizer_based_on_transformer()  # Use Transformer.
+
+	#--------------------
+	# Recognize text using CRAFT (scene text detector) + character recognizer.
+	#recognize_character_using_craft()
+
+	# Recognize word using CRAFT (scene text detector) + word recognizer.
+	#recognize_word_using_craft()  # Use RARE #1.
+
+	if False:
+		# For word recognition.
+		image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
+		max_label_len = 10
+	else:
+		# For textline recognition.
+		image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
+		max_label_len = 30
+	#recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_size=64, is_individual_pad_value_used=False)
 
 #--------------------------------------------------------------------
 
