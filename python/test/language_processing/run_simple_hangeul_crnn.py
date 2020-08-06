@@ -154,6 +154,7 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 		super().__init__(label_converter, text_set, image_height, image_width, image_channel, font_list, functools.partial(generate_font_colors, image_depth=image_channel), use_NWHC)
 
 		self._augmenter = create_augmenter()
+		self.MAX_IMAGE_WIDTH = np.iinfo(np.int16).max - 1
 
 	def augment(self, inputs, outputs, *args, **kwargs):
 		if outputs is None:
@@ -170,7 +171,8 @@ class MyRunTimeTextLineDataset(text_line_data.BasicRunTimeTextLineDataset):
 			import random, cv2
 			height = random.randint(min_height, max_height)
 			interpolation = random.choice([cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4])
-			return cv2.resize(image, (round(image.shape[1] * height / image.shape[0]), height), interpolation=interpolation)
+			#return cv2.resize(image, (round(image.shape[1] * height / image.shape[0]), height), interpolation=interpolation)
+			return cv2.resize(image, (min(round(image.shape[1] * height / image.shape[0]), self.MAX_IMAGE_WIDTH), height), interpolation=interpolation)
 
 		if steps_per_epoch:
 			generator = textGenerator.create_subset_generator(text_set, batch_size, color_functor)
