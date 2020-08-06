@@ -512,7 +512,7 @@ def main():
 
 	#if args.gpu:
 	#	os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
-	device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu >= 0 else 'cpu')
+	device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and int(args.gpu) >= 0 else 'cpu')
 	logger.info('Device: {}.'.format(device))
 
 	#--------------------

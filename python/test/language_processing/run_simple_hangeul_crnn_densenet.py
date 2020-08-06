@@ -1237,7 +1237,7 @@ def load_aihub_printed_text_data():
 	try:
 		print('Start loading AI Hub dataset info...')
 		start_time = time.time()
-		with open(aihub_data_json_filepath, encoding='UTF8') as fd:
+		with open(aihub_data_json_filepath, 'r', encoding='UTF8') as fd:
 			json_data = json.load(fd)
 		print('End loading AI Hub dataset info: {} secs.'.format(time.time() - start_time))
 	except FileNotFoundError as ex:
@@ -1316,8 +1316,12 @@ def evaluate_text_recognition_results(gts, predictions, classes, num_classes, is
 	total_text_count += len(gts)
 	for gt, pred in zip(gts, predictions):
 		for gl, pl in zip(gt, pred):
-			if gl == pl: correct_char_class_count[gl] += 1
-			total_char_class_count[gl] += 1
+			try:
+				class_id = classes.index(gl)
+				if gl == pl: correct_char_class_count[class_id] += 1
+				total_char_class_count[class_id] += 1
+			except ValueError as ex:
+				print('Warning: Invalid character, {}: {}.'.format(gl, ex))
 
 		gt_case, pred_case = (gt, pred) if is_case_sensitive else (gt.lower(), pred.lower())
 
@@ -1381,6 +1385,21 @@ def inference_main():
 		inferences_str = list()
 		for inf in inferences:
 			inferences_str.extend(map(lambda x: runner.label_converter.decode(x), inf))
+
+		if False:
+			inf_filepath = './simple_hangeul_crnn_densenet_inference_results.tsv'
+			try:
+				print('[SWL] Info: Start saving inference results to {}...'.format(inf_filepath))
+				start_time = time.time()
+				with open(inf_filepath, 'w', newline='', encoding='UTF8') as csvfile:
+					writer = csv.writer(csvfile, delimiter='\t', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+					for idx, (fpath, gt, pred) in enumerate(zip(image_filepaths, labels, inferences_str)):
+						writer.writerow([idx, fpath, gt, pred])
+				print('[SWL] Info: End saving inference results: {} secs.'.format(time.time() - start_time))
+			except FileNotFoundError as ex:
+				print('[SWL] Warning: File not found: {}.'.format(inf_filepath))
+			except UnicodeDecodeError as ex:
+				print('[SWL] Warning: Unicode decode error: {}.'.format(inf_filepath))
 
 		# TODO [check] >> Which one is correct?
 		evaluate_text_recognition_results(labels, inferences_str, runner.label_converter.tokens, runner.label_converter.num_tokens, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False)
