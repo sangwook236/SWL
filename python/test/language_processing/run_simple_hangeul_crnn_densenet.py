@@ -583,9 +583,14 @@ class MyRunner(object):
 		elif False:
 			image_height, image_width, image_channel = 64, 1280, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
 			model_output_time_steps = 99 #319
-		else:
+		elif False:
+			image_height, image_width, image_channel = 64, 1920, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+			model_output_time_steps = 99 #479
+		elif False:
 			image_height, image_width, image_channel = 64, 2560, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
 			model_output_time_steps = 99 #639
+		else:
+			raise RuntimeError('Error: Image shape has to be assigned')
 		max_label_len = model_output_time_steps  # max_label_len <= model_output_time_steps.
 
 		#--------------------
@@ -706,10 +711,10 @@ class MyRunner(object):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			#model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_value)
+			#model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_id)
 			#model_output, loss, accuracy = model.create_model(self._label_converter.num_tokens + 1, is_training=True)
 			# Ignore <UNKNOWN> token.
-			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens - 1, default_value=self._label_converter.pad_value)
+			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens - 1, default_value=self._label_converter.pad_id)
 			model_output, loss, accuracy = model.create_model(self._label_converter.num_tokens, is_training=True)
 
 			# Create a trainer.
@@ -915,10 +920,10 @@ class MyRunner(object):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			#model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_value)
+			#model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_id)
 			#model_output = model.create_model(self._label_converter.num_tokens + 1, is_training=False)
 			# Ignore <UNKNOWN> token.
-			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens - 1, default_value=self._label_converter.pad_value)
+			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens - 1, default_value=self._label_converter.pad_id)
 			model_output = model.create_model(self._label_converter.num_tokens, is_training=False)
 
 			# Create a saver.
@@ -992,10 +997,10 @@ class MyRunner(object):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			#model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_value)
+			#model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_id)
 			#model_output = model.create_model(self._label_converter.num_tokens + 1, is_training=False)
 			# Ignore <UNKNOWN> token.
-			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens - 1, default_value=self._label_converter.pad_value)
+			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens - 1, default_value=self._label_converter.pad_id)
 			model_output = model.create_model(self._label_converter.num_tokens, is_training=False)
 
 			# Create a saver.
@@ -1080,8 +1085,8 @@ def check_data(dataset, label_converter, batch_size):
 		sparse = swl_ml_util.sequences_to_sparse(batch_data[2], dtype=np.int32)
 		sequences = swl_ml_util.sparse_to_sequences(*sparse, dtype=np.int32)
 		#print('Sparse tensor = {}.'.format(sparse))
-		dense = swl_ml_util.sequences_to_dense(batch_data[2], default_value=label_converter.pad_value, dtype=np.int32)
-		sequences = swl_ml_util.dense_to_sequences(dense, default_value=label_converter.pad_value, dtype=np.int32)
+		dense = swl_ml_util.sequences_to_dense(batch_data[2], default_value=label_converter.pad_id, dtype=np.int32)
+		sequences = swl_ml_util.dense_to_sequences(dense, default_value=label_converter.pad_id, dtype=np.int32)
 		#print('Dense tensor = {}.'.format(dense))
 
 		break
@@ -1223,16 +1228,8 @@ def main():
 #--------------------------------------------------------------------
 
 # REF [function] >> aihub_printed_text_data_loading_test() in aihub_data_test.py.
-def load_aihub_printed_text_data():
+def load_aihub_printed_text_data(aihub_data_json_filepath, aihub_data_dir_path):
 	import json, cv2
-
-	if 'posix' == os.name:
-		data_base_dir_path = '/home/sangwook/work/dataset'
-	else:
-		data_base_dir_path = 'D:/work/dataset'
-
-	aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
-	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
 
 	try:
 		print('Start loading AI Hub dataset info...')
@@ -1240,11 +1237,11 @@ def load_aihub_printed_text_data():
 		with open(aihub_data_json_filepath, 'r', encoding='UTF8') as fd:
 			json_data = json.load(fd)
 		print('End loading AI Hub dataset info: {} secs.'.format(time.time() - start_time))
-	except FileNotFoundError as ex:
-		print('File not found: {}.'.format(aihub_data_json_filepath))
-		return
 	except UnicodeDecodeError as ex:
-		print('Unicode decode error: {}.'.format(aihub_data_json_filepath))
+		print('Unicode decode error in {}: {}.'.format(aihub_data_json_filepath, ex))
+		return
+	except FileNotFoundError as ex:
+		print('File not found, {}: {}.'.format(aihub_data_json_filepath, ex))
 		return
 
 	print('#images = {}, #annotations = {}.'.format(len(json_data['images']), len(json_data['annotations'])))
@@ -1286,6 +1283,36 @@ def load_aihub_printed_text_data():
 
 	return image_filepaths, labels
 
+# REF [function] >> FileBasedTextLineDatasetBase._load_data_from_image_label_info() in text_line_data.py.
+def load_data_from_image_label_info(image_label_info_filepath):
+	import json, cv2
+
+	try:
+		with open(image_label_info_filepath, 'r', encoding='UTF8') as fd:
+			#lines = fd.readlines()  # A list of strings.
+			lines = fd.read().splitlines()  # A list of strings.
+	except UnicodeDecodeError as ex:
+		print('[SWL] Error: Unicode decode error in {}: {}.'.format(image_label_info_filepath, ex))
+		raise
+	except FileNotFoundError as ex:
+		print('[SWL] Error: File not found, {}: {}.'.format(image_label_info_filepath, ex))
+		raise
+
+	print('Start loading a dataset from image-label info file, {}...'.format(image_label_info_filepath))
+	start_time = time.time()
+	image_label_separator = ' '
+	dir_path = os.path.dirname(image_label_info_filepath)
+	image_filepaths, labels = list(), list()
+	for line in lines:
+		img_fpath, label = line.split(image_label_separator, 1)
+		img_fpath = os.path.join(dir_path, img_fpath)
+
+		image_filepaths.append(img_fpath)
+		labels.append(label)
+	print('End loading a dataset from image-label info file: {} secs.'.format(time.time() - start_time))
+
+	return image_filepaths, labels
+
 # REF [function] >> show_per_char_accuracy() in run_text_recognition.py.
 def show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char=False):
 	#for idx in range(num_classes):
@@ -1304,7 +1331,7 @@ def show_per_char_accuracy(correct_char_class_count, total_char_class_count, cla
 		print('Per-character accuracy (< {}) = {}.'.format(acc_thresh, {classes[idx]: round(acc, 2) for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]) if acc < acc_thresh}))
 
 # REF [function] >> evaluate_text_recognition_model() in run_text_recognition.py.
-def evaluate_text_recognition_results(gts, predictions, classes, num_classes, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False):
+def evaluate_text_recognition_results(gts, predictions, classes, num_classes, unknown_id, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False):
 	error_cases_dir_path = './text_error_cases'
 	if is_error_cases_saved:
 		os.makedirs(error_cases_dir_path, exist_ok=True)
@@ -1318,10 +1345,11 @@ def evaluate_text_recognition_results(gts, predictions, classes, num_classes, is
 		for gl, pl in zip(gt, pred):
 			try:
 				class_id = classes.index(gl)
-				if gl == pl: correct_char_class_count[class_id] += 1
-				total_char_class_count[class_id] += 1
 			except ValueError as ex:
 				print('Warning: Invalid character, {}: {}.'.format(gl, ex))
+				class_id = unknown_id
+			if gl == pl: correct_char_class_count[class_id] += 1
+			total_char_class_count[class_id] += 1
 
 		gt_case, pred_case = (gt, pred) if is_case_sensitive else (gt.lower(), pred.lower())
 
@@ -1365,7 +1393,22 @@ def inference_main():
 		print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
 		return
 
-	image_filepaths, labels = load_aihub_printed_text_data()
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+
+	if True:
+		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
+		aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
+
+		image_filepaths, labels = load_aihub_printed_text_data(aihub_data_json_filepath, aihub_data_dir_path)
+	else:
+		# In a image-label info file:
+		#	Each line consists of 'image-filepath + image-label-separator + label'.
+		image_label_info_filepath = data_base_dir_path + '/text/font_test/epapyrus_font_test_textline.txt'
+
+		image_filepaths, labels = load_data_from_image_label_info(image_label_info_filepath)
 
 	print('[SWL] Info: Start loading images...')
 	start_time = time.time()
@@ -1391,19 +1434,23 @@ def inference_main():
 			try:
 				print('[SWL] Info: Start saving inference results to {}...'.format(inf_filepath))
 				start_time = time.time()
-				with open(inf_filepath, 'w', newline='', encoding='UTF8') as csvfile:
-					writer = csv.writer(csvfile, delimiter='\t', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+				with open(inf_filepath, 'w', newline='', encoding='UTF8') as fd:
+					#writer = csv.writer(fd, delimiter='\t', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+					writer = csv.writer(fd, delimiter='\t', quotechar=None, escapechar='\\', quoting=csv.QUOTE_NONE)
 					for idx, (fpath, gt, pred) in enumerate(zip(image_filepaths, labels, inferences_str)):
 						writer.writerow([idx, fpath, gt, pred])
 				print('[SWL] Info: End saving inference results: {} secs.'.format(time.time() - start_time))
-			except FileNotFoundError as ex:
-				print('[SWL] Warning: File not found: {}.'.format(inf_filepath))
+			except csv.Error as ex:
+				print('[SWL] Warning: csv.Error in {}: {}.'.format(inf_filepath))
 			except UnicodeDecodeError as ex:
-				print('[SWL] Warning: Unicode decode error: {}.'.format(inf_filepath))
+				print('[SWL] Warning: Unicode decode error in {}: {}.'.format(inf_filepath, ex))
+			except FileNotFoundError as ex:
+				print('[SWL] Warning: File not found, {}: {}.'.format(inf_filepath, ex))
 
+		UNKNOWN_ID = label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]
 		# TODO [check] >> Which one is correct?
-		evaluate_text_recognition_results(labels, inferences_str, runner.label_converter.tokens, runner.label_converter.num_tokens, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False)
-		#evaluate_text_recognition_results(labels, inferences_str, runner.label_converter.tokens, runner.label_converter.num_tokens + 1, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False)
+		evaluate_text_recognition_results(labels, inferences_str, runner.label_converter.tokens, runner.label_converter.num_tokens, UNKNOWN_ID, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False)
+		#evaluate_text_recognition_results(labels, inferences_str, runner.label_converter.tokens, runner.label_converter.num_tokens + 1, UNKNOWN_ID, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False)
 	else:
 		print('[SWL] Warning: Invalid inference results.')
 
