@@ -376,7 +376,7 @@ class SimpleWordDataset(TextDatasetBase):
 		while True:
 			#word = random.choice(self.words)
 			word = random.sample(self.words, 1)[0][:self.max_word_len]
-			target = [self.label_converter.pad_value] * (self.max_word_len + self.label_converter.num_affixes)
+			target = [self.label_converter.pad_id] * (self.max_word_len + self.label_converter.num_affixes)
 			#target[:len(word)] = self.label_converter.encode(word)  # Undecorated integer label.
 			word_int_ext = self.label_converter.encode(word)  # Decorated/undecorated integer label.
 			target_len = len(word_int_ext)
@@ -442,7 +442,7 @@ class RandomWordDataset(TextDatasetBase):
 			word_len = random.randint(*self.word_len_interval)
 			#word = ''.join(random.sample(self.chars, word_len))[:self.max_word_len]
 			word = ''.join(random.choice(self.chars) for _ in range(word_len))[:self.max_word_len]
-			target = [self.label_converter.pad_value] * (self.max_word_len + self.label_converter.num_affixes)
+			target = [self.label_converter.pad_id] * (self.max_word_len + self.label_converter.num_affixes)
 			#target[:len(word)] = self.label_converter.encode(word)  # Undecorated integer label.
 			word_int_ext = self.label_converter.encode(word)  # Decorated/undecorated integer label.
 			target_len = len(word_int_ext)
@@ -509,7 +509,7 @@ class FileBasedWordDatasetBase(FileBasedTextDatasetBase):
 			except IOError as ex:
 				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
 				image = None
-		target = [self.label_converter.pad_value] * (self.max_word_len + self.label_converter.num_affixes)
+		target = [self.label_converter.pad_id] * (self.max_word_len + self.label_converter.num_affixes)
 		word_ext_int = self.labels_int[idx]  # Decorated/undecorated integer label.
 		target_len = len(word_ext_int)
 		target[:target_len] = word_ext_int
@@ -583,7 +583,7 @@ class SimpleTextLineDataset(TextDatasetBase):
 		while True:
 			words = random.sample(self.words, random.randint(*self.word_count_interval))	
 			textline = functools.reduce(lambda t, w: t + ' ' * random.randint(*self.space_count_interval) + w, words[1:], words[0])[:self.max_textline_len]
-			target = [self.label_converter.pad_value] * (self.max_textline_len + self.label_converter.num_affixes)
+			target = [self.label_converter.pad_id] * (self.max_textline_len + self.label_converter.num_affixes)
 			#target[:len(textline)] = self.label_converter.encode(textline)  # Undecorated integer label.
 			textline_int_ext = self.label_converter.encode(textline)  # Decorated/undecorated integer label.
 			target_len = len(textline_int_ext)
@@ -652,7 +652,7 @@ class RandomTextLineDataset(TextDatasetBase):
 			#words = [''.join(random.sample(self.chars, random.randint(*self.word_len_interval))) for _ in range(word_count)]
 			words = [''.join(random.choice(self.chars) for _ in range(random.randint(*self.word_len_interval))) for _ in range(word_count)]
 			textline = functools.reduce(lambda t, w: t + ' ' * random.randint(*self.space_count_interval) + w, words[1:], words[0])[:self.max_textline_len]
-			target = [self.label_converter.pad_value] * (self.max_textline_len + self.label_converter.num_affixes)
+			target = [self.label_converter.pad_id] * (self.max_textline_len + self.label_converter.num_affixes)
 			#target[:len(textline)] = self.label_converter.encode(textline)  # Undecorated integer label.
 			textline_int_ext = self.label_converter.encode(textline)  # Decorated/undecorated integer label.
 			target_len = len(textline_int_ext)
@@ -769,7 +769,7 @@ class TextRecognitionDataGeneratorTextLineDataset(TextDatasetBase):
 			target_len = len(text_int_ext)
 			if target_len > self.max_textline_len + self.label_converter.num_affixes:
 				continue
-			target = [self.label_converter.pad_value] * (self.max_textline_len + self.label_converter.num_affixes)
+			target = [self.label_converter.pad_id] * (self.max_textline_len + self.label_converter.num_affixes)
 			#target[:len(text)] = self.label_converter.encode(text)  # Undecorated integer label.
 			target[:target_len] = text_int_ext
 
@@ -877,7 +877,7 @@ class FileBasedTextLineDatasetBase(FileBasedTextDatasetBase):
 			except IOError as ex:
 				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
 				image = None
-		target = [self.label_converter.pad_value] * (self.max_word_len + self.label_converter.num_affixes)
+		target = [self.label_converter.pad_id] * (self.max_word_len + self.label_converter.num_affixes)
 		word_ext_int = self.labels_int[idx]  # Decorated/undecorated integer label.
 		target_len = len(word_ext_int)
 		target[:target_len] = word_ext_int

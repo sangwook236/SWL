@@ -398,7 +398,7 @@ def visualize_data_with_length(dataloader, label_converter, num_data=10):
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	images = images.transpose(0, 2, 3, 1)
 	for idx, (img, lbl, l) in enumerate(zip(images, labels, label_lens)):
-		print('Label (len={}): {} (int), {} (str).'.format(l, [ll for ll in lbl if ll != label_converter.pad_value], label_converter.decode(lbl)))
+		print('Label (len={}): {} (int), {} (str).'.format(l, [ll for ll in lbl if ll != label_converter.pad_id], label_converter.decode(lbl)))
 		cv2.imshow('Image', img)
 		cv2.waitKey(0)
 		if idx >= (num_data - 1): break

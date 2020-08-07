@@ -226,7 +226,7 @@ class MyDataSequence(tf.keras.utils.Sequence):
 			batch_labels_int = self._encode_labels(batch_labels_str)  # Dense tensor.
 
 			if batch_labels_int.shape[1] < self._max_label_len:
-				labels = np.full((num_batch_examples, self._max_label_len), self._label_converter.pad_value)
+				labels = np.full((num_batch_examples, self._max_label_len), self._label_converter.pad_id)
 				labels[:,:batch_labels_int.shape[1]] = batch_labels_int
 				batch_labels_int = labels
 			elif batch_labels_int.shape[1] > self._max_label_len:
@@ -279,7 +279,7 @@ class MyDataSequence(tf.keras.utils.Sequence):
 				batch_labels_int = self._encode_labels(batch_labels_str)  # Dense tensor.
 
 				if batch_labels_int.shape[1] < self._max_label_len:
-					labels = np.full((num_batch_examples, self._max_label_len), self._label_converter.pad_value)
+					labels = np.full((num_batch_examples, self._max_label_len), self._label_converter.pad_id)
 					labels[:,:batch_labels_int.shape[1]] = batch_labels_int
 					batch_labels_int = labels
 				elif batch_labels_int.shape[1] > self._max_label_len:
@@ -301,7 +301,7 @@ class MyDataSequence(tf.keras.utils.Sequence):
 	# String sequences -> Integer sequences.
 	def _encode_labels(self, labels_str, dtype=np.int16):
 		max_label_len = functools.reduce(lambda x, y: max(x, len(y)), labels_str, 0)
-		labels_int = np.full((len(labels_str), max_label_len), self._label_converter.pad_value, dtype=dtype)
+		labels_int = np.full((len(labels_str), max_label_len), self._label_converter.pad_id, dtype=dtype)
 		for (idx, lbl) in enumerate(labels_str):
 			"""
 			try:
@@ -317,7 +317,7 @@ class MyDataSequence(tf.keras.utils.Sequence):
 		"""
 		def int2str(label):
 			try:
-				label = list(self._labels[id] for id in label if id != self._label_converter.pad_value)
+				label = list(self._labels[id] for id in label if id != self._label_converter.pad_id)
 				return ''.join(label)
 			except ValueError:
 				return None

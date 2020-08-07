@@ -804,7 +804,7 @@ class MyRunner(object):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_value)
+			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_id)
 			model_output, loss, accuracy = model.create_model(self._label_converter.num_tokens + 1, is_training=True)
 
 			# Create a trainer.
@@ -1009,7 +1009,7 @@ class MyRunner(object):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_value)
+			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_id)
 			model_output = model.create_model(self._label_converter.num_tokens + 1, is_training=False)
 
 			# Create a saver.
@@ -1083,7 +1083,7 @@ class MyRunner(object):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_value)
+			model = MyModel(*self._dataset.shape, blank_label=self._label_converter.num_tokens, default_value=self._label_converter.pad_id)
 			model_output = model.create_model(self._label_converter.num_tokens + 1, is_training=False)
 
 			# Create a saver.
@@ -1168,8 +1168,8 @@ def check_data(dataset, label_converter, batch_size):
 		sparse = swl_ml_util.sequences_to_sparse(batch_data[2], dtype=np.int32)
 		sequences = swl_ml_util.sparse_to_sequences(*sparse, dtype=np.int32)
 		#print('Sparse tensor = {}.'.format(sparse))
-		dense = swl_ml_util.sequences_to_dense(batch_data[2], default_value=label_converter.pad_value, dtype=np.int32)
-		sequences = swl_ml_util.dense_to_sequences(dense, default_value=label_converter.pad_value, dtype=np.int32)
+		dense = swl_ml_util.sequences_to_dense(batch_data[2], default_value=label_converter.pad_id, dtype=np.int32)
+		sequences = swl_ml_util.dense_to_sequences(dense, default_value=label_converter.pad_id, dtype=np.int32)
 		#print('Dense tensor = {}.'.format(dense))
 
 		break

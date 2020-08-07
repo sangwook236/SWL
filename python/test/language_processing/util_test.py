@@ -23,7 +23,7 @@ def TokenConverter_test():
 	converter = swl_langproc_util.TokenConverter(list(charset), unknown='<UNK>', sos=None, eos=None, pad=None, prefixes=None, suffixes=None)
 	print('Tokens = {}.'.format(converter.tokens))
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
-	print('Pad value = {}.'.format(converter.pad_value))
+	print('<PAD> = {}.'.format(converter.pad_id))
 
 	seq = '123ABCxyz'
 	encoded = converter.encode(seq)
@@ -37,7 +37,7 @@ def TokenConverter_test():
 	converter = swl_langproc_util.TokenConverter(list(charset), unknown='<UNK>', sos='<SOS>', eos='<EOS>', pad=None, prefixes=None, suffixes=None)
 	print('Tokens = {}.'.format(converter.tokens))
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
-	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
+	print('<PAD> = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_id, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
 
 	seq = '123ABCxyz'
 	encoded = converter.encode(seq)
@@ -75,11 +75,11 @@ def TokenConverter_test():
 	assert seq == decoded
 
 	#--------------------
-	print('---------- SOS + EOS & pad value = SOS.')
+	print('---------- SOS + EOS & PAD ID = SOS.')
 	converter = swl_langproc_util.TokenConverter(list(charset), unknown='<UNK>', sos='<SOS>', eos='<EOS>', pad='<SOS>', prefixes=None, suffixes=None)
 	print('Tokens = {}.'.format(converter.tokens))
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
-	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
+	print('<PAD> = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_id, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
 
 	seq = '123ABCxyz'
 	encoded = converter.encode(seq)
@@ -93,7 +93,7 @@ def TokenConverter_test():
 	converter = swl_langproc_util.TokenConverter(list(charset), unknown='<UNK>', sos='<SOS>', eos='<EOS>', pad=None, prefixes=['<HEAD>'], suffixes=['<TAIL>'])
 	print('Tokens = {}.'.format(converter.tokens))
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
-	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
+	print('<PAD> = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_id, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
 
 	seq = '123ABCxyz'
 	encoded = converter.encode(seq)
@@ -125,7 +125,7 @@ def JamoTokenConverter_test():
 	converter = swl_langproc_util.JamoTokenConverter(list(charset), hangeul2jamo_functor, jamo2hangeul_functor, eoj=EOJ, sos=None, eos=None, pad=None, prefixes=None, suffixes=None)
 	print('Tokens = {}.'.format(converter.tokens))
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
-	print('Pad value = {}.'.format(converter.pad_value))
+	print('<PAD> = {}.'.format(converter.pad_id))
 
 	seq = '123ABCxyz가나다라각난닭랍'
 	encoded = converter.encode(seq)
@@ -139,7 +139,7 @@ def JamoTokenConverter_test():
 	converter = swl_langproc_util.JamoTokenConverter(list(charset), hangeul2jamo_functor, jamo2hangeul_functor, eoj=EOJ, sos='<SOS>', eos='<EOS>', pad=None, prefixes=None, suffixes=None)
 	print('Tokens = {}.'.format(converter.tokens))
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
-	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
+	print('<PAD> = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_id, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
 
 	seq = '123ABCxyz가나다라각난닭랍'
 	encoded = converter.encode(seq)
@@ -177,11 +177,11 @@ def JamoTokenConverter_test():
 	assert seq == decoded
 
 	#--------------------
-	print('---------- SOS + EOS & pad value = SOS.')
+	print('---------- SOS + EOS & PAD ID = SOS.')
 	converter = swl_langproc_util.JamoTokenConverter(list(charset), hangeul2jamo_functor, jamo2hangeul_functor, eoj=EOJ, sos='<SOS>', eos='<EOS>', pad='<SOS>', prefixes=None, suffixes=None)
 	print('Tokens = {}.'.format(converter.tokens))
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
-	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
+	print('<PAD> = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_id, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
 
 	seq = '123ABCxyz가나다라각난닭랍'
 	encoded = converter.encode(seq)
@@ -195,7 +195,7 @@ def JamoTokenConverter_test():
 	converter = swl_langproc_util.JamoTokenConverter(list(charset), hangeul2jamo_functor, jamo2hangeul_functor, eoj=EOJ, sos='<SOS>', eos='<EOS>', pad=None, prefixes=['<HEAD>'], suffixes=['<TAIL>'])
 	print('Tokens = {}.'.format(converter.tokens))
 	print('#tokens = {}, #affixes = {}.'.format(converter.num_tokens, converter.num_affixes))
-	print('Pad value = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_value, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
+	print('<PAD> = {}, <SOS> = {}, <EOS> = {}.'.format(converter.pad_id, converter.encode([converter.SOS], is_bare_output=True)[0], converter.encode([converter.EOS], is_bare_output=True)[0]))
 
 	seq = '123ABCxyz가나다라각난닭랍'
 	encoded = converter.encode(seq)

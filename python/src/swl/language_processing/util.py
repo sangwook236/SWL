@@ -15,7 +15,7 @@ class TokenConverterBase(object):
 				All token sequences may start with the Start-Of-Sequence (SOS) token.
 			eos (token or None): A special token to use as <EOS> token. If None, <EOS> token is not used.
 				All token sequences may end with the End-Of-Sequence (EOS) token.
-			pad (token, int, or None): A special token or integer for padding, which may be not an actual token. If None, the pad token is not used.
+			pad (token, int, or None): A special token or integer token ID for padding, which may be not an actual token. If None, the pad token is not used.
 			prefixes (list of tokens): Special tokens to be used as prefix.
 			suffixes (list of tokens): Special tokens to be used as suffix.
 		"""
@@ -36,34 +36,34 @@ class TokenConverterBase(object):
 		#self._tokens = tokens
 		self._tokens = extended_tokens
 
-		self.UNKNOWN_int = extended_tokens.index(self.unknown)
-		prefixes_int, suffixes_int = [extended_tokens.index(tok) for tok in prefixes], [extended_tokens.index(tok) for tok in suffixes]
+		self.unknown_id = extended_tokens.index(self.unknown)
+		prefix_ids, suffix_ids = [extended_tokens.index(tok) for tok in prefixes], [extended_tokens.index(tok) for tok in suffixes]
 
-		default_pad_value = -1 #len(extended_tokens)
+		default_pad_id = -1 #len(extended_tokens)
 		if pad is None:
-			self._pad_value = default_pad_value
+			self._pad_id = default_pad_id
 			self.pad = None
 		elif isinstance(pad, int):
-			self._pad_value = pad
+			self._pad_id = pad
 			try:
 				self.pad = extended_tokens[pad]
 			except IndexError:
 				self.pad = None
 		else:
 			try:
-				self._pad_value = extended_tokens.index(pad)
+				self._pad_id = extended_tokens.index(pad)
 				self.pad = pad
 			except ValueError:
-				self._pad_value = default_pad_value
+				self._pad_id = default_pad_id
 				self.pad = None
 
-		self.auxiliary_tokens_int = [self._pad_value] + prefixes_int + suffixes_int
-		self.decoration_functor = lambda x: prefixes_int + x + suffixes_int
+		self.auxiliary_token_ids = [self._pad_id] + prefix_ids + suffix_ids
+		self.decoration_functor = lambda x: prefix_ids + x + suffix_ids
 
 		if self.eos:
-			EOS_int = extended_tokens.index(self.eos)
-			#self.auxiliary_tokens_int.remove(self.eos)  # TODO [decide] >>
-			self.decode_functor = functools.partial(self._decode_with_eos, EOS_int=EOS_int)
+			eos_id = extended_tokens.index(self.eos)
+			#self.auxiliary_token_ids.remove(self.eos)  # TODO [decide] >>
+			self.decode_functor = functools.partial(self._decode_with_eos, eos_id=eos_id)
 		else:
 			self.decode_functor = self._decode
 
@@ -92,79 +92,79 @@ class TokenConverterBase(object):
 		return self.pad
 
 	@property
-	def pad_value(self):
-		return self._pad_value
+	def pad_id(self):
+		return self._pad_id
 
 	@property
 	def num_affixes(self):
 		return self._num_affixes
 
-	# Token sequence -> integer token sequence.
+	# Token sequence -> token ID sequence.
 	def encode(self, seq, is_bare_output=False, *args, **kwargs):
 		"""
 		Inputs:
 			seq (list of tokens): A sequence of tokens to encode.
-			is_bare_output (bool): Specifies whether an encoded integer sequence without prefixes and suffixes is returned or not.
+			is_bare_output (bool): Specifies whether an encoded token ID sequence without prefixes and suffixes is returned or not.
 		"""
-		def tok2int(tok):
+		def tok2id(tok):
 			try:
 				return self._tokens.index(tok)
 			except ValueError:
 				#print('[SWL] Error: Failed to encode a token, {} in {}.'.format(tok, seq))
-				return self.UNKNOWN_int
-		seq_int = [tok2int(tok) for tok in seq]
-		return seq_int if is_bare_output else self.decoration_functor(seq_int)
+				return self.unknown_id
+		id_seq = [tok2id(tok) for tok in seq]
+		return id_seq if is_bare_output else self.decoration_functor(id_seq)
 
-	# Integer token sequence -> token sequence.
-	def decode(self, integer_seq, is_string_output=True, *args, **kwargs):
+	# Token ID sequence -> token sequence.
+	def decode(self, id_seq, is_string_output=True, *args, **kwargs):
 		"""
 		Inputs:
-			integer_seq (list of integer tokens): A sequence of integer tokens to decode.
+			id_seq (list of token IDs): A sequence of integer token IDs to decode.
 			is_string_output (bool): Specifies whether the decoded output is a string or not.
 		"""
 
-		return self.decode_functor(integer_seq, is_string_output, *args, **kwargs)
+		return self.decode_functor(id_seq, is_string_output, *args, **kwargs)
 
-	# Integer token sequence -> token sequence.
-	def _decode(self, integer_seq, is_string_output=True, *args, **kwargs):
-		def int2tok(tok):
+	# Token ID sequence -> token sequence.
+	def _decode(self, id_seq, is_string_output=True, *args, **kwargs):
+		def id2tok(tok):
 			try:
 				return self._tokens[tok]
 			except IndexError:
-				#print('[SWL] Error: Failed to decode an integer token, {} in {}.'.format(tok, integer_seq))
+				#print('[SWL] Error: Failed to decode a token ID, {} in {}.'.format(tok, id_seq))
 				return self.unknown  # TODO [check] >> Is it correct?
-		seq = [int2tok(tok) for tok in integer_seq if tok not in self.auxiliary_tokens_int]
+		seq = [id2tok(tok) for tok in id_seq if tok not in self.auxiliary_token_ids]
 		return ''.join(seq) if is_string_output else seq
 
-	# Integer token sequence -> token sequence.
-	def _decode_with_eos(self, integer_seq, is_string_output=True, EOS_int=None, *args, **kwargs):
-		def int2tok(tok):
+	# Token ID sequence -> token sequence.
+	def _decode_with_eos(self, id_seq, is_string_output=True, eos_id=None, *args, **kwargs):
+		def id2tok(tok):
 			try:
 				return self._tokens[tok]
 			except IndexError:
-				#print('[SWL] Error: Failed to decode an integer token, {} in {}.'.format(tok, integer_seq))
+				#print('[SWL] Error: Failed to decode a token ID, {} in {}.'.format(tok, id_seq))
 				return self.unknown  # TODO [check] >> Is it correct?
 		"""
 		try:
-			integer_seq = integer_seq[:integer_seq.index(EOS_int)]  # NOTE [info] >> It is applied to list only.
+			id_seq = id_seq[:id_seq.index(eos_id)]  # NOTE [info] >> It is applied to list only.
 		except ValueError:
 			pass
-		return self._decode(integer_seq, is_string_output, *args, **kwargs)
+		return self._decode(id_seq, is_string_output, *args, **kwargs)
 		"""
 		tokens = list()
-		for tok in integer_seq:
-			if tok == EOS_int: break
-			elif tok in self.auxiliary_tokens_int: continue
-			else: tokens.append(int2tok(tok))
+		for tok in id_seq:
+			if tok == eos_id: break
+			elif tok in self.auxiliary_token_ids: continue
+			else: tokens.append(id2tok(tok))
 		return ''.join(tokens) if is_string_output else tokens
 		"""
 		def ff(tok):
-			if tok == EOS_int: raise StopIteration
-			elif tok in self.auxiliary_tokens_int: pass  # Error: return None.
-			else: return int2tok(tok)
+			if tok == eos_id: raise StopIteration
+			elif tok in self.auxiliary_token_ids: pass  # Error: return None.
+			else: return id2tok(tok)
 		try:
-			tokens = map(ff, integer_seq)
-			#tokens = map(ff, filter(lambda tok: tok in self.auxiliary_tokens_int, integer_seq))
+			tokens = map(ff, id_seq)
+			#tokens = map(ff, filter(lambda tok: tok in self.auxiliary_token_ids, id_seq))
 		except StopIteration:
 			pass
 		"""
@@ -190,7 +190,7 @@ class JamoTokenConverter(TokenConverterBase):
 				All Hangeul jamo sequences may start with the Start-Of-Jamo-Sequence (SOJ) token.
 			eoj (token or None): A special token to use as <EOJ> token. If None, <EOJ> token is not used.
 				All Hangeul jamo sequences may end with the End-Of-Jamo-Sequence (EOJ) token.
-			pad (token, int, or None): A special token or integer for padding, which may be not an actual token. If None, the pad token is not used.
+			pad (token, int, or None): A special token or integer token ID for padding, which may be not an actual token. If None, the pad token is not used.
 			prefixes (list of tokens): Special tokens to be used as prefix.
 			suffixes (list of tokens): Special tokens to be used as suffix.
 		"""
@@ -219,32 +219,32 @@ class JamoTokenConverter(TokenConverterBase):
 	def EOJ(self):
 		return self.eoj
 
-	# Token sequence -> integer token sequence.
+	# Token sequence -> token ID sequence.
 	def encode(self, seq, is_bare_output=False, *args, **kwargs):
 		"""
 		Inputs:
 			seq (list of tokens): A sequence of tokens to encode.
-			is_bare_output (bool): Specifies whether an encoded integer sequence without prefixes and suffixes is returned or not.
+			is_bare_output (bool): Specifies whether an encoded token ID sequence without prefixes and suffixes is returned or not.
 		"""
 
 		try:
 			return super().encode(self.hangeul2jamo_functor(seq), is_bare_output, *args, **kwargs)
 		except Exception as ex:
-			print('[SWL] Error: Failed to encode a sequence: {}.'.format(seq))
+			print('[SWL] Error: Failed to encode a token sequence: {}.'.format(seq))
 			raise
 
-	# Integer token sequence -> token sequence.
-	def decode(self, integer_seq, is_string_output=True, *args, **kwargs):
+	# Token ID sequence -> token sequence.
+	def decode(self, id_seq, is_string_output=True, *args, **kwargs):
 		"""
 		Inputs:
-			integer_seq (list of integer tokens): A sequence of integer tokens to decode.
+			id_seq (list of token IDs): A sequence of integer token IDs to decode.
 			is_string_output (bool): Specifies whether the decoded output is a string or not.
 		"""
 
 		try:
-			return self.jamo2hangeul_functor(super().decode(integer_seq, is_string_output, *args, **kwargs))
+			return self.jamo2hangeul_functor(super().decode(id_seq, is_string_output, *args, **kwargs))
 		except Exception as ex:
-			print('[SWL] Error: Failed to decode an integer sequence: {}.'.format(integer_seq))
+			print('[SWL] Error: Failed to decode a token ID sequence: {}.'.format(id_seq))
 			raise
 
 #--------------------------------------------------------------------

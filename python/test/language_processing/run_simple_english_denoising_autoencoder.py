@@ -670,8 +670,8 @@ def check_data(dataset, label_converter, batch_size):
 		sparse = swl_ml_util.sequences_to_sparse(batch_data[3], dtype=np.int32)
 		sequences = swl_ml_util.sparse_to_sequences(*sparse, dtype=np.int32)
 		#print('Sparse tensor = {}.'.format(sparse))
-		dense = swl_ml_util.sequences_to_dense(batch_data[3], default_value=label_converter.pad_value, dtype=np.int32)
-		sequences = swl_ml_util.dense_to_sequences(dense, default_value=label_converter.pad_value, dtype=np.int32)
+		dense = swl_ml_util.sequences_to_dense(batch_data[3], default_value=label_converter.pad_id, dtype=np.int32)
+		sequences = swl_ml_util.dense_to_sequences(dense, default_value=label_converter.pad_id, dtype=np.int32)
 		#print('Dense tensor = {}.'.format(dense))
 
 		break

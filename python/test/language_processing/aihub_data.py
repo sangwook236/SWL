@@ -39,7 +39,7 @@ class AiHubPrintedTextDataset(torch.utils.data.Dataset):
 			except IOError as ex:
 				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
 				image = None
-		target = [self.label_converter.pad_value] * (self.max_label_len + self.label_converter.num_affixes)
+		target = [self.label_converter.pad_id] * (self.max_label_len + self.label_converter.num_affixes)
 		label_ext_int = self.labels_int[idx]  # Decorated/undecorated integer label.
 		target_len = len(label_ext_int)
 		target[:target_len] = label_ext_int
