@@ -19,7 +19,10 @@ import text_data, aihub_data
 import opennmt_util
 #import mixup.vgg, mixup.resnet
 
+# Define a global logger.
 glogger = None
+# Define a global variable, print.
+print = print
 
 def save_model(model_filepath, model):
 	#torch.save(model.state_dict(), model_filepath)
@@ -5172,7 +5175,12 @@ def main():
 
 	global glogger
 	glogger = logger
-	if glogger is None:
+	if glogger is not None:
+		# REF [function] >> main() in ${SWDT_PYTHON_HOME}/ext/test/logging/logging_main.py.
+		global print
+		#print = glogger.info
+		print = lambda *objects, sep=' ', end='\n', file=sys.stdout, flush=False: glogger.error(*objects) if file == sys.stderr else glogger.info(*objects)
+	else:
 		raise ValueError('Invalid global logger: {}'.format(glogger))
 
 	"""

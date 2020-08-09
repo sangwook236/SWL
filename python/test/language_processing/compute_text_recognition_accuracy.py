@@ -417,6 +417,9 @@ def compute_accuracy_from_inference_result():
 			delimiter = '\t'
 			# index\tfilepath\tG/T\tinference.
 			result_filepath = './simple_hangeul_crnn_densenet_large_rt_ch99_64x1280x1_aihub_printed_inference_results_20200807.tsv'
+			#result_filepath = './simple_hangeul_crnn_densenet_large_rt_ch99_64x1280x1_aihub_printed_inference_results_20200809.tsv'
+			#result_filepath = './simple_hangeul_crnn_densenet_large_rt_ch99_64x1280x1_epapyrus_font_test_inference_results_20200807.tsv'
+			#result_filepath = './simple_hangeul_crnn_densenet_large_rt_ch99_64x1280x1_epapyrus_font_test_inference_results_20200809.tsv'
 
 		quotechar = '"'
 		escapechar = '\\'
