@@ -301,7 +301,7 @@ class ConvertNumpyToRGB(object):
 			return x
 		else: raise ValueError('Invalid dimension, {}.'.format(x.ndim))
 
-class ResizeImage(object):
+class ResizeImageToFixedSizeWithPadding(object):
 	def __init__(self, height, width, is_pil=True):
 		self.height, self.width = height, width
 		self.resize_functor = self._resize_by_pil if is_pil else self._resize_by_opencv
@@ -432,7 +432,7 @@ def generate_simple_word_data(image_height, image_width, image_channel, max_word
 		RandomAugment(create_word_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -442,7 +442,7 @@ def generate_simple_word_data(image_height, image_width, image_channel, max_word
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -521,7 +521,7 @@ def generate_random_word_data(image_height, image_width, image_channel, max_word
 		RandomAugment(create_word_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -531,7 +531,7 @@ def generate_random_word_data(image_height, image_width, image_channel, max_word
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -610,7 +610,7 @@ def generate_file_based_word_data(image_height, image_width, image_channel, max_
 		#RandomAugment(create_word_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -620,7 +620,7 @@ def generate_file_based_word_data(image_height, image_width, image_channel, max_
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -730,7 +730,7 @@ def generate_simple_text_line_data(image_height, image_width, image_channel, max
 		RandomAugment(create_text_line_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -740,7 +740,7 @@ def generate_simple_text_line_data(image_height, image_width, image_channel, max
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),

@@ -308,7 +308,7 @@ class ConvertNumpyToRGB(object):
 			return x
 		else: raise ValueError('Invalid dimension, {}.'.format(x.ndim))
 
-class ResizeImage(object):
+class ResizeImageToFixedSizeWithPadding(object):
 	def __init__(self, height, width, is_pil=True):
 		self.height, self.width = height, width
 		self.resize_functor = self._resize_by_pil if is_pil else self._resize_by_opencv
@@ -425,7 +425,7 @@ def SimpleCharacterDataset_test():
 		RandomAugment(create_char_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -434,7 +434,7 @@ def SimpleCharacterDataset_test():
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -506,7 +506,7 @@ def NoisyCharacterDataset_test():
 		RandomAugment(create_char_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -515,7 +515,7 @@ def NoisyCharacterDataset_test():
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -587,7 +587,7 @@ def FileBasedCharacterDataset_test():
 		#RandomAugment(create_char_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -596,7 +596,7 @@ def FileBasedCharacterDataset_test():
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -697,7 +697,7 @@ def SimpleWordDataset_test():
 		RandomAugment(create_word_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -707,7 +707,7 @@ def SimpleWordDataset_test():
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -780,7 +780,7 @@ def RandomWordDataset_test():
 		RandomAugment(create_word_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -790,7 +790,7 @@ def RandomWordDataset_test():
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -864,7 +864,7 @@ def FileBasedWordDataset_test():
 		#RandomAugment(create_word_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -874,7 +874,7 @@ def FileBasedWordDataset_test():
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -977,7 +977,7 @@ def SimpleTextLineDataset_test():
 		RandomAugment(create_text_line_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -987,7 +987,7 @@ def SimpleTextLineDataset_test():
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -1063,7 +1063,7 @@ def RandomTextLineDataset_test():
 		RandomAugment(create_text_line_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -1073,7 +1073,7 @@ def RandomTextLineDataset_test():
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -1176,7 +1176,7 @@ def TextRecognitionDataGeneratorTextLineDataset_test():
 		RandomAugment(create_text_line_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -1186,7 +1186,7 @@ def TextRecognitionDataGeneratorTextLineDataset_test():
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -1259,7 +1259,7 @@ def FileBasedTextLineDataset_test():
 		#RandomAugment(create_text_line_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -1269,7 +1269,7 @@ def FileBasedTextLineDataset_test():
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),

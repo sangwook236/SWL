@@ -123,8 +123,8 @@ def visualize_data_with_length(dataloader, label_converter, num_data=10):
 		if idx >= (num_data - 1): break
 	cv2.destroyAllWindows()
 
-# REF [class] >> ResizeImage in test_data_test.py.
-class ResizeImage(object):
+# REF [class] >> ResizeImageToFixedSizeWithPadding in test_data_test.py.
+class ResizeImageToFixedSizeWithPadding(object):
 	def __init__(self, height, width, is_pil=True):
 		self.height, self.width = height, width
 		self.resize_functor = self._resize_by_pil if is_pil else self._resize_by_opencv
@@ -225,7 +225,7 @@ def AiHubPrintedTextDataset_test():
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
-		ResizeImage(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -233,7 +233,7 @@ def AiHubPrintedTextDataset_test():
 	])
 	train_target_transform = ToIntTensor()
 	test_transform = torchvision.transforms.Compose([
-		ResizeImage(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),

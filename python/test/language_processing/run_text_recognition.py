@@ -292,13 +292,13 @@ class ConvertNumpyToRGB(object):
 			return x
 		else: raise ValueError('Invalid dimension, {}.'.format(x.ndim))
 
-class ResizeImage(object):
-	def __init__(self, height, width, is_pil=True, warn_abount_small_image=False):
+class ResizeImageToFixedSizeWithPadding(object):
+	def __init__(self, height, width, warn_about_small_image=False, is_pil=True):
 		self.height, self.width = height, width
 		self.resize_functor = self._resize_by_pil if is_pil else self._resize_by_opencv
 
-		self.height_threshold, self.width_threshold = 20, 20
-		self.warn = self._warn_about_small_image if warn_abount_small_image else lambda *args, **kwargs: None
+		self.min_height_threshold, self.min_width_threshold = 20, 20
+		self.warn = self._warn_about_small_image if warn_about_small_image else lambda *args, **kwargs: None
 
 	def __call__(self, x):
 		return self.resize_functor(x, self.height, self.width)
@@ -353,10 +353,47 @@ class ResizeImage(object):
 		"""
 
 	def _warn_about_small_image(self, height, width):
-		if height < self.height_threshold:
-			glogger.info('Too small image: The image height {} should be larger than or equal to {}.'.format(height, self.height_threshold))
-		#if width < self.width_threshold:
-		#	glogger.info('Too small image: The image width {} should be larger than or equal to {}.'.format(width, self.width_threshold))
+		if height < self.min_height_threshold:
+			glogger.info('Too small image: The image height {} should be larger than or equal to {}.'.format(height, self.min_height_threshold))
+		#if width < self.min_width_threshold:
+		#	glogger.info('Too small image: The image width {} should be larger than or equal to {}.'.format(width, self.min_width_threshold))
+
+class ResizeImageWithMaxWidth(object):
+	def __init__(self, height, max_width, warn_about_small_image, is_pil=True):
+		self.height, self.max_width = height, max_width
+		self.resize_functor = self._resize_by_pil if is_pil else self._resize_by_opencv
+
+		self.min_height_threshold, self.min_width_threshold = 20, 20
+		self.warn = self._warn_about_small_image if warn_about_small_image else lambda *args, **kwargs: None
+
+	def __call__(self, x):
+		return self.resize_functor(x, self.height, self.max_width)
+
+	def _resize_by_opencv(self, input, height, max_width, *args, **kwargs):
+		interpolation = cv2.INTER_AREA
+		hi, wi = input.shape[:2]
+		self.warn(hi, wi)
+		aspect_ratio = height / hi
+		#min_width = min(max_width, int(wi * aspect_ratio))
+		min_width = max(min(max_width, int(wi * aspect_ratio)), height // 2)
+		assert min_width > 0 and height > 0
+		return cv2.resize(input, (min_width, height), interpolation=interpolation)
+
+	def _resize_by_pil(self, input, height, max_width, *args, **kwargs):
+		interpolation = Image.BICUBIC
+		wi, hi = input.size
+		self.warn(hi, wi)
+		aspect_ratio = height / hi
+		#min_width = min(max_width, int(wi * aspect_ratio))
+		min_width = max(min(max_width, int(wi * aspect_ratio)), height // 2)
+		assert min_width > 0 and height > 0
+		return input.resize((min_width, height), resample=interpolation)
+
+	def _warn_about_small_image(self, height, width):
+		if height < self.min_height_threshold:
+			glogger.info('Too small image: The image height {} should be larger than or equal to {}.'.format(height, self.min_height_threshold))
+		#if width < self.min_width_threshold:
+		#	glogger.info('Too small image: The image width {} should be larger than or equal to {}.'.format(width, self.min_width_threshold))
 
 class ToIntTensor(object):
 	def __call__(self, lst):
@@ -385,20 +422,20 @@ def create_char_data_loaders(char_type, label_converter, charset, num_train_exam
 		RandomAugment(create_char_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize((0.5,) * image_channel, (0.5,) * image_channel)
+		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	test_transform = torchvision.transforms.Compose([
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize((0.5,) * image_channel, (0.5,) * image_channel)
+		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 
 	glogger.info('Start creating datasets...')
@@ -478,20 +515,20 @@ def create_mixed_char_data_loaders(label_converter, charset, num_simple_char_exa
 		RandomAugment(create_char_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize((0.5,) * image_channel, (0.5,) * image_channel)
+		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	test_transform = torchvision.transforms.Compose([
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize((0.5,) * image_channel, (0.5,) * image_channel)
+		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 
 	if 'posix' == os.name:
@@ -562,21 +599,21 @@ def create_word_data_loaders(word_type, label_converter, wordset, chars, num_tra
 		RandomAugment(create_word_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize((0.5,) * image_channel, (0.5,) * image_channel)
+		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	train_target_transform = ToIntTensor()
 	test_transform = torchvision.transforms.Compose([
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize((0.5,) * image_channel, (0.5,) * image_channel)
+		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	test_target_transform = ToIntTensor()
 
@@ -664,21 +701,21 @@ def create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_e
 		RandomAugment(create_word_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize((0.5,) * image_channel, (0.5,) * image_channel)
+		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	train_target_transform = ToIntTensor()
 	test_transform = torchvision.transforms.Compose([
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize((0.5,) * image_channel, (0.5,) * image_channel)
+		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	test_target_transform = ToIntTensor()
 
@@ -749,21 +786,21 @@ def create_textline_data_loaders(textline_type, label_converter, wordset, chars,
 		RandomAugment(create_textline_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize((0.5,) * image_channel, (0.5,) * image_channel)
+		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	train_target_transform = ToIntTensor()
 	test_transform = torchvision.transforms.Compose([
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize((0.5,) * image_channel, (0.5,) * image_channel)
+		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	test_target_transform = ToIntTensor()
 
@@ -897,21 +934,21 @@ def create_mixed_textline_data_loaders(label_converter, wordset, chars, num_simp
 		RandomAugment(create_textline_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize((0.5,) * image_channel, (0.5,) * image_channel)
+		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	train_target_transform = ToIntTensor()
 	test_transform = torchvision.transforms.Compose([
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImage(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize((0.5,) * image_channel, (0.5,) * image_channel)
+		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	test_target_transform = ToIntTensor()
 
@@ -2920,7 +2957,7 @@ def train_word_recognizer_based_on_rare1(num_epochs=20, batch_size=64, device='c
 		BLANK_LABEL = '<BLANK>'  # The BLANK label for CTC.
 		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), pad=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
 		assert label_converter.encode([BLANK_LABEL], is_bare_output=True)[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL], is_bare_output=True)[0])
-		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL], is_bare_output=True)[0]
+		BLANK_LABEL_ID = 0 #label_converter.encode([BLANK_LABEL], is_bare_output=True)[0]
 		SOS_ID, EOS_ID = None, None
 		num_suffixes = 0
 	elif loss_type in ['xent', 'nll']:
@@ -4081,7 +4118,7 @@ def train_word_recognizer_using_mixup(num_epochs=20, batch_size=64, device='cpu'
 		BLANK_LABEL = '<BLANK>'  # The BLANK label for CTC.
 		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), pad=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
 		assert label_converter.encode([BLANK_LABEL], is_bare_output=True)[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL], is_bare_output=True)[0])
-		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL], is_bare_output=True)[0]
+		BLANK_LABEL_ID = 0 #label_converter.encode([BLANK_LABEL], is_bare_output=True)[0]
 		SOS_ID, EOS_ID = None, None
 		num_suffixes = 0
 	elif loss_type in ['xent', 'nll']:
@@ -4246,11 +4283,12 @@ def evaluate_word_recognizer_using_aihub_data(max_label_len, batch_size, is_indi
 	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
 
 	test_transform = torchvision.transforms.Compose([
-		ResizeImage(image_height, image_width, warn_abount_small_image=True),
+		#ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True),
+		ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True),  # batch_size must be 1.
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	test_target_transform = ToIntTensor()
 
@@ -4745,11 +4783,13 @@ def recognize_character_using_craft(device='cpu'):
 		transform = torchvision.transforms.Compose([
 			#RandomInvert(),
 			ConvertPILMode(mode='RGB'),
-			ResizeImage(image_height, image_width),
+			# TODO [decide] >> Which one is correct?
+			ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True),
+			#ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True),  # batch_size must be 1.
 			#torchvision.transforms.Resize((image_height, image_width)),
 			#torchvision.transforms.CenterCrop((image_height, image_width)),
 			torchvision.transforms.ToTensor(),
-			torchvision.transforms.Normalize((0.5,) * image_channel, (0.5,) * image_channel)
+			torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 		])
 
 		recognizer.eval()
@@ -4806,7 +4846,7 @@ def recognize_word_using_craft(device='cpu'):
 		BLANK_LABEL = '<BLANK>'  # The BLANK label for CTC.
 		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), pad=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
 		assert label_converter.encode([BLANK_LABEL], is_bare_output=True)[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL], is_bare_output=True)[0])
-		BLANK_LABEL_INT = 0 #label_converter.encode([BLANK_LABEL], is_bare_output=True)[0]
+		BLANK_LABEL_ID = 0 #label_converter.encode([BLANK_LABEL], is_bare_output=True)[0]
 		SOS_ID, EOS_ID = None, None
 		num_suffixes = 0
 	else:
@@ -4883,11 +4923,12 @@ def recognize_word_using_craft(device='cpu'):
 		transform = torchvision.transforms.Compose([
 			#RandomInvert(),
 			ConvertPILMode(mode='RGB'),
-			ResizeImage(image_height, image_width),
+			#ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True),
+			ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True),  # batch_size must be 1.
 			#torchvision.transforms.Resize((image_height, image_width)),
 			#torchvision.transforms.CenterCrop((image_height, image_width)),
 			torchvision.transforms.ToTensor(),
-			torchvision.transforms.Normalize((0.5,) * image_channel, (0.5,) * image_channel)
+			torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 		])
 
 		recognizer.eval()
@@ -4953,11 +4994,12 @@ def recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_si
 	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
 
 	test_transform = torchvision.transforms.Compose([
-		ResizeImage(image_height, image_width, warn_abount_small_image=True),
+		#ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True),
+		ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True),  # batch_size must be 1.
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	test_target_transform = ToIntTensor()
 
