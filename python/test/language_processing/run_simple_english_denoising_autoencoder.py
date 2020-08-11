@@ -254,20 +254,18 @@ def generate_font_colors(image_depth):
 	return font_color, bg_color
 
 class MyRunner(object):
-	def __init__(self):
+	def __init__(self, image_height, image_width, image_channel, max_label_len):
 		import text_generation_util as tg_util
 
 		# Set parameters.
 		# TODO [modify] >> Depends on a model.
 		#	model_output_time_steps = image_width / width_downsample_factor or image_width / width_downsample_factor - 1.
 		#	REF [function] >> MyModel.create_model().
-		#width_downsample_factor = 4
-		image_height, image_width, image_channel = 64, 640, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
-		model_output_time_steps = 80 #160
-		max_label_len = model_output_time_steps  # max_label_len <= model_output_time_steps.
+		width_downsample_factor = 4
+		model_output_time_steps = image_width // width_downsample_factor
+		max_label_len = min(max_label_len, model_output_time_steps)
 
-		#--------------------
-		# Create a dataset.
+		"""
 		#word_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
 		word_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
 		#word_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
@@ -294,6 +292,16 @@ class MyRunner(object):
 		labels = functools.reduce(lambda x, txt: x.union(txt), texts, set())
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
+		"""
+		import string
+		labels = \
+			string.ascii_uppercase + \
+			string.ascii_lowercase + \
+			string.digits + \
+			string.punctuation + \
+			' '
+		labels = sorted(labels)
+		#labels = ''.join(sorted(labels))
 
 		self._label_converter = swl_langproc_util.TokenConverter(labels, pad=None)
 		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
@@ -301,6 +309,7 @@ class MyRunner(object):
 		print('[SWL] Info: #labels = {}.'.format(self._label_converter.num_tokens))
 
 		#--------------------
+		# Create a dataset.
 		if 'posix' == os.name:
 			system_font_dir_path = '/usr/share/fonts'
 			font_base_dir_path = '/home/sangwook/work/font'
@@ -511,10 +520,10 @@ class MyRunner(object):
 
 				#--------------------
 				if is_best_model:
-					print('[SWL] Info: Start saving a model...')
+					print('[SWL] Info: Start saving a model to {}...'.format(saved_model_path))
 					start_time = time.time()
 					saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model_ckpt'), global_step=epoch)
-					print('[SWL] Info: End saving a model to {}: {} secs.'.format(saved_model_path, time.time() - start_time))
+					print('[SWL] Info: End saving a model: {} secs.'.format(time.time() - start_time))
 
 				sys.stdout.flush()
 				time.sleep(0)
@@ -686,12 +695,15 @@ def main():
 	os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
 
 	#--------------------
+	image_height, image_width, image_channel = 64, 640, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+	max_label_len = 80
+
 	is_trained, is_tested, is_inferred = True, True, True
 	is_training_resumed = False
 	initial_epoch, final_epoch, batch_size = 0, 50, 128  # batch_size affects training.
 
 	#--------------------
-	runner = MyRunner()
+	runner = MyRunner(image_height, image_width, image_channel, max_label_len)
 
 	if False:
 		print('[SWL] Info: Start checking data...')

@@ -474,15 +474,29 @@ def construct_chars():
 	return chars
 
 class MyRunner(object):
-	def __init__(self, is_dataset_generated_at_runtime, data_dir_path=None, train_test_ratio=0.8, is_fine_tuned=False):
+	def __init__(self, image_height, image_width, image_channel, max_label_len, train_test_ratio=0.8, is_dataset_generated_at_runtime=True, is_fine_tuned=False):
 		# Set parameters.
 		# TODO [modify] >> Depends on a model.
 		#	model_output_time_steps = image_width / width_downsample_factor or image_width / width_downsample_factor - 1.
 		#	REF [function] >> MyModel.create_model().
-		#width_downsample_factor = 4
-		image_height, image_width, image_channel = 64, 640, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
-		model_output_time_steps = 80 #160
-		max_label_len = model_output_time_steps  # max_label_len <= model_output_time_steps.
+		width_downsample_factor = 4
+		model_output_time_steps = image_width // width_downsample_factor
+		max_label_len = min(max_label_len, model_output_time_steps)
+
+		import string
+		labels = \
+			string.ascii_uppercase + \
+			string.ascii_lowercase + \
+			string.digits + \
+			string.punctuation + \
+			' '
+		labels = sorted(labels)
+		#labels = ''.join(sorted(labels))
+
+		self._label_converter = swl_langproc_util.TokenConverter(labels, pad=None)
+		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+		print('[SWL] Info: Labels = {}.'.format(self._label_converter.tokens))
+		print('[SWL] Info: #labels = {}.'.format(self._label_converter.num_tokens))
 
 		#--------------------
 		# Create a dataset.
@@ -519,6 +533,7 @@ class MyRunner(object):
 				from swl.language_processing.util import draw_character_histogram
 				draw_character_histogram(texts, charset=None)
 
+			"""
 			labels = functools.reduce(lambda x, txt: x.union(txt), texts, set())
 			labels = sorted(labels)
 			#labels = ''.join(sorted(labels))
@@ -527,6 +542,7 @@ class MyRunner(object):
 			# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 			print('[SWL] Info: Labels = {}.'.format(self._label_converter.tokens))
 			print('[SWL] Info: #labels = {}.'.format(self._label_converter.num_tokens))
+			"""
 
 			#--------------------
 			if 'posix' == os.name:
@@ -554,6 +570,7 @@ class MyRunner(object):
 			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000  # Uses a subset of texts per epoch.
 			#self._train_examples_per_epoch, self._test_examples_per_epoch = None, None  # Uses the whole set of texts per epoch.
 		else:
+			"""
 			import string
 			labels = \
 				string.ascii_uppercase + \
@@ -568,10 +585,24 @@ class MyRunner(object):
 			# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 			print('[SWL] Info: Labels = {}.'.format(self._label_converter.tokens))
 			print('[SWL] Info: #labels = {}.'.format(self._label_converter.num_tokens))
+			"""
 
 			if is_fine_tuned:
+				if 'posix' == os.name:
+					data_base_dir_path = '/home/sangwook/work/dataset'
+				else:
+					data_base_dir_path = 'D:/work/dataset'
+
+				data_dir_path = data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line'
+
 				self._dataset = icdar_data.Icdar2019SroieTextLineDataset(self._label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len)
 			else:
+				# Data generation.
+				#	REF [function] >> EnglishTextRecognitionDataGeneratorTextLineDataset_test() in TextRecognitionDataGenerator_data_test.py.
+
+				# REF [directory] >> ${TextRecognitionDataGenerator_HOME}/TextRecognitionDataGenerator
+				data_dir_path = './text_line_samples_en_train'
+
 				self._dataset = MyEnglishTextLineDataset(self._label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len)
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = None, None
@@ -778,10 +809,10 @@ class MyRunner(object):
 
 				#--------------------
 				if is_best_model:
-					print('[SWL] Info: Start saving a model...')
+					print('[SWL] Info: Start saving a model to {}...'.format(saved_model_path))
 					start_time = time.time()
 					saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model_ckpt'), global_step=epoch)
-					print('[SWL] Info: End saving a model to {}: {} secs.'.format(saved_model_path, time.time() - start_time))
+					print('[SWL] Info: End saving a model: {} secs.'.format(time.time() - start_time))
 
 				sys.stdout.flush()
 				time.sleep(0)
@@ -968,35 +999,18 @@ def main():
 	os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
 
 	#--------------------
+	image_height, image_width, image_channel = 64, 640, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+	max_label_len = 80
+
 	is_trained, is_tested, is_inferred = True, True, True
 	is_training_resumed = False
 	initial_epoch, final_epoch, batch_size = 0, 50, 64  # batch_size affects training.
+	train_test_ratio = 0.9 if is_fine_tuned else 0.8
 	is_dataset_generated_at_runtime = True
 	is_fine_tuned = False
-	train_test_ratio = 0.9 if is_fine_tuned else 0.8
-
-	if not is_dataset_generated_at_runtime and (is_trained or is_tested):
-		if is_fine_tuned:
-			if 'posix' == os.name:
-				data_base_dir_path = '/home/sangwook/work/dataset'
-			else:
-				data_base_dir_path = 'D:/work/dataset'
-
-			data_dir_path = data_base_dir_path + '/text/icdar2019_sroie/task1_train_text_line'
-		else:
-			# Data generation.
-			#	REF [function] >> EnglishTextRecognitionDataGeneratorTextLineDataset_test() in TextRecognitionDataGenerator_data_test.py.
-
-			data_dir_path = './text_line_samples_en_train'
-
-		if not os.path.isdir(data_dir_path) or not os.path.exists(data_dir_path):
-			print('[SWL] Error: Data directory not found, {}.'.format(data_dir_path))
-			return
-	else:
-		data_dir_path = None
 
 	#--------------------
-	runner = MyRunner(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio, is_fine_tuned)
+	runner = MyRunner(image_height, image_width, image_channel, max_label_len, train_test_ratio, is_dataset_generated_at_runtime, is_fine_tuned)
 
 	if False:
 		print('[SWL] Info: Start checking data...')

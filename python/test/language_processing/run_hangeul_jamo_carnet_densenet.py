@@ -448,31 +448,43 @@ class MyModel(object):
 #--------------------------------------------------------------------
 
 class MyRunner(object):
-	def __init__(self, is_dataset_generated_at_runtime, data_dir_path=None, train_test_ratio=0.8):
+	def __init__(self, image_height, image_width, image_channel, max_label_len, train_test_ratio=0.8, is_dataset_generated_at_runtime=True):
 		# Set parameters.
 		# TODO [modify] >> Depends on a model.
-		#	model_output_time_steps = image_width / width_downsample_factor or image_width / width_downsample_factor - 1.
+		#	model_output_time_steps = (image_height / width_downsample_factor) * (image_width / width_downsample_factor).
 		#	REF [function] >> MyModel.create_model().
-		#width_downsample_factor = 8
-		if False:
-			image_height, image_width, image_channel = 32, 320, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
-			model_output_time_steps = 160  # (image_height / width_downsample_factor) * (image_width / width_downsample_factor).
-		else:
-			image_height, image_width, image_channel = 64, 640, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
-			model_output_time_steps = 640  # (image_height / width_downsample_factor) * (image_width / width_downsample_factor).
-		max_label_len = 80 #model_output_time_steps  # max_label_len <= model_output_time_steps.
+		width_downsample_factor = 8
+		model_output_time_steps = (image_height // width_downsample_factor) * (image_width // width_downsample_factor)
+		max_label_len = min(max_label_len, model_output_time_steps)
 
 		#SOJ, EOJ = '<SOJ>', '<EOJ>'
 		EOJ = '<EOJ>'
 
-		#--------------------
-		# Create a dataset.
 		import hangeul_util as hg_util
 		# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
 		hangeul2jamo_functor = lambda hangeul_str: hg_util.hangeul2jamo(hangeul_str, eojc_str=EOJ, use_separate_consonants=False, use_separate_vowels=True)
 		# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
 		jamo2hangeul_functor = lambda jamo_str: hg_util.jamo2hangeul(jamo_str, eojc_str=EOJ, use_separate_consonants=False, use_separate_vowels=True)
 
+		#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+		hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+		#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
+
+		import string
+		labels = \
+			hangeul_jamo_charset + \
+			string.ascii_uppercase + \
+			string.ascii_lowercase + \
+			string.digits + \
+			string.punctuation + \
+			' '
+		self._label_converter = swl_langproc_util.JamoTokenConverter(labels, hangeul2jamo_functor, jamo2hangeul_functor, eoj=EOJ, pad=None)
+		# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
+		print('[SWL] Info: Labels = {}.'.format(self._label_converter.tokens))
+		print('[SWL] Info: #labels = {}.'.format(self._label_converter.num_tokens))
+
+		#--------------------
+		# Create a dataset.
 		if is_dataset_generated_at_runtime:
 			import text_generation_util as tg_util
 
@@ -497,6 +509,7 @@ class MyRunner(object):
 				from swl.language_processing.util import draw_character_histogram
 				draw_character_histogram(texts, charset=None)
 
+			"""
 			labels = functools.reduce(lambda x, txt: x.union(hangeul2jamo_functor(txt)), texts, set())
 			labels.remove(EOJ)
 			labels = sorted(labels)
@@ -506,6 +519,7 @@ class MyRunner(object):
 			# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 			print('[SWL] Info: Labels = {}.'.format(self._label_converter.tokens))
 			print('[SWL] Info: #labels = {}.'.format(self._label_converter.num_tokens))
+			"""
 
 			#--------------------
 			if 'posix' == os.name:
@@ -531,6 +545,7 @@ class MyRunner(object):
 			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000  # Uses a subset of texts per epoch.
 			#self._train_examples_per_epoch, self._test_examples_per_epoch = None, None  # Uses the whole set of texts per epoch.
 		else:
+			"""
 			#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 			hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 			#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
@@ -553,6 +568,15 @@ class MyRunner(object):
 			# NOTE [info] >> The ID of the blank label is reserved as label_converter.num_tokens.
 			print('[SWL] Info: Labels = {}.'.format(self._label_converter.tokens))
 			print('[SWL] Info: #labels = {}.'.format(self._label_converter.num_tokens))
+			"""
+
+			# Data generation.
+			#	REF [function] >> generate_single_letter_dataset() in text_generation_util_test.py.
+			#	REF [function] >> HangeulJamoTextRecognitionDataGeneratorTextLineDataset_test() in TextRecognitionDataGenerator_data_test.py.
+
+			#data_dir_path = './single_letters_train'
+			#data_dir_path = './double_letters_train'
+			data_dir_path = './text_line_samples_kr_train'
 
 			self._dataset = MyHangeulJamoTextLineDataset(self._label_converter, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len)
 
@@ -761,10 +785,10 @@ class MyRunner(object):
 
 				#--------------------
 				if is_best_model:
-					print('[SWL] Info: Start saving a model...')
+					print('[SWL] Info: Start saving a model to {}...'.format(saved_model_path))
 					start_time = time.time()
 					saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model_ckpt'), global_step=epoch)
-					print('[SWL] Info: End saving a model to {}: {} secs.'.format(saved_model_path, time.time() - start_time))
+					print('[SWL] Info: End saving a model: {} secs.'.format(time.time() - start_time))
 
 				sys.stdout.flush()
 				time.sleep(0)
@@ -966,29 +990,21 @@ def main():
 	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
 
 	#--------------------
+	if False:
+		image_height, image_width, image_channel = 32, 320, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+		max_label_len = 80
+	else:
+		image_height, image_width, image_channel = 64, 640, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+		max_label_len = 80
+
 	is_trained, is_tested, is_inferred = True, True, False
 	is_training_resumed = False
 	initial_epoch, final_epoch, batch_size = 0, 50, 128
 	train_test_ratio = 0.8
-
 	is_dataset_generated_at_runtime = True
-	if not is_dataset_generated_at_runtime and (is_trained or is_tested):
-		# Data generation.
-		#	REF [function] >> generate_single_letter_dataset() in text_generation_util_test.py.
-		#	REF [function] >> HangeulJamoTextRecognitionDataGeneratorTextLineDataset_test() in TextRecognitionDataGenerator_data_test.py.
-
-		#data_dir_path = './single_letters_train'
-		#data_dir_path = './double_letters_train'
-		data_dir_path = './text_line_samples_kr_train'
-
-		if not os.path.isdir(data_dir_path) or not os.path.exists(data_dir_path):
-			print('[SWL] Error: Data directory not found, {}.'.format(data_dir_path))
-			return
-	else:
-		data_dir_path = None
 
 	#--------------------
-	runner = MyRunner(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio)
+	runner = MyRunner(image_height, image_width, image_channel, max_label_len, train_test_ratio, is_dataset_generated_at_runtime)
 
 	if False:
 		print('[SWL] Info: Start checking data...')

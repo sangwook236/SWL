@@ -23,16 +23,21 @@ class TextLineDatasetBase(abc.ABC):
 		raise NotImplementedError
 
 	@abc.abstractmethod
-	def resize(self, input, output=None, height=None, width=None, *args, **kwargs):
-		raise NotImplementedError
-
-	@abc.abstractmethod
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
 		raise NotImplementedError
 
 	@abc.abstractmethod
 	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
 		raise NotImplementedError
+
+	def resize(self, input, output=None, height=None, width=None, *args, **kwargs):
+		if height is None:
+			height = self._image_height
+		if width is None:
+			width = self._image_width
+
+		return self._resize_by_opencv(input, height, width, interpolation=cv2.INTER_AREA)
+		#return self._resize_by_pil(input, height, width, interpolation=PIL.Image.BICUBIC)
 
 	def visualize(self, batch_generator, num_examples=10):
 		for batch_data, num_batch_examples in batch_generator:
@@ -97,6 +102,45 @@ class TextLineDatasetBase(abc.ABC):
 
 		return images
 
+	def _resize_by_opencv(self, image, height, width, interpolation):
+		"""
+		hi, wi = image.shape[:2]
+		if wi >= width:
+			return cv2.resize(image, (width, height), interpolation=interpolation)
+		else:
+			aspect_ratio = height / hi
+			min_width = min(width, int(wi * aspect_ratio))
+			image = cv2.resize(image, (min_width, height), interpolation=interpolation)
+			if min_width < width:
+				image_zeropadded = np.zeros((height, width) + image.shape[2:], dtype=image.dtype)
+				image_zeropadded[:,:min_width] = image[:,:min_width]
+				return image_zeropadded
+			else:
+				return image
+		"""
+		hi, wi = image.shape[:2]
+		aspect_ratio = height / hi
+		min_width = min(width, int(wi * aspect_ratio))
+		zeropadded = np.zeros((height, width) + image.shape[2:], dtype=image.dtype)
+		zeropadded[:,:min_width] = cv2.resize(image, (min_width, height), interpolation=interpolation)
+		return zeropadded
+		"""
+		return cv2.resize(image, (width, height), interpolation=interpolation)
+		"""
+
+	def _resize_by_pil(self, image, height, width, interpolation):
+		import PIL.Image
+
+		wi, hi = image.size
+		aspect_ratio = height / hi
+		min_width = min(width, int(wi * aspect_ratio))
+		zeropadded = PIL.Image.new(image.mode, (width, height), color=0)
+		zeropadded.paste(image.resize((min_width, height), resample=interpolation), (0, 0, min_width, height))
+		return zeropadded
+		"""
+		return image.resize((width, height), resample=interpolation)
+		"""
+
 #--------------------------------------------------------------------
 
 class RunTimeTextLineDatasetBase(TextLineDatasetBase):
@@ -151,61 +195,11 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 
 		return inputs, outputs
 
-	def resize(self, input, output=None, height=None, width=None, *args, **kwargs):
-		if height is None:
-			height = self._image_height
-		if width is None:
-			width = self._image_width
-
-		return self._resize_by_opencv(input, height, width)
-		#return self._resize_by_pil(input, height, width)
-
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
 		return self._create_batch_generator(self._textGenerator, self._color_functor, self._text_set, batch_size, steps_per_epoch, shuffle, is_training=True)
 
 	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
 		return self._create_batch_generator(self._textGenerator, self._color_functor, self._text_set, batch_size, steps_per_epoch, shuffle, is_training=False)
-
-	def _resize_by_opencv(self, input, height, width):
-		interpolation = cv2.INTER_AREA
-		"""
-		hi, wi = input.shape[:2]
-		if wi >= width:
-			return cv2.resize(input, (width, height), interpolation=interpolation)
-		else:
-			aspect_ratio = height / hi
-			min_width = min(width, int(wi * aspect_ratio))
-			input = cv2.resize(input, (min_width, height), interpolation=interpolation)
-			if min_width < width:
-				image_zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
-				image_zeropadded[:,:min_width] = input[:,:min_width]
-				return image_zeropadded
-			else:
-				return input
-		"""
-		hi, wi = input.shape[:2]
-		aspect_ratio = height / hi
-		min_width = min(width, int(wi * aspect_ratio))
-		zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
-		zeropadded[:,:min_width] = cv2.resize(input, (min_width, height), interpolation=interpolation)
-		return zeropadded
-		"""
-		return cv2.resize(input, (width, height), interpolation=interpolation)
-		"""
-
-	def _resize_by_pil(self, input, height, width):
-		import PIL.Image
-
-		interpolation = PIL.Image.BICUBIC
-		wi, hi = input.size
-		aspect_ratio = height / hi
-		min_width = min(width, int(wi * aspect_ratio))
-		zeropadded = PIL.Image.new(input.mode, (width, height), color=0)
-		zeropadded.paste(input.resize((min_width, height), resample=interpolation), (0, 0, min_width, height))
-		return zeropadded
-		"""
-		return input.resize((width, height), resample=interpolation)
-		"""
 
 	def _create_batch_generator(self, textGenerator, color_functor, text_set, batch_size, steps_per_epoch, shuffle, is_training=False):
 		if steps_per_epoch:
@@ -430,37 +424,6 @@ class FileBasedTextLineDatasetBase(TextLineDatasetBase):
 		inputs = (inputs.astype(np.float32) / 255.0) * 2.0 - 1.0  # Normalization.
 
 		return inputs, outputs
-
-	def resize(self, input, output=None, height=None, width=None, *args, **kwargs):
-		if height is None:
-			height = self._image_height
-		if width is None:
-			width = self._image_width
-
-		"""
-		hi, wi = input.shape[:2]
-		if wi >= width:
-			return cv2.resize(input, (width, height), interpolation=cv2.INTER_AREA)
-		else:
-			aspect_ratio = height / hi
-			min_width = min(width, int(wi * aspect_ratio))
-			input = cv2.resize(input, (min_width, height), interpolation=cv2.INTER_AREA)
-			if min_width < width:
-				image_zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
-				image_zeropadded[:,:min_width] = input[:,:min_width]
-				return image_zeropadded
-			else:
-				return input
-		"""
-		hi, wi = input.shape[:2]
-		aspect_ratio = height / hi
-		min_width = min(width, int(wi * aspect_ratio))
-		zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
-		zeropadded[:,:min_width] = cv2.resize(input, (min_width, height), interpolation=cv2.INTER_AREA)
-		return zeropadded
-		"""
-		return cv2.resize(input, (width, height), interpolation=cv2.INTER_AREA)
-		"""
 
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
 		return self._create_batch_generator(self._train_data, batch_size, shuffle, is_training=True)
@@ -884,37 +847,6 @@ class TextLinePairDatasetBase(TextLineDatasetBase):
 		inputs = inputs.astype(np.float32) / 255.0  # Normalization.
 
 		return inputs, outputs
-
-	def resize(self, input, output=None, height=None, width=None, *args, **kwargs):
-		if height is None:
-			height = self._image_height
-		if width is None:
-			width = self._image_width
-
-		"""
-		hi, wi = input.shape[:2]
-		if wi >= width:
-			return cv2.resize(input, (width, height), interpolation=cv2.INTER_AREA)
-		else:
-			aspect_ratio = height / hi
-			min_width = min(width, int(wi * aspect_ratio))
-			input = cv2.resize(input, (min_width, height), interpolation=cv2.INTER_AREA)
-			if min_width < width:
-				image_zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
-				image_zeropadded[:,:min_width] = input[:,:min_width]
-				return image_zeropadded
-			else:
-				return input
-		"""
-		hi, wi = input.shape[:2]
-		aspect_ratio = height / hi
-		min_width = min(width, int(wi * aspect_ratio))
-		zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
-		zeropadded[:,:min_width] = cv2.resize(input, (min_width, height), interpolation=cv2.INTER_AREA)
-		return zeropadded
-		"""
-		return cv2.resize(input, (width, height), interpolation=cv2.INTER_AREA)
-		"""
 
 	def visualize(self, batch_generator, num_examples=10):
 		for batch_data, num_batch_examples in batch_generator:
