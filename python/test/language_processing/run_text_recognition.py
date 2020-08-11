@@ -1270,10 +1270,10 @@ def evaluate_char_recognition_model(model, label_converter, dataloader, is_case_
 			with open(err_fpath, 'w', encoding='UTF8') as fd:
 				for idx, (gt, pred) in enumerate(error_cases):
 					fd.write('{}: {}\t{}\n'.format(idx, gt, pred))
-		except FileNotFoundError as ex:
-			glogger.warn('File not found: {}.'.format(err_fpath))
 		except UnicodeDecodeError as ex:
-			glogger.warn('Unicode decode error: {}.'.format(err_fpath))
+			glogger.warning('Unicode decode error in {}: {}.'.format(err_fpath, ex))
+		except FileNotFoundError as ex:
+			glogger.warning('File not found, {}: {}.'.format(err_fpath, ex))
 
 	show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char)
 	glogger.info('Char accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
@@ -1343,10 +1343,10 @@ def evaluate_text_recognition_model(model, infer_functor, label_converter, datal
 			with open(err_fpath, 'w', encoding='UTF8') as fd:
 				for idx, (gt, pred) in enumerate(error_cases):
 					fd.write('{}: {}\t{}\n'.format(idx, gt, pred))
-		except FileNotFoundError as ex:
-			glogger.warn('File not found: {}.'.format(err_fpath))
 		except UnicodeDecodeError as ex:
-			glogger.warn('Unicode decode error: {}.'.format(err_fpath))
+			glogger.warning('Unicode decode error in {}: {}.'.format(err_fpath, ex))
+		except FileNotFoundError as ex:
+			glogger.warning('File not found, {}: {}.'.format(err_fpath, ex))
 
 	show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char)
 	glogger.info('Text accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
@@ -1355,7 +1355,7 @@ def evaluate_text_recognition_model(model, infer_functor, label_converter, datal
 
 	return correct_char_count / total_char_count
 
-def infer_by_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=None, batch_size=None, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False, device='cpu'):
+def infer_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=None, batch_size=None, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False, device='cpu'):
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	if batch_size is None: batch_size = len(inputs)
 
@@ -1439,10 +1439,84 @@ def infer_by_text_recognition_model(model, infer_functor, label_converter, input
 				with open(err_fpath, 'w', encoding='UTF8') as fd:
 					for idx, (gt, pred) in enumerate(error_cases):
 						fd.write('{}: {}\t{}\n'.format(idx, gt, pred))
-			except FileNotFoundError as ex:
-				glogger.warn('File not found: {}.'.format(err_fpath))
 			except UnicodeDecodeError as ex:
-				glogger.warn('Unicode decode error: {}.'.format(err_fpath))
+				glogger.warning('Unicode decode error in {}: {}.'.format(err_fpath, ex))
+			except FileNotFoundError as ex:
+				glogger.warning('File not found, {}: {}.'.format(err_fpath, ex))
+
+		show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char)
+		glogger.info('Text accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
+		glogger.info('Word accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
+		glogger.info('Char accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
+
+def infer_one_by_one_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=None, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False, device='cpu'):
+	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+	num_examples_to_show = 50
+
+	with torch.no_grad():
+		predictions = list(infer_functor(model, inp, device=device)[0][0] for inp in inputs)
+	#glogger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(predictions.shape, predictions.dtype, np.min(predictions), np.max(predictions)))
+
+	if outputs is None:
+		glogger.info('Prediction:\n{}.'.format('\n'.join([label_converter.decode(pred) for pred in predictions[:num_examples_to_show]])))
+	else:
+		minval, maxval = -1, 1
+		def transform(img):
+			#minval, maxval = np.min(img), np.max(img)
+			return np.round((img.transpose(1, 2, 0) - minval) * 255 / (maxval - minval)).astype(np.uint8)
+
+		inputs = list(transform(inp[0].numpy()) for inp in inputs)
+		outputs = list(outp[0].numpy() for outp in outputs)
+
+		#glogger.info('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in outputs[:num_examples_to_show]])))
+		#glogger.info('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in predictions[:num_examples_to_show]])))
+		#for gt, pred in zip(outputs[:num_examples_to_show], predictions[:num_examples_to_show]):
+		#	glogger.info('G/T - prediction: {}, {}.'.format(label_converter.decode(gt), label_converter.decode(pred)))
+		glogger.info('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(outputs[:num_examples_to_show], predictions[:num_examples_to_show])]))
+
+		#--------------------
+		error_cases_dir_path = './text_error_cases'
+		if is_error_cases_saved:
+			os.makedirs(error_cases_dir_path, exist_ok=True)
+
+		correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0, 0, 0
+		correct_char_class_count, total_char_class_count = [0] * num_classes, [0] * num_classes
+		error_cases = list()
+		error_idx = 0
+
+		total_text_count += len(outputs)
+		for img, gt, pred in zip(inputs, outputs, predictions):
+			for gl, pl in zip(gt, pred):
+				if gl == pl: correct_char_class_count[gl] += 1
+				total_char_class_count[gl] += 1
+
+			gt, pred = label_converter.decode(gt), label_converter.decode(pred)
+			gt_case, pred_case = (gt, pred) if is_case_sensitive else (gt.lower(), pred.lower())
+
+			if gt_case == pred_case:
+				correct_text_count += 1
+			elif is_error_cases_saved:
+				cv2.imwrite(os.path.join(error_cases_dir_path, 'image_{}.png'.format(error_idx)), img)
+				error_cases.append((gt, pred))
+				error_idx += 1
+
+			gt_words, pred_words = gt_case.split(' '), pred_case.split(' ')
+			total_word_count += max(len(gt_words), len(pred_words))
+			correct_word_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gt_words, pred_words))))
+
+			total_char_count += max(len(gt), len(pred))
+			correct_char_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gt_case, pred_case))))
+
+		if is_error_cases_saved:
+			err_fpath = os.path.join(error_cases_dir_path, 'error_cases.txt')
+			try:
+				with open(err_fpath, 'w', encoding='UTF8') as fd:
+					for idx, (gt, pred) in enumerate(error_cases):
+						fd.write('{}: {}\t{}\n'.format(idx, gt, pred))
+			except UnicodeDecodeError as ex:
+				glogger.warning('Unicode decode error in {}: {}.'.format(err_fpath, ex))
+			except FileNotFoundError as ex:
+				glogger.warning('File not found, {}: {}.'.format(err_fpath, ex))
 
 		show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char)
 		glogger.info('Text accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
@@ -2734,7 +2808,7 @@ def train_character_recognizer(num_epochs=100, batch_size=128, device='cpu'):
 				shutil.copyfile(best_model_filepath, model_filepath)
 				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warn('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 		else:
 			if model:
 				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
@@ -2876,7 +2950,7 @@ def train_character_recognizer_using_mixup(num_epochs=100, batch_size=128, devic
 				shutil.copyfile(best_model_filepath, model_filepath)
 				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warn('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 		else:
 			if model:
 				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
@@ -3053,7 +3127,7 @@ def train_word_recognizer_based_on_rare1(num_epochs=20, batch_size=64, device='c
 				shutil.copyfile(best_model_filepath, model_filepath)
 				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warn('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 		else:
 			if model:
 				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
@@ -3217,7 +3291,7 @@ def train_word_recognizer_based_on_rare2(num_epochs=20, batch_size=64, device='c
 				shutil.copyfile(best_model_filepath, model_filepath)
 				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warn('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 		else:
 			if model:
 				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
@@ -3382,7 +3456,7 @@ def train_word_recognizer_based_on_aster(num_epochs=20, batch_size=64, device='c
 				shutil.copyfile(best_model_filepath, model_filepath)
 				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warn('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 		else:
 			if model:
 				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
@@ -3548,7 +3622,7 @@ def train_word_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, device=
 				shutil.copyfile(best_model_filepath, model_filepath)
 				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warn('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 		else:
 			if model:
 				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
@@ -3711,7 +3785,7 @@ def train_word_recognizer_based_on_rare1_and_opennmt(num_epochs=20, batch_size=6
 				shutil.copyfile(best_model_filepath, model_filepath)
 				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warn('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 		else:
 			if model:
 				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
@@ -3874,7 +3948,7 @@ def train_word_recognizer_based_on_rare2_and_opennmt(num_epochs=20, batch_size=6
 				shutil.copyfile(best_model_filepath, model_filepath)
 				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warn('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 		else:
 			if model:
 				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
@@ -4037,7 +4111,7 @@ def train_word_recognizer_based_on_aster_and_opennmt(num_epochs=20, batch_size=6
 				shutil.copyfile(best_model_filepath, model_filepath)
 				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warn('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 		else:
 			if model:
 				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
@@ -4214,7 +4288,7 @@ def train_word_recognizer_using_mixup(num_epochs=20, batch_size=64, device='cpu'
 				shutil.copyfile(best_model_filepath, model_filepath)
 				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warn('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 		else:
 			if model:
 				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
@@ -4504,7 +4578,7 @@ def train_textline_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, dev
 				shutil.copyfile(best_model_filepath, model_filepath)
 				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warn('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 		else:
 			if model:
 				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
@@ -4674,7 +4748,7 @@ def train_textline_recognizer_based_on_transformer(num_epochs=20, batch_size=64,
 				shutil.copyfile(best_model_filepath, model_filepath)
 				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warn('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 		else:
 			if model:
 				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
@@ -5022,7 +5096,7 @@ def recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_si
 			inputs.append(images)
 			outputs.append(labels)
 	except Exception as ex:
-		glogger.warn('Exception raised: {}.'.format(ex))
+		glogger.warning('Exception raised: {}.'.format(ex))
 	inputs = torch.cat(inputs)
 	outputs = torch.cat(outputs)
 
@@ -5081,7 +5155,146 @@ def recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_si
 	start_time = time.time()
 	model.eval()
 	#outputs = None
-	infer_by_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, batch_size=batch_size, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=True, device=device)
+	infer_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, batch_size=batch_size, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=True, device=device)
+	glogger.info('End inferring: {} secs.'.format(time.time() - start_time))
+
+def recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_len, is_individual_pad_id_used=False, device='cpu'):
+	batch_size = 1
+
+	#image_height, image_width, image_channel = 32, 100, 3
+	image_height, image_width, image_channel = 64, 640, 3
+	#image_height, image_width, image_channel = 64, 1280, 3
+	#image_height, image_width, image_channel = 64, 1920, 3
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
+	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	is_preloaded_image_used = False
+
+	lang = 'kor'  # {'kor', 'eng'}.
+	shuffle = False
+	num_workers = 8
+
+	if lang == 'kor':
+		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
+		font_list = construct_font(korean=True, english=False)
+	elif lang == 'eng':
+		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
+		font_list = construct_font(korean=False, english=True)
+	else:
+		raise ValueError('Invalid language, {}'.format(lang))
+
+	#--------------------
+	# Prepare data.
+
+	if is_individual_pad_id_used:
+		# When the PAD ID is the ID of a valid token.
+		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes the PAD ID the ID of a valid token.
+		PAD_TOKEN = '<PAD>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_ID)
+		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
+		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
+	else:
+		# When the PAD ID = the ID of <SOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+	assert label_converter.PAD is not None
+	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
+	num_suffixes = 1
+
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+
+	aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
+	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
+
+	test_transform = torchvision.transforms.Compose([
+		#ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True),
+		ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True),  # batch_size must be 1.
+		#torchvision.transforms.Resize((image_height, image_width)),
+		#torchvision.transforms.CenterCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
+	])
+	test_target_transform = ToIntTensor()
+
+	glogger.info('Start creating a dataset and a dataloader...')
+	start_time = time.time()
+	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
+	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+	glogger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
+	glogger.info('#examples = {}.'.format(len(test_dataset)))
+	glogger.info('#classes = {}.'.format(num_classes))
+	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID))
+
+	# Show data info.
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+
+	inputs, outputs = list(), list()
+	try:
+		for images, labels, _ in test_dataloader:
+			inputs.append(images)
+			outputs.append(labels)
+	except Exception as ex:
+		glogger.warning('Exception raised: {}.'.format(ex))
+
+	#--------------------
+	# Build a model.
+
+	glogger.info('Start building a model...')
+	start_time = time.time()
+	if False:
+		# For RARE2.
+		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2_attn_xent_gradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9514_epoch3.pth'
+		assert model_filepath_to_load is not None
+
+		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID, device=device)
+	elif False:
+		# For ASTER.
+		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster_sxent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.8449_epoch3.pth'
+		assert model_filepath_to_load is not None
+
+		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_ID, device=device)
+	elif True:
+		# For OpenNMT.
+		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_onmt_xent_nogradclip_allparams_nopad_kor_ch5_64x640x3_best_20200725T115106.pth'
+		assert model_filepath_to_load is not None
+
+		encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
+		model, infer_functor, _, _ = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, encoder_type, lang, loss_type=None, device=device)
+	elif False:
+		# For RARE2 + OpenNMT.
+		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2+onmt_xent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.9441_epoch20_new.pth'
+		assert model_filepath_to_load is not None
+
+		model, infer_functor, _, _ = build_rare2_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
+	elif False:
+		# For ASTER + OpenNMT.
+		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_xent_nogradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9325_epoch2_new.pth'
+		assert model_filepath_to_load is not None
+
+		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
+	else:
+		raise ValueError('Undefined model')
+	glogger.info('End building a model: {} secs.'.format(time.time() - start_time))
+
+	# Load a model.
+	glogger.info('Start loading a pretrained model from {}.'.format(model_filepath_to_load))
+	start_time = time.time()
+	model = load_model(model_filepath_to_load, model, device=device)
+	glogger.info('End loading a pretrained model: {} secs.'.format(time.time() - start_time))
+
+	model = model.to(device)
+
+	#--------------------
+	# Infer by the model.
+
+	glogger.info('Start inferring...')
+	start_time = time.time()
+	model.eval()
+	#outputs = None
+	infer_one_by_one_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=True, device=device)
 	glogger.info('End inferring: {} secs.'.format(time.time() - start_time))
 
 #--------------------------------------------------------------------
@@ -5276,6 +5489,7 @@ def main():
 		image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
 		max_label_len = 30
 	#recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_size=args.batch_size, is_individual_pad_id_used=False, device=device)
+	#recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_len, is_individual_pad_id_used=False, device=device)
 
 #--------------------------------------------------------------------
 
