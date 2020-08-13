@@ -3602,8 +3602,8 @@ def train_word_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, device=
 
 		# Define an optimizer.
 		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
+		optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
 		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)

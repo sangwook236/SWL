@@ -249,31 +249,21 @@ class JamoTokenConverter(TokenConverterBase):
 
 #--------------------------------------------------------------------
 
-def compute_simple_text_recognition_accuracy(text_pairs, case_sensitive=True):
+def compute_simple_text_recognition_accuracy(text_pairs):
 	total_text_count = len(text_pairs)
+	correct_text_count = len(list(filter(lambda x: x[0] == x[1], text_pairs)))
 	correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0
-	if case_sensitive:
-		correct_text_count = len(list(filter(lambda x: x[0] == x[1], text_pairs)))
-		for inf_text, gt_text in text_pairs:
-			inf_words, gt_words = inf_text.split(' '), gt_text.split(' ')
-			total_word_count += max(len(inf_words), len(gt_words))
-			correct_word_count += len(list(filter(lambda x: x[0] == x[1], zip(inf_words, gt_words))))
+	for inf_text, gt_text in text_pairs:
+		inf_words, gt_words = inf_text.split(' '), gt_text.split(' ')
+		total_word_count += max(len(inf_words), len(gt_words))
+		correct_word_count += len(list(filter(lambda x: x[0] == x[1], zip(inf_words, gt_words))))
 
-			total_char_count += max(len(inf_text), len(gt_text))
-			correct_char_count += len(list(filter(lambda x: x[0] == x[1], zip(inf_text, gt_text))))
-	else:
-		correct_text_count = len(list(filter(lambda x: x[0].lower() == x[1].lower(), text_pairs)))
-		for inf_text, gt_text in text_pairs:
-			inf_words, gt_words = inf_text.split(' '), gt_text.split(' ')
-			total_word_count += max(len(inf_words), len(gt_words))
-			correct_word_count += len(list(filter(lambda x: x[0].lower() == x[1].lower(), zip(inf_words, gt_words))))
-
-			total_char_count += max(len(inf_text), len(gt_text))
-			correct_char_count += len(list(filter(lambda x: x[0].lower() == x[1].lower(), zip(inf_text, gt_text))))
+		total_char_count += max(len(inf_text), len(gt_text))
+		correct_char_count += len(list(filter(lambda x: x[0] == x[1], zip(inf_text, gt_text))))
 
 	return correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count
 
-def compute_string_distance(text_pairs, case_sensitive=True):
+def compute_string_distance(text_pairs):
 	import jellyfish
 
 	#string_distance_functor = jellyfish.hamming_distance
@@ -284,25 +274,15 @@ def compute_string_distance(text_pairs, case_sensitive=True):
 	#string_distance_functor = jellyfish.match_rating_comparison
 
 	total_text_count = len(text_pairs)
+	text_distance = functools.reduce(lambda ss, x: ss + string_distance_functor(x[0], x[1]), text_pairs, 0)
 	word_distance, total_word_count, char_distance, total_char_count = 0, 0, 0, 0
-	if case_sensitive:
-		text_distance = functools.reduce(lambda ss, x: ss + string_distance_functor(x[0], x[1]), text_pairs, 0)
-		for inf_text, gt_text in text_pairs:
-			inf_words, gt_words = inf_text.split(' '), gt_text.split(' ')
-			total_word_count += max(len(inf_words), len(gt_words))
-			word_distance += functools.reduce(lambda ss, x: ss + string_distance_functor(x[0], x[1]), zip(inf_words, gt_words), 0)
+	for inf_text, gt_text in text_pairs:
+		inf_words, gt_words = inf_text.split(' '), gt_text.split(' ')
+		total_word_count += max(len(inf_words), len(gt_words))
+		word_distance += functools.reduce(lambda ss, x: ss + string_distance_functor(x[0], x[1]), zip(inf_words, gt_words), 0)
 
-			total_char_count += max(len(inf_text), len(gt_text))
-			char_distance += functools.reduce(lambda ss, x: ss + string_distance_functor(x[0], x[1]), zip(inf_text, gt_text), 0)
-	else:
-		text_distance = functools.reduce(lambda ss, x: ss + string_distance_functor(x[0].lower(), x[1].lower()), text_pairs, 0)
-		for inf_text, gt_text in text_pairs:
-			inf_words, gt_words = inf_text.split(' '), gt_text.split(' ')
-			total_word_count += max(len(inf_words), len(gt_words))
-			word_distance += functools.reduce(lambda ss, x: ss + string_distance_functor(x[0].lower(), x[1].lower()), zip(inf_words, gt_words), 0)
-
-			total_char_count += max(len(inf_text), len(gt_text))
-			char_distance += functools.reduce(lambda ss, x: ss + string_distance_functor(x[0].lower(), x[1].lower()), zip(inf_text, gt_text), 0)
+		total_char_count += max(len(inf_text), len(gt_text))
+		char_distance += functools.reduce(lambda ss, x: ss + string_distance_functor(x[0], x[1]), zip(inf_text, gt_text), 0)
 
 	return text_distance, word_distance, char_distance, total_text_count, total_word_count, total_char_count
 

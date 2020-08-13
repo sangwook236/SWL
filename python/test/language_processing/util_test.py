@@ -211,7 +211,8 @@ def compute_simple_text_recognition_accuracy_test():
 
 	print('[SWL] Info: Start computing text recognition accuracy...')
 	start_time = time.time()
-	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = swl_langproc_util.compute_simple_text_recognition_accuracy(inferred_texts, ground_truth_texts)
+	#inferred_texts, ground_truth_texts = list(map(lambda x: x.lower(), inferred_texts)), list(map(lambda x: x.lower(), ground_truth_texts))
+	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = swl_langproc_util.compute_simple_text_recognition_accuracy(zip(inferred_texts, ground_truth_texts))
 	print('[SWL] Info: End computing text recognition accuracy: {} secs.'.format(time.time() - start_time))
 	print('\tText accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
 	print('\tWord accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
@@ -224,7 +225,8 @@ def compute_string_distance_test():
 
 	print('[SWL] Info: Start computing text recognition accuracy...')
 	start_time = time.time()
-	text_distance, word_distance, char_distance, total_text_count, total_word_count, total_char_count = swl_langproc_util.compute_string_distance(inferred_texts, ground_truth_texts)
+	#inferred_texts, ground_truth_texts = list(map(lambda x: x.lower(), inferred_texts)), list(map(lambda x: x.lower(), ground_truth_texts))
+	text_distance, word_distance, char_distance, total_text_count, total_word_count, total_char_count = swl_langproc_util.compute_string_distance(zip(inferred_texts, ground_truth_texts))
 	print('[SWL] Info: End computing text recognition accuracy: {} secs.'.format(time.time() - start_time))
 	print('\tText: Distance = {0}, average distance = {0} / {1} = {2}.'.format(text_distance, total_text_count, text_distance / total_text_count))
 	print('\tWord: Distance = {0}, average distance = {0} / {1} = {2}.'.format(word_distance, total_word_count, word_distance / total_word_count))

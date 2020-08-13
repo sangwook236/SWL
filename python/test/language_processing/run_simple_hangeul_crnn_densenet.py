@@ -1386,14 +1386,36 @@ def evaluate_text_recognition_results(gts, predictions, classes, num_classes, un
 	print('Char accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
 
 def inference_main():
-	checkpoint_dir_path = './training_outputs_crnn/simple_hangeul_crnn_densenet_20191130T113620_fine_tuning_12/tf_checkpoint'
+	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
+
+	#--------------------
+	if False:
+		image_height, image_width, image_channel = 32, 320, 1
+		max_label_len = 39
+		checkpoint_dir_path = None
+	elif True:
+		image_height, image_width, image_channel = 64, 640, 1
+		max_label_len = 79
+		checkpoint_dir_path = './training_outputs_crnn/simple_hangeul_crnn_densenet_20191130T113620_fine_tuning_12/tf_checkpoint'
+	elif False:
+		image_height, image_width, image_channel = 64, 1280, 1
+		max_label_len = 99
+		checkpoint_dir_path = './training_outputs_crnn/simple_hangeul_crnn_densenet_20191130T113620_large_rt_ch99_64x1280x1_01/tf_checkpoint'
+	elif False:
+		image_height, image_width, image_channel = 64, 1920, 1
+		max_label_len = 99
+		checkpoint_dir_path = './training_outputs_crnn/simple_hangeul_crnn_densenet_20191130T113620_large_rt_ch99_64x1920x1_01/tf_checkpoint'
+	elif False:
+		image_height, image_width, image_channel = 64, 2560, 1
+		max_label_len = 99
+		checkpoint_dir_path = None
+	assert checkpoint_dir_path is not None and os.path.isdir(checkpoint_dir_path)
+
 	batch_size = 64
 
+	#--------------------
 	runner = MyRunner(image_height, image_width, image_channel, max_label_len, train_test_ratio=0.0, is_dataset_generated_at_runtime=True, is_fine_tuned=False)
-
-	if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
-		print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
-		return
 
 	if 'posix' == os.name:
 		data_base_dir_path = '/home/sangwook/work/dataset'
@@ -1422,6 +1444,7 @@ def inference_main():
 		if fpath != fpath0:
 			print('[SWL] Warning: Unmatched filenames: {} != {}.'.format(fpath, fpath0))
 
+	#--------------------
 	inferences = runner.infer(checkpoint_dir_path, images, batch_size)
 
 	if inferences:

@@ -4,7 +4,7 @@
 import sys
 sys.path.append('../../src')
 
-import os, math, time, glob, csv
+import os, math, functools, time, glob, csv
 import numpy as np
 import swl.language_processing.util as swl_langproc_util
 
@@ -306,8 +306,6 @@ def load_ground_truth_of_icdar2019_sroie_task1_test():
 	return dict(sorted(text_dict.items()))
 
 def compute_simple_matching_accuracy_using_icdar2019_sroie():
-	case_sensitive = False
-
 	print('[SWL] Info: Start loading text recognition results...')
 	start_time = time.time()
 	gt_text_dict = load_ground_truth_of_icdar2019_sroie_task1_test()
@@ -338,6 +336,7 @@ def compute_simple_matching_accuracy_using_icdar2019_sroie():
 			print('[SWL] Warning: Nonexistent inference ID {}.'.format(key))
 		else:
 			text_pairs.append((inf_text_dict[key], gt_text_dict[key]))
+			#text_pairs.append((inf_text_dict[key].lower(), gt_text_dict[key].lower()))  # Case insensitive.
 
 	if 0 == len(text_pairs) or len(text_pairs) != len(gt_text_dict):
 		print('[SWL] Warning: Unmatched lengths of text pairs and ground-truth texts: {} != {}.'.format(len(text_pairs), len(gt_text_dict)))	
@@ -346,15 +345,13 @@ def compute_simple_matching_accuracy_using_icdar2019_sroie():
 	#--------------------
 	print('[SWL] Info: Start comparing text recognition results...')
 	start_time = time.time()
-	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = swl_langproc_util.compute_simple_text_recognition_accuracy(text_pairs, case_sensitive)
+	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = swl_langproc_util.compute_simple_text_recognition_accuracy(text_pairs)
 	print('[SWL] Info: End comparing text recognition results: {} secs.'.format(time.time() - start_time))
 	print('\tText accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
 	print('\tWord accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
 	print('\tChar accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
 
 def compute_string_distance_using_icdar2019_sroie():
-	case_sensitive = False
-
 	print('[SWL] Info: Start loading text recognition results...')
 	start_time = time.time()
 	gt_text_dict = load_ground_truth_of_icdar2019_sroie_task1_test()
@@ -385,6 +382,7 @@ def compute_string_distance_using_icdar2019_sroie():
 			print('[SWL] Warning: Nonexistent inference ID {}.'.format(key))
 		else:
 			text_pairs.append((inf_text_dict[key], gt_text_dict[key]))
+			#text_pairs.append((inf_text_dict[key].lower(), gt_text_dict[key].lower()))  # Case insensitive.
 
 	if 0 == len(text_pairs) or len(text_pairs) != len(gt_text_dict):
 		print('[SWL] Warning: Unmatched lengths of text pairs and ground-truth texts: {} != {}.'.format(len(text_pairs), len(gt_text_dict)))	
@@ -393,7 +391,7 @@ def compute_string_distance_using_icdar2019_sroie():
 	#--------------------
 	print('[SWL] Info: Start comparing text recognition results...')
 	start_time = time.time()
-	text_distance, word_distance, char_distance, total_text_count, total_word_count, total_char_count = swl_langproc_util.compute_string_distance(text_pairs, case_sensitive)
+	text_distance, word_distance, char_distance, total_text_count, total_word_count, total_char_count = swl_langproc_util.compute_string_distance(text_pairs)
 	print('[SWL] Info: End comparing text recognition results: {} secs.'.format(time.time() - start_time))
 	print('\tText: Distance = {0}, average distance = {0} / {1} = {2}.'.format(text_distance, total_text_count, text_distance / total_text_count))
 	print('\tWord: Distance = {0}, average distance = {0} / {1} = {2}.'.format(word_distance, total_word_count, word_distance / total_word_count))
@@ -402,8 +400,6 @@ def compute_string_distance_using_icdar2019_sroie():
 #--------------------------------------------------------------------
 
 def compute_accuracy_from_inference_result():
-	case_sensitive = False
-
 	text_pairs = list()  # Pairs of inferences and G/T's.
 	if True:
 		# For a CSV or TSV file.
@@ -416,10 +412,12 @@ def compute_accuracy_from_inference_result():
 			# For a TSV file.
 			delimiter = '\t'
 			# index\tfilepath\tG/T\tinference.
-			result_filepath = './simple_hangeul_crnn_densenet_large_rt_ch99_64x1280x1_aihub_printed_inference_results_20200807.tsv'
+			#result_filepath = './simple_hangeul_crnn_densenet_large_rt_ch99_64x1280x1_aihub_printed_inference_results_20200807.tsv'
 			#result_filepath = './simple_hangeul_crnn_densenet_large_rt_ch99_64x1280x1_aihub_printed_inference_results_20200809.tsv'
+			result_filepath = './simple_hangeul_crnn_densenet_large_rt_ch99_64x1920x1_aihub_printed_inference_results_20200810.tsv'
 			#result_filepath = './simple_hangeul_crnn_densenet_large_rt_ch99_64x1280x1_epapyrus_font_test_inference_results_20200807.tsv'
 			#result_filepath = './simple_hangeul_crnn_densenet_large_rt_ch99_64x1280x1_epapyrus_font_test_inference_results_20200809.tsv'
+			#result_filepath = './simple_hangeul_crnn_densenet_large_rt_ch99_64x1280x1_epapyrus_font_test_inference_results_20200810.tsv'
 
 		quotechar = '"'
 		escapechar = '\\'
@@ -431,7 +429,9 @@ def compute_accuracy_from_inference_result():
 				reader = csv.reader(fd, delimiter=delimiter, quotechar=None, escapechar=escapechar, quoting=csv.QUOTE_NONE)
 				for idx, row in enumerate(reader):
 					text_pairs.append((row[3], row[2]))
+					#text_pairs.append((row[3].lower(), row[2].lower()))
 					#text_pairs.append((row[3].replace(' ', ''), row[2].replace(' ', '')))  # Ignore blank spaces.
+					#text_pairs.append((row[3].lower().replace(' ', ''), row[2].lower().replace(' ', '')))  # Ignore blank spaces.
 
 					#if idx == 277149: break  # Words only.
 		except csv.Error as ex:
@@ -460,7 +460,9 @@ def compute_accuracy_from_inference_result():
 					line = line.split(delimiter)
 
 					text_pairs.append((line[3], line[2]))
+					#text_pairs.append((line[3].lower(), line[2].lower()))
 					#text_pairs.append((line[3].replace(' ', ''), line[2].replace(' ', '')))  # Ignore blank spaces.
+					#text_pairs.append((line[3].lower().replace(' ', ''), line[2].lower().replace(' ', '')))  # Ignore blank spaces.
 					
 					#if idx == 277149: break  # Words only.
 		except UnicodeDecodeError as ex:
@@ -469,19 +471,19 @@ def compute_accuracy_from_inference_result():
 			print('File not found, {}: {}.'.format(result_filepath, ex))
 
 	#--------------------
-	print('[SWL] Info: Start comparing text recognition results (simple matching)...')
+	print('[SWL] Info: Start computing accuracy (simple matching)...')
 	start_time = time.time()
-	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = swl_langproc_util.compute_simple_text_recognition_accuracy(text_pairs, case_sensitive)
-	print('[SWL] Info: End comparing text recognition results: {} secs.'.format(time.time() - start_time))
+	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = swl_langproc_util.compute_simple_text_recognition_accuracy(text_pairs)
+	print('[SWL] Info: End computing accuracy: {} secs.'.format(time.time() - start_time))
 	print('\tText accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
 	print('\tWord accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
 	print('\tChar accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
 
 	#--------------------
-	print('[SWL] Info: Start comparing text recognition results (string distance)...')
+	print('[SWL] Info: Start computing accuracy (string distance)...')
 	start_time = time.time()
-	text_distance, word_distance, char_distance, total_text_count, total_word_count, total_char_count = swl_langproc_util.compute_string_distance(text_pairs, case_sensitive)
-	print('[SWL] Info: End comparing text recognition results: {} secs.'.format(time.time() - start_time))
+	text_distance, word_distance, char_distance, total_text_count, total_word_count, total_char_count = swl_langproc_util.compute_string_distance(text_pairs)
+	print('[SWL] Info: End computing accuracy: {} secs.'.format(time.time() - start_time))
 	print('\tText: Distance = {0}, average distance = {0} / {1} = {2}.'.format(text_distance, total_text_count, text_distance / total_text_count))
 	print('\tWord: Distance = {0}, average distance = {0} / {1} = {2}.'.format(word_distance, total_word_count, word_distance / total_word_count))
 	print('\tChar: Distance = {0}, average distance = {0} / {1} = {2}.'.format(char_distance, total_char_count, char_distance / total_char_count))
