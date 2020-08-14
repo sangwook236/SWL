@@ -335,8 +335,10 @@ def compute_simple_matching_accuracy_using_icdar2019_sroie():
 		if key not in gt_text_dict:
 			print('[SWL] Warning: Nonexistent inference ID {}.'.format(key))
 		else:
+			# Case sensitive.
 			text_pairs.append((inf_text_dict[key], gt_text_dict[key]))
-			#text_pairs.append((inf_text_dict[key].lower(), gt_text_dict[key].lower()))  # Case insensitive.
+			# Case insensitive.
+			#text_pairs.append((inf_text_dict[key].lower(), gt_text_dict[key].lower()))
 
 	if 0 == len(text_pairs) or len(text_pairs) != len(gt_text_dict):
 		print('[SWL] Warning: Unmatched lengths of text pairs and ground-truth texts: {} != {}.'.format(len(text_pairs), len(gt_text_dict)))	
@@ -347,6 +349,7 @@ def compute_simple_matching_accuracy_using_icdar2019_sroie():
 	start_time = time.time()
 	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = swl_langproc_util.compute_simple_text_recognition_accuracy(text_pairs)
 	print('[SWL] Info: End comparing text recognition results: {} secs.'.format(time.time() - start_time))
+
 	print('\tText accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
 	print('\tWord accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
 	print('\tChar accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
@@ -381,8 +384,10 @@ def compute_string_distance_using_icdar2019_sroie():
 		if key not in gt_text_dict:
 			print('[SWL] Warning: Nonexistent inference ID {}.'.format(key))
 		else:
+			# Case sensitive.
 			text_pairs.append((inf_text_dict[key], gt_text_dict[key]))
-			#text_pairs.append((inf_text_dict[key].lower(), gt_text_dict[key].lower()))  # Case insensitive.
+			# Case insensitive.
+			#text_pairs.append((inf_text_dict[key].lower(), gt_text_dict[key].lower()))
 
 	if 0 == len(text_pairs) or len(text_pairs) != len(gt_text_dict):
 		print('[SWL] Warning: Unmatched lengths of text pairs and ground-truth texts: {} != {}.'.format(len(text_pairs), len(gt_text_dict)))	
@@ -393,11 +398,29 @@ def compute_string_distance_using_icdar2019_sroie():
 	start_time = time.time()
 	text_distance, word_distance, char_distance, total_text_count, total_word_count, total_char_count = swl_langproc_util.compute_string_distance(text_pairs)
 	print('[SWL] Info: End comparing text recognition results: {} secs.'.format(time.time() - start_time))
+
 	print('\tText: Distance = {0}, average distance = {0} / {1} = {2}.'.format(text_distance, total_text_count, text_distance / total_text_count))
 	print('\tWord: Distance = {0}, average distance = {0} / {1} = {2}.'.format(word_distance, total_word_count, word_distance / total_word_count))
 	print('\tChar: Distance = {0}, average distance = {0} / {1} = {2}.'.format(char_distance, total_char_count, char_distance / total_char_count))
 
 #--------------------------------------------------------------------
+
+def compute_precision_and_recall(text_pairs):
+	classes = list(zip(*text_pairs))
+	classes = sorted(functools.reduce(lambda x, txt: x.union(txt), classes[0] + classes[1], set()))
+
+	print('Classes = {}.'.format(classes))
+	print('#classes = {}.'.format(len(classes)))
+
+	def compute_metric(text_pairs, ch):
+		TP_FP, TP_FN, TP = 0, 0, 0
+		for inf, gt in text_pairs:
+			TP_FP += inf.count(ch)  # Retrieved examples. TP + FP.
+			TP_FN += gt.count(ch)  # Relevent examples. TP + FN.
+			TP += len(list(filter(lambda ig: ig[0] == ig[1] == ch, zip(inf, gt))))
+		return TP_FP, TP_FN, TP
+
+	return list(map(lambda cls: compute_metric(text_pairs, cls), classes)), classes
 
 def compute_accuracy_from_inference_result():
 	text_pairs = list()  # Pairs of inferences and G/T's.
@@ -413,8 +436,8 @@ def compute_accuracy_from_inference_result():
 			delimiter = '\t'
 			# index\tfilepath\tG/T\tinference.
 			#result_filepath = './simple_hangeul_crnn_densenet_large_rt_ch99_64x1280x1_aihub_printed_inference_results_20200807.tsv'
-			#result_filepath = './simple_hangeul_crnn_densenet_large_rt_ch99_64x1280x1_aihub_printed_inference_results_20200809.tsv'
-			result_filepath = './simple_hangeul_crnn_densenet_large_rt_ch99_64x1920x1_aihub_printed_inference_results_20200810.tsv'
+			result_filepath = './simple_hangeul_crnn_densenet_large_rt_ch99_64x1280x1_aihub_printed_inference_results_20200809.tsv'
+			#result_filepath = './simple_hangeul_crnn_densenet_large_rt_ch99_64x1920x1_aihub_printed_inference_results_20200810.tsv'
 			#result_filepath = './simple_hangeul_crnn_densenet_large_rt_ch99_64x1280x1_epapyrus_font_test_inference_results_20200807.tsv'
 			#result_filepath = './simple_hangeul_crnn_densenet_large_rt_ch99_64x1280x1_epapyrus_font_test_inference_results_20200809.tsv'
 			#result_filepath = './simple_hangeul_crnn_densenet_large_rt_ch99_64x1280x1_epapyrus_font_test_inference_results_20200810.tsv'
@@ -428,12 +451,14 @@ def compute_accuracy_from_inference_result():
 				#reader = csv.reader(fd, delimiter=delimiter, escapechar=escapechar, quoting=csv.QUOTE_NONE)
 				reader = csv.reader(fd, delimiter=delimiter, quotechar=None, escapechar=escapechar, quoting=csv.QUOTE_NONE)
 				for idx, row in enumerate(reader):
-					text_pairs.append((row[3], row[2]))
-					#text_pairs.append((row[3].lower(), row[2].lower()))
+					# Case sensitive.
+					#text_pairs.append((row[3], row[2]))
 					#text_pairs.append((row[3].replace(' ', ''), row[2].replace(' ', '')))  # Ignore blank spaces.
-					#text_pairs.append((row[3].lower().replace(' ', ''), row[2].lower().replace(' ', '')))  # Ignore blank spaces.
+					# Case insensitive.
+					#text_pairs.append((row[3].lower(), row[2].lower()))
+					text_pairs.append((row[3].lower().replace(' ', ''), row[2].lower().replace(' ', '')))  # Ignore blank spaces.
 
-					#if idx == 277149: break  # Words only.
+					if idx == 277149: break  # Words only.
 		except csv.Error as ex:
 			print('csv.Error in {}: {}.'.format(result_filepath, ex))
 		except UnicodeDecodeError as ex:
@@ -459,9 +484,11 @@ def compute_accuracy_from_inference_result():
 
 					line = line.split(delimiter)
 
+					# Case sensitive.
 					text_pairs.append((line[3], line[2]))
-					#text_pairs.append((line[3].lower(), line[2].lower()))
 					#text_pairs.append((line[3].replace(' ', ''), line[2].replace(' ', '')))  # Ignore blank spaces.
+					# Case insensitive.
+					#text_pairs.append((line[3].lower(), line[2].lower()))
 					#text_pairs.append((line[3].lower().replace(' ', ''), line[2].lower().replace(' ', '')))  # Ignore blank spaces.
 					
 					#if idx == 277149: break  # Words only.
@@ -475,6 +502,7 @@ def compute_accuracy_from_inference_result():
 	start_time = time.time()
 	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = swl_langproc_util.compute_simple_text_recognition_accuracy(text_pairs)
 	print('[SWL] Info: End computing accuracy: {} secs.'.format(time.time() - start_time))
+
 	print('\tText accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
 	print('\tWord accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
 	print('\tChar accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
@@ -484,9 +512,34 @@ def compute_accuracy_from_inference_result():
 	start_time = time.time()
 	text_distance, word_distance, char_distance, total_text_count, total_word_count, total_char_count = swl_langproc_util.compute_string_distance(text_pairs)
 	print('[SWL] Info: End computing accuracy: {} secs.'.format(time.time() - start_time))
+
 	print('\tText: Distance = {0}, average distance = {0} / {1} = {2}.'.format(text_distance, total_text_count, text_distance / total_text_count))
 	print('\tWord: Distance = {0}, average distance = {0} / {1} = {2}.'.format(word_distance, total_word_count, word_distance / total_word_count))
 	print('\tChar: Distance = {0}, average distance = {0} / {1} = {2}.'.format(char_distance, total_char_count, char_distance / total_char_count))
+
+	#--------------------
+	print('[SWL] Info: Start computing precision and recall...')
+	start_time = time.time()
+	metrics, classes = compute_precision_and_recall(text_pairs)  # A list of (TP+FP, TP+FN, TP)s.
+	print('[SWL] Info: End computing precision and recall: {} secs.'.format(time.time() - start_time))
+
+	precisions, recalls, precisions_for_nonzero_tp, recalls_for_nonzero_tp = list(), list(), list(), list()
+	for idx, (cls, (TP_FP, TP_FN, TP)) in enumerate(zip(classes, metrics)):
+		prec = (TP / TP_FP) if TP_FP != 0 else None
+		recall = (TP / TP_FN) if TP_FN != 0 else None
+		if prec is not None:
+			precisions.append(prec)
+			if TP != 0: precisions_for_nonzero_tp.append(prec)
+		if recall is not None:
+			recalls.append(recall)
+			if TP != 0: recalls_for_nonzero_tp.append(recall)
+		print('{}: {}: Precision = {}, recall = {}.'.format(idx, cls, prec, recall))
+	avg_precision, avg_recall = sum(precisions) / len(precisions) if len(precisions) > 0 else -1, sum(recalls) / len(recalls) if len(recalls) > 0 else -1
+	f1 = 2 * avg_precision * avg_recall / (avg_precision + avg_recall)
+	avg_precision_for_nonzero_tp, avg_recall_for_nonzero_tp = sum(precisions_for_nonzero_tp) / len(precisions_for_nonzero_tp) if len(precisions_for_nonzero_tp) > 0 else -1, sum(recalls_for_nonzero_tp) / len(recalls_for_nonzero_tp) if len(recalls_for_nonzero_tp) > 0 else -1
+	f1_for_nonzero_tp = 2 * avg_precision_for_nonzero_tp * avg_recall_for_nonzero_tp / (avg_precision_for_nonzero_tp + avg_recall_for_nonzero_tp)
+	print('Average precision = {}, average recall = {}, F1 = {}.'.format(avg_precision, avg_recall, f1))
+	print('Average precision (for non-zero TP) = {}, average recall (for non-zero TP) = {}, F1 (for non-zero TP) = {}.'.format(avg_precision_for_nonzero_tp, avg_recall_for_nonzero_tp, f1_for_nonzero_tp))
 
 #--------------------------------------------------------------------
 
