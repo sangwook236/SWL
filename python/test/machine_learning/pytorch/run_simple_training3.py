@@ -471,6 +471,13 @@ def parse_command_line_options():
 		default='0'
 	)
 	parser.add_argument(
+		'-l',
+		'--log',
+		type=str,
+		help='The name of logger and log files',
+		default=None
+	)
+	parser.add_argument(
 		'-ll',
 		'--log_level',
 		type=int,
@@ -478,8 +485,8 @@ def parse_command_line_options():
 		default=None
 	)
 	parser.add_argument(
-		'-l',
-		'--log',
+		'-ld',
+		'--log_dir',
 		type=str,
 		help='The directory path to log',
 		default=None
@@ -515,7 +522,7 @@ def get_logger(name, log_level=None, log_dir_path=None, is_rotating=True):
 def main():
 	args = parse_command_line_options()
 
-	logger = get_logger(os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, args.log, is_rotating=True)
+	logger = get_logger(args.log if args.log else os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, args.log_dir, is_rotating=True)
 	logger.info('----------------------------------------------------------------------')
 	logger.info('Logger: name = {}, level = {}.'.format(logger.name, logger.level))
 	logger.info('Command-line arguments: {}.'.format(sys.argv))
