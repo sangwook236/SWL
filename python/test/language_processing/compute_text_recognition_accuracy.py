@@ -409,9 +409,6 @@ def compute_precision_and_recall(text_pairs):
 	classes = list(zip(*text_pairs))
 	classes = sorted(functools.reduce(lambda x, txt: x.union(txt), classes[0] + classes[1], set()))
 
-	print('Classes = {}.'.format(classes))
-	print('#classes = {}.'.format(len(classes)))
-
 	def compute_metric(text_pairs, ch):
 		TP_FP, TP_FN, TP = 0, 0, 0
 		for inf, gt in text_pairs:
@@ -520,8 +517,11 @@ def compute_accuracy_from_inference_result():
 	#--------------------
 	print('[SWL] Info: Start computing precision and recall...')
 	start_time = time.time()
-	metrics, classes = compute_precision_and_recall(text_pairs)  # A list of (TP+FP, TP+FN, TP)s.
+	metrics, classes = compute_precision_and_recall(text_pairs)  # A list of (TP + FP, TP + FN, TP)s.
 	print('[SWL] Info: End computing precision and recall: {} secs.'.format(time.time() - start_time))
+
+	print('Classes = {}.'.format(classes))
+	print('#classes = {}.'.format(len(classes)))
 
 	precisions, recalls, precisions_for_nonzero_tp, recalls_for_nonzero_tp = list(), list(), list(), list()
 	for idx, (cls, (TP_FP, TP_FN, TP)) in enumerate(zip(classes, metrics)):

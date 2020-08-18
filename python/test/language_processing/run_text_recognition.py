@@ -426,7 +426,7 @@ def create_char_data_loaders(char_type, label_converter, charset, num_train_exam
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
+		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	test_transform = torchvision.transforms.Compose([
 		#RandomInvert(),
@@ -435,7 +435,7 @@ def create_char_data_loaders(char_type, label_converter, charset, num_train_exam
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
+		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 
 	glogger.info('Start creating datasets...')
@@ -519,7 +519,7 @@ def create_mixed_char_data_loaders(label_converter, charset, num_simple_char_exa
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
+		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	test_transform = torchvision.transforms.Compose([
 		#RandomInvert(),
@@ -528,7 +528,7 @@ def create_mixed_char_data_loaders(label_converter, charset, num_simple_char_exa
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
+		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 
 	if 'posix' == os.name:
@@ -603,7 +603,7 @@ def create_word_data_loaders(word_type, label_converter, wordset, chars, num_tra
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
+		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	train_target_transform = ToIntTensor()
 	test_transform = torchvision.transforms.Compose([
@@ -613,7 +613,7 @@ def create_word_data_loaders(word_type, label_converter, wordset, chars, num_tra
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
+		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	test_target_transform = ToIntTensor()
 
@@ -653,21 +653,25 @@ def create_word_data_loaders(word_type, label_converter, wordset, chars, num_tra
 
 		datasets = list()
 		if True:
+			# E2E-MLT Korean dataset.
 			# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
 			is_preloaded_image_used = False
 			datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 		if True:
+			# E2E-MLT English dataset.
 			# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_en.txt'
 			is_preloaded_image_used = False
 			datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 		if True:
+			# ICDAR RRC-MLT 2019 Korean dataset.
 			# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
 			is_preloaded_image_used = True
 			datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 		if True:
+			# ICDAR RRC-MLT 2019 English dataset.
 			# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_en.txt'
 			is_preloaded_image_used = True
@@ -705,7 +709,7 @@ def create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_e
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
+		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	train_target_transform = ToIntTensor()
 	test_transform = torchvision.transforms.Compose([
@@ -715,7 +719,7 @@ def create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_e
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
+		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	test_target_transform = ToIntTensor()
 
@@ -740,21 +744,25 @@ def create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_e
 		is_preloaded_image_used = False
 		datasets.append(aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_word_len, is_preloaded_image_used))
 	if True:
+		# E2E-MLT Korean dataset.
 		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
 		is_preloaded_image_used = False
 		datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
+		# E2E-MLT English dataset.
 		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_en.txt'
 		is_preloaded_image_used = False
 		datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
+		# ICDAR RRC-MLT 2019 Korean dataset.
 		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
 		is_preloaded_image_used = True
 		datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
+		# ICDAR RRC-MLT 2019 English dataset.
 		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_en.txt'
 		is_preloaded_image_used = True
@@ -790,7 +798,7 @@ def create_textline_data_loaders(textline_type, label_converter, wordset, chars,
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
+		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	train_target_transform = ToIntTensor()
 	test_transform = torchvision.transforms.Compose([
@@ -800,7 +808,7 @@ def create_textline_data_loaders(textline_type, label_converter, wordset, chars,
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
+		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	test_target_transform = ToIntTensor()
 
@@ -897,11 +905,13 @@ def create_textline_data_loaders(textline_type, label_converter, wordset, chars,
 				image_label_info_filepath = data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_test_text_line/labels.txt'
 				datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
 		if True:
+			# ePapyrus data.
 			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.png', recursive=False))
 			label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.txt', recursive=False))
 			is_preloaded_image_used = True
 			datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
 		if True:
+			# SiliconMinds data.
 			image_label_info_filepath = data_base_dir_path + '/text/receipt/sminds/receipt_text_line/labels.txt'
 			is_preloaded_image_used = True
 			datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
@@ -938,7 +948,7 @@ def create_mixed_textline_data_loaders(label_converter, wordset, chars, num_simp
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
+		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	train_target_transform = ToIntTensor()
 	test_transform = torchvision.transforms.Compose([
@@ -948,7 +958,7 @@ def create_mixed_textline_data_loaders(label_converter, wordset, chars, num_simp
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
+		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	test_target_transform = ToIntTensor()
 
@@ -1029,11 +1039,13 @@ def create_mixed_textline_data_loaders(label_converter, wordset, chars, num_simp
 			image_label_info_filepath = data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_test_text_line/labels.txt'
 			datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
+		# ePapyrus data.
 		image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.png', recursive=False))
 		label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.txt', recursive=False))
 		is_preloaded_image_used = True
 		datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
 	if True:
+		# SiliconMinds data.
 		image_label_info_filepath = data_base_dir_path + '/text/receipt/sminds/receipt_text_line/labels.txt'
 		is_preloaded_image_used = True
 		datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
@@ -2292,7 +2304,7 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 			self.decoder, self.generator = build_decoder_and_generator_for_opennmt(num_classes, word_vec_size, hidden_size=decoder_hidden_size, num_layers=num_decoder_layers, bidirectional_encoder=bidirectional_encoder)
 
 		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
-		def train_forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
+		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
 			enc_hiddens, enc_outputs, lengths = self.encoder(src, lengths=lengths, device=device)
 
 			if tgt is None or lengths is None:
@@ -2445,7 +2457,7 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 			self.decoder, self.generator = build_decoder_and_generator_for_opennmt(num_classes, word_vec_size, hidden_size=decoder_hidden_size, num_layers=num_decoder_layers, bidirectional_encoder=bidirectional_encoder)
 
 		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
-		def train_forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
+		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
 			enc_hiddens, enc_outputs, lengths = self.encoder(src, lengths=lengths, device=device)
 
 			if tgt is None or lengths is None:
@@ -2598,7 +2610,7 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 			self.decoder, self.generator = build_decoder_and_generator_for_opennmt(num_classes, word_vec_size, hidden_size=decoder_hidden_size, num_layers=num_decoder_layers, bidirectional_encoder=bidirectional_encoder)
 
 		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
-		def train_forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
+		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
 			enc_hiddens, enc_outputs, lengths = self.encoder(src, lengths=lengths, device=device)
 
 			if tgt is None or lengths is None:
@@ -3044,7 +3056,9 @@ def train_word_recognizer_based_on_rare1(num_epochs=20, batch_size=64, device='c
 			assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 		else:
 			# When the PAD ID = the ID of <SOS> token.
-			label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+			#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+			# When the PAD ID = the ID of <EOS> token.
+			label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
 		assert label_converter.PAD is not None
 		SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 		num_suffixes = 1
@@ -3208,7 +3222,9 @@ def train_word_recognizer_based_on_rare2(num_epochs=20, batch_size=64, device='c
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
 		# When the PAD ID = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		# When the PAD ID = the ID of <EOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
 	assert label_converter.PAD is not None
 	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
@@ -3373,7 +3389,9 @@ def train_word_recognizer_based_on_aster(num_epochs=20, batch_size=64, device='c
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
 		# When the PAD ID = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		# When the PAD ID = the ID of <EOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
 	assert label_converter.PAD is not None
 	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 
@@ -3540,7 +3558,9 @@ def train_word_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, device=
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
 		# When the PAD ID = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		# When the PAD ID = the ID of <EOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
 	assert label_converter.PAD is not None
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
@@ -3704,7 +3724,9 @@ def train_word_recognizer_based_on_rare1_and_opennmt(num_epochs=20, batch_size=6
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
 		# When the PAD ID = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		# When the PAD ID = the ID of <EOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
 	assert label_converter.PAD is not None
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
@@ -3867,7 +3889,9 @@ def train_word_recognizer_based_on_rare2_and_opennmt(num_epochs=20, batch_size=6
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
 		# When the PAD ID = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		# When the PAD ID = the ID of <EOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
 	assert label_converter.PAD is not None
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
@@ -4030,7 +4054,9 @@ def train_word_recognizer_based_on_aster_and_opennmt(num_epochs=20, batch_size=6
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
 		# When the PAD ID = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		# When the PAD ID = the ID of <EOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
 	assert label_converter.PAD is not None
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
@@ -4205,7 +4231,9 @@ def train_word_recognizer_using_mixup(num_epochs=20, batch_size=64, device='cpu'
 			assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 		else:
 			# When the PAD ID = the ID of <SOS> token.
-			label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+			#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+			# When the PAD ID = the ID of <EOS> token.
+			label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
 		assert label_converter.PAD is not None
 		SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 		num_suffixes = 1
@@ -4343,7 +4371,9 @@ def evaluate_word_recognizer_using_aihub_data(max_label_len, batch_size, is_indi
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
 		# When the PAD ID = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		# When the PAD ID = the ID of <EOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
 	assert label_converter.PAD is not None
 	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
@@ -4496,7 +4526,9 @@ def train_textline_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, dev
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
 		# When the PAD ID = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		# When the PAD ID = the ID of <EOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
 	assert label_converter.PAD is not None
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
@@ -4558,8 +4590,8 @@ def train_textline_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, dev
 
 		# Define an optimizer.
 		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
+		optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
 		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
 		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
@@ -4664,7 +4696,9 @@ def train_textline_recognizer_based_on_transformer(num_epochs=20, batch_size=64,
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
 		# When the PAD ID = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		# When the PAD ID = the ID of <EOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
 	assert label_converter.PAD is not None
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
@@ -4934,7 +4968,9 @@ def recognize_word_using_craft(device='cpu'):
 			assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 		else:
 			# When the PAD ID = the ID of <SOS> token.
-			label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+			#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+			# When the PAD ID = the ID of <EOS> token.
+			label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
 		assert label_converter.PAD is not None
 		SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 		num_suffixes = 1
@@ -5054,7 +5090,9 @@ def recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_si
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
 		# When the PAD ID = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		# When the PAD ID = the ID of <EOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
 	assert label_converter.PAD is not None
 	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
@@ -5195,7 +5233,9 @@ def recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_le
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
 		# When the PAD ID = the ID of <SOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
+		# When the PAD ID = the ID of <EOS> token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
 	assert label_converter.PAD is not None
 	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
@@ -5300,7 +5340,7 @@ def recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_le
 #--------------------------------------------------------------------
 
 def parse_command_line_options():
-	parser = argparse.ArgumentParser(description='Train, test, or infer a CNN model for MNIST dataset.')
+	parser = argparse.ArgumentParser(description='Runner for text recognition models.')
 
 	"""
 	parser.add_argument(
