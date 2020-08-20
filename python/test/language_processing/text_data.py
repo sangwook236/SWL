@@ -63,7 +63,7 @@ class FileBasedTextDatasetBase(TextDatasetBase):
 
 			#img = self.resize(img, None, image_height, image_width)
 			try:
-				label_int = self.label_converter.encode(label_str)  # Decorated/undecorated integer label.
+				label_int = self.label_converter.encode(label_str)  # Decorated/undecorated label ID.
 			except Exception:
 				print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
 				continue
@@ -125,7 +125,7 @@ class FileBasedTextDatasetBase(TextDatasetBase):
 
 			#img = self.resize(img, None, image_height, image_width)
 			try:
-				label_int = self.label_converter.encode(label_str)  # Decorated/undecorated integer label.
+				label_int = self.label_converter.encode(label_str)  # Decorated/undecorated label ID.
 			except Exception:
 				print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
 				continue
@@ -174,7 +174,7 @@ class SimpleCharacterDataset(TextDatasetBase):
 	def __getitem__(self, idx):
 		while True:
 			ch = self.chars[idx]
-			target = self.label_converter.encode([ch])[0]  # Undecorated integer label.
+			target = self.label_converter.encode([ch])[0]  # Undecorated label ID.
 			font_type, font_index = random.choice(self.fonts)
 			font_size = random.randint(*self.font_size_interval)
 			font_color, bg_color = self.color_functor()
@@ -232,7 +232,7 @@ class NoisyCharacterDataset(TextDatasetBase):
 			ch2 = random.sample(self.label_converter.tokens, 2)
 			#ch2 = [random.choice(self.label_converter.tokens) for _ in range(2)]
 			ch3 = ch2[0] + ch + ch2[1]
-			target = self.label_converter.encode([ch])[0]  # Undecorated integer label.
+			target = self.label_converter.encode([ch])[0]  # Undecorated label ID.
 			font_type, font_index = random.choice(self.fonts)
 			font_size = random.randint(*self.font_size_interval)
 			font_color, bg_color = self.color_functor()
@@ -328,7 +328,7 @@ class FileBasedCharacterDataset(FileBasedTextDatasetBase):
 			except IOError as ex:
 				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
 				image = None
-		target = self.labels_int[idx][0]  # Undecorated integer label.
+		target = self.labels_int[idx][0]  # Undecorated label ID.
 
 		if image and image.mode != self.mode:
 			image = image.convert(self.mode)
@@ -357,6 +357,9 @@ class SimpleWordDataset(TextDatasetBase):
 		self.transform = transform
 		self.target_transform = target_transform
 
+		self.pad_id = label_converter.pad_id
+		self.max_time_steps = max_word_len + label_converter.num_affixes
+
 		if image_channel == 1:
 			self.mode = 'L'
 			#self.mode = '1'
@@ -376,11 +379,12 @@ class SimpleWordDataset(TextDatasetBase):
 		while True:
 			#word = random.choice(self.words)
 			word = random.sample(self.words, 1)[0][:self.max_word_len]
-			target = [self.label_converter.pad_id] * (self.max_word_len + self.label_converter.num_affixes)
-			#target[:len(word)] = self.label_converter.encode(word)  # Undecorated integer label.
-			word_int_ext = self.label_converter.encode(word)  # Decorated/undecorated integer label.
-			target_len = len(word_int_ext)
-			target[:target_len] = word_int_ext
+			target = [self.pad_id] * self.max_time_steps
+			#target_len = len(word)
+			#target[:target_len] = self.label_converter.encode(word)  # Undecorated label ID.
+			word_id = self.label_converter.encode(word)  # Decorated/undecorated label ID.
+			target_len = len(word_id)
+			target[:target_len] = word_id
 			font_type, font_index = random.choice(self.fonts)
 			font_size = random.randint(*self.font_size_interval)
 			font_color, bg_color = self.color_functor()
@@ -422,6 +426,9 @@ class RandomWordDataset(TextDatasetBase):
 		self.transform = transform
 		self.target_transform = target_transform
 
+		self.pad_id = label_converter.pad_id
+		self.max_time_steps = max_word_len + label_converter.num_affixes
+
 		if image_channel == 1:
 			self.mode = 'L'
 			#self.mode = '1'
@@ -442,11 +449,12 @@ class RandomWordDataset(TextDatasetBase):
 			word_len = random.randint(*self.word_len_interval)
 			#word = ''.join(random.sample(self.chars, word_len))[:self.max_word_len]
 			word = ''.join(random.choice(self.chars) for _ in range(word_len))[:self.max_word_len]
-			target = [self.label_converter.pad_id] * (self.max_word_len + self.label_converter.num_affixes)
-			#target[:len(word)] = self.label_converter.encode(word)  # Undecorated integer label.
-			word_int_ext = self.label_converter.encode(word)  # Decorated/undecorated integer label.
-			target_len = len(word_int_ext)
-			target[:target_len] = word_int_ext
+			target = [self.pad_id] * self.max_time_steps
+			#target_len = len(word)
+			#target[:target_len] = self.label_converter.encode(word)  # Undecorated label ID.
+			word_id = self.label_converter.encode(word)  # Decorated/undecorated label ID.
+			target_len = len(word_id)
+			target[:target_len] = word_id
 			font_type, font_index = random.choice(self.fonts)
 			font_size = random.randint(*self.font_size_interval)
 			font_color, bg_color = self.color_functor()
@@ -482,6 +490,9 @@ class FileBasedWordDatasetBase(FileBasedTextDatasetBase):
 		self.transform = transform
 		self.target_transform = target_transform
 
+		self.pad_id = label_converter.pad_id
+		self.max_time_steps = max_word_len + label_converter.num_affixes
+
 		if image_channel == 1:
 			self.mode = 'L'
 			#self.mode = '1'
@@ -509,10 +520,10 @@ class FileBasedWordDatasetBase(FileBasedTextDatasetBase):
 			except IOError as ex:
 				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
 				image = None
-		target = [self.label_converter.pad_id] * (self.max_word_len + self.label_converter.num_affixes)
-		word_ext_int = self.labels_int[idx]  # Decorated/undecorated integer label.
-		target_len = len(word_ext_int)
-		target[:target_len] = word_ext_int
+		target = [self.pad_id] * self.max_time_steps
+		word_id = self.labels_int[idx]  # Decorated/undecorated label ID.
+		target_len = len(word_id)
+		target[:target_len] = word_id
 
 		if image and image.mode != self.mode:
 			image = image.convert(self.mode)
@@ -534,7 +545,7 @@ class InfoFileBasedWordDataset(FileBasedWordDatasetBase):
 
 		image_label_separator = ','
 		self.data_dir_path = os.path.dirname(image_label_info_filepath)
-		self.images, self.labels_str, self.labels_int = self._load_data_from_image_label_info(image_label_info_filepath, None, None, image_channel, max_label_len=self.max_word_len, image_label_separator=image_label_separator, is_preloaded_image_used=self.is_preloaded_image_used)
+		self.images, self.labels_str, self.labels_int = self._load_data_from_image_label_info(image_label_info_filepath, None, None, image_channel, max_label_len=max_word_len, image_label_separator=image_label_separator, is_preloaded_image_used=self.is_preloaded_image_used)
 		assert len(self.images) == len(self.labels_str) == len(self.labels_int)
 
 #--------------------------------------------------------------------
@@ -544,7 +555,7 @@ class ImageLabelFileBasedWordDataset(FileBasedWordDatasetBase):
 		super().__init__(label_converter, image_channel, max_word_len, is_preloaded_image_used, transform, target_transform)
 
 		self.data_dir_path = None
-		self.images, self.labels_str, self.labels_int = self._load_data_from_image_and_label_files(image_filepaths, label_filepaths, None, None, image_channel, max_label_len=self.max_word_len, is_preloaded_image_used=self.is_preloaded_image_used)
+		self.images, self.labels_str, self.labels_int = self._load_data_from_image_and_label_files(image_filepaths, label_filepaths, None, None, image_channel, max_label_len=max_word_len, is_preloaded_image_used=self.is_preloaded_image_used)
 		assert len(self.images) == len(self.labels_str) == len(self.labels_int)
 
 #--------------------------------------------------------------------
@@ -563,6 +574,9 @@ class SimpleTextLineDataset(TextDatasetBase):
 		self.font_size_interval = font_size_interval
 		self.transform = transform
 		self.target_transform = target_transform
+
+		self.pad_id = label_converter.pad_id
+		self.max_time_steps = max_textline_len + label_converter.num_affixes
 
 		if image_channel == 1:
 			self.mode = 'L'
@@ -583,11 +597,12 @@ class SimpleTextLineDataset(TextDatasetBase):
 		while True:
 			words = random.sample(self.words, random.randint(*self.word_count_interval))	
 			textline = functools.reduce(lambda t, w: t + ' ' * random.randint(*self.space_count_interval) + w, words[1:], words[0])[:self.max_textline_len]
-			target = [self.label_converter.pad_id] * (self.max_textline_len + self.label_converter.num_affixes)
-			#target[:len(textline)] = self.label_converter.encode(textline)  # Undecorated integer label.
-			textline_int_ext = self.label_converter.encode(textline)  # Decorated/undecorated integer label.
-			target_len = len(textline_int_ext)
-			target[:target_len] = textline_int_ext
+			target = [self.pad_id] * self.max_time_steps
+			#target_len = len(textline)
+			#target[:len(textline)] = self.label_converter.encode(textline)  # Undecorated label ID.
+			textline_id = self.label_converter.encode(textline)  # Decorated/undecorated label ID.
+			target_len = len(textline_id)
+			target[:target_len] = textline_id
 			font_type, font_index = random.choice(self.fonts)
 			font_size = random.randint(*self.font_size_interval)
 			char_space_ratio = None if self.char_space_ratio_interval is None else random.uniform(*self.char_space_ratio_interval)
@@ -631,6 +646,9 @@ class RandomTextLineDataset(TextDatasetBase):
 		self.transform = transform
 		self.target_transform = target_transform
 
+		self.pad_id = label_converter.pad_id
+		self.max_time_steps = max_textline_len + label_converter.num_affixes
+
 		if image_channel == 1:
 			self.mode = 'L'
 			#self.mode = '1'
@@ -652,11 +670,12 @@ class RandomTextLineDataset(TextDatasetBase):
 			#words = [''.join(random.sample(self.chars, random.randint(*self.word_len_interval))) for _ in range(word_count)]
 			words = [''.join(random.choice(self.chars) for _ in range(random.randint(*self.word_len_interval))) for _ in range(word_count)]
 			textline = functools.reduce(lambda t, w: t + ' ' * random.randint(*self.space_count_interval) + w, words[1:], words[0])[:self.max_textline_len]
-			target = [self.label_converter.pad_id] * (self.max_textline_len + self.label_converter.num_affixes)
-			#target[:len(textline)] = self.label_converter.encode(textline)  # Undecorated integer label.
-			textline_int_ext = self.label_converter.encode(textline)  # Decorated/undecorated integer label.
-			target_len = len(textline_int_ext)
-			target[:target_len] = textline_int_ext
+			target = [self.pad_id] * self.max_time_steps
+			#target_len = len(textline)
+			#target[:target_len] = self.label_converter.encode(textline)  # Undecorated label ID.
+			textline_id = self.label_converter.encode(textline)  # Decorated/undecorated label ID.
+			target_len = len(textline_id)
+			target[:target_len] = textline_id
 			font_type, font_index = random.choice(self.fonts)
 			font_size = random.randint(*self.font_size_interval)
 			char_space_ratio = None if self.char_space_ratio_interval is None else random.uniform(*self.char_space_ratio_interval)
@@ -692,6 +711,9 @@ class TextRecognitionDataGeneratorTextLineDataset(TextDatasetBase):
 		self.max_textline_len = max_textline_len
 		self.transform = transform
 		self.target_transform = target_transform
+
+		self.pad_id = label_converter.pad_id
+		self.max_time_steps = max_textline_len + label_converter.num_affixes
 
 		import trdg.generators, trdg.string_generator, trdg.utils
 
@@ -765,13 +787,15 @@ class TextRecognitionDataGeneratorTextLineDataset(TextDatasetBase):
 			image, text = next(self.generator)
 			#(image, mask), text = next(self.generator)
 
-			text_int_ext = self.label_converter.encode(text)  # Decorated/undecorated integer label.
-			target_len = len(text_int_ext)
-			if target_len > self.max_textline_len + self.label_converter.num_affixes:
+			if len(text) > self.max_textline_len:
 				continue
-			target = [self.label_converter.pad_id] * (self.max_textline_len + self.label_converter.num_affixes)
-			#target[:len(text)] = self.label_converter.encode(text)  # Undecorated integer label.
-			target[:target_len] = text_int_ext
+
+			target = [self.pad_id] * self.max_time_steps
+			#target_len = len(text)
+			#target[:target_len] = self.label_converter.encode(text)  # Undecorated label ID.
+			textline_id = self.label_converter.encode(text)  # Decorated/undecorated label ID.
+			target_len = len(textline_id)
+			target[:target_len] = textline_id
 
 			if image and image.mode != self.mode:
 				image = image.convert(self.mode)
@@ -805,24 +829,24 @@ class TextRecognitionDataGeneratorTextLineDataset(TextDatasetBase):
 
 		pool = ""
 		if let:
-			if lang == "kr":
+			if lang == 'kr':
 				pool += tg_util.construct_charset(digit=False, alphabet_uppercase=False, alphabet_lowercase=False, punctuation=False, space=False, hangeul=True)
 				#pool += tg_util.construct_charset(digit=False, alphabet_uppercase=True, alphabet_lowercase=True, punctuation=False, space=False, hangeul=True)
-			elif lang == "cn":
-				pool += "".join(
+			elif lang == 'cn':
+				pool += ''.join(
 					[chr(i) for i in range(19968, 40908)]
 				)  # Unicode range of CHK characters
 			else:
 				pool += string.ascii_letters
 		if num:
-			pool += "0123456789"
+			pool += '0123456789'
 		if sym:
 			pool += "!\"#$%&'()*+,-./:;?@[\\]^_`{|}~"
 
-		if lang == "kr":
+		if lang == 'kr':
 			min_seq_len = 2
 			max_seq_len = 10
-		elif lang == "cn":
+		elif lang == 'cn':
 			min_seq_len = 1
 			max_seq_len = 2
 		else:
@@ -831,24 +855,27 @@ class TextRecognitionDataGeneratorTextLineDataset(TextDatasetBase):
 
 		strings = []
 		for _ in range(0, count):
-			current_string = ""
+			current_string = ''
 			for _ in range(0, random.randint(1, length) if allow_variable else length):
 				seq_len = random.randint(min_seq_len, max_seq_len)
-				current_string += "".join([random.choice(pool) for _ in range(seq_len)])
-				current_string += " "
+				current_string += ''.join([random.choice(pool) for _ in range(seq_len)])
+				current_string += ' '
 			strings.append(current_string[:-1])
 		return strings
 
 #--------------------------------------------------------------------
 
 class FileBasedTextLineDatasetBase(FileBasedTextDatasetBase):
-	def __init__(self, label_converter, image_channel, max_word_len, is_preloaded_image_used=True, transform=None, target_transform=None):
+	def __init__(self, label_converter, image_channel, max_textline_len, is_preloaded_image_used=True, transform=None, target_transform=None):
 		super().__init__(label_converter)
 
-		self.max_word_len = max_word_len
+		self.max_textline_len = max_textline_len
 		self.is_preloaded_image_used = is_preloaded_image_used
 		self.transform = transform
 		self.target_transform = target_transform
+
+		self.pad_id = label_converter.pad_id
+		self.max_time_steps = max_textline_len + label_converter.num_affixes
 
 		if image_channel == 1:
 			self.mode = 'L'
@@ -877,10 +904,10 @@ class FileBasedTextLineDatasetBase(FileBasedTextDatasetBase):
 			except IOError as ex:
 				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
 				image = None
-		target = [self.label_converter.pad_id] * (self.max_word_len + self.label_converter.num_affixes)
-		word_ext_int = self.labels_int[idx]  # Decorated/undecorated integer label.
-		target_len = len(word_ext_int)
-		target[:target_len] = word_ext_int
+		target = [self.pad_id] * self.max_time_steps
+		textline_id = self.labels_int[idx]  # Decorated/undecorated label ID.
+		target_len = len(textline_id)
+		target[:target_len] = textline_id
 
 		if image and image.mode != self.mode:
 			image = image.convert(self.mode)
@@ -897,20 +924,20 @@ class FileBasedTextLineDatasetBase(FileBasedTextDatasetBase):
 #--------------------------------------------------------------------
 
 class InfoFileBasedTextLineDataset(FileBasedTextLineDatasetBase):
-	def __init__(self, label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=True, transform=None, target_transform=None):
-		super().__init__(label_converter, image_channel, max_word_len, is_preloaded_image_used, transform, target_transform)
+	def __init__(self, label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=True, transform=None, target_transform=None):
+		super().__init__(label_converter, image_channel, max_textline_len, is_preloaded_image_used, transform, target_transform)
 
 		image_label_separator = ','
 		self.data_dir_path = os.path.dirname(image_label_info_filepath)
-		self.images, self.labels_str, self.labels_int = self._load_data_from_image_label_info(image_label_info_filepath, None, None, image_channel, max_label_len=self.max_word_len, image_label_separator=image_label_separator, is_preloaded_image_used=self.is_preloaded_image_used)
+		self.images, self.labels_str, self.labels_int = self._load_data_from_image_label_info(image_label_info_filepath, None, None, image_channel, max_label_len=max_textline_len, image_label_separator=image_label_separator, is_preloaded_image_used=self.is_preloaded_image_used)
 		assert len(self.images) == len(self.labels_str) == len(self.labels_int)
 
 #--------------------------------------------------------------------
 
 class ImageLabelFileBasedTextLineDataset(FileBasedTextLineDatasetBase):
-	def __init__(self, label_converter, image_filepaths, label_filepaths, image_channel, max_word_len, is_preloaded_image_used=True, transform=None, target_transform=None):
-		super().__init__(label_converter, image_channel, max_word_len, is_preloaded_image_used, transform, target_transform)
+	def __init__(self, label_converter, image_filepaths, label_filepaths, image_channel, max_textline_len, is_preloaded_image_used=True, transform=None, target_transform=None):
+		super().__init__(label_converter, image_channel, max_textline_len, is_preloaded_image_used, transform, target_transform)
 
 		self.data_dir_path = None
-		self.images, self.labels_str, self.labels_int = self._load_data_from_image_and_label_files(image_filepaths, label_filepaths, None, None, image_channel, max_label_len=self.max_word_len, is_preloaded_image_used=self.is_preloaded_image_used)
+		self.images, self.labels_str, self.labels_int = self._load_data_from_image_and_label_files(image_filepaths, label_filepaths, None, None, image_channel, max_label_len=max_textline_len, is_preloaded_image_used=self.is_preloaded_image_used)
 		assert len(self.images) == len(self.labels_str) == len(self.labels_int)

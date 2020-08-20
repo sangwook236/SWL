@@ -14,10 +14,12 @@ class AiHubPrintedTextDataset(torch.utils.data.Dataset):
 		self._label_converter = label_converter
 		self.data_dir_path = data_dir_path
 		self.image_height, self.image_width, self.image_channel = image_height, image_width, image_channel
-		self.max_label_len = max_label_len
 		self.is_preloaded_image_used = is_preloaded_image_used
 		self.transform = transform
 		self.target_transform = target_transform
+
+		self.pad_id = label_converter.pad_id
+		self.max_time_steps = max_label_len + label_converter.num_affixes
 
 		self.mode = 'RGB'
 
@@ -39,10 +41,10 @@ class AiHubPrintedTextDataset(torch.utils.data.Dataset):
 			except IOError as ex:
 				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
 				image = None
-		target = [self.label_converter.pad_id] * (self.max_label_len + self.label_converter.num_affixes)
-		label_ext_int = self.labels_int[idx]  # Decorated/undecorated integer label.
-		target_len = len(label_ext_int)
-		target[:target_len] = label_ext_int
+		target = [self.pad_id] * self.max_time_steps
+		label_id = self.labels_int[idx]  # Decorated/undecorated label ID.
+		target_len = len(label_id)
+		target[:target_len] = label_id
 
 		if image and image.mode != self.mode:
 			image = image.convert(self.mode)
@@ -118,7 +120,7 @@ class AiHubPrintedTextDataset(torch.utils.data.Dataset):
 
 			#img = self.resize(img, None, image_height, image_width)
 			try:
-				label_int = self.label_converter.encode(label_str)  # Decorated/undecorated integer label.
+				label_int = self.label_converter.encode(label_str)  # Decorated/undecorated label ID.
 			except Exception:
 				print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
 				continue
