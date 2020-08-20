@@ -1641,7 +1641,7 @@ def build_rare1_model(label_converter, image_height, image_width, image_channel,
 			# Construct inputs for one-step look-ahead.
 			decoder_inputs = outputs[:,:-1]
 			# Construct outputs for one-step look-ahead.
-			decoder_outputs = outputs[:,1:]  # Remove <SOS> token.
+			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
 			decoder_output_lens = output_lens - 1
 
 			model_outputs = model(inputs.to(device), decoder_inputs.to(device), is_train=True, device=device)
@@ -1734,7 +1734,7 @@ def build_rare1_mixup_model(label_converter, image_height, image_width, image_ch
 			# Construct inputs for one-step look-ahead.
 			decoder_inputs = outputs[:,:-1]
 			# Construct outputs for one-step look-ahead.
-			decoder_outputs = outputs[:,1:]  # Remove <SOS> token.
+			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
 			decoder_output_lens = output_lens - 1
 
 			model_outputs = model(inputs.to(device), decoder_inputs.to(device), is_train=True, device=device)
@@ -1797,7 +1797,7 @@ def build_rare2_model(label_converter, image_height, image_width, image_channel,
 			decoder_inputs = outputs[:,:-1]
 			decoder_input_lens = output_lens - 1
 			# Construct outputs for one-step look-ahead.
-			decoder_outputs = outputs[:,1:]  # Remove <SOS> token.
+			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
 			decoder_output_lens = output_lens - 1
 
 			model_outputs = model(inputs.to(device), decoder_inputs.to(device), decoder_input_lens.to(device), device=device)
@@ -1844,7 +1844,7 @@ def build_rare2_model(label_converter, image_height, image_width, image_channel,
 			#decoder_inputs = outputs[:,:-1]
 			#decoder_input_lens = output_lens - 1
 			# Construct outputs for one-step look-ahead.
-			decoder_outputs = outputs[:,1:]  # Remove <SOS> token.
+			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
 			decoder_output_lens = output_lens - 1
 
 			"""
@@ -1889,13 +1889,13 @@ def build_aster_model(label_converter, image_height, image_width, image_channel,
 
 		"""
 		# Construct inputs for one-step look-ahead.
-		decoder_inputs = outputs.clone()
-		for idx, ll in enumerate(output_lens):
-			decoder_inputs[idx, ll-1] = label_converter.pad_id  # Remove <EOS> token.
-		decoder_inputs = decoder_inputs[:,:-1]
+		if eos_id != pad_id:
+			decoder_inputs = outputs[:,:-1].clone()
+			decoder_inputs[decoder_inputs == eos_id] = pad_id  # Remove <EOS> tokens.
+		else: decoder_inputs = outputs[:,:-1]
 		"""
 		# Construct outputs for one-step look-ahead.
-		decoder_outputs = outputs[:,1:]  # Remove <SOS> token.
+		decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
 		decoder_output_lens = output_lens - 1
 
 		input_dict = dict()
@@ -1923,7 +1923,7 @@ def build_aster_model(label_converter, image_height, image_width, image_channel,
 			return model_outputs.cpu().numpy(), None
 		else:
 			# Construct outputs for one-step look-ahead.
-			decoder_outputs = outputs[:,1:]  # Remove <SOS> token.
+			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
 			decoder_output_lens = output_lens - 1
 
 			input_dict = dict()
@@ -2660,10 +2660,12 @@ def build_transformer_ocr_model(label_converter, image_height, image_width, imag
 			outputs = outputs.long()
 
 			# Construct inputs for one-step look-ahead.
-			decoder_inputs = outputs[:,:-1]
-			decoder_inputs[decoder_inputs == eos_id] = pad_id  # Remove <EOS> token.
+			if eos_id != pad_id:
+				decoder_inputs = outputs[:,:-1].clone()
+				decoder_inputs[decoder_inputs == eos_id] = pad_id  # Remove <EOS> tokens.
+			else: decoder_inputs = outputs[:,:-1]
 			# Construct outputs for one-step look-ahead.
-			decoder_outputs = outputs[:,1:]  # Remove <SOS> token.
+			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
 
 			batch = transformer_ocr.dataset.Batch(inputs, decoder_inputs, decoder_outputs, pad=pad_id, device=device)
 			model_outputs = model(batch.src, batch.tgt_input, batch.src_mask, batch.tgt_input_mask)
@@ -3009,11 +3011,11 @@ def train_word_recognizer_based_on_rare1(num_epochs=20, batch_size=64, device='c
 	is_model_loaded = False
 	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_individual_pad_id_used = False
+	is_separate_pad_id_used = False
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	pad_nopad = 'pad' if is_individual_pad_id_used else 'nopad'
+	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	if loss_type == 'ctc':
 		model_filepath_base = './word_recognition_rare1_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	elif loss_type in ['xent', 'nll']:
@@ -3047,18 +3049,18 @@ def train_word_recognizer_based_on_rare1(num_epochs=20, batch_size=64, device='c
 		SOS_ID, EOS_ID = None, None
 		num_suffixes = 0
 	elif loss_type in ['xent', 'nll']:
-		if is_individual_pad_id_used:
-			# When the PAD ID is the ID of a valid token.
-			PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes the PAD ID the ID of a valid token.
+		SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
+		if is_separate_pad_id_used:
+			# When <PAD> token has a separate valid token ID.
 			PAD_TOKEN = '<PAD>'
-			label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_ID)
+			PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
+			label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
 			assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 			assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 		else:
-			# When the PAD ID = the ID of <SOS> token.
-			#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
-			# When the PAD ID = the ID of <EOS> token.
-			label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
+			#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+			label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+		del SOS_TOKEN, EOS_TOKEN
 		assert label_converter.PAD is not None
 		SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 		num_suffixes = 1
@@ -3070,7 +3072,7 @@ def train_word_recognizer_based_on_rare1(num_epochs=20, batch_size=64, device='c
 		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID))
+	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
@@ -3188,11 +3190,11 @@ def train_word_recognizer_based_on_rare2(num_epochs=20, batch_size=64, device='c
 	is_model_loaded = False
 	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_individual_pad_id_used = False
+	is_separate_pad_id_used = False
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	pad_nopad = 'pad' if is_individual_pad_id_used else 'nopad'
+	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	model_filepath_base = './word_recognition_rare2_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
@@ -3213,18 +3215,18 @@ def train_word_recognizer_based_on_rare2(num_epochs=20, batch_size=64, device='c
 	#--------------------
 	# Prepare data.
 
-	if is_individual_pad_id_used:
-		# When the PAD ID is the ID of a valid token.
-		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes the PAD ID the ID of a valid token.
+	SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
+	if is_separate_pad_id_used:
+		# When <PAD> token has a separate valid token ID.
 		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_ID)
+		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
 		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
-		# When the PAD ID = the ID of <SOS> token.
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
-		# When the PAD ID = the ID of <EOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+	del SOS_TOKEN, EOS_TOKEN
 	assert label_converter.PAD is not None
 	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
@@ -3236,7 +3238,7 @@ def train_word_recognizer_based_on_rare2(num_epochs=20, batch_size=64, device='c
 		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID))
+	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
@@ -3355,11 +3357,11 @@ def train_word_recognizer_based_on_aster(num_epochs=20, batch_size=64, device='c
 	is_model_loaded = False
 	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_individual_pad_id_used = False
+	is_separate_pad_id_used = False
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	pad_nopad = 'pad' if is_individual_pad_id_used else 'nopad'
+	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	model_filepath_base = './word_recognition_aster_sxent_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
@@ -3380,18 +3382,18 @@ def train_word_recognizer_based_on_aster(num_epochs=20, batch_size=64, device='c
 	#--------------------
 	# Prepare data.
 
-	if is_individual_pad_id_used:
-		# When the PAD ID is the ID of a valid token.
-		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes the PAD ID the ID of a valid token.
+	SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
+	if is_separate_pad_id_used:
+		# When <PAD> token has a separate valid token ID.
 		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_ID)
+		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
 		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
-		# When the PAD ID = the ID of <SOS> token.
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
-		# When the PAD ID = the ID of <EOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+	del SOS_TOKEN, EOS_TOKEN
 	assert label_converter.PAD is not None
 	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 
@@ -3402,7 +3404,7 @@ def train_word_recognizer_based_on_aster(num_epochs=20, batch_size=64, device='c
 		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID))
+	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
@@ -3524,11 +3526,11 @@ def train_word_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, device=
 	is_model_loaded = False
 	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_individual_pad_id_used = False
+	is_separate_pad_id_used = False
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	pad_nopad = 'pad' if is_individual_pad_id_used else 'nopad'
+	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	model_filepath_base = './word_recognition_onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
@@ -3549,18 +3551,18 @@ def train_word_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, device=
 	#--------------------
 	# Prepare data.
 
-	if is_individual_pad_id_used:
-		# When the PAD ID is the ID of a valid token.
-		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes the PAD ID the ID of a valid token.
+	SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
+	if is_separate_pad_id_used:
+		# When <PAD> token has a separate valid token ID.
 		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_ID)
+		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
 		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
-		# When the PAD ID = the ID of <SOS> token.
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
-		# When the PAD ID = the ID of <EOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+	del SOS_TOKEN, EOS_TOKEN
 	assert label_converter.PAD is not None
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
@@ -3570,7 +3572,7 @@ def train_word_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, device=
 		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]))
+	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
@@ -3690,11 +3692,11 @@ def train_word_recognizer_based_on_rare1_and_opennmt(num_epochs=20, batch_size=6
 	is_model_loaded = False
 	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_individual_pad_id_used = False
+	is_separate_pad_id_used = False
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	pad_nopad = 'pad' if is_individual_pad_id_used else 'nopad'
+	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	model_filepath_base = './word_recognition_rare1+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
@@ -3715,18 +3717,18 @@ def train_word_recognizer_based_on_rare1_and_opennmt(num_epochs=20, batch_size=6
 	#--------------------
 	# Prepare data.
 
-	if is_individual_pad_id_used:
-		# When the PAD ID is the ID of a valid token.
-		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes the PAD ID the ID of a valid token.
+	SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
+	if is_separate_pad_id_used:
+		# When <PAD> token has a separate valid token ID.
 		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_ID)
+		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
 		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
-		# When the PAD ID = the ID of <SOS> token.
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
-		# When the PAD ID = the ID of <EOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+	del SOS_TOKEN, EOS_TOKEN
 	assert label_converter.PAD is not None
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
@@ -3736,7 +3738,7 @@ def train_word_recognizer_based_on_rare1_and_opennmt(num_epochs=20, batch_size=6
 		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]))
+	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
@@ -3855,11 +3857,11 @@ def train_word_recognizer_based_on_rare2_and_opennmt(num_epochs=20, batch_size=6
 	is_model_loaded = False
 	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_individual_pad_id_used = False
+	is_separate_pad_id_used = False
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	pad_nopad = 'pad' if is_individual_pad_id_used else 'nopad'
+	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	model_filepath_base = './word_recognition_rare2+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
@@ -3880,18 +3882,18 @@ def train_word_recognizer_based_on_rare2_and_opennmt(num_epochs=20, batch_size=6
 	#--------------------
 	# Prepare data.
 
-	if is_individual_pad_id_used:
-		# When the PAD ID is the ID of a valid token.
-		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes the PAD ID the ID of a valid token.
+	SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
+	if is_separate_pad_id_used:
+		# When <PAD> token has a separate valid token ID.
 		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_ID)
+		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
 		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
-		# When the PAD ID = the ID of <SOS> token.
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
-		# When the PAD ID = the ID of <EOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+	del SOS_TOKEN, EOS_TOKEN
 	assert label_converter.PAD is not None
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
@@ -3901,7 +3903,7 @@ def train_word_recognizer_based_on_rare2_and_opennmt(num_epochs=20, batch_size=6
 		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]))
+	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
@@ -4020,11 +4022,11 @@ def train_word_recognizer_based_on_aster_and_opennmt(num_epochs=20, batch_size=6
 	is_model_loaded = False
 	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_individual_pad_id_used = False
+	is_separate_pad_id_used = False
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	pad_nopad = 'pad' if is_individual_pad_id_used else 'nopad'
+	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	model_filepath_base = './word_recognition_aster+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
@@ -4045,18 +4047,18 @@ def train_word_recognizer_based_on_aster_and_opennmt(num_epochs=20, batch_size=6
 	#--------------------
 	# Prepare data.
 
-	if is_individual_pad_id_used:
-		# When the PAD ID is the ID of a valid token.
-		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes the PAD ID the ID of a valid token.
+	SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
+	if is_separate_pad_id_used:
+		# When <PAD> token has a separate valid token ID.
 		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_ID)
+		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
 		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
-		# When the PAD ID = the ID of <SOS> token.
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
-		# When the PAD ID = the ID of <EOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+	del SOS_TOKEN, EOS_TOKEN
 	assert label_converter.PAD is not None
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
@@ -4066,7 +4068,7 @@ def train_word_recognizer_based_on_aster_and_opennmt(num_epochs=20, batch_size=6
 		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]))
+	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
@@ -4184,11 +4186,11 @@ def train_word_recognizer_using_mixup(num_epochs=20, batch_size=64, device='cpu'
 	is_model_loaded = False
 	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_individual_pad_id_used = False
+	is_separate_pad_id_used = False
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	pad_nopad = 'pad' if is_individual_pad_id_used else 'nopad'
+	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	if loss_type == 'ctc':
 		model_filepath_base = './word_recognition_mixup_rare1_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	elif loss_type in ['xent', 'nll']:
@@ -4222,18 +4224,18 @@ def train_word_recognizer_using_mixup(num_epochs=20, batch_size=64, device='cpu'
 		SOS_ID, EOS_ID = None, None
 		num_suffixes = 0
 	elif loss_type in ['xent', 'nll']:
-		if is_individual_pad_id_used:
-			# When the PAD ID is the ID of a valid token.
-			PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes the PAD ID the ID of a valid token.
+		SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
+		if is_separate_pad_id_used:
+			# When <PAD> token has a separate valid token ID.
 			PAD_TOKEN = '<PAD>'
-			label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_ID)
+			PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
+			label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
 			assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 			assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 		else:
-			# When the PAD ID = the ID of <SOS> token.
-			#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
-			# When the PAD ID = the ID of <EOS> token.
-			label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
+			#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+			label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+		del SOS_TOKEN, EOS_TOKEN
 		assert label_converter.PAD is not None
 		SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 		num_suffixes = 1
@@ -4245,7 +4247,7 @@ def train_word_recognizer_using_mixup(num_epochs=20, batch_size=64, device='cpu'
 		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID))
+	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
@@ -4331,7 +4333,7 @@ def train_word_recognizer_using_mixup(num_epochs=20, batch_size=64, device='cpu'
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def evaluate_word_recognizer_using_aihub_data(max_label_len, batch_size, is_individual_pad_id_used=False, device='cpu'):
+def evaluate_word_recognizer_using_aihub_data(max_label_len, batch_size, is_separate_pad_id_used=False, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -4362,18 +4364,18 @@ def evaluate_word_recognizer_using_aihub_data(max_label_len, batch_size, is_indi
 	#--------------------
 	# Prepare data.
 
-	if is_individual_pad_id_used:
-		# When the PAD ID is the ID of a valid token.
-		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes the PAD ID the ID of a valid token.
+	SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
+	if is_separate_pad_id_used:
+		# When <PAD> token has a separate valid token ID.
 		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_ID)
+		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
 		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
-		# When the PAD ID = the ID of <SOS> token.
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
-		# When the PAD ID = the ID of <EOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+	del SOS_TOKEN, EOS_TOKEN
 	assert label_converter.PAD is not None
 	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
@@ -4404,7 +4406,7 @@ def evaluate_word_recognizer_using_aihub_data(max_label_len, batch_size, is_indi
 	glogger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
 	glogger.info('#examples = {}.'.format(len(test_dataset)))
 	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID))
+	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
@@ -4492,11 +4494,11 @@ def train_textline_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, dev
 	is_model_loaded = False
 	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_individual_pad_id_used = False
+	is_separate_pad_id_used = False
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	pad_nopad = 'pad' if is_individual_pad_id_used else 'nopad'
+	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	model_filepath_base = './textline_recognition_onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_textline_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
@@ -4517,18 +4519,18 @@ def train_textline_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, dev
 	#--------------------
 	# Prepare data.
 
-	if is_individual_pad_id_used:
-		# When the PAD ID is the ID of a valid token.
-		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes the PAD ID the ID of a valid token.
+	SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
+	if is_separate_pad_id_used:
+		# When <PAD> token has a separate valid token ID.
 		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_ID)
+		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
 		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
-		# When the PAD ID = the ID of <SOS> token.
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
-		# When the PAD ID = the ID of <EOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+	del SOS_TOKEN, EOS_TOKEN
 	assert label_converter.PAD is not None
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
@@ -4538,7 +4540,7 @@ def train_textline_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, dev
 		train_dataloader, test_dataloader = create_textline_data_loaders(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]))
+	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
@@ -4662,11 +4664,11 @@ def train_textline_recognizer_based_on_transformer(num_epochs=20, batch_size=64,
 	is_model_loaded = False
 	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_individual_pad_id_used = True
+	is_separate_pad_id_used = False
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	pad_nopad = 'pad' if is_individual_pad_id_used else 'nopad'
+	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	model_filepath_base = './textline_recognition_transformer_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_textline_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
@@ -4687,18 +4689,18 @@ def train_textline_recognizer_based_on_transformer(num_epochs=20, batch_size=64,
 	#--------------------
 	# Prepare data.
 
-	if is_individual_pad_id_used:
-		# When the PAD ID is the ID of a valid token.
-		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes the PAD ID the ID of a valid token.
+	SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
+	if is_separate_pad_id_used:
+		# When <PAD> token has a separate valid token ID.
 		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_ID)
+		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
 		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
-		# When the PAD ID = the ID of <SOS> token.
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
-		# When the PAD ID = the ID of <EOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+	del SOS_TOKEN, EOS_TOKEN
 	assert label_converter.PAD is not None
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
@@ -4708,7 +4710,7 @@ def train_textline_recognizer_based_on_transformer(num_epochs=20, batch_size=64,
 		train_dataloader, test_dataloader = create_textline_data_loaders(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]))
+	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
@@ -4958,19 +4960,19 @@ def recognize_word_using_craft(device='cpu'):
 		SOS_ID, EOS_ID = None, None
 		num_suffixes = 0
 	else:
-		is_individual_pad_id_used = False
-		if is_individual_pad_id_used:
-			# When the PAD ID is the ID of a valid token.
-			PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes the PAD ID the ID of a valid token.
+		is_separate_pad_id_used = False
+		SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
+		if is_separate_pad_id_used:
+			# When <PAD> token has a separate valid token ID.
 			PAD_TOKEN = '<PAD>'
-			label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_ID)
+			PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
+			label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
 			assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 			assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 		else:
-			# When the PAD ID = the ID of <SOS> token.
-			#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
-			# When the PAD ID = the ID of <EOS> token.
-			label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
+			#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+			label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+		del SOS_TOKEN, EOS_TOKEN
 		assert label_converter.PAD is not None
 		SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 		num_suffixes = 1
@@ -5055,7 +5057,7 @@ def recognize_word_using_craft(device='cpu'):
 	else:
 		glogger.info('No text detected.')
 
-def recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_size, is_individual_pad_id_used=False, device='cpu'):
+def recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_size, is_separate_pad_id_used=False, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -5081,18 +5083,18 @@ def recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_si
 	#--------------------
 	# Prepare data.
 
-	if is_individual_pad_id_used:
-		# When the PAD ID is the ID of a valid token.
-		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes the PAD ID the ID of a valid token.
+	SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
+	if is_separate_pad_id_used:
+		# When <PAD> token has a separate valid token ID.
 		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_ID)
+		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
 		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
-		# When the PAD ID = the ID of <SOS> token.
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
-		# When the PAD ID = the ID of <EOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+	del SOS_TOKEN, EOS_TOKEN
 	assert label_converter.PAD is not None
 	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
@@ -5123,7 +5125,7 @@ def recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_si
 	glogger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
 	glogger.info('#examples = {}.'.format(len(test_dataset)))
 	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID))
+	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
@@ -5196,7 +5198,7 @@ def recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_si
 	infer_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, batch_size=batch_size, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=True, device=device)
 	glogger.info('End inferring: {} secs.'.format(time.time() - start_time))
 
-def recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_len, is_individual_pad_id_used=False, device='cpu'):
+def recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_len, is_separate_pad_id_used=False, device='cpu'):
 	batch_size = 1
 
 	#image_height, image_width, image_channel = 32, 100, 3
@@ -5224,18 +5226,18 @@ def recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_le
 	#--------------------
 	# Prepare data.
 
-	if is_individual_pad_id_used:
-		# When the PAD ID is the ID of a valid token.
-		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes the PAD ID the ID of a valid token.
+	SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
+	if is_separate_pad_id_used:
+		# When <PAD> token has a separate valid token ID.
 		PAD_TOKEN = '<PAD>'
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos='<SOS>', eos='<EOS>', pad=PAD_ID)
+		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
 		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
-		# When the PAD ID = the ID of <SOS> token.
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<SOS>')
-		# When the PAD ID = the ID of <EOS> token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad='<EOS>')
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+	del SOS_TOKEN, EOS_TOKEN
 	assert label_converter.PAD is not None
 	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
@@ -5266,7 +5268,7 @@ def recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_le
 	glogger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
 	glogger.info('#examples = {}.'.format(len(test_dataset)))
 	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID))
+	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
@@ -5513,7 +5515,7 @@ def main():
 
 	#train_word_recognizer_using_mixup(args.epoch, args.batch_size, device)  # Use RARE #1. Not working.
 
-	#evaluate_word_recognizer_using_aihub_data(max_label_len=10, batch_size=args.batch_size, is_individual_pad_id_used=False, device=device)
+	#evaluate_word_recognizer_using_aihub_data(max_label_len=10, batch_size=args.batch_size, is_separate_pad_id_used=False, device=device)
 
 	#--------------------
 	#train_textline_recognizer_based_on_opennmt(args.epoch, args.batch_size, device)  # Use OpenNMT.
@@ -5535,13 +5537,13 @@ def main():
 		# For textline recognition.
 		image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
 		max_label_len = 30
-	#recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_size=args.batch_size, is_individual_pad_id_used=False, device=device)
-	#recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_len, is_individual_pad_id_used=False, device=device)
+	#recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_size=args.batch_size, is_separate_pad_id_used=False, device=device)
+	#recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_len, is_separate_pad_id_used=False, device=device)
 
 #--------------------------------------------------------------------
 
 # Usage:
-#	python run_text_recognition.py --epoch 20 --batch 64 --gpu 0
+#	python run_text_recognition.py --epoch 20 --batch 64 --gpu 0 --log text_recognition --log_dir ./log
 
 if '__main__' == __name__:
 	main()
