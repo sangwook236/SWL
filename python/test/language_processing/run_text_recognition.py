@@ -1649,13 +1649,13 @@ def build_rare1_model(label_converter, image_height, image_width, image_channel,
 			# TODO [check] >> How to compute loss?
 			# NOTE [info] >> All examples in a batch are concatenated together.
 			#	Can each example be handled individually?
-			#return criterion(model_outputs.view(-1, model_outputs.shape[-1]), decoder_outputs.to(device).contiguous().view(-1))
+			#return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.to(device).contiguous().view(-1))
 			"""
 			mask = torch.full(decoder_outputs.shape[:2], False, dtype=torch.bool)
 			for idx, ll in enumerate(decoder_output_lens):
 				mask[idx,:ll].fill_(True)
 			model_outputs[mask == False] = label_converter.pad_id
-			return criterion(model_outputs.view(-1, model_outputs.shape[-1]), decoder_outputs.to(device).contiguous().view(-1))
+			return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.to(device).contiguous().view(-1))
 			"""
 			concat_model_outputs, concat_decoder_outputs = list(), list()
 			for mo, do, dl in zip(model_outputs, decoder_outputs, decoder_output_lens):
@@ -1742,13 +1742,13 @@ def build_rare1_mixup_model(label_converter, image_height, image_width, image_ch
 			# TODO [check] >> How to compute loss?
 			# NOTE [info] >> All examples in a batch are concatenated together.
 			#	Can each example be handled individually?
-			#return criterion(model_outputs.view(-1, model_outputs.shape[-1]), decoder_outputs.to(device).contiguous().view(-1))
+			#return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.to(device).contiguous().view(-1))
 			"""
 			mask = torch.full(decoder_outputs.shape[:2], False, dtype=torch.bool)
 			for idx, ll in enumerate(decoder_output_lens):
 				mask[idx,:ll].fill_(True)
 			model_outputs[mask == False] = label_converter.pad_id
-			return criterion(model_outputs.view(-1, model_outputs.shape[-1]), decoder_outputs.to(device).contiguous().view(-1))
+			return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.to(device).contiguous().view(-1))
 			"""
 			concat_model_outputs, concat_decoder_outputs = list(), list()
 			for mo, do, dl in zip(model_outputs, decoder_outputs, decoder_output_lens):
@@ -1805,7 +1805,7 @@ def build_rare2_model(label_converter, image_height, image_width, image_channel,
 			# TODO [check] >> How to compute loss?
 			# NOTE [info] >> All examples in a batch are concatenated together.
 			#	Can each example be handled individually?
-			#return criterion(model_outputs.view(-1, model_outputs.shape[-1]), outputs.to(device).contiguous().view(-1))
+			#return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), outputs.to(device).contiguous().view(-1))
 			"""
 			concat_model_outputs, concat_decoder_outputs = list(), list()
 			for mo, do, dl in zip(model_outputs, decoder_outputs, decoder_output_lens):
@@ -2014,18 +2014,25 @@ def build_opennmt_model(label_converter, image_height, image_width, image_channe
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
 
-			decoder_outputs = outputs[:,1:].to(device)
-			outputs.unsqueeze_(dim=-1)
-			outputs = torch.transpose(outputs, 0, 1)  # [B, T, F] -> [T, B, F].
+			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
+			decoder_output_lens = output_lens - 1
+			outputs.unsqueeze_(dim=-1)  # [B, T] -> [B, T, 1]. No one-hot encoding.
+			outputs = torch.transpose(outputs, 0, 1)  # [B, T, 1] -> [T, B, 1].
 
 			model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
 
-			model_outputs = model.generator(model_output_tuple[0]).transpose(0, 1)  # [T, B, F] -> [B, T, F].
+			model_outputs = model.generator(model_output_tuple[0]).transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes] where T-1 is for one-step look-ahead.
 			#attentions = model_output_tuple[1]['std']
 
 			# NOTE [info] >> All examples in a batch are concatenated together.
 			#	Can each example be handled individually?
-			return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
+			# TODO [decide] >> Which is better, tensor.contiguous().to(device) or tensor.to(device).contiguous()?
+			#return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().to(device).view(-1))
+			concat_model_outputs, concat_decoder_outputs = list(), list()
+			for mo, do, dl in zip(model_outputs, decoder_outputs, decoder_output_lens):
+				concat_model_outputs.append(mo[:dl])
+				concat_decoder_outputs.append(do[:dl])
+			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
 	else:
 		criterion = None
 		train_forward = None
@@ -2094,17 +2101,17 @@ def build_opennmt_model(label_converter, image_height, image_width, image_channe
 			rank_id = 0  # rank_id < n_best.
 			#max_time_steps = functools.reduce(lambda x, y: x if x >= len(y[rank_id]) else len(y[rank_id]), model_outputs, 0)
 			new_model_outputs = torch.full((len(model_outputs), max_time_steps), tgt_pad, dtype=torch.int)
-			for idx, tt in enumerate(model_outputs):
-				new_model_outputs[idx,:len(tt[rank_id])] = tt[rank_id]
+			for idx, moutp in enumerate(model_outputs):
+				new_model_outputs[idx,:len(moutp[rank_id])] = moutp[rank_id]
 
 			return new_model_outputs.cpu().numpy(), None
 		else:
-			decoder_outputs = outputs[:,1:]
-			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
+			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
+			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T] -> [T, B, 1]. No one-hot encoding.
 
 			model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
 
-			model_outputs = model.generator(model_output_tuple[0]).transpose(0, 1)  # [T, B, F] -> [B, T, F].
+			model_outputs = model.generator(model_output_tuple[0]).transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes].
 			#attentions = model_output_tuple[1]['std']
 
 			_, model_outputs = torch.max(model_outputs, dim=-1)
@@ -2200,18 +2207,25 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
 
-			decoder_outputs = outputs[:,1:].to(device)
-			outputs.unsqueeze_(dim=-1)
-			outputs = torch.transpose(outputs, 0, 1)  # [B, T, F] -> [T, B, F].
+			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
+			decoder_output_lens = output_lens - 1
+			outputs.unsqueeze_(dim=-1)  # [B, T] -> [B, T, 1]. No one-hot encoding.
+			outputs = torch.transpose(outputs, 0, 1)  # [B, T, 1] -> [T, B, 1].
 
 			model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
 
-			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes] where T-1 is for one-step look-ahead.
 			#attentions = model_output_tuple[1]['std']
 
 			# NOTE [info] >> All examples in a batch are concatenated together.
 			#	Can each example be handled individually?
-			return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
+			# TODO [decide] >> Which is better, tensor.contiguous().to(device) or tensor.to(device).contiguous()?
+			#return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().to(device).view(-1))
+			concat_model_outputs, concat_decoder_outputs = list(), list()
+			for mo, do, dl in zip(model_outputs, decoder_outputs, decoder_output_lens):
+				concat_model_outputs.append(mo[:dl])
+				concat_decoder_outputs.append(do[:dl])
+			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
 	else:
 		criterion = None
 		train_forward = None
@@ -2280,17 +2294,17 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 			rank_id = 0  # rank_id < n_best.
 			#max_time_steps = functools.reduce(lambda x, y: x if x >= len(y[rank_id]) else len(y[rank_id]), model_outputs, 0)
 			new_model_outputs = torch.full((len(model_outputs), max_time_steps), tgt_pad, dtype=torch.int)
-			for idx, tt in enumerate(model_outputs):
-				new_model_outputs[idx,:len(tt[rank_id])] = tt[rank_id]
+			for idx, moutp in enumerate(model_outputs):
+				new_model_outputs[idx,:len(moutp[rank_id])] = moutp[rank_id]
 
 			return new_model_outputs.cpu().numpy(), None
 		else:
-			decoder_outputs = outputs[:,1:]
-			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
+			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
+			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T] -> [T, B, 1]. No one-hot encoding.
 
 			model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
 
-			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes].
 			#attentions = model_output_tuple[1]['std']
 
 			_, model_outputs = torch.max(model_outputs, dim=-1)
@@ -2353,18 +2367,25 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
 
-			decoder_outputs = outputs[:,1:].to(device)
-			outputs.unsqueeze_(dim=-1)
-			outputs = torch.transpose(outputs, 0, 1)  # [B, T, F] -> [T, B, F].
+			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
+			decoder_output_lens = output_lens - 1
+			outputs.unsqueeze_(dim=-1)  # [B, T] -> [B, T, 1]. No one-hot encoding.
+			outputs = torch.transpose(outputs, 0, 1)  # [B, T, 1] -> [T, B, 1].
 
 			model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
 
-			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes] where T-1 is for one-step look-ahead.
 			#attentions = model_output_tuple[1]['std']
 
 			# NOTE [info] >> All examples in a batch are concatenated together.
 			#	Can each example be handled individually?
-			return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
+			# TODO [decide] >> Which is better, tensor.contiguous().to(device) or tensor.to(device).contiguous()?
+			#return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().to(device).view(-1))
+			concat_model_outputs, concat_decoder_outputs = list(), list()
+			for mo, do, dl in zip(model_outputs, decoder_outputs, decoder_output_lens):
+				concat_model_outputs.append(mo[:dl])
+				concat_decoder_outputs.append(do[:dl])
+			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
 	else:
 		criterion = None
 		train_forward = None
@@ -2433,17 +2454,17 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 			rank_id = 0  # rank_id < n_best.
 			#max_time_steps = functools.reduce(lambda x, y: x if x >= len(y[rank_id]) else len(y[rank_id]), model_outputs, 0)
 			new_model_outputs = torch.full((len(model_outputs), max_time_steps), tgt_pad, dtype=torch.int)
-			for idx, tt in enumerate(model_outputs):
-				new_model_outputs[idx,:len(tt[rank_id])] = tt[rank_id]
+			for idx, moutp in enumerate(model_outputs):
+				new_model_outputs[idx,:len(moutp[rank_id])] = moutp[rank_id]
 
 			return new_model_outputs.cpu().numpy(), None
 		else:
-			decoder_outputs = outputs[:,1:]
-			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
+			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
+			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T] -> [T, B, 1]. No one-hot encoding.
 
 			model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
 
-			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes].
 			#attentions = model_output_tuple[1]['std']
 
 			_, model_outputs = torch.max(model_outputs, dim=-1)
@@ -2506,18 +2527,25 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 			inputs, outputs, output_lens = batch
 			outputs = outputs.long()
 
-			decoder_outputs = outputs[:,1:].to(device)
-			outputs.unsqueeze_(dim=-1)
-			outputs = torch.transpose(outputs, 0, 1)  # [B, T, F] -> [T, B, F].
+			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
+			decoder_output_lens = output_lens - 1
+			outputs.unsqueeze_(dim=-1)  # [B, T] -> [B, T, 1]. No one-hot encoding.
+			outputs = torch.transpose(outputs, 0, 1)  # [B, T, 1] -> [T, B, 1].
 
 			model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
 
-			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes] where T-1 is for one-step look-ahead.
 			#attentions = model_output_tuple[1]['std']
 
 			# NOTE [info] >> All examples in a batch are concatenated together.
 			#	Can each example be handled individually?
-			return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().view(-1))
+			# TODO [decide] >> Which is better, tensor.contiguous().to(device) or tensor.to(device).contiguous()?
+			#return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.contiguous().to(device).view(-1))
+			concat_model_outputs, concat_decoder_outputs = list(), list()
+			for mo, do, dl in zip(model_outputs, decoder_outputs, decoder_output_lens):
+				concat_model_outputs.append(mo[:dl])
+				concat_decoder_outputs.append(do[:dl])
+			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
 	else:
 		criterion = None
 		train_forward = None
@@ -2586,17 +2614,17 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 			rank_id = 0  # rank_id < n_best.
 			#max_time_steps = functools.reduce(lambda x, y: x if x >= len(y[rank_id]) else len(y[rank_id]), model_outputs, 0)
 			new_model_outputs = torch.full((len(model_outputs), max_time_steps), tgt_pad, dtype=torch.int)
-			for idx, tt in enumerate(model_outputs):
-				new_model_outputs[idx,:len(tt[rank_id])] = tt[rank_id]
+			for idx, moutp in enumerate(model_outputs):
+				new_model_outputs[idx,:len(moutp[rank_id])] = moutp[rank_id]
 
 			return new_model_outputs.cpu().numpy(), None
 		else:
-			decoder_outputs = outputs[:,1:]
-			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T, F] -> [T, B, F].
+			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
+			outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T] -> [T, B, 1]. No one-hot encoding.
 
 			model_output_tuple = model(inputs.to(device), outputs.to(device), output_lens.to(device))
 
-			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T, B, F] -> [B, T, F].
+			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes].
 			#attentions = model_output_tuple[1]['std']
 
 			_, model_outputs = torch.max(model_outputs, dim=-1)
@@ -2722,20 +2750,18 @@ def train_character_recognizer(num_epochs=100, batch_size=128, device='cpu'):
 	max_gradient_norm = None
 	log_print_freq = 1000
 
-	is_trained = True
-	is_model_loaded = False
+	model_filepath_to_load = None
+	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
+
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	model_filepath_base = './char_recognition_{}_{}_{}_{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, lang, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
-
-	if is_model_loaded:
-		model_filepath_to_load = None
-	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
 		charset = tg_util.construct_charset()
@@ -2790,43 +2816,42 @@ def train_character_recognizer(num_epochs=100, batch_size=128, device='cpu'):
 	#--------------------
 	# Train the model.
 
-	if is_trained:
-		if is_all_model_params_optimized:
-			model_params = list(model.parameters())
-		else:
-			# Filter model parameters only that require gradients.
-			#model_params = filter(lambda p: p.requires_grad, model.parameters())
-			model_params, num_model_params = list(), 0
-			for p in filter(lambda p: p.requires_grad, model.parameters()):
-				model_params.append(p)
-				num_model_params += np.prod(p.size())
-			glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-			#glogger.info('Trainable model parameters:')
-			#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+	if is_all_model_params_optimized:
+		model_params = list(model.parameters())
+	else:
+		# Filter model parameters only that require gradients.
+		#model_params = filter(lambda p: p.requires_grad, model.parameters())
+		model_params, num_model_params = list(), 0
+		for p in filter(lambda p: p.requires_grad, model.parameters()):
+			model_params.append(p)
+			num_model_params += np.prod(p.size())
+		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#glogger.info('Trainable model parameters:')
+		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
-		# Define an optimizer.
-		optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
-		scheduler = None
+	# Define an optimizer.
+	optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+	scheduler = None
 
-		#--------------------
-		glogger.info('Start training...')
-		start_time = time.time()
-		model, best_model_filepath = train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-		glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	#--------------------
+	glogger.info('Start training...')
+	start_time = time.time()
+	model, best_model_filepath = train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+	glogger.info('End training: {} secs.'.format(time.time() - start_time))
 
-		# Save a model.
-		if best_model_filepath:
-			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			try:
-				shutil.copyfile(best_model_filepath, model_filepath)
-				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
-			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-		else:
-			if model:
-				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-				save_model(model_filepath, model)
+	# Save a model.
+	if best_model_filepath:
+		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		try:
+			shutil.copyfile(best_model_filepath, model_filepath)
+			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+		except (FileNotFoundError, PermissionError) as ex:
+			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+	else:
+		if model:
+			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			save_model(model_filepath, model)
 
 	#--------------------
 	# Evaluate the model.
@@ -2864,20 +2889,18 @@ def train_character_recognizer_using_mixup(num_epochs=100, batch_size=128, devic
 	max_gradient_norm = None
 	log_print_freq = 1000
 
-	is_trained = True
-	is_model_loaded = False
+	model_filepath_to_load = None
+	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
+
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	model_filepath_base = './char_recognition_mixup_{}_{}_{}_{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, lang, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
-
-	if is_model_loaded:
-		model_filepath_to_load = None
-	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
 		charset = tg_util.construct_charset()
@@ -2932,43 +2955,42 @@ def train_character_recognizer_using_mixup(num_epochs=100, batch_size=128, devic
 	#--------------------
 	# Train the model.
 
-	if is_trained:
-		if is_all_model_params_optimized:
-			model_params = list(model.parameters())
-		else:
-			# Filter model parameters only that require gradients.
-			#model_params = filter(lambda p: p.requires_grad, model.parameters())
-			model_params, num_model_params = list(), 0
-			for p in filter(lambda p: p.requires_grad, model.parameters()):
-				model_params.append(p)
-				num_model_params += np.prod(p.size())
-			glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-			#glogger.info('Trainable model parameters:')
-			#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+	if is_all_model_params_optimized:
+		model_params = list(model.parameters())
+	else:
+		# Filter model parameters only that require gradients.
+		#model_params = filter(lambda p: p.requires_grad, model.parameters())
+		model_params, num_model_params = list(), 0
+		for p in filter(lambda p: p.requires_grad, model.parameters()):
+			model_params.append(p)
+			num_model_params += np.prod(p.size())
+		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#glogger.info('Trainable model parameters:')
+		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
-		# Define an optimizer.
-		optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
-		scheduler = None
+	# Define an optimizer.
+	optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+	scheduler = None
 
-		#--------------------
-		glogger.info('Start training...')
-		start_time = time.time()
-		model, best_model_filepath = train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-		glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	#--------------------
+	glogger.info('Start training...')
+	start_time = time.time()
+	model, best_model_filepath = train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+	glogger.info('End training: {} secs.'.format(time.time() - start_time))
 
-		# Save a model.
-		if best_model_filepath:
-			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			try:
-				shutil.copyfile(best_model_filepath, model_filepath)
-				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
-			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-		else:
-			if model:
-				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-				save_model(model_filepath, model)
+	# Save a model.
+	if best_model_filepath:
+		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		try:
+			shutil.copyfile(best_model_filepath, model_filepath)
+			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+		except (FileNotFoundError, PermissionError) as ex:
+			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+	else:
+		if model:
+			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			save_model(model_filepath, model)
 
 	#--------------------
 	# Evaluate the model.
@@ -3007,11 +3029,13 @@ def train_word_recognizer_based_on_rare1(num_epochs=20, batch_size=64, device='c
 	max_gradient_norm = 5  # Gradient clipping value.
 	log_print_freq = 1000
 
-	is_trained = True
-	is_model_loaded = False
+	model_filepath_to_load = None
+	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
 	is_separate_pad_id_used = False
+
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
@@ -3024,10 +3048,6 @@ def train_word_recognizer_based_on_rare1(num_epochs=20, batch_size=64, device='c
 		raise ValueError('Invalid loss type, {}'.format(loss_type))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
-
-	if is_model_loaded:
-		model_filepath_to_load = None
-	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
@@ -3107,47 +3127,46 @@ def train_word_recognizer_based_on_rare1(num_epochs=20, batch_size=64, device='c
 	#--------------------
 	# Train the model.
 
-	if is_trained:
-		if is_all_model_params_optimized:
-			model_params = list(model.parameters())
-		else:
-			# Filter model parameters only that require gradients.
-			#model_params = filter(lambda p: p.requires_grad, model.parameters())
-			model_params, num_model_params = list(), 0
-			for p in filter(lambda p: p.requires_grad, model.parameters()):
-				model_params.append(p)
-				num_model_params += np.prod(p.size())
-			glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-			#glogger.info('Trainable model parameters:')
-			#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+	if is_all_model_params_optimized:
+		model_params = list(model.parameters())
+	else:
+		# Filter model parameters only that require gradients.
+		#model_params = filter(lambda p: p.requires_grad, model.parameters())
+		model_params, num_model_params = list(), 0
+		for p in filter(lambda p: p.requires_grad, model.parameters()):
+			model_params.append(p)
+			num_model_params += np.prod(p.size())
+		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#glogger.info('Trainable model parameters:')
+		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
-		# Define an optimizer.
-		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
-		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
-		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
-		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
-		scheduler = None
+	# Define an optimizer.
+	#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+	#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+	optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
+	#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
+	#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
+	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+	scheduler = None
 
-		#--------------------
-		glogger.info('Start training...')
-		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-		glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	#--------------------
+	glogger.info('Start training...')
+	start_time = time.time()
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+	glogger.info('End training: {} secs.'.format(time.time() - start_time))
 
-		# Save a model.
-		if best_model_filepath:
-			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			try:
-				shutil.copyfile(best_model_filepath, model_filepath)
-				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
-			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-		else:
-			if model:
-				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-				save_model(model_filepath, model)
+	# Save a model.
+	if best_model_filepath:
+		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		try:
+			shutil.copyfile(best_model_filepath, model_filepath)
+			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+		except (FileNotFoundError, PermissionError) as ex:
+			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+	else:
+		if model:
+			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			save_model(model_filepath, model)
 
 	#--------------------
 	# Evaluate the model.
@@ -3186,11 +3205,13 @@ def train_word_recognizer_based_on_rare2(num_epochs=20, batch_size=64, device='c
 	max_gradient_norm = 5  # Gradient clipping value.
 	log_print_freq = 1000
 
-	is_trained = True
-	is_model_loaded = False
+	model_filepath_to_load = None
+	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
 	is_separate_pad_id_used = False
+
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
@@ -3198,10 +3219,6 @@ def train_word_recognizer_based_on_rare2(num_epochs=20, batch_size=64, device='c
 	model_filepath_base = './word_recognition_rare2_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
-
-	if is_model_loaded:
-		model_filepath_to_load = None
-	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
@@ -3273,47 +3290,46 @@ def train_word_recognizer_based_on_rare2(num_epochs=20, batch_size=64, device='c
 	#--------------------
 	# Train the model.
 
-	if is_trained:
-		if is_all_model_params_optimized:
-			model_params = list(model.parameters())
-		else:
-			# Filter model parameters only that require gradients.
-			#model_params = filter(lambda p: p.requires_grad, model.parameters())
-			model_params, num_model_params = list(), 0
-			for p in filter(lambda p: p.requires_grad, model.parameters()):
-				model_params.append(p)
-				num_model_params += np.prod(p.size())
-			glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-			#glogger.info('Trainable model parameters:')
-			#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+	if is_all_model_params_optimized:
+		model_params = list(model.parameters())
+	else:
+		# Filter model parameters only that require gradients.
+		#model_params = filter(lambda p: p.requires_grad, model.parameters())
+		model_params, num_model_params = list(), 0
+		for p in filter(lambda p: p.requires_grad, model.parameters()):
+			model_params.append(p)
+			num_model_params += np.prod(p.size())
+		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#glogger.info('Trainable model parameters:')
+		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
-		# Define an optimizer.
-		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
-		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
-		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
-		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
-		scheduler = None
+	# Define an optimizer.
+	#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+	#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+	optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
+	#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
+	#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
+	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+	scheduler = None
 
-		#--------------------
-		glogger.info('Start training...')
-		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-		glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	#--------------------
+	glogger.info('Start training...')
+	start_time = time.time()
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+	glogger.info('End training: {} secs.'.format(time.time() - start_time))
 
-		# Save a model.
-		if best_model_filepath:
-			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			try:
-				shutil.copyfile(best_model_filepath, model_filepath)
-				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
-			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-		else:
-			if model:
-				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-				save_model(model_filepath, model)
+	# Save a model.
+	if best_model_filepath:
+		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		try:
+			shutil.copyfile(best_model_filepath, model_filepath)
+			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+		except (FileNotFoundError, PermissionError) as ex:
+			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+	else:
+		if model:
+			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			save_model(model_filepath, model)
 
 	#--------------------
 	# Evaluate the model.
@@ -3353,11 +3369,13 @@ def train_word_recognizer_based_on_aster(num_epochs=20, batch_size=64, device='c
 	max_gradient_norm = None
 	log_print_freq = 1000
 
-	is_trained = True
-	is_model_loaded = False
+	model_filepath_to_load = None
+	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
 	is_separate_pad_id_used = False
+
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
@@ -3365,10 +3383,6 @@ def train_word_recognizer_based_on_aster(num_epochs=20, batch_size=64, device='c
 	model_filepath_base = './word_recognition_aster_sxent_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
-
-	if is_model_loaded:
-		model_filepath_to_load = None
-	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
@@ -3439,48 +3453,47 @@ def train_word_recognizer_based_on_aster(num_epochs=20, batch_size=64, device='c
 	#--------------------
 	# Train the model.
 
-	if is_trained:
-		if is_all_model_params_optimized:
-			model_params = list(model.parameters())
-		else:
-			# Filter model parameters only that require gradients.
-			#model_params = filter(lambda p: p.requires_grad, model.parameters())
-			model_params, num_model_params = list(), 0
-			for p in filter(lambda p: p.requires_grad, model.parameters()):
-				model_params.append(p)
-				num_model_params += np.prod(p.size())
-			glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-			#glogger.info('Trainable model parameters:')
-			#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+	if is_all_model_params_optimized:
+		model_params = list(model.parameters())
+	else:
+		# Filter model parameters only that require gradients.
+		#model_params = filter(lambda p: p.requires_grad, model.parameters())
+		model_params, num_model_params = list(), 0
+		for p in filter(lambda p: p.requires_grad, model.parameters()):
+			model_params.append(p)
+			num_model_params += np.prod(p.size())
+		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#glogger.info('Trainable model parameters:')
+		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
-		# Define an optimizer.
-		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
-		optimizer = torch.optim.Adadelta(model_params, lr=sys_args.lr, weight_decay=sys_args.weight_decay)
-		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
-		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
-		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
-		scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
+	# Define an optimizer.
+	#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+	#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+	#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
+	optimizer = torch.optim.Adadelta(model_params, lr=sys_args.lr, weight_decay=sys_args.weight_decay)
+	#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
+	#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
+	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+	scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
 
-		#--------------------
-		glogger.info('Start training...')
-		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, None, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-		glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	#--------------------
+	glogger.info('Start training...')
+	start_time = time.time()
+	model, best_model_filepath = train_text_recognition_model(model, None, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+	glogger.info('End training: {} secs.'.format(time.time() - start_time))
 
-		# Save a model.
-		if best_model_filepath:
-			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			try:
-				shutil.copyfile(best_model_filepath, model_filepath)
-				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
-			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-		else:
-			if model:
-				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-				save_model(model_filepath, model)
+	# Save a model.
+	if best_model_filepath:
+		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		try:
+			shutil.copyfile(best_model_filepath, model_filepath)
+			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+		except (FileNotFoundError, PermissionError) as ex:
+			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+	else:
+		if model:
+			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			save_model(model_filepath, model)
 
 	#--------------------
 	# Evaluate the model.
@@ -3522,11 +3535,13 @@ def train_word_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, device=
 	max_gradient_norm = None
 	log_print_freq = 1000
 
-	is_trained = True
-	is_model_loaded = False
+	model_filepath_to_load = None
+	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
 	is_separate_pad_id_used = False
+
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
@@ -3534,10 +3549,6 @@ def train_word_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, device=
 	model_filepath_base = './word_recognition_onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
-
-	if is_model_loaded:
-		model_filepath_to_load = None
-	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
@@ -3608,47 +3619,46 @@ def train_word_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, device=
 	#--------------------
 	# Train the model.
 
-	if is_trained:
-		if is_all_model_params_optimized:
-			model_params = list(model.parameters())
-		else:
-			# Filter model parameters only that require gradients.
-			#model_params = filter(lambda p: p.requires_grad, model.parameters())
-			model_params, num_model_params = list(), 0
-			for p in filter(lambda p: p.requires_grad, model.parameters()):
-				model_params.append(p)
-				num_model_params += np.prod(p.size())
-			glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-			#glogger.info('Trainable model parameters:')
-			#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+	if is_all_model_params_optimized:
+		model_params = list(model.parameters())
+	else:
+		# Filter model parameters only that require gradients.
+		#model_params = filter(lambda p: p.requires_grad, model.parameters())
+		model_params, num_model_params = list(), 0
+		for p in filter(lambda p: p.requires_grad, model.parameters()):
+			model_params.append(p)
+			num_model_params += np.prod(p.size())
+		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#glogger.info('Trainable model parameters:')
+		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
-		# Define an optimizer.
-		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
-		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
-		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
-		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
-		scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
+	# Define an optimizer.
+	#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+	optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+	#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
+	#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
+	#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
+	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+	scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
 
-		#--------------------
-		glogger.info('Start training...')
-		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-		glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	#--------------------
+	glogger.info('Start training...')
+	start_time = time.time()
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+	glogger.info('End training: {} secs.'.format(time.time() - start_time))
 
-		# Save a model.
-		if best_model_filepath:
-			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			try:
-				shutil.copyfile(best_model_filepath, model_filepath)
-				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
-			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-		else:
-			if model:
-				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-				save_model(model_filepath, model)
+	# Save a model.
+	if best_model_filepath:
+		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		try:
+			shutil.copyfile(best_model_filepath, model_filepath)
+			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+		except (FileNotFoundError, PermissionError) as ex:
+			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+	else:
+		if model:
+			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			save_model(model_filepath, model)
 
 	#--------------------
 	# Evaluate the model.
@@ -3688,11 +3698,13 @@ def train_word_recognizer_based_on_rare1_and_opennmt(num_epochs=20, batch_size=6
 	max_gradient_norm = None
 	log_print_freq = 1000
 
-	is_trained = True
-	is_model_loaded = False
+	model_filepath_to_load = None
+	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
 	is_separate_pad_id_used = False
+
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
@@ -3700,10 +3712,6 @@ def train_word_recognizer_based_on_rare1_and_opennmt(num_epochs=20, batch_size=6
 	model_filepath_base = './word_recognition_rare1+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
-
-	if is_model_loaded:
-		model_filepath_to_load = None
-	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
@@ -3773,47 +3781,46 @@ def train_word_recognizer_based_on_rare1_and_opennmt(num_epochs=20, batch_size=6
 	#--------------------
 	# Train the model.
 
-	if is_trained:
-		if is_all_model_params_optimized:
-			model_params = list(model.parameters())
-		else:
-			# Filter model parameters only that require gradients.
-			#model_params = filter(lambda p: p.requires_grad, model.parameters())
-			model_params, num_model_params = list(), 0
-			for p in filter(lambda p: p.requires_grad, model.parameters()):
-				model_params.append(p)
-				num_model_params += np.prod(p.size())
-			glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-			#glogger.info('Trainable model parameters:')
-			#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+	if is_all_model_params_optimized:
+		model_params = list(model.parameters())
+	else:
+		# Filter model parameters only that require gradients.
+		#model_params = filter(lambda p: p.requires_grad, model.parameters())
+		model_params, num_model_params = list(), 0
+		for p in filter(lambda p: p.requires_grad, model.parameters()):
+			model_params.append(p)
+			num_model_params += np.prod(p.size())
+		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#glogger.info('Trainable model parameters:')
+		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
-		# Define an optimizer.
-		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
-		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
-		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
-		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
-		scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
+	# Define an optimizer.
+	#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+	#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+	optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
+	#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
+	#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
+	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+	scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
 
-		#--------------------
-		glogger.info('Start training...')
-		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-		glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	#--------------------
+	glogger.info('Start training...')
+	start_time = time.time()
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+	glogger.info('End training: {} secs.'.format(time.time() - start_time))
 
-		# Save a model.
-		if best_model_filepath:
-			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			try:
-				shutil.copyfile(best_model_filepath, model_filepath)
-				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
-			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-		else:
-			if model:
-				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-				save_model(model_filepath, model)
+	# Save a model.
+	if best_model_filepath:
+		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		try:
+			shutil.copyfile(best_model_filepath, model_filepath)
+			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+		except (FileNotFoundError, PermissionError) as ex:
+			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+	else:
+		if model:
+			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			save_model(model_filepath, model)
 
 	#--------------------
 	# Evaluate the model.
@@ -3853,11 +3860,13 @@ def train_word_recognizer_based_on_rare2_and_opennmt(num_epochs=20, batch_size=6
 	max_gradient_norm = None
 	log_print_freq = 1000
 
-	is_trained = True
-	is_model_loaded = False
+	model_filepath_to_load = None
+	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
 	is_separate_pad_id_used = False
+
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
@@ -3865,10 +3874,6 @@ def train_word_recognizer_based_on_rare2_and_opennmt(num_epochs=20, batch_size=6
 	model_filepath_base = './word_recognition_rare2+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
-
-	if is_model_loaded:
-		model_filepath_to_load = None
-	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
@@ -3938,47 +3943,46 @@ def train_word_recognizer_based_on_rare2_and_opennmt(num_epochs=20, batch_size=6
 	#--------------------
 	# Train the model.
 
-	if is_trained:
-		if is_all_model_params_optimized:
-			model_params = list(model.parameters())
-		else:
-			# Filter model parameters only that require gradients.
-			#model_params = filter(lambda p: p.requires_grad, model.parameters())
-			model_params, num_model_params = list(), 0
-			for p in filter(lambda p: p.requires_grad, model.parameters()):
-				model_params.append(p)
-				num_model_params += np.prod(p.size())
-			glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-			#glogger.info('Trainable model parameters:')
-			#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+	if is_all_model_params_optimized:
+		model_params = list(model.parameters())
+	else:
+		# Filter model parameters only that require gradients.
+		#model_params = filter(lambda p: p.requires_grad, model.parameters())
+		model_params, num_model_params = list(), 0
+		for p in filter(lambda p: p.requires_grad, model.parameters()):
+			model_params.append(p)
+			num_model_params += np.prod(p.size())
+		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#glogger.info('Trainable model parameters:')
+		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
-		# Define an optimizer.
-		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
-		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
-		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
-		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
-		scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
+	# Define an optimizer.
+	#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+	#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+	optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
+	#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
+	#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
+	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+	scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
 
-		#--------------------
-		glogger.info('Start training...')
-		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-		glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	#--------------------
+	glogger.info('Start training...')
+	start_time = time.time()
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+	glogger.info('End training: {} secs.'.format(time.time() - start_time))
 
-		# Save a model.
-		if best_model_filepath:
-			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			try:
-				shutil.copyfile(best_model_filepath, model_filepath)
-				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
-			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-		else:
-			if model:
-				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-				save_model(model_filepath, model)
+	# Save a model.
+	if best_model_filepath:
+		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		try:
+			shutil.copyfile(best_model_filepath, model_filepath)
+			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+		except (FileNotFoundError, PermissionError) as ex:
+			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+	else:
+		if model:
+			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			save_model(model_filepath, model)
 
 	#--------------------
 	# Evaluate the model.
@@ -4018,11 +4022,13 @@ def train_word_recognizer_based_on_aster_and_opennmt(num_epochs=20, batch_size=6
 	max_gradient_norm = None
 	log_print_freq = 1000
 
-	is_trained = True
-	is_model_loaded = False
+	model_filepath_to_load = None
+	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
 	is_separate_pad_id_used = False
+
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
@@ -4030,10 +4036,6 @@ def train_word_recognizer_based_on_aster_and_opennmt(num_epochs=20, batch_size=6
 	model_filepath_base = './word_recognition_aster+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
-
-	if is_model_loaded:
-		model_filepath_to_load = None
-	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
@@ -4103,47 +4105,46 @@ def train_word_recognizer_based_on_aster_and_opennmt(num_epochs=20, batch_size=6
 	#--------------------
 	# Train the model.
 
-	if is_trained:
-		if is_all_model_params_optimized:
-			model_params = list(model.parameters())
-		else:
-			# Filter model parameters only that require gradients.
-			#model_params = filter(lambda p: p.requires_grad, model.parameters())
-			model_params, num_model_params = list(), 0
-			for p in filter(lambda p: p.requires_grad, model.parameters()):
-				model_params.append(p)
-				num_model_params += np.prod(p.size())
-			glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-			#glogger.info('Trainable model parameters:')
-			#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+	if is_all_model_params_optimized:
+		model_params = list(model.parameters())
+	else:
+		# Filter model parameters only that require gradients.
+		#model_params = filter(lambda p: p.requires_grad, model.parameters())
+		model_params, num_model_params = list(), 0
+		for p in filter(lambda p: p.requires_grad, model.parameters()):
+			model_params.append(p)
+			num_model_params += np.prod(p.size())
+		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#glogger.info('Trainable model parameters:')
+		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
-		# Define an optimizer.
-		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
-		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
-		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
-		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
-		scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
+	# Define an optimizer.
+	#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+	#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+	optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
+	#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
+	#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
+	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+	scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
 
-		#--------------------
-		glogger.info('Start training...')
-		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-		glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	#--------------------
+	glogger.info('Start training...')
+	start_time = time.time()
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+	glogger.info('End training: {} secs.'.format(time.time() - start_time))
 
-		# Save a model.
-		if best_model_filepath:
-			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			try:
-				shutil.copyfile(best_model_filepath, model_filepath)
-				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
-			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-		else:
-			if model:
-				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-				save_model(model_filepath, model)
+	# Save a model.
+	if best_model_filepath:
+		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		try:
+			shutil.copyfile(best_model_filepath, model_filepath)
+			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+		except (FileNotFoundError, PermissionError) as ex:
+			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+	else:
+		if model:
+			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			save_model(model_filepath, model)
 
 	#--------------------
 	# Evaluate the model.
@@ -4182,11 +4183,13 @@ def train_word_recognizer_using_mixup(num_epochs=20, batch_size=64, device='cpu'
 	max_gradient_norm = 5  # Gradient clipping value.
 	log_print_freq = 1000
 
-	is_trained = True
-	is_model_loaded = False
+	model_filepath_to_load = None
+	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
 	is_separate_pad_id_used = False
+
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
@@ -4199,10 +4202,6 @@ def train_word_recognizer_using_mixup(num_epochs=20, batch_size=64, device='cpu'
 		raise ValueError('Invalid loss type, {}'.format(loss_type))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
-
-	if is_model_loaded:
-		model_filepath_to_load = None
-	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
@@ -4282,47 +4281,46 @@ def train_word_recognizer_using_mixup(num_epochs=20, batch_size=64, device='cpu'
 	#--------------------
 	# Train the model.
 
-	if is_trained:
-		if is_all_model_params_optimized:
-			model_params = list(model.parameters())
-		else:
-			# Filter model parameters only that require gradients.
-			#model_params = filter(lambda p: p.requires_grad, model.parameters())
-			model_params, num_model_params = list(), 0
-			for p in filter(lambda p: p.requires_grad, model.parameters()):
-				model_params.append(p)
-				num_model_params += np.prod(p.size())
-			glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-			#glogger.info('Trainable model parameters:')
-			#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+	if is_all_model_params_optimized:
+		model_params = list(model.parameters())
+	else:
+		# Filter model parameters only that require gradients.
+		#model_params = filter(lambda p: p.requires_grad, model.parameters())
+		model_params, num_model_params = list(), 0
+		for p in filter(lambda p: p.requires_grad, model.parameters()):
+			model_params.append(p)
+			num_model_params += np.prod(p.size())
+		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#glogger.info('Trainable model parameters:')
+		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
-		# Define an optimizer.
-		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
-		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
-		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
-		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
-		scheduler = None
+	# Define an optimizer.
+	#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+	#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+	optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
+	#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
+	#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
+	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+	scheduler = None
 
-		#--------------------
-		glogger.info('Start training...')
-		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-		glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	#--------------------
+	glogger.info('Start training...')
+	start_time = time.time()
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+	glogger.info('End training: {} secs.'.format(time.time() - start_time))
 
-		# Save a model.
-		if best_model_filepath:
-			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			try:
-				shutil.copyfile(best_model_filepath, model_filepath)
-				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
-			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-		else:
-			if model:
-				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-				save_model(model_filepath, model)
+	# Save a model.
+	if best_model_filepath:
+		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		try:
+			shutil.copyfile(best_model_filepath, model_filepath)
+			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+		except (FileNotFoundError, PermissionError) as ex:
+			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+	else:
+		if model:
+			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			save_model(model_filepath, model)
 
 	#--------------------
 	# Evaluate the model.
@@ -4419,23 +4417,21 @@ def evaluate_word_recognizer_using_aihub_data(max_label_len, batch_size, is_sepa
 	if True:
 		# For RARE2.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2_attn_xent_gradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9514_epoch3.pth'
-		assert model_filepath_to_load is not None
 
 		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID, device=device)
 	elif False:
 		# For ASTER + OpenNMT.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster_sxent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.8449_epoch3.pth'
-		assert model_filepath_to_load is not None
 
 		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_ID, device=device)
 	elif False:
 		# For ASTER + OpenNMT.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_xent_nogradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9325_epoch2.pth'
-		assert model_filepath_to_load is not None
 
 		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
 	else:
 		raise ValueError('Undefined model')
+	assert model_filepath_to_load is not None
 	glogger.info('End building a model: {} secs.'.format(time.time() - start_time))
 
 	# Load a model.
@@ -4490,11 +4486,13 @@ def train_textline_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, dev
 	max_gradient_norm = None
 	log_print_freq = 1000
 
-	is_trained = True
-	is_model_loaded = False
+	model_filepath_to_load = None
+	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
 	is_separate_pad_id_used = False
+
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
@@ -4502,10 +4500,6 @@ def train_textline_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, dev
 	model_filepath_base = './textline_recognition_onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_textline_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
-
-	if is_model_loaded:
-		model_filepath_to_load = None
-	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
@@ -4576,47 +4570,46 @@ def train_textline_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, dev
 	#--------------------
 	# Train the model.
 
-	if is_trained:
-		if is_all_model_params_optimized:
-			model_params = list(model.parameters())
-		else:
-			# Filter model parameters only that require gradients.
-			#model_params = filter(lambda p: p.requires_grad, model.parameters())
-			model_params, num_model_params = list(), 0
-			for p in filter(lambda p: p.requires_grad, model.parameters()):
-				model_params.append(p)
-				num_model_params += np.prod(p.size())
-			glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-			#glogger.info('Trainable model parameters:')
-			#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+	if is_all_model_params_optimized:
+		model_params = list(model.parameters())
+	else:
+		# Filter model parameters only that require gradients.
+		#model_params = filter(lambda p: p.requires_grad, model.parameters())
+		model_params, num_model_params = list(), 0
+		for p in filter(lambda p: p.requires_grad, model.parameters()):
+			model_params.append(p)
+			num_model_params += np.prod(p.size())
+		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#glogger.info('Trainable model parameters:')
+		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
-		# Define an optimizer.
-		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
-		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
-		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
-		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
-		scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
+	# Define an optimizer.
+	#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+	optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+	#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
+	#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
+	#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
+	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+	scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
 
-		#--------------------
-		glogger.info('Start training...')
-		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-		glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	#--------------------
+	glogger.info('Start training...')
+	start_time = time.time()
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+	glogger.info('End training: {} secs.'.format(time.time() - start_time))
 
-		# Save a model.
-		if best_model_filepath:
-			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			try:
-				shutil.copyfile(best_model_filepath, model_filepath)
-				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
-			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-		else:
-			if model:
-				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-				save_model(model_filepath, model)
+	# Save a model.
+	if best_model_filepath:
+		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		try:
+			shutil.copyfile(best_model_filepath, model_filepath)
+			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+		except (FileNotFoundError, PermissionError) as ex:
+			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+	else:
+		if model:
+			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			save_model(model_filepath, model)
 
 	#--------------------
 	# Evaluate the model.
@@ -4627,7 +4620,7 @@ def train_textline_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, dev
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def train_textline_recognizer_based_on_transformer(num_epochs=20, batch_size=64, device='cpu'):
+def train_textline_recognizer_based_on_transformer(num_epochs=40, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	#image_height, image_width, image_channel = 64, 640, 3
 	image_height, image_width, image_channel = 64, 1280, 3
@@ -4660,11 +4653,13 @@ def train_textline_recognizer_based_on_transformer(num_epochs=20, batch_size=64,
 	max_gradient_norm = None
 	log_print_freq = 1000
 
-	is_trained = True
-	is_model_loaded = False
+	model_filepath_to_load = None
+	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
 	is_separate_pad_id_used = False
+
+	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
@@ -4672,10 +4667,6 @@ def train_textline_recognizer_based_on_transformer(num_epochs=20, batch_size=64,
 	model_filepath_base = './textline_recognition_transformer_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_textline_len, image_height, image_width, image_channel)
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
-
-	if is_model_loaded:
-		model_filepath_to_load = None
-	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
@@ -4745,50 +4736,49 @@ def train_textline_recognizer_based_on_transformer(num_epochs=20, batch_size=64,
 	#--------------------
 	# Train the model.
 
-	if is_trained:
-		if is_all_model_params_optimized:
-			model_params = list(model.parameters())
-		else:
-			# Filter model parameters only that require gradients.
-			#model_params = filter(lambda p: p.requires_grad, model.parameters())
-			model_params, num_model_params = list(), 0
-			for p in filter(lambda p: p.requires_grad, model.parameters()):
-				model_params.append(p)
-				num_model_params += np.prod(p.size())
-			glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-			#glogger.info('Trainable model parameters:')
-			#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+	if is_all_model_params_optimized:
+		model_params = list(model.parameters())
+	else:
+		# Filter model parameters only that require gradients.
+		#model_params = filter(lambda p: p.requires_grad, model.parameters())
+		model_params, num_model_params = list(), 0
+		for p in filter(lambda p: p.requires_grad, model.parameters()):
+			model_params.append(p)
+			num_model_params += np.prod(p.size())
+		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#glogger.info('Trainable model parameters:')
+		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
-		# Define an optimizer.
-		#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
-		#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-		#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
-		#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
-		#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
-		import transformer_ocr.train
-		optimizer = torch.optim.Adam(model_params, lr=0, betas=(0.9, 0.98), eps=1e-09, weight_decay=0, amsgrad=False)
-		optimizer = transformer_ocr.train.NoamOpt(model.tgt_embed[0].d_model, factor=1, warmup=2000, optimizer=optimizer)
-		#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
-		scheduler = None
+	# Define an optimizer.
+	#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+	#optimizer = torch.optim.Adam(model_params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+	#optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
+	#optimizer = torch.optim.Adagrad(model_params, lr=0.1, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10)
+	#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
+	import transformer_ocr.train
+	optimizer = torch.optim.Adam(model_params, lr=0, betas=(0.9, 0.98), eps=1e-09, weight_decay=0, amsgrad=False)
+	optimizer = transformer_ocr.train.NoamOpt(model.tgt_embed[0].d_model, factor=1, warmup=2000, optimizer=optimizer)
+	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
+	scheduler = None
 
-		#--------------------
-		glogger.info('Start training...')
-		start_time = time.time()
-		model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-		glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	#--------------------
+	glogger.info('Start training...')
+	start_time = time.time()
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
+	glogger.info('End training: {} secs.'.format(time.time() - start_time))
 
-		# Save a model.
-		if best_model_filepath:
-			model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			try:
-				shutil.copyfile(best_model_filepath, model_filepath)
-				glogger.info('Copied the best trained model to {}.'.format(model_filepath))
-			except (FileNotFoundError, PermissionError) as ex:
-				glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-		else:
-			if model:
-				model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-				save_model(model_filepath, model)
+	# Save a model.
+	if best_model_filepath:
+		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		try:
+			shutil.copyfile(best_model_filepath, model_filepath)
+			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+		except (FileNotFoundError, PermissionError) as ex:
+			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+	else:
+		if model:
+			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+			save_model(model_filepath, model)
 
 	#--------------------
 	# Evaluate the model.
@@ -5148,36 +5138,32 @@ def recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_si
 	if False:
 		# For RARE2.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2_attn_xent_gradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9514_epoch3.pth'
-		assert model_filepath_to_load is not None
 
 		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID, device=device)
 	elif False:
 		# For ASTER.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster_sxent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.8449_epoch3.pth'
-		assert model_filepath_to_load is not None
 
 		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_ID, device=device)
 	elif True:
 		# For OpenNMT.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_onmt_xent_nogradclip_allparams_nopad_kor_ch5_64x640x3_best_20200725T115106.pth'
-		assert model_filepath_to_load is not None
 
 		encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
 		model, infer_functor, _, _ = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, encoder_type, lang, loss_type=None, device=device)
 	elif False:
 		# For RARE2 + OpenNMT.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2+onmt_xent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.9441_epoch20_new.pth'
-		assert model_filepath_to_load is not None
 
 		model, infer_functor, _, _ = build_rare2_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
 	elif False:
 		# For ASTER + OpenNMT.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_xent_nogradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9325_epoch2_new.pth'
-		assert model_filepath_to_load is not None
 
 		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
 	else:
 		raise ValueError('Undefined model')
+	assert model_filepath_to_load is not None
 	glogger.info('End building a model: {} secs.'.format(time.time() - start_time))
 
 	# Load a model.
@@ -5289,36 +5275,32 @@ def recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_le
 	if False:
 		# For RARE2.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2_attn_xent_gradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9514_epoch3.pth'
-		assert model_filepath_to_load is not None
 
 		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID, device=device)
 	elif False:
 		# For ASTER.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster_sxent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.8449_epoch3.pth'
-		assert model_filepath_to_load is not None
 
 		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_ID, device=device)
 	elif True:
 		# For OpenNMT.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_onmt_xent_nogradclip_allparams_nopad_kor_ch5_64x640x3_best_20200725T115106.pth'
-		assert model_filepath_to_load is not None
 
 		encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
 		model, infer_functor, _, _ = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, encoder_type, lang, loss_type=None, device=device)
 	elif False:
 		# For RARE2 + OpenNMT.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2+onmt_xent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.9441_epoch20_new.pth'
-		assert model_filepath_to_load is not None
 
 		model, infer_functor, _, _ = build_rare2_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
 	elif False:
 		# For ASTER + OpenNMT.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_xent_nogradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9325_epoch2_new.pth'
-		assert model_filepath_to_load is not None
 
 		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
 	else:
 		raise ValueError('Undefined model')
+	assert model_filepath_to_load is not None
 	glogger.info('End building a model: {} secs.'.format(time.time() - start_time))
 
 	# Load a model.
