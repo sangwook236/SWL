@@ -505,7 +505,7 @@ def get_logger(name, log_level=None, log_dir_path=None, is_rotating=True):
 	if not log_level: log_level = logging.INFO
 	if not log_dir_path: log_dir_path = './log'
 	if not os.path.isdir(log_dir_path):
-		os.mkdir(log_dir_path)
+		os.makedirs(log_dir_path, exist_ok=True)
 
 	log_filepath = os.path.join(log_dir_path, (name if name else 'swl') + '.log')
 	if is_rotating:
@@ -529,7 +529,7 @@ def get_logger(name, log_level=None, log_dir_path=None, is_rotating=True):
 def main():
 	args = parse_command_line_options()
 
-	logger = get_logger(args.log if args.log else os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, args.log_dir, is_rotating=True)
+	logger = get_logger(args.log if args.log else os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, args.log_dir if args.log_dir else args.out_dir, is_rotating=True)
 	logger.info('----------------------------------------------------------------------')
 	logger.info('Logger: name = {}, level = {}.'.format(logger.name, logger.level))
 	logger.info('Command-line arguments: {}.'.format(sys.argv))

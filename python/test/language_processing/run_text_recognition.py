@@ -1535,15 +1535,15 @@ def infer_one_by_one_using_text_recognition_model(model, infer_functor, label_co
 		glogger.info('Word accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
 		glogger.info('Char accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
 
-def build_char_model(label_converter, image_channel, loss_type, lang, device='cpu'):
+def build_char_model(label_converter, image_channel, loss_type, lang):
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
 
 	# Define a loss function.
 	if loss_type == 'xent':
-		criterion = torch.nn.CrossEntropyLoss().to(device)
+		criterion = torch.nn.CrossEntropyLoss()
 	elif loss_type == 'nll':
-		criterion = torch.nn.NLLLoss(reduction='sum').to(device)
+		criterion = torch.nn.NLLLoss(reduction='sum')
 	else:
 		raise ValueError('Invalid loss type, {}'.format(loss_type))
 
@@ -1559,7 +1559,7 @@ def build_char_model(label_converter, image_channel, loss_type, lang, device='cp
 
 	return model, train_forward, criterion
 
-def build_char_mixup_model(label_converter, image_channel, loss_type, lang, device='cpu'):
+def build_char_mixup_model(label_converter, image_channel, loss_type, lang):
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
 
@@ -1568,9 +1568,9 @@ def build_char_mixup_model(label_converter, image_channel, loss_type, lang, devi
 
 	# Define a loss function.
 	if loss_type == 'xent':
-		criterion = torch.nn.CrossEntropyLoss().to(device)
+		criterion = torch.nn.CrossEntropyLoss()
 	elif loss_type == 'nll':
-		criterion = torch.nn.NLLLoss(reduction='sum').to(device)
+		criterion = torch.nn.NLLLoss(reduction='sum')
 	else:
 		raise ValueError('Invalid loss type, {}'.format(loss_type))
 
@@ -1587,7 +1587,7 @@ def build_char_mixup_model(label_converter, image_channel, loss_type, lang, devi
 
 	return model, train_forward, criterion
 
-def build_rare1_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_text_len, num_suffixes, sos_id, blank_label=None, device='cpu'):
+def build_rare1_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_text_len, num_suffixes, sos_id, blank_label=None):
 	transformer = None  # The type of transformer. {None, 'TPS'}.
 	feature_extractor = 'VGG'  # The type of feature extractor. {'VGG', 'RCNN', 'ResNet'}.
 	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
@@ -1606,7 +1606,7 @@ def build_rare1_model(label_converter, image_height, image_width, image_channel,
 
 	if loss_type == 'ctc':
 		# Define a loss function.
-		criterion = torch.nn.CTCLoss(blank=blank_label, zero_infinity=True).to(device)  # The BLANK label.
+		criterion = torch.nn.CTCLoss(blank=blank_label, zero_infinity=True)  # The BLANK label.
 
 		def train_forward(model, criterion, batch, device):
 			inputs, outputs, output_lens = batch
@@ -1630,9 +1630,9 @@ def build_rare1_model(label_converter, image_height, image_width, image_channel,
 	elif loss_type in ['xent', 'nll']:
 		# Define a loss function.
 		if loss_type == 'xent':
-			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id).to(device)  # Ignore the PAD ID.
+			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id)  # Ignore the PAD ID.
 		elif loss_type == 'nll':
-			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum').to(device)  # Ignore the PAD ID.
+			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum')  # Ignore the PAD ID.
 
 		def train_forward(model, criterion, batch, device):
 			inputs, outputs, output_lens = batch
@@ -1677,7 +1677,7 @@ def build_rare1_model(label_converter, image_height, image_width, image_channel,
 
 	return model, infer, train_forward, criterion
 
-def build_rare1_mixup_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_text_len, num_suffixes, sos_id, blank_label=None, device='cpu'):
+def build_rare1_mixup_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_text_len, num_suffixes, sos_id, blank_label=None):
 	transformer = None  # The type of transformer. {None, 'TPS'}.
 	feature_extractor = 'VGG'  # The type of feature extractor. {'VGG', 'RCNN', 'ResNet'}.
 	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
@@ -1699,7 +1699,7 @@ def build_rare1_mixup_model(label_converter, image_height, image_width, image_ch
 
 	if loss_type == 'ctc':
 		# Define a loss function.
-		criterion = torch.nn.CTCLoss(blank=blank_label, zero_infinity=True).to(device)  # The BLANK label.
+		criterion = torch.nn.CTCLoss(blank=blank_label, zero_infinity=True)  # The BLANK label.
 
 		def train_forward(model, criterion, batch, device):
 			inputs, outputs, output_lens = batch
@@ -1723,9 +1723,9 @@ def build_rare1_mixup_model(label_converter, image_height, image_width, image_ch
 	elif loss_type in ['xent', 'nll']:
 		# Define a loss function.
 		if loss_type == 'xent':
-			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id).to(device)  # Ignore the PAD ID.
+			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id)  # Ignore the PAD ID.
 		elif loss_type == 'nll':
-			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum').to(device)  # Ignore the PAD ID.
+			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum')  # Ignore the PAD ID.
 
 		def train_forward(model, criterion, batch, device):
 			inputs, outputs, output_lens = batch
@@ -1771,7 +1771,7 @@ def build_rare1_mixup_model(label_converter, image_height, image_width, image_ch
 
 	return model, infer, train_forward, criterion
 
-def build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=0, sos_id=0, device='cpu'):
+def build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=0, sos_id=0):
 	if lang == 'kor':
 		hidden_size = 512  # The size of the LSTM hidden states.
 	else:
@@ -1783,9 +1783,9 @@ def build_rare2_model(label_converter, image_height, image_width, image_channel,
 	if loss_type is not None:
 		# Define a loss function.
 		if loss_type == 'xent':
-			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id).to(device)  # Ignore the PAD ID.
+			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id)  # Ignore the PAD ID.
 		elif loss_type == 'nll':
-			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum').to(device)  # Ignore the PAD ID.
+			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum')  # Ignore the PAD ID.
 		else:
 			raise ValueError('Invalid loss type, {}'.format(loss_type))
 
@@ -1863,24 +1863,25 @@ def build_rare2_model(label_converter, image_height, image_width, image_channel,
 
 	return model, infer, train_forward, criterion
 
-def build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_text_len, eos_id, device='cpu'):
+def build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_text_len, eos_id):
 	if lang == 'kor':
 		hidden_size = 512  # The size of the LSTM hidden states.
 	else:
 		hidden_size = 256  # The size of the LSTM hidden states.
 
 	import aster.config
-	sys_args = aster.config.get_args(sys.argv[1:])
+	#sys_args = aster.config.get_args(sys.argv[1:])
+	sys_args = aster.config.get_args([])
 	sys_args.with_lstm = True
 	#sys_args.STN_ON = True
 
-	glogger.info('Config options: {}.'.format(vars(sys_args)))
+	glogger.info('ASTER options: {}.'.format(vars(sys_args)))
 
 	# Define a loss function.
 	#if loss_type == 'xent':
-	#	criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id).to(device)  # Ignore the PAD ID.
+	#	criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id)  # Ignore the PAD ID.
 	#elif loss_type == 'nll':
-	#	criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum').to(device)  # Ignore the PAD ID.
+	#	criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum')  # Ignore the PAD ID.
 	#else:
 	#	raise ValueError('Invalid loss type, {}'.format(loss_type))
 
@@ -1991,7 +1992,7 @@ def build_decoder_and_generator_for_opennmt(num_classes, word_vec_size, hidden_s
 	)
 	return decoder, generator
 
-def build_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, encoder_type, lang, loss_type=None, device='cpu'):
+def build_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, encoder_type, lang, loss_type=None):
 	bidirectional_encoder = True
 	num_encoder_layers, num_decoder_layers = 2, 2
 	if lang == 'kor':
@@ -2004,9 +2005,9 @@ def build_opennmt_model(label_converter, image_height, image_width, image_channe
 	if loss_type is not None:
 		# Define a loss function.
 		if loss_type == 'xent':
-			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id).to(device)  # Ignore the PAD ID.
+			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id)  # Ignore the PAD ID.
 		elif loss_type == 'nll':
-			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum').to(device)  # Ignore the PAD ID.
+			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum')  # Ignore the PAD ID.
 		else:
 			raise ValueError('Invalid loss type, {}'.format(loss_type))
 
@@ -2197,9 +2198,9 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 	if loss_type is not None:
 		# Define a loss function.
 		if loss_type == 'xent':
-			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id).to(device)  # Ignore the PAD ID.
+			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id)  # Ignore the PAD ID.
 		elif loss_type == 'nll':
-			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum').to(device)  # Ignore the PAD ID.
+			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum')  # Ignore the PAD ID.
 		else:
 			raise ValueError('Invalid loss type, {}'.format(loss_type))
 
@@ -2357,9 +2358,9 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 	if loss_type is not None:
 		# Define a loss function.
 		if loss_type == 'xent':
-			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id).to(device)  # Ignore the PAD ID.
+			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id)  # Ignore the PAD ID.
 		elif loss_type == 'nll':
-			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum').to(device)  # Ignore the PAD ID.
+			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum')  # Ignore the PAD ID.
 		else:
 			raise ValueError('Invalid loss type, {}'.format(loss_type))
 
@@ -2517,9 +2518,9 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 	if loss_type is not None:
 		# Define a loss function.
 		if loss_type == 'xent':
-			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id).to(device)  # Ignore the PAD ID.
+			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id)  # Ignore the PAD ID.
 		elif loss_type == 'nll':
-			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum').to(device)  # Ignore the PAD ID.
+			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum')  # Ignore the PAD ID.
 		else:
 			raise ValueError('Invalid loss type, {}'.format(loss_type))
 
@@ -2658,7 +2659,7 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 	return model, infer, train_forward, criterion
 
 # REF [site] >> https://github.com/fengxinjie/Transformer-OCR
-def build_transformer_ocr_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, is_train=False, device='cpu'):
+def build_transformer_ocr_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, is_train=False):
 	import transformer_ocr.model, transformer_ocr.train, transformer_ocr.predict, transformer_ocr.dataset
 
 	num_layers = 4
@@ -2729,6 +2730,7 @@ def train_character_recognizer(num_epochs=100, batch_size=128, device='cpu'):
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	lang = 'kor'  # {'kor', 'eng'}.
 	# File-based chars: 78,838.
 	is_mixed_chars_used = True
 	if is_mixed_chars_used:
@@ -2740,14 +2742,12 @@ def train_character_recognizer(num_epochs=100, batch_size=128, device='cpu'):
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
-	lang = 'kor'  # {'kor', 'eng'}.
-	train_test_ratio = 0.8
-	shuffle = True
-	num_workers = 8
-
 	loss_type = 'xent'  # {'xent', 'nll'}.
 	#max_gradient_norm = 5  # Gradient clipping value.
 	max_gradient_norm = None
+	train_test_ratio = 0.8
+	shuffle = True
+	num_workers = 8
 	log_print_freq = 1000
 
 	model_filepath_to_load = None
@@ -2790,7 +2790,7 @@ def train_character_recognizer(num_epochs=100, batch_size=128, device='cpu'):
 	#--------------------
 	# Build a model.
 
-	model, train_forward_functor, criterion = build_char_model(label_converter, image_channel, loss_type, lang, device)
+	model, train_forward_functor, criterion = build_char_model(label_converter, image_channel, loss_type, lang)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -2812,6 +2812,7 @@ def train_character_recognizer(num_epochs=100, batch_size=128, device='cpu'):
 		model = load_model(model_filepath_to_load, model, device=device)
 
 	model = model.to(device)
+	criterion = model.to(criterion)
 
 	#--------------------
 	# Train the model.
@@ -2868,6 +2869,7 @@ def train_character_recognizer_using_mixup(num_epochs=100, batch_size=128, devic
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	lang = 'kor'  # {'kor', 'eng'}.
 	# File-based chars: 78,838.
 	is_mixed_chars_used = True
 	if is_mixed_chars_used:
@@ -2879,14 +2881,12 @@ def train_character_recognizer_using_mixup(num_epochs=100, batch_size=128, devic
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
-	lang = 'kor'  # {'kor', 'eng'}.
-	train_test_ratio = 0.8
-	shuffle = True
-	num_workers = 8
-
 	loss_type = 'xent'  # {'xent', 'nll'}.
 	#max_gradient_norm = 5  # Gradient clipping value.
 	max_gradient_norm = None
+	train_test_ratio = 0.8
+	shuffle = True
+	num_workers = 8
 	log_print_freq = 1000
 
 	model_filepath_to_load = None
@@ -2929,7 +2929,7 @@ def train_character_recognizer_using_mixup(num_epochs=100, batch_size=128, devic
 	#--------------------
 	# Build a model.
 
-	model, train_forward_functor, criterion = build_char_mixup_model(label_converter, image_channel, loss_type, lang, device)
+	model, train_forward_functor, criterion = build_char_mixup_model(label_converter, image_channel, loss_type, lang)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -2951,6 +2951,7 @@ def train_character_recognizer_using_mixup(num_epochs=100, batch_size=128, devic
 		model = load_model(model_filepath_to_load, model, device=device)
 
 	model = model.to(device)
+	criterion = criterion.to(device)
 
 	#--------------------
 	# Train the model.
@@ -3008,6 +3009,8 @@ def train_word_recognizer_based_on_rare1(num_epochs=20, batch_size=64, device='c
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	lang = 'kor'  # {'kor', 'eng'}.
+	max_word_len = 5  # Max. word length.
 	# File-based words: 504,279.
 	is_mixed_words_used = True
 	if is_mixed_words_used:
@@ -3015,18 +3018,15 @@ def train_word_recognizer_based_on_rare1(num_epochs=20, batch_size=64, device='c
 	else:
 		word_type = 'simple_word'  # {'simple_word', 'random_word', 'aihub_word', 'file_based_word'}.
 		num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
-	max_word_len = 5  # Max. word length.
 	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
-	lang = 'kor'  # {'kor', 'eng'}.
+	loss_type = 'xent'  # {'ctc', 'xent', 'nll'}.
+	max_gradient_norm = 5  # Gradient clipping value.
 	train_test_ratio = 0.8
 	shuffle = True
 	num_workers = 8
-
-	loss_type = 'xent'  # {'ctc', 'xent', 'nll'}.
-	max_gradient_norm = 5  # Gradient clipping value.
 	log_print_freq = 1000
 
 	model_filepath_to_load = None
@@ -3069,6 +3069,7 @@ def train_word_recognizer_based_on_rare1(num_epochs=20, batch_size=64, device='c
 		SOS_ID, EOS_ID = None, None
 		num_suffixes = 0
 	elif loss_type in ['xent', 'nll']:
+		BLANK_LABEL = None
 		SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
 		if is_separate_pad_id_used:
 			# When <PAD> token has a separate valid token ID.
@@ -3101,7 +3102,7 @@ def train_word_recognizer_based_on_rare1(num_epochs=20, batch_size=64, device='c
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, train_forward_functor, criterion = build_rare1_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_word_len, num_suffixes, SOS_ID, BLANK_LABEL if loss_type == 'ctc' else None, device)
+	model, infer_functor, train_forward_functor, criterion = build_rare1_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_word_len, num_suffixes, SOS_ID, BLANK_LABEL if loss_type == 'ctc' else None)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3123,6 +3124,7 @@ def train_word_recognizer_based_on_rare1(num_epochs=20, batch_size=64, device='c
 		model = load_model(model_filepath_to_load, model, device=device)
 
 	model = model.to(device)
+	criterion = criterion.to(device)
 
 	#--------------------
 	# Train the model.
@@ -3184,6 +3186,8 @@ def train_word_recognizer_based_on_rare2(num_epochs=20, batch_size=64, device='c
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	lang = 'kor'  # {'kor', 'eng'}.
+	max_word_len = 5  # Max. word length.
 	# File-based words: 504,279.
 	is_mixed_words_used = True
 	if is_mixed_words_used:
@@ -3191,18 +3195,15 @@ def train_word_recognizer_based_on_rare2(num_epochs=20, batch_size=64, device='c
 	else:
 		word_type = 'simple_word'  # {'simple_word', 'random_word', 'aihub_word', 'file_based_word'}.
 		num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
-	max_word_len = 5  # Max. word length.
 	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
-	lang = 'kor'  # {'kor', 'eng'}.
+	loss_type = 'xent'  # {'xent', 'nll'}.
+	max_gradient_norm = 5  # Gradient clipping value.
 	train_test_ratio = 0.8
 	shuffle = True
 	num_workers = 8
-
-	loss_type = 'xent'  # {'xent', 'nll'}.
-	max_gradient_norm = 5  # Gradient clipping value.
 	log_print_freq = 1000
 
 	model_filepath_to_load = None
@@ -3264,7 +3265,7 @@ def train_word_recognizer_based_on_rare2(num_epochs=20, batch_size=64, device='c
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, train_forward_functor, criterion = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type, max_word_len + num_suffixes, SOS_ID, device)
+	model, infer_functor, train_forward_functor, criterion = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type, max_word_len + num_suffixes, SOS_ID)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3286,6 +3287,7 @@ def train_word_recognizer_based_on_rare2(num_epochs=20, batch_size=64, device='c
 		model = load_model(model_filepath_to_load, model, device=device)
 
 	model = model.to(device)
+	criterion = criterion.to(device)
 
 	#--------------------
 	# Train the model.
@@ -3347,6 +3349,8 @@ def train_word_recognizer_based_on_aster(num_epochs=20, batch_size=64, device='c
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	lang = 'kor'  # {'kor', 'eng'}.
+	max_word_len = 5  # Max. word length.
 	# File-based words: 504,279.
 	is_mixed_words_used = True
 	if is_mixed_words_used:
@@ -3354,19 +3358,16 @@ def train_word_recognizer_based_on_aster(num_epochs=20, batch_size=64, device='c
 	else:
 		word_type = 'simple_word'  # {'simple_word', 'random_word', 'aihub_word', 'file_based_word'}.
 		num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
-	max_word_len = 5  # Max. word length.
 	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
-	lang = 'kor'  # {'kor', 'eng'}.
-	train_test_ratio = 0.8
-	shuffle = True
-	num_workers = 8
-
 	#loss_type = 'sxent'  # Sequence cross entropy.
 	#max_gradient_norm = 5  # Gradient clipping value.
 	max_gradient_norm = None
+	train_test_ratio = 0.8
+	shuffle = True
+	num_workers = 8
 	log_print_freq = 1000
 
 	model_filepath_to_load = None
@@ -3427,7 +3428,7 @@ def train_word_recognizer_based_on_aster(num_epochs=20, batch_size=64, device='c
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, train_forward_functor, sys_args = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_word_len, EOS_ID, device)
+	model, infer_functor, train_forward_functor, sys_args = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_word_len, EOS_ID)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3513,6 +3514,8 @@ def train_word_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, device=
 
 	encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
 
+	lang = 'kor'  # {'kor', 'eng'}.
+	max_word_len = 5  # Max. word length.
 	# File-based words: 504,279.
 	is_mixed_words_used = True
 	if is_mixed_words_used:
@@ -3520,19 +3523,16 @@ def train_word_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, device=
 	else:
 		word_type = 'simple_word'  # {'simple_word', 'random_word', 'aihub_word', 'file_based_word'}.
 		num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
-	max_word_len = 5  # Max. word length.
 	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
-	lang = 'kor'  # {'kor', 'eng'}.
-	train_test_ratio = 0.8
-	shuffle = True
-	num_workers = 8
-
 	loss_type = 'xent'  # {'xent', 'nll'}.
 	#max_gradient_norm = 20  # Gradient clipping value.
 	max_gradient_norm = None
+	train_test_ratio = 0.8
+	shuffle = True
+	num_workers = 8
 	log_print_freq = 1000
 
 	model_filepath_to_load = None
@@ -3592,7 +3592,7 @@ def train_word_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, device=
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, train_forward_functor, criterion = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_word_len, encoder_type, lang, loss_type, device)
+	model, infer_functor, train_forward_functor, criterion = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_word_len, encoder_type, lang, loss_type)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3615,6 +3615,7 @@ def train_word_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, device=
 
 	model = model.to(device)
 	model.generator = model.generator.to(device)
+	criterion = criterion.to(device)
 
 	#--------------------
 	# Train the model.
@@ -3676,6 +3677,8 @@ def train_word_recognizer_based_on_rare1_and_opennmt(num_epochs=20, batch_size=6
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	lang = 'kor'  # {'kor', 'eng'}.
+	max_word_len = 5  # Max. word length.
 	# File-based words: 504,279.
 	is_mixed_words_used = True
 	if is_mixed_words_used:
@@ -3683,19 +3686,16 @@ def train_word_recognizer_based_on_rare1_and_opennmt(num_epochs=20, batch_size=6
 	else:
 		word_type = 'simple_word'  # {'simple_word', 'random_word', 'aihub_word', 'file_based_word'}.
 		num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
-	max_word_len = 5  # Max. word length.
 	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
-	lang = 'kor'  # {'kor', 'eng'}.
-	train_test_ratio = 0.8
-	shuffle = True
-	num_workers = 8
-
 	loss_type = 'xent'  # {'xent', 'nll'}.
 	#max_gradient_norm = 20  # Gradient clipping value.
 	max_gradient_norm = None
+	train_test_ratio = 0.8
+	shuffle = True
+	num_workers = 8
 	log_print_freq = 1000
 
 	model_filepath_to_load = None
@@ -3777,6 +3777,7 @@ def train_word_recognizer_based_on_rare1_and_opennmt(num_epochs=20, batch_size=6
 		model = load_model(model_filepath_to_load, model, device=device)
 
 	model = model.to(device)
+	criterion = criterion.to(device)
 
 	#--------------------
 	# Train the model.
@@ -3838,6 +3839,8 @@ def train_word_recognizer_based_on_rare2_and_opennmt(num_epochs=20, batch_size=6
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	lang = 'kor'  # {'kor', 'eng'}.
+	max_word_len = 5  # Max. word length.
 	# File-based words: 504,279.
 	is_mixed_words_used = True
 	if is_mixed_words_used:
@@ -3845,19 +3848,16 @@ def train_word_recognizer_based_on_rare2_and_opennmt(num_epochs=20, batch_size=6
 	else:
 		word_type = 'simple_word'  # {'simple_word', 'random_word', 'aihub_word', 'file_based_word'}.
 		num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
-	max_word_len = 5  # Max. word length.
 	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
-	lang = 'kor'  # {'kor', 'eng'}.
-	train_test_ratio = 0.8
-	shuffle = True
-	num_workers = 8
-
 	loss_type = 'xent'  # {'xent', 'nll'}.
 	#max_gradient_norm = 20  # Gradient clipping value.
 	max_gradient_norm = None
+	train_test_ratio = 0.8
+	shuffle = True
+	num_workers = 8
 	log_print_freq = 1000
 
 	model_filepath_to_load = None
@@ -3939,6 +3939,7 @@ def train_word_recognizer_based_on_rare2_and_opennmt(num_epochs=20, batch_size=6
 		model = load_model(model_filepath_to_load, model, device=device)
 
 	model = model.to(device)
+	criterion = criterion.to(device)
 
 	#--------------------
 	# Train the model.
@@ -4000,6 +4001,8 @@ def train_word_recognizer_based_on_aster_and_opennmt(num_epochs=20, batch_size=6
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	lang = 'kor'  # {'kor', 'eng'}.
+	max_word_len = 5  # Max. word length.
 	# File-based words: 504,279.
 	is_mixed_words_used = True
 	if is_mixed_words_used:
@@ -4007,19 +4010,16 @@ def train_word_recognizer_based_on_aster_and_opennmt(num_epochs=20, batch_size=6
 	else:
 		word_type = 'simple_word'  # {'simple_word', 'random_word', 'aihub_word', 'file_based_word'}.
 		num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
-	max_word_len = 5  # Max. word length.
 	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
-	lang = 'kor'  # {'kor', 'eng'}.
-	train_test_ratio = 0.8
-	shuffle = True
-	num_workers = 8
-
 	loss_type = 'xent'  # {'xent', 'nll'}.
 	#max_gradient_norm = 20  # Gradient clipping value.
 	max_gradient_norm = None
+	train_test_ratio = 0.8
+	shuffle = True
+	num_workers = 8
 	log_print_freq = 1000
 
 	model_filepath_to_load = None
@@ -4101,6 +4101,7 @@ def train_word_recognizer_based_on_aster_and_opennmt(num_epochs=20, batch_size=6
 		model = load_model(model_filepath_to_load, model, device=device)
 
 	model = model.to(device)
+	criterion = criterion.to(device)
 
 	#--------------------
 	# Train the model.
@@ -4162,6 +4163,8 @@ def train_word_recognizer_using_mixup(num_epochs=20, batch_size=64, device='cpu'
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	lang = 'kor'  # {'kor', 'eng'}.
+	max_word_len = 25  # Max. word length.
 	# File-based words: 504,279.
 	is_mixed_words_used = True
 	if is_mixed_words_used:
@@ -4169,18 +4172,15 @@ def train_word_recognizer_using_mixup(num_epochs=20, batch_size=64, device='cpu'
 	else:
 		word_type = 'simple_word'  # {'simple_word', 'random_word', 'aihub_word', 'file_based_word'}.
 		num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
-	max_word_len = 25  # Max. word length.
 	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
-	lang = 'kor'  # {'kor', 'eng'}.
+	loss_type = 'xent'  # {'ctc', 'xent', 'nll'}.
+	max_gradient_norm = 5  # Gradient clipping value.
 	train_test_ratio = 0.8
 	shuffle = True
 	num_workers = 8
-
-	loss_type = 'xent'  # {'ctc', 'xent', 'nll'}.
-	max_gradient_norm = 5  # Gradient clipping value.
 	log_print_freq = 1000
 
 	model_filepath_to_load = None
@@ -4223,6 +4223,7 @@ def train_word_recognizer_using_mixup(num_epochs=20, batch_size=64, device='cpu'
 		SOS_ID, EOS_ID = None, None
 		num_suffixes = 0
 	elif loss_type in ['xent', 'nll']:
+		BLANK_LABEL = None
 		SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
 		if is_separate_pad_id_used:
 			# When <PAD> token has a separate valid token ID.
@@ -4255,7 +4256,7 @@ def train_word_recognizer_using_mixup(num_epochs=20, batch_size=64, device='cpu'
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, train_forward_functor, criterion = build_rare1_mixup_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_word_len, num_suffixes, SOS_ID, BLANK_LABEL if loss_type == 'ctc' else None, device)
+	model, infer_functor, train_forward_functor, criterion = build_rare1_mixup_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_word_len, num_suffixes, SOS_ID, BLANK_LABEL if loss_type == 'ctc' else None)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -4277,6 +4278,7 @@ def train_word_recognizer_using_mixup(num_epochs=20, batch_size=64, device='cpu'
 		model = load_model(model_filepath_to_load, model, device=device)
 
 	model = model.to(device)
+	criterion = criterion.to(device)
 
 	#--------------------
 	# Train the model.
@@ -4339,10 +4341,10 @@ def evaluate_word_recognizer_using_aihub_data(max_label_len, batch_size, is_sepa
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	lang = 'kor'  # {'kor', 'eng'}.
 	image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
 	is_preloaded_image_used = False
 
-	lang = 'kor'  # {'kor', 'eng'}.
 	shuffle = False
 	num_workers = 8
 
@@ -4418,12 +4420,12 @@ def evaluate_word_recognizer_using_aihub_data(max_label_len, batch_size, is_sepa
 		# For RARE2.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2_attn_xent_gradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9514_epoch3.pth'
 
-		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID, device=device)
+		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID)
 	elif False:
 		# For ASTER + OpenNMT.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster_sxent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.8449_epoch3.pth'
 
-		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_ID, device=device)
+		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_ID)
 	elif False:
 		# For ASTER + OpenNMT.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_xent_nogradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9325_epoch2.pth'
@@ -4461,6 +4463,8 @@ def train_textline_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, dev
 
 	encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
 
+	lang = 'kor'  # {'kor', 'eng'}.
+	max_textline_len = 50  # Max. text line length.
 	# File-based text lines: 55,835.
 	is_mixed_textlines_used = True
 	if is_mixed_textlines_used:
@@ -4468,7 +4472,6 @@ def train_textline_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, dev
 	else:
 		textline_type = 'simple_textline'  # {'simple_textline', 'random_textline', 'trdg_textline', 'aihub_textline', 'file_based_textline'}.
 		num_train_examples, num_test_examples = int(2e5), int(2e3)  # For simple, random, and TRDG text lines.
-	max_textline_len = 50  # Max. text line length.
 	word_len_interval = (1, 20)
 	word_count_interval = (1, 5)
 	space_count_interval = (1, 3)
@@ -4476,14 +4479,12 @@ def train_textline_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, dev
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
-	lang = 'kor'  # {'kor', 'eng'}.
-	train_test_ratio = 0.8
-	shuffle = True
-	num_workers = 8
-
 	loss_type = 'xent'  # {'xent', 'nll'}.
 	#max_gradient_norm = 20  # Gradient clipping value.
 	max_gradient_norm = None
+	train_test_ratio = 0.8
+	shuffle = True
+	num_workers = 8
 	log_print_freq = 1000
 
 	model_filepath_to_load = None
@@ -4543,7 +4544,7 @@ def train_textline_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, dev
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, train_forward_functor, criterion = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_textline_len, encoder_type, lang, loss_type, device)
+	model, infer_functor, train_forward_functor, criterion = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_textline_len, encoder_type, lang, loss_type)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -4566,6 +4567,7 @@ def train_textline_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, dev
 
 	model = model.to(device)
 	model.generator = model.generator.to(device)
+	criterion = criterion.to(device)
 
 	#--------------------
 	# Train the model.
@@ -4628,6 +4630,8 @@ def train_textline_recognizer_based_on_transformer(num_epochs=40, batch_size=64,
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	lang = 'kor'  # {'kor', 'eng'}.
+	max_textline_len = 50  # Max. text line length.
 	# File-based text lines: 55,835.
 	is_mixed_textlines_used = True
 	if is_mixed_textlines_used:
@@ -4635,7 +4639,6 @@ def train_textline_recognizer_based_on_transformer(num_epochs=40, batch_size=64,
 	else:
 		textline_type = 'simple_textline'  # {'simple_textline', 'random_textline', 'trdg_textline', 'aihub_textline', 'file_based_textline'}.
 		num_train_examples, num_test_examples = int(2e5), int(2e3)  # For simple, random, and TRDG text lines.
-	max_textline_len = 50  # Max. text line length.
 	word_len_interval = (1, 20)
 	word_count_interval = (1, 5)
 	space_count_interval = (1, 3)
@@ -4643,14 +4646,12 @@ def train_textline_recognizer_based_on_transformer(num_epochs=40, batch_size=64,
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
-	lang = 'kor'  # {'kor', 'eng'}.
-	train_test_ratio = 0.8
-	shuffle = True
-	num_workers = 8
-
 	loss_type = 'kldiv'  # {'kldiv'}.
 	#max_gradient_norm = 20  # Gradient clipping value.
 	max_gradient_norm = None
+	train_test_ratio = 0.8
+	shuffle = True
+	num_workers = 8
 	log_print_freq = 1000
 
 	model_filepath_to_load = None
@@ -4710,7 +4711,7 @@ def train_textline_recognizer_based_on_transformer(num_epochs=40, batch_size=64,
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, train_forward_functor, criterion = build_transformer_ocr_model(label_converter, image_height, image_width, image_channel, max_textline_len, lang, is_train=True, device=device)
+	model, infer_functor, train_forward_functor, criterion = build_transformer_ocr_model(label_converter, image_height, image_width, image_channel, max_textline_len, lang, is_train=True)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -4732,6 +4733,7 @@ def train_textline_recognizer_based_on_transformer(num_epochs=40, batch_size=64,
 		model = load_model(model_filepath_to_load, model, device=device)
 
 	model = model.to(device)
+	criterion = criterion.to(device)
 
 	#--------------------
 	# Train the model.
@@ -4951,6 +4953,7 @@ def recognize_word_using_craft(device='cpu'):
 		num_suffixes = 0
 	else:
 		is_separate_pad_id_used = False
+		BLANK_LABEL = None
 		SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
 		if is_separate_pad_id_used:
 			# When <PAD> token has a separate valid token ID.
@@ -5047,7 +5050,7 @@ def recognize_word_using_craft(device='cpu'):
 	else:
 		glogger.info('No text detected.')
 
-def recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_size, is_separate_pad_id_used=False, device='cpu'):
+def recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_size, is_separate_pad_id_used=True, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -5055,9 +5058,9 @@ def recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_si
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	lang = 'kor'  # {'kor', 'eng'}.
 	is_preloaded_image_used = False
 
-	lang = 'kor'  # {'kor', 'eng'}.
 	shuffle = False
 	num_workers = 8
 
@@ -5139,18 +5142,18 @@ def recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_si
 		# For RARE2.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2_attn_xent_gradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9514_epoch3.pth'
 
-		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID, device=device)
+		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID)
 	elif False:
 		# For ASTER.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster_sxent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.8449_epoch3.pth'
 
-		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_ID, device=device)
+		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_ID)
 	elif True:
 		# For OpenNMT.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_onmt_xent_nogradclip_allparams_nopad_kor_ch5_64x640x3_best_20200725T115106.pth'
 
 		encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
-		model, infer_functor, _, _ = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, encoder_type, lang, loss_type=None, device=device)
+		model, infer_functor, _, _ = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, encoder_type, lang, loss_type=None)
 	elif False:
 		# For RARE2 + OpenNMT.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2+onmt_xent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.9441_epoch20_new.pth'
@@ -5161,6 +5164,11 @@ def recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_si
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_xent_nogradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9325_epoch2_new.pth'
 
 		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
+	elif False:
+		# For transformer.
+		model_filepath_to_load = './training_outputs_textline_recognition/textline_recognition_transformer_kldiv_nogradclip_allparams_pad_kor_ch10_64x1280x3_acc0.9794_epoch19.pth'
+
+		model, infer_functor, _, _ = build_transformer_ocr_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, is_train=False)
 	else:
 		raise ValueError('Undefined model')
 	assert model_filepath_to_load is not None
@@ -5184,7 +5192,7 @@ def recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_si
 	infer_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, batch_size=batch_size, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=True, device=device)
 	glogger.info('End inferring: {} secs.'.format(time.time() - start_time))
 
-def recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_len, is_separate_pad_id_used=False, device='cpu'):
+def recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_len, is_separate_pad_id_used=True, device='cpu'):
 	batch_size = 1
 
 	#image_height, image_width, image_channel = 32, 100, 3
@@ -5194,9 +5202,9 @@ def recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_le
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	lang = 'kor'  # {'kor', 'eng'}.
 	is_preloaded_image_used = False
 
-	lang = 'kor'  # {'kor', 'eng'}.
 	shuffle = False
 	num_workers = 8
 
@@ -5276,18 +5284,18 @@ def recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_le
 		# For RARE2.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2_attn_xent_gradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9514_epoch3.pth'
 
-		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID, device=device)
+		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID)
 	elif False:
 		# For ASTER.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster_sxent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.8449_epoch3.pth'
 
-		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_ID, device=device)
+		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_ID)
 	elif True:
 		# For OpenNMT.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_onmt_xent_nogradclip_allparams_nopad_kor_ch5_64x640x3_best_20200725T115106.pth'
 
 		encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
-		model, infer_functor, _, _ = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, encoder_type, lang, loss_type=None, device=device)
+		model, infer_functor, _, _ = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, encoder_type, lang, loss_type=None)
 	elif False:
 		# For RARE2 + OpenNMT.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2+onmt_xent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.9441_epoch20_new.pth'
@@ -5298,6 +5306,11 @@ def recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_le
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_xent_nogradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9325_epoch2_new.pth'
 
 		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
+	elif False:
+		# For transformer.
+		model_filepath_to_load = './training_outputs_textline_recognition/textline_recognition_transformer_kldiv_nogradclip_allparams_pad_kor_ch10_64x1280x3_acc0.9794_epoch19.pth'
+
+		model, infer_functor, _, _ = build_transformer_ocr_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, is_train=False)
 	else:
 		raise ValueError('Undefined model')
 	assert model_filepath_to_load is not None
@@ -5342,6 +5355,7 @@ def parse_command_line_options():
 		action='store_true',
 		help='Specify whether to infer by a trained model'
 	)
+	"""
 	parser.add_argument(
 		'-m',
 		'--model_file',
@@ -5360,6 +5374,7 @@ def parse_command_line_options():
 		#required=True,
 		default=None
 	)
+	"""
 	parser.add_argument(
 		'-tr',
 		'--train_data_dir',
@@ -5426,7 +5441,7 @@ def get_logger(name, log_level=None, log_dir_path=None, is_rotating=True):
 	if not log_level: log_level = logging.INFO
 	if not log_dir_path: log_dir_path = './log'
 	if not os.path.isdir(log_dir_path):
-		os.mkdir(log_dir_path)
+		os.makedirs(log_dir_path, exist_ok=True)
 
 	log_filepath = os.path.join(log_dir_path, (name if name else 'swl') + '.log')
 	if is_rotating:
@@ -5481,6 +5496,20 @@ def main():
 	logger.info('Device: {}.'.format(device))
 
 	#--------------------
+	is_resumed = args.model_file is not None
+
+	model_filepath, output_dir_path = os.path.normpath(args.model_file) if args.model_file else None, os.path.normpath(args.out_dir) if args.out_dir else None
+	if model_filepath:
+		if not output_dir_path:
+			output_dir_path = os.path.dirname(model_filepath)
+	else:
+		if not output_dir_path:
+			output_dir_prefix = 'text_recognition'
+			output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+		model_filepath = os.path.join(output_dir_path, 'model.pth')
+
+	#--------------------
 	#train_character_recognizer(args.epoch, args.batch_size, device)
 	#train_character_recognizer_using_mixup(args.epoch, args.batch_size, device)
 
@@ -5519,8 +5548,8 @@ def main():
 		# For textline recognition.
 		image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
 		max_label_len = 30
-	#recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_size=args.batch_size, is_separate_pad_id_used=False, device=device)
-	#recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_len, is_separate_pad_id_used=False, device=device)
+	#recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_size=args.batch_size, is_separate_pad_id_used=True, device=device)
+	#recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_len, is_separate_pad_id_used=True, device=device)  # batch_size = 1.
 
 #--------------------------------------------------------------------
 
