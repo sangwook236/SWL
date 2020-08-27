@@ -204,33 +204,56 @@ def JamoTokenConverter_test():
 	print('Decoded tokens = {}.'.format(decoded))
 	assert seq == decoded
 
-def compute_simple_text_recognition_accuracy_test():
-	inferred_texts     = ['abc', 'df',  'ghijk', 'ab cde', 'fhijk lmno', 'pqrst uvwy', 'abc defg hijklmn opqr', 'abc deg hijklmn opqr', 'abc df hijklmn opqr', '',    'zyx']
-	ground_truth_texts = ['abc', 'def', 'gijk',  'ab cde', 'fghijk lmo', 'pqst uvwxy', 'abc defg hijklmn opqr', 'abc defg hiklmn opqr', 'abc defg hijklmn pr', 'xyz', '']
-	# #texts = 11, #words = 23, #characters = 103.
+def compute_simple_text_matching_accuracy_test():
+	# #texts = 12 * 2 = 24, #words = 26 * 2 = 52, #characters = 111 + 112 = 223.
+	inferred_texts     = ['abc', 'df',  'ghijk', 'ab cde', 'fhijk lmno', 'pqrst uvwy', 'abc defg hijklmn opqr', 'abc deg hijklmn opqr', 'abc df hijklmn opqr', '',    'zyx', '우리나라 대한민국 만세']
+	ground_truth_texts = ['abc', 'def', 'gijk',  'ab cde', 'fghijk lmo', 'pqst uvwxy', 'abc defg hijklmn opqr', 'abc defg hiklmn opqr', 'abc defg hijklmn pr', 'xyz', '',    '대한민국! 우리 만.세.']
 
-	print('[SWL] Info: Start computing text recognition accuracy...')
+	#inferred_texts, ground_truth_texts = list(map(lambda x: x.lower(), inferred_texts)), list(map(lambda x: x.lower(), ground_truth_texts))  # Case-insensitive.
+	text_pairs = list(zip(inferred_texts, ground_truth_texts))
+
+	print('[SWL] Info: Start computing simple matching accuracy...')
 	start_time = time.time()
-	#inferred_texts, ground_truth_texts = list(map(lambda x: x.lower(), inferred_texts)), list(map(lambda x: x.lower(), ground_truth_texts))
-	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = swl_langproc_util.compute_simple_text_recognition_accuracy(zip(inferred_texts, ground_truth_texts))
-	print('[SWL] Info: End computing text recognition accuracy: {} secs.'.format(time.time() - start_time))
-	print('\tText accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
-	print('\tWord accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
-	print('\tChar accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
+	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = swl_langproc_util.compute_simple_text_matching_accuracy(text_pairs)
+	print('[SWL] Info: End computing simple matching accuracy: {} secs.'.format(time.time() - start_time))
+
+	print('\tText: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
+	print('\tWord: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
+	print('\tChar: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
+
+def compute_sequence_matching_ratio_test():
+	# #texts = 12 * 2 = 24, #words = 26 * 2 = 52, #characters = 111 + 112 = 223.
+	inferred_texts     = ['abc', 'df',  'ghijk', 'ab cde', 'fhijk lmno', 'pqrst uvwy', 'abc defg hijklmn opqr', 'abc deg hijklmn opqr', 'abc df hijklmn opqr', '',    'zyx', '우리나라 대한민국 만세']
+	ground_truth_texts = ['abc', 'def', 'gijk',  'ab cde', 'fghijk lmo', 'pqst uvwxy', 'abc defg hijklmn opqr', 'abc defg hiklmn opqr', 'abc defg hijklmn pr', 'xyz', '',    '대한민국! 우리 만.세.']
+
+	#inferred_texts, ground_truth_texts = list(map(lambda x: x.lower(), inferred_texts)), list(map(lambda x: x.lower(), ground_truth_texts))  # Case-insensitive.
+	text_pairs = list(zip(inferred_texts, ground_truth_texts))
+
+	print('[SWL] Info: Start computing average matching ratio...')
+	start_time = time.time()
+	ave_matching_ratio = swl_langproc_util.compute_sequence_matching_ratio(text_pairs, isjunk=None)  # [0, 1].
+	#ave_matching_ratio = swl_langproc_util.compute_sequence_matching_ratio(text_pairs, isjunk=lambda x: x == '\n\r')  # [0, 1].
+	#ave_matching_ratio = swl_langproc_util.compute_sequence_matching_ratio(text_pairs, isjunk=lambda x: x == ' \t\n\r')  # [0, 1].
+	print('[SWL] Info: End computing average matching ratio: {} secs.'.format(time.time() - start_time))
+
+	print('\tAverage matching ratio = {}.'.format(ave_matching_ratio))
 
 def compute_string_distance_test():
-	inferred_texts     = ['abc', 'df',  'ghijk', 'ab cde', 'fhijk lmno', 'pqrst uvwy', 'abc defg hijklmn opqr', 'abc deg hijklmn opqr', 'abc df hijklmn opqr', '',    'zyx']
-	ground_truth_texts = ['abc', 'def', 'gijk',  'ab cde', 'fghijk lmo', 'pqst uvwxy', 'abc defg hijklmn opqr', 'abc defg hiklmn opqr', 'abc defg hijklmn pr', 'xyz', '']
-	# #texts = 11, #words = 23, #characters = 103.
+	# #texts = 12 * 2 = 24, #words = 26 * 2 = 52, #characters = 111 + 112 = 223.
+	inferred_texts     = ['abc', 'df',  'ghijk', 'ab cde', 'fhijk lmno', 'pqrst uvwy', 'abc defg hijklmn opqr', 'abc deg hijklmn opqr', 'abc df hijklmn opqr', '',    'zyx', '우리나라 대한민국 만세']
+	ground_truth_texts = ['abc', 'def', 'gijk',  'ab cde', 'fghijk lmo', 'pqst uvwxy', 'abc defg hijklmn opqr', 'abc defg hiklmn opqr', 'abc defg hijklmn pr', 'xyz', '',    '대한민국! 우리 만.세.']
 
-	print('[SWL] Info: Start computing text recognition accuracy...')
+	#inferred_texts, ground_truth_texts = list(map(lambda x: x.lower(), inferred_texts)), list(map(lambda x: x.lower(), ground_truth_texts))  # Case-insensitive.
+	text_pairs = list(zip(inferred_texts, ground_truth_texts))
+
+	print('[SWL] Info: Start computing string distance...')
 	start_time = time.time()
-	#inferred_texts, ground_truth_texts = list(map(lambda x: x.lower(), inferred_texts)), list(map(lambda x: x.lower(), ground_truth_texts))
-	text_distance, word_distance, char_distance, total_text_count, total_word_count, total_char_count = swl_langproc_util.compute_string_distance(zip(inferred_texts, ground_truth_texts))
-	print('[SWL] Info: End computing text recognition accuracy: {} secs.'.format(time.time() - start_time))
-	print('\tText: Distance = {0}, average distance = {0} / {1} = {2}.'.format(text_distance, total_text_count, text_distance / total_text_count))
-	print('\tWord: Distance = {0}, average distance = {0} / {1} = {2}.'.format(word_distance, total_word_count, word_distance / total_word_count))
-	print('\tChar: Distance = {0}, average distance = {0} / {1} = {2}.'.format(char_distance, total_char_count, char_distance / total_char_count))
+	text_distance, word_distance, char_distance, total_text_count, total_word_count, total_char_count = swl_langproc_util.compute_string_distance(text_pairs)
+	print('[SWL] Info: End computing string distance: {} secs.'.format(time.time() - start_time))
+
+	print('\tText: String distance = {0}, average string distance = {0} / {1} = {2}.'.format(text_distance, total_text_count, text_distance / total_text_count))
+	print('\tWord: String distance = {0}, average string distance = {0} / {1} = {2}.'.format(word_distance, total_word_count, word_distance / total_word_count))
+	print('\tChar: String distance = {0}, average string distance = {0} / {1} = {2}.'.format(char_distance, total_char_count, char_distance / total_char_count))
 
 def hangeul_example(need_mask=False):
 	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
@@ -868,10 +891,11 @@ def transform_text_line_test():
 
 def main():
 	#TokenConverter_test()
-	JamoTokenConverter_test()
+	#JamoTokenConverter_test()
 
-	#compute_simple_text_recognition_accuracy_test()
-	#compute_string_distance_test()
+	compute_simple_text_matching_accuracy_test()
+	compute_sequence_matching_ratio_test()
+	compute_string_distance_test()
 
 	#generate_text_image_test()
 	#generate_text_image_and_mask_test()

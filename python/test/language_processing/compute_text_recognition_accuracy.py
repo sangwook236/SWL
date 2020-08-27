@@ -3,6 +3,7 @@
 
 import sys
 sys.path.append('../../src')
+sys.path.append('./src')
 
 import os, math, functools, time, glob, csv
 import numpy as np
@@ -345,14 +346,14 @@ def compute_simple_matching_accuracy_using_icdar2019_sroie():
 	print('[SWL] Info: End checking ID validity: {} secs.'.format(time.time() - start_time))
 
 	#--------------------
-	print('[SWL] Info: Start comparing text recognition results...')
+	print('[SWL] Info: Start computing simple matching accuracy...')
 	start_time = time.time()
-	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = swl_langproc_util.compute_simple_text_recognition_accuracy(text_pairs)
-	print('[SWL] Info: End comparing text recognition results: {} secs.'.format(time.time() - start_time))
+	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = swl_langproc_util.compute_simple_text_matching_accuracy(text_pairs)
+	print('[SWL] Info: End computing simple matching accuracy: {} secs.'.format(time.time() - start_time))
 
-	print('\tText accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
-	print('\tWord accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
-	print('\tChar accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
+	print('\tText: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else 0))
+	print('\tWord: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else 0))
+	print('\tChar: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else 0))
 
 def compute_string_distance_using_icdar2019_sroie():
 	print('[SWL] Info: Start loading text recognition results...')
@@ -394,14 +395,14 @@ def compute_string_distance_using_icdar2019_sroie():
 	print('[SWL] Info: End checking ID validity: {} secs.'.format(time.time() - start_time))
 
 	#--------------------
-	print('[SWL] Info: Start comparing text recognition results...')
+	print('[SWL] Info: Start computing string distance...')
 	start_time = time.time()
 	text_distance, word_distance, char_distance, total_text_count, total_word_count, total_char_count = swl_langproc_util.compute_string_distance(text_pairs)
-	print('[SWL] Info: End comparing text recognition results: {} secs.'.format(time.time() - start_time))
+	print('[SWL] Info: End computing string distance: {} secs.'.format(time.time() - start_time))
 
-	print('\tText: Distance = {0}, average distance = {0} / {1} = {2}.'.format(text_distance, total_text_count, text_distance / total_text_count))
-	print('\tWord: Distance = {0}, average distance = {0} / {1} = {2}.'.format(word_distance, total_word_count, word_distance / total_word_count))
-	print('\tChar: Distance = {0}, average distance = {0} / {1} = {2}.'.format(char_distance, total_char_count, char_distance / total_char_count))
+	print('\tText: String distance = {0}, average string distance = {0} / {1} = {2}.'.format(text_distance, total_text_count, text_distance / total_text_count if total_text_count > 0 else 0))
+	print('\tWord: String distance = {0}, average string distance = {0} / {1} = {2}.'.format(word_distance, total_word_count, word_distance / total_word_count if total_word_count > 0 else 0))
+	print('\tChar: String distance = {0}, average string distance = {0} / {1} = {2}.'.format(char_distance, total_char_count, char_distance / total_char_count if total_char_count > 0 else 0))
 
 #--------------------------------------------------------------------
 
@@ -495,24 +496,34 @@ def compute_accuracy_from_inference_result():
 			print('File not found, {}: {}.'.format(result_filepath, ex))
 
 	#--------------------
-	print('[SWL] Info: Start computing accuracy (simple matching)...')
+	print('[SWL] Info: Start computing simple matching accuracy...')
 	start_time = time.time()
-	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = swl_langproc_util.compute_simple_text_recognition_accuracy(text_pairs)
-	print('[SWL] Info: End computing accuracy: {} secs.'.format(time.time() - start_time))
+	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = swl_langproc_util.compute_simple_text_matching_accuracy(text_pairs)
+	print('[SWL] Info: End computing simple matching accuracy: {} secs.'.format(time.time() - start_time))
 
-	print('\tText accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
-	print('\tWord accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
-	print('\tChar accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
+	print('\tText: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else 0))
+	print('\tWord: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else 0))
+	print('\tChar: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else 0))
 
 	#--------------------
-	print('[SWL] Info: Start computing accuracy (string distance)...')
+	print('[SWL] Info: Start computing average sequence matching ratio...')
+	start_time = time.time()
+	ave_matching_ratio = swl_langproc_util.compute_sequence_matching_ratio(text_pairs, isjunk=None)  # [0, 1].
+	#ave_matching_ratio = swl_langproc_util.compute_sequence_matching_ratio(text_pairs, isjunk=lambda x: x == '\n\r')  # [0, 1].
+	#ave_matching_ratio = swl_langproc_util.compute_sequence_matching_ratio(text_pairs, isjunk=lambda x: x == ' \t\n\r')  # [0, 1].
+	print('[SWL] Info: End computing average sequence matching ratio: {} secs.'.format(time.time() - start_time))
+
+	print('\tAverage sequence matching ratio = {}.'.format(ave_matching_ratio))
+
+	#--------------------
+	print('[SWL] Info: Start computing string distance...')
 	start_time = time.time()
 	text_distance, word_distance, char_distance, total_text_count, total_word_count, total_char_count = swl_langproc_util.compute_string_distance(text_pairs)
-	print('[SWL] Info: End computing accuracy: {} secs.'.format(time.time() - start_time))
+	print('[SWL] Info: End computing string distance: {} secs.'.format(time.time() - start_time))
 
-	print('\tText: Distance = {0}, average distance = {0} / {1} = {2}.'.format(text_distance, total_text_count, text_distance / total_text_count))
-	print('\tWord: Distance = {0}, average distance = {0} / {1} = {2}.'.format(word_distance, total_word_count, word_distance / total_word_count))
-	print('\tChar: Distance = {0}, average distance = {0} / {1} = {2}.'.format(char_distance, total_char_count, char_distance / total_char_count))
+	print('\tText: String distance = {0}, average string distance = {0} / {1} = {2}.'.format(text_distance, total_text_count, text_distance / total_text_count if total_text_count > 0 else 0))
+	print('\tWord: String distance = {0}, average string distance = {0} / {1} = {2}.'.format(word_distance, total_word_count, word_distance / total_word_count if total_word_count > 0 else 0))
+	print('\tChar: String distance = {0}, average string distance = {0} / {1} = {2}.'.format(char_distance, total_char_count, char_distance / total_char_count if total_char_count > 0 else 0))
 
 	#--------------------
 	print('[SWL] Info: Start computing precision and recall...')

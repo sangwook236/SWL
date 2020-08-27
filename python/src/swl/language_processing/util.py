@@ -249,7 +249,7 @@ class JamoTokenConverter(TokenConverterBase):
 
 #--------------------------------------------------------------------
 
-def compute_simple_text_recognition_accuracy(text_pairs):
+def compute_simple_text_matching_accuracy(text_pairs):
 	total_text_count = len(text_pairs)
 	correct_text_count = len(list(filter(lambda x: x[0] == x[1], text_pairs)))
 	correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0
@@ -262,6 +262,20 @@ def compute_simple_text_recognition_accuracy(text_pairs):
 		correct_char_count += len(list(filter(lambda x: x[0] == x[1], zip(inf_text, gt_text))))
 
 	return correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count
+
+def compute_sequence_matching_ratio(seq_pairs, isjunk=None):
+	if len(seq_pairs) > 0:
+		import difflib
+		return functools.reduce(lambda total_ratio, pair: total_ratio + difflib.SequenceMatcher(isjunk, pair[0], pair[1]).ratio(), seq_pairs, 0) / len(seq_pairs)
+		"""
+		total_ratio = 0
+		for inf, gt in seq_pairs:
+			matcher = difflib.SequenceMatcher(isjunk, inf, gt)
+			# sum(matched sequence lengths) / len(G/T).
+			total_ratio += functools.reduce(lambda matched_len, mth: matched_len + mth.size, matcher.get_matching_blocks(), 0) / len(gt) if len(gt) > 0 else 0
+		return total_ratio / len(seq_pairs)
+		"""
+	else: return 0
 
 def compute_string_distance(text_pairs):
 	import jellyfish

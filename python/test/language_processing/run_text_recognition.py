@@ -5,7 +5,7 @@ import sys
 sys.path.append('../../src')
 sys.path.append('./src')
 
-import os, random, functools, itertools, shutil, glob, datetime, time
+import os, random, functools, itertools, operator, shutil, glob, datetime, time
 import argparse, logging, logging.handlers
 import numpy as np
 import torch
@@ -1206,7 +1206,7 @@ def train_text_recognition_model(model, criterion, train_forward_functor, infer_
 		glogger.info('Start evaluating...')
 		start_time = time.time()
 		model.eval()
-		acc = evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False, device=device)
+		acc = evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, device=device)
 		glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 		if scheduler: scheduler.step()
@@ -1281,7 +1281,7 @@ def evaluate_char_recognition_model(model, label_converter, dataloader, is_case_
 		try:
 			with open(err_fpath, 'w', encoding='UTF8') as fd:
 				for idx, (gt, pred) in enumerate(error_cases):
-					fd.write('{}: {}\t{}\n'.format(idx, gt, pred))
+					fd.write('{}\t{}\t{}\n'.format(idx, gt, pred))
 		except UnicodeDecodeError as ex:
 			glogger.warning('Unicode decode error in {}: {}.'.format(err_fpath, ex))
 		except FileNotFoundError as ex:
@@ -1292,13 +1292,80 @@ def evaluate_char_recognition_model(model, label_converter, dataloader, is_case_
 
 	return correct_char_count / total_char_count
 
-def evaluate_text_recognition_model(model, infer_functor, label_converter, dataloader, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False, device='cpu'):
-	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+def compute_simple_matching_accuracy(inputs, outputs, predictions, label_converter, is_case_sensitive, show_acc_per_char, error_cases_dir_path=None, error_idx=0):
+	is_error_cases_saved = error_cases_dir_path is not None
 
-	error_cases_dir_path = './text_error_cases'
+	total_text_count = len(outputs)
+	correct_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0, 0
+	correct_char_class_count, total_char_class_count = [0] * label_converter.num_tokens, [0] * label_converter.num_tokens
+	error_cases = list()
+	for img, gt, pred in zip(inputs, outputs, predictions):
+		for gl, pl in zip(gt, pred):
+			if gl == pl: correct_char_class_count[gl] += 1
+			total_char_class_count[gl] += 1
+
+		gt, pred = label_converter.decode(gt), label_converter.decode(pred)
+		gt_case, pred_case = (gt, pred) if is_case_sensitive else (gt.lower(), pred.lower())
+
+		if gt_case == pred_case:
+			correct_text_count += 1
+		elif is_error_cases_saved:
+			cv2.imwrite(os.path.join(error_cases_dir_path, 'image_{}.png'.format(error_idx)), img)
+			error_cases.append((gt, pred))
+			error_idx += 1
+
+		gt_words, pred_words = gt_case.split(' '), pred_case.split(' ')
+		total_word_count += max(len(gt_words), len(pred_words))
+		correct_word_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gt_words, pred_words))))
+
+		total_char_count += max(len(gt), len(pred))
+		correct_char_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gt_case, pred_case))))
+
+	return correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count, correct_char_class_count, total_char_class_count, error_cases
+
+def compute_sequence_matching_ratio(inputs, outputs, predictions, label_converter, is_case_sensitive, show_acc_per_char, error_cases_dir_path=None, error_idx=0):
+	import difflib
+
+	isjunk = None
+	#isjunk = lambda x: x == '\n\r'
+	#isjunk = lambda x: x == ' \t\n\r'
+
+	is_error_cases_saved = error_cases_dir_path is not None
+
+	total_matching_ratio = 0
+	correct_char_class_count, total_char_class_count = [0] * label_converter.num_tokens, [0] * label_converter.num_tokens
+	error_cases = list()
+	for img, gt, pred in zip(inputs, outputs, predictions):
+		matcher = difflib.SequenceMatcher(isjunk, gt, pred)
+		#matcher = difflib.SequenceMatcher(isjunk, gt_case, pred_case)
+		for mth in matcher.get_matching_blocks():
+			if mth.size != 0:
+				for idx in range(mth.a, mth.a + mth.size):
+					correct_char_class_count[gt[idx]] += 1
+		for gl in gt:
+			total_char_class_count[gl] += 1
+
+		gt, pred = label_converter.decode(gt), label_converter.decode(pred)
+		gt_case, pred_case = (gt, pred) if is_case_sensitive else (gt.lower(), pred.lower())
+
+		matching_ratio = difflib.SequenceMatcher(isjunk, gt_case, pred_case).ratio()
+		total_matching_ratio += matching_ratio
+		if matching_ratio < 1 and is_error_cases_saved:
+			cv2.imwrite(os.path.join(error_cases_dir_path, 'image_{}.png'.format(error_idx)), img)
+			error_cases.append((gt, pred))
+			error_idx += 1
+
+	return total_matching_ratio, correct_char_class_count, total_char_class_count, error_cases
+
+def evaluate_text_recognition_model(model, infer_functor, label_converter, dataloader, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, device='cpu'):
+	is_error_cases_saved = error_cases_dir_path is not None
 	if is_error_cases_saved:
 		os.makedirs(error_cases_dir_path, exist_ok=True)
 
+	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+
+	is_sequence_matching_ratio_used, is_simple_matching_accuracy_used = True, True
+	total_matching_ratio, num_examples = 0, 0
 	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0, 0, 0
 	correct_char_class_count, total_char_class_count = [0] * num_classes, [0] * num_classes
 	error_cases = list()
@@ -1314,28 +1381,22 @@ def evaluate_text_recognition_model(model, infer_functor, label_converter, datal
 			minval, maxval = -1, 1
 			images_np = np.round((images_np - minval) * 255 / (maxval - minval)).astype(np.uint8)
 
-			total_text_count += len(gts)
-			for img, gt, pred in zip(images_np, gts, predictions):
-				for gl, pl in zip(gt, pred):
-					if gl == pl: correct_char_class_count[gl] += 1
-					total_char_class_count[gl] += 1
-
-				gt, pred = label_converter.decode(gt), label_converter.decode(pred)
-				gt_case, pred_case = (gt, pred) if is_case_sensitive else (gt.lower(), pred.lower())
-
-				if gt_case == pred_case:
-					correct_text_count += 1
-				elif is_error_cases_saved:
-					cv2.imwrite(os.path.join(error_cases_dir_path, 'image_{}.png'.format(error_idx)), img)
-					error_cases.append((gt, pred))
-					error_idx += 1
-
-				gt_words, pred_words = gt_case.split(' '), pred_case.split(' ')
-				total_word_count += max(len(gt_words), len(pred_words))
-				correct_word_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gt_words, pred_words))))
-
-				total_char_count += max(len(gt), len(pred))
-				correct_char_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gt_case, pred_case))))
+			if is_sequence_matching_ratio_used:
+				batch_total_matching_ratio, batch_correct_char_class_count, batch_total_char_class_count, batch_error_cases = compute_sequence_matching_ratio(images_np, gts, predictions, label_converter, is_case_sensitive, show_acc_per_char, error_cases_dir_path, error_idx=error_idx)
+				total_matching_ratio += batch_total_matching_ratio
+				num_examples += len(images_np)
+			if is_simple_matching_accuracy_used:
+				batch_correct_text_count, batch_total_text_count, batch_correct_word_count, batch_total_word_count, batch_correct_char_count, batch_total_char_count, batch_correct_char_class_count, batch_total_char_class_count, batch_error_cases = compute_simple_matching_accuracy(images_np, gts, predictions, label_converter, is_case_sensitive, show_acc_per_char, error_cases_dir_path, error_idx=error_idx)
+				correct_text_count += batch_correct_text_count
+				total_text_count += batch_total_text_count
+				correct_word_count += batch_correct_word_count
+				total_word_count += batch_total_word_count
+				correct_char_count += batch_correct_char_count
+				total_char_count += batch_total_char_count
+			correct_char_class_count = list(map(operator.add, correct_char_class_count, batch_correct_char_class_count))
+			total_char_class_count = list(map(operator.add, total_char_class_count, batch_total_char_class_count))
+			error_idx += len(batch_error_cases)
+			error_cases += batch_error_cases
 
 			if is_first:
 				# Show images.
@@ -1354,21 +1415,29 @@ def evaluate_text_recognition_model(model, infer_functor, label_converter, datal
 		try:
 			with open(err_fpath, 'w', encoding='UTF8') as fd:
 				for idx, (gt, pred) in enumerate(error_cases):
-					fd.write('{}: {}\t{}\n'.format(idx, gt, pred))
+					fd.write('{}\t{}\t{}\n'.format(idx, gt, pred))
 		except UnicodeDecodeError as ex:
 			glogger.warning('Unicode decode error in {}: {}.'.format(err_fpath, ex))
 		except FileNotFoundError as ex:
 			glogger.warning('File not found, {}: {}.'.format(err_fpath, ex))
 
 	show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char)
-	glogger.info('Text accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
-	glogger.info('Word accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
-	glogger.info('Char accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
+	if is_sequence_matching_ratio_used:
+		#num_examples = len(dataloader)
+		ave_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else 0
+		glogger.info('Average sequence matching ratio = {}.'.format(ave_matching_ratio))
+	if is_simple_matching_accuracy_used:
+		glogger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else 0))
+		glogger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else 0))
+		glogger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else 0))
 
-	return correct_char_count / total_char_count
+	if is_sequence_matching_ratio_used:
+		return ave_matching_ratio
+	elif is_simple_matching_accuracy_used:
+		return correct_char_count / total_char_count if total_char_count > 0 else 0
+	else: return -1
 
-def infer_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=None, batch_size=None, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False, device='cpu'):
-	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+def infer_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=None, batch_size=None, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, device='cpu'):
 	if batch_size is None: batch_size = len(inputs)
 
 	with torch.no_grad():
@@ -1389,6 +1458,9 @@ def infer_using_text_recognition_model(model, infer_functor, label_converter, in
 			num_iters += 1
 			if num_iters >= 5: break
 	else:
+		if error_cases_dir_path:
+			os.makedirs(error_cases_dir_path, exist_ok=True)
+
 		outputs = outputs.numpy()
 
 		num_iters = 0
@@ -1408,61 +1480,40 @@ def infer_using_text_recognition_model(model, infer_functor, label_converter, in
 			if num_iters >= 5: break
 
 		#--------------------
-		error_cases_dir_path = './text_error_cases'
-		if is_error_cases_saved:
-			os.makedirs(error_cases_dir_path, exist_ok=True)
-
-		correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0, 0, 0
-		correct_char_class_count, total_char_class_count = [0] * num_classes, [0] * num_classes
-		error_cases = list()
-		error_idx = 0
-
 		if inputs.ndim == 4: inputs = inputs.transpose(0, 2, 3, 1)
 		#minval, maxval = np.min(inputs), np.max(inputs)
 		minval, maxval = -1, 1
 		inputs = np.round((inputs - minval) * 255 / (maxval - minval)).astype(np.uint8)
 
-		total_text_count += len(outputs)
-		for img, gt, pred in zip(inputs, outputs, predictions):
-			for gl, pl in zip(gt, pred):
-				if gl == pl: correct_char_class_count[gl] += 1
-				total_char_class_count[gl] += 1
+		is_sequence_matching_ratio_used, is_simple_matching_accuracy_used = True, True
+		if is_sequence_matching_ratio_used:
+			total_matching_ratio, correct_char_class_count, total_char_class_count, error_cases = compute_sequence_matching_ratio(inputs, outputs, predictions, label_converter, is_case_sensitive, show_acc_per_char, error_cases_dir_path, error_idx=0)
+		if is_simple_matching_accuracy_used:
+			correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count, correct_char_class_count, total_char_class_count, error_cases = compute_simple_matching_accuracy(inputs, outputs, predictions, label_converter, is_case_sensitive, show_acc_per_char, error_cases_dir_path, error_idx=0)
 
-			gt, pred = label_converter.decode(gt), label_converter.decode(pred)
-			gt_case, pred_case = (gt, pred) if is_case_sensitive else (gt.lower(), pred.lower())
-
-			if gt_case == pred_case:
-				correct_text_count += 1
-			elif is_error_cases_saved:
-				cv2.imwrite(os.path.join(error_cases_dir_path, 'image_{}.png'.format(error_idx)), img)
-				error_cases.append((gt, pred))
-				error_idx += 1
-
-			gt_words, pred_words = gt_case.split(' '), pred_case.split(' ')
-			total_word_count += max(len(gt_words), len(pred_words))
-			correct_word_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gt_words, pred_words))))
-
-			total_char_count += max(len(gt), len(pred))
-			correct_char_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gt_case, pred_case))))
-
-		if is_error_cases_saved:
+		if error_cases_dir_path:
 			err_fpath = os.path.join(error_cases_dir_path, 'error_cases.txt')
 			try:
 				with open(err_fpath, 'w', encoding='UTF8') as fd:
 					for idx, (gt, pred) in enumerate(error_cases):
-						fd.write('{}: {}\t{}\n'.format(idx, gt, pred))
+						fd.write('{}\t{}\t{}\n'.format(idx, gt, pred))
 			except UnicodeDecodeError as ex:
 				glogger.warning('Unicode decode error in {}: {}.'.format(err_fpath, ex))
 			except FileNotFoundError as ex:
 				glogger.warning('File not found, {}: {}.'.format(err_fpath, ex))
 
-		show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char)
-		glogger.info('Text accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
-		glogger.info('Word accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
-		glogger.info('Char accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
+		show_per_char_accuracy(correct_char_class_count, total_char_class_count, label_converter.tokens, label_converter.num_tokens, show_acc_per_char)
+		if is_sequence_matching_ratio_used:
+			#num_examples = len(outputs)
+			num_examples = min(len(inputs), len(outputs), len(predictions))
+			ave_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else 0
+			glogger.info('Average sequence matching ratio = {}.'.format(ave_matching_ratio))
+		if is_simple_matching_accuracy_used:
+			glogger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else 0))
+			glogger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else 0))
+			glogger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else 0))
 
-def infer_one_by_one_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=None, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False, device='cpu'):
-	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+def infer_one_by_one_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=None, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, device='cpu'):
 	num_examples_to_show = 50
 
 	with torch.no_grad():
@@ -1487,53 +1538,33 @@ def infer_one_by_one_using_text_recognition_model(model, infer_functor, label_co
 		glogger.info('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(outputs[:num_examples_to_show], predictions[:num_examples_to_show])]))
 
 		#--------------------
-		error_cases_dir_path = './text_error_cases'
-		if is_error_cases_saved:
-			os.makedirs(error_cases_dir_path, exist_ok=True)
+		is_sequence_matching_ratio_used, is_simple_matching_accuracy_used = True
+		if is_sequence_matching_ratio_used:
+			total_matching_ratio, correct_char_class_count, total_char_class_count, error_cases = compute_sequence_matching_ratio(inputs, outputs, predictions, label_converter, is_case_sensitive, show_acc_per_char, error_cases_dir_path, error_idx=0)
+		if is_simple_matching_accuracy_used:
+			correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count, correct_char_class_count, total_char_class_count, error_cases = compute_simple_matching_accuracy(inputs, outputs, predictions, label_converter, is_case_sensitive, show_acc_per_char, error_cases_dir_path, error_idx=0)
 
-		correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0, 0, 0
-		correct_char_class_count, total_char_class_count = [0] * num_classes, [0] * num_classes
-		error_cases = list()
-		error_idx = 0
-
-		total_text_count += len(outputs)
-		for img, gt, pred in zip(inputs, outputs, predictions):
-			for gl, pl in zip(gt, pred):
-				if gl == pl: correct_char_class_count[gl] += 1
-				total_char_class_count[gl] += 1
-
-			gt, pred = label_converter.decode(gt), label_converter.decode(pred)
-			gt_case, pred_case = (gt, pred) if is_case_sensitive else (gt.lower(), pred.lower())
-
-			if gt_case == pred_case:
-				correct_text_count += 1
-			elif is_error_cases_saved:
-				cv2.imwrite(os.path.join(error_cases_dir_path, 'image_{}.png'.format(error_idx)), img)
-				error_cases.append((gt, pred))
-				error_idx += 1
-
-			gt_words, pred_words = gt_case.split(' '), pred_case.split(' ')
-			total_word_count += max(len(gt_words), len(pred_words))
-			correct_word_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gt_words, pred_words))))
-
-			total_char_count += max(len(gt), len(pred))
-			correct_char_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gt_case, pred_case))))
-
-		if is_error_cases_saved:
+		if error_cases_dir_path:
 			err_fpath = os.path.join(error_cases_dir_path, 'error_cases.txt')
 			try:
 				with open(err_fpath, 'w', encoding='UTF8') as fd:
 					for idx, (gt, pred) in enumerate(error_cases):
-						fd.write('{}: {}\t{}\n'.format(idx, gt, pred))
+						fd.write('{}\t{}\t{}\n'.format(idx, gt, pred))
 			except UnicodeDecodeError as ex:
 				glogger.warning('Unicode decode error in {}: {}.'.format(err_fpath, ex))
 			except FileNotFoundError as ex:
 				glogger.warning('File not found, {}: {}.'.format(err_fpath, ex))
 
-		show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char)
-		glogger.info('Text accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
-		glogger.info('Word accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
-		glogger.info('Char accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
+		show_per_char_accuracy(correct_char_class_count, total_char_class_count, label_converter.tokens, label_converter.num_tokens, show_acc_per_char)
+		if is_sequence_matching_ratio_used:
+			#num_examples = len(outputs)
+			num_examples = min(len(inputs), len(outputs), len(predictions))
+			ave_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else 0
+			glogger.info('Average sequence matching ratio = {}.'.format(ave_matching_ratio))
+		if is_simple_matching_accuracy_used:
+			glogger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else 0))
+			glogger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else 0))
+			glogger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else 0))
 
 def build_char_model(label_converter, image_channel, loss_type, lang):
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
@@ -3176,7 +3207,7 @@ def train_word_recognizer_based_on_rare1(num_epochs=20, batch_size=64, device='c
 	glogger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def train_word_recognizer_based_on_rare2(num_epochs=20, batch_size=64, device='cpu'):
@@ -3339,7 +3370,7 @@ def train_word_recognizer_based_on_rare2(num_epochs=20, batch_size=64, device='c
 	glogger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def train_word_recognizer_based_on_aster(num_epochs=20, batch_size=64, device='cpu'):
@@ -3502,7 +3533,7 @@ def train_word_recognizer_based_on_aster(num_epochs=20, batch_size=64, device='c
 	glogger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def train_word_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, device='cpu'):
@@ -3667,7 +3698,7 @@ def train_word_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, device=
 	glogger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def train_word_recognizer_based_on_rare1_and_opennmt(num_epochs=20, batch_size=64, device='cpu'):
@@ -3829,7 +3860,7 @@ def train_word_recognizer_based_on_rare1_and_opennmt(num_epochs=20, batch_size=6
 	glogger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def train_word_recognizer_based_on_rare2_and_opennmt(num_epochs=20, batch_size=64, device='cpu'):
@@ -3991,7 +4022,7 @@ def train_word_recognizer_based_on_rare2_and_opennmt(num_epochs=20, batch_size=6
 	glogger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def train_word_recognizer_based_on_aster_and_opennmt(num_epochs=20, batch_size=64, device='cpu'):
@@ -4153,7 +4184,7 @@ def train_word_recognizer_based_on_aster_and_opennmt(num_epochs=20, batch_size=6
 	glogger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def train_word_recognizer_using_mixup(num_epochs=20, batch_size=64, device='cpu'):
@@ -4330,7 +4361,7 @@ def train_word_recognizer_using_mixup(num_epochs=20, batch_size=64, device='cpu'
 	glogger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def evaluate_word_recognizer_using_aihub_data(max_label_len, batch_size, is_separate_pad_id_used=False, device='cpu'):
@@ -4450,7 +4481,8 @@ def evaluate_word_recognizer_using_aihub_data(max_label_len, batch_size, is_sepa
 	glogger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=True, device=device)
+	error_cases_dir_path = './text_error_cases'
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def train_textline_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, device='cpu'):
@@ -4619,7 +4651,7 @@ def train_textline_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, dev
 	glogger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def train_textline_recognizer_based_on_transformer(num_epochs=40, batch_size=64, device='cpu'):
@@ -4788,7 +4820,7 @@ def train_textline_recognizer_based_on_transformer(num_epochs=40, batch_size=64,
 	glogger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 def recognize_character_using_craft(device='cpu'):
@@ -5189,7 +5221,8 @@ def recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_si
 	start_time = time.time()
 	model.eval()
 	#outputs = None
-	infer_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, batch_size=batch_size, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=True, device=device)
+	error_cases_dir_path = './text_error_cases'
+	infer_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, batch_size=batch_size, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, device=device)
 	glogger.info('End inferring: {} secs.'.format(time.time() - start_time))
 
 def recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_len, is_separate_pad_id_used=True, device='cpu'):
@@ -5331,7 +5364,8 @@ def recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_le
 	start_time = time.time()
 	model.eval()
 	#outputs = None
-	infer_one_by_one_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=True, device=device)
+	error_cases_dir_path = './text_error_cases'
+	infer_one_by_one_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, device=device)
 	glogger.info('End inferring: {} secs.'.format(time.time() - start_time))
 
 #--------------------------------------------------------------------
