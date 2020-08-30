@@ -255,6 +255,42 @@ def compute_string_distance_test():
 	print('\tWord: String distance = {0}, average string distance = {0} / {1} = {2}.'.format(word_distance, total_word_count, word_distance / total_word_count))
 	print('\tChar: String distance = {0}, average string distance = {0} / {1} = {2}.'.format(char_distance, total_char_count, char_distance / total_char_count))
 
+def compute_sequence_precision_and_recall_test():
+	# #texts = 12 * 2 = 24, #words = 26 * 2 = 52, #characters = 111 + 112 = 223.
+	inferred_texts     = ['abc', 'df',  'ghijk', 'ab cde', 'fhijk lmno', 'pqrst uvwy', 'abc defg hijklmn opqr', 'abc deg hijklmn opqr', 'abc df hijklmn opqr', '',    'zyx', '우리나라 대한민국 만세']
+	ground_truth_texts = ['abc', 'def', 'gijk',  'ab cde', 'fghijk lmo', 'pqst uvwxy', 'abc defg hijklmn opqr', 'abc defg hiklmn opqr', 'abc defg hijklmn pr', 'xyz', '',    '대한민국! 우리 만.세.']
+
+	#inferred_texts, ground_truth_texts = list(map(lambda x: x.lower(), inferred_texts)), list(map(lambda x: x.lower(), ground_truth_texts))  # Case-insensitive.
+	text_pairs = list(zip(inferred_texts, ground_truth_texts))
+
+	print('[SWL] Info: Start computing sequence precision and recall...')
+	start_time = time.time()
+	metrics, classes = swl_langproc_util.compute_sequence_precision_and_recall(text_pairs, classes=None, isjunk=None)  # A list of (TP + FP, TP + FN, TP)'s.
+	#metrics = swl_langproc_util.compute_sequence_precision_and_recall(text_pairs, classes=None, isjunk=None)  # A dictionary of {class: (TP + FP, TP + FN, TP)}'s
+	print('[SWL] Info: End computing sequence precision and recall: {} secs.'.format(time.time() - start_time))
+
+	print('Classes = {}.'.format(classes))
+	print('#classes = {}.'.format(len(classes)))
+
+	precisions, recalls, precisions_for_nonzero_tp, recalls_for_nonzero_tp = list(), list(), list(), list()
+	for idx, (cls, (TP_FP, TP_FN, TP)) in enumerate(zip(classes, metrics)):
+	#for idx, (cls, (TP_FP, TP_FN, TP)) in enumerate(metrics.items()):
+		prec = (TP / TP_FP) if TP_FP != 0 else None
+		recall = (TP / TP_FN) if TP_FN != 0 else None
+		if prec is not None:
+			precisions.append(prec)
+			if TP != 0: precisions_for_nonzero_tp.append(prec)
+		if recall is not None:
+			recalls.append(recall)
+			if TP != 0: recalls_for_nonzero_tp.append(recall)
+		print('{}: {}: Precision = {}, recall = {}.'.format(idx, cls, prec, recall))
+	avg_precision, avg_recall = sum(precisions) / len(precisions) if len(precisions) > 0 else -1, sum(recalls) / len(recalls) if len(recalls) > 0 else -1
+	f1 = 2 * avg_precision * avg_recall / (avg_precision + avg_recall)
+	avg_precision_for_nonzero_tp, avg_recall_for_nonzero_tp = sum(precisions_for_nonzero_tp) / len(precisions_for_nonzero_tp) if len(precisions_for_nonzero_tp) > 0 else -1, sum(recalls_for_nonzero_tp) / len(recalls_for_nonzero_tp) if len(recalls_for_nonzero_tp) > 0 else -1
+	f1_for_nonzero_tp = 2 * avg_precision_for_nonzero_tp * avg_recall_for_nonzero_tp / (avg_precision_for_nonzero_tp + avg_recall_for_nonzero_tp)
+	print('Average precision = {}, average recall = {}, F1 = {}.'.format(avg_precision, avg_recall, f1))
+	print('Average precision (for non-zero TP) = {}, average recall (for non-zero TP) = {}, F1 (for non-zero TP) = {}.'.format(avg_precision_for_nonzero_tp, avg_recall_for_nonzero_tp, f1_for_nonzero_tp))
+
 def hangeul_example(need_mask=False):
 	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
 	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
@@ -896,6 +932,7 @@ def main():
 	compute_simple_text_matching_accuracy_test()
 	compute_sequence_matching_ratio_test()
 	compute_string_distance_test()
+	compute_sequence_precision_and_recall_test()
 
 	#generate_text_image_test()
 	#generate_text_image_and_mask_test()

@@ -264,18 +264,16 @@ def compute_simple_text_matching_accuracy(text_pairs):
 	return correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count
 
 def compute_sequence_matching_ratio(seq_pairs, isjunk=None):
-	if len(seq_pairs) > 0:
-		import difflib
-		return functools.reduce(lambda total_ratio, pair: total_ratio + difflib.SequenceMatcher(isjunk, pair[0], pair[1]).ratio(), seq_pairs, 0) / len(seq_pairs)
-		"""
-		total_ratio = 0
-		for inf, gt in seq_pairs:
-			matcher = difflib.SequenceMatcher(isjunk, inf, gt)
-			# sum(matched sequence lengths) / len(G/T).
-			total_ratio += functools.reduce(lambda matched_len, mth: matched_len + mth.size, matcher.get_matching_blocks(), 0) / len(gt) if len(gt) > 0 else 0
-		return total_ratio / len(seq_pairs)
-		"""
-	else: return 0
+	import difflib
+	return functools.reduce(lambda total_ratio, pair: total_ratio + difflib.SequenceMatcher(isjunk, pair[0], pair[1]).ratio(), seq_pairs, 0) / len(seq_pairs)
+	"""
+	total_ratio = 0
+	for inf, gt in seq_pairs:
+		matcher = difflib.SequenceMatcher(isjunk, inf, gt)
+		# sum(matched sequence lengths) / len(G/T).
+		total_ratio += functools.reduce(lambda matched_len, mth: matched_len + mth.size, matcher.get_matching_blocks(), 0) / len(gt) if len(gt) > 0 else 0
+	return total_ratio / len(seq_pairs)
+	"""
 
 def compute_string_distance(text_pairs):
 	import jellyfish
@@ -299,6 +297,28 @@ def compute_string_distance(text_pairs):
 		char_distance += functools.reduce(lambda ss, x: ss + string_distance_functor(x[0], x[1]), zip(inf_text, gt_text), 0)
 
 	return text_distance, word_distance, char_distance, total_text_count, total_word_count, total_char_count
+
+def compute_sequence_precision_and_recall(seq_pairs, classes=None, isjunk=None):
+	import difflib
+
+	if classes is None:
+		classes = list(zip(*seq_pairs))
+		classes = sorted(functools.reduce(lambda x, txt: x.union(txt), classes[0] + classes[1], set()))
+
+	def compute_metric(seq_pairs, ch):
+		TP_FP, TP_FN, TP = 0, 0, 0
+		for inf, gt in seq_pairs:
+			TP_FP += inf.count(ch)  # Retrieved examples. TP + FP.
+			TP_FN += gt.count(ch)  # Relevant examples. TP + FN.
+			#TP += len(list(filter(lambda ig: ig[0] == ig[1] == ch, zip(inf, gt))))  # Too simple.
+			#TP += sum([inf[mth.a:mth.a+mth.size].count(ch) for mth in difflib.SequenceMatcher(isjunk, inf, gt).get_matching_blocks() if mth.size > 0])
+			TP = functools.reduce(lambda tot, mth: tot + inf[mth.a:mth.a+mth.size].count(ch) if mth.size > 0 else tot, difflib.SequenceMatcher(isjunk, inf, gt).get_matching_blocks(), TP)
+		return TP_FP, TP_FN, TP
+
+	# A list of (TP + FP, TP + FN, TP)'s.
+	return list(map(lambda cls: compute_metric(seq_pairs, cls), classes)), classes
+	# A dictionary of {class: (TP + FP, TP + FN, TP)}'s.
+	#return {cls: metric for cls, metric in zip(classes, map(lambda cls: compute_metric(seq_pairs, cls), classes))}
 
 #--------------------------------------------------------------------
 
