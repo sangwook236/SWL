@@ -239,6 +239,9 @@ def create_textline_augmenter():
 
 	return augmenter
 
+def create_ocrodeg_augmenter():
+	import ocrodeg
+
 def generate_font_colors(image_depth):
 	#random_val = random.randrange(1, 255)
 
@@ -460,41 +463,67 @@ def create_char_data_loaders(char_type, label_converter, charset, num_train_exam
 		else:
 			data_base_dir_path = 'D:/work/dataset'
 
-		datasets = list()
+		train_datasets, test_datasets = list(), list()
 		if True:
 			# REF [function] >> generate_chars_from_chars74k_data() in chars74k_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/chars74k/English/Img/char_images.txt'
 			is_preloaded_image_used = True
-			datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
+			dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used)
+
+			num_examples = len(dataset)
+			num_train_examples = int(num_examples * train_test_ratio)
+			train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+			train_dataset = MySubsetDataset(train_subset, transform=train_transform)
+			test_dataset = MySubsetDataset(test_subset, transform=test_transform)
 		if True:
 			# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_kr.txt'
 			is_preloaded_image_used = True
-			datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
+			dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used)
+
+			num_examples = len(dataset)
+			num_train_examples = int(num_examples * train_test_ratio)
+			train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+			train_dataset = MySubsetDataset(train_subset, transform=train_transform)
+			test_dataset = MySubsetDataset(test_subset, transform=test_transform)
 		if True:
 			# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_en.txt'
 			is_preloaded_image_used = True
-			datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
+			dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used)
+
+			num_examples = len(dataset)
+			num_train_examples = int(num_examples * train_test_ratio)
+			train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+			train_dataset = MySubsetDataset(train_subset, transform=train_transform)
+			test_dataset = MySubsetDataset(test_subset, transform=test_transform)
 		if True:
 			# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_kr.txt'
 			is_preloaded_image_used = True
-			datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
+			dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used)
+
+			num_examples = len(dataset)
+			num_train_examples = int(num_examples * train_test_ratio)
+			train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+			train_dataset = MySubsetDataset(train_subset, transform=train_transform)
+			test_dataset = MySubsetDataset(test_subset, transform=test_transform)
 		if True:
 			# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_en.txt'
 			is_preloaded_image_used = True
-			datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
-		assert datasets, 'NO Dataset'
+			dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used)
 
-		dataset = torch.utils.data.ConcatDataset(datasets)
-		num_examples = len(dataset)
-		num_train_examples = int(num_examples * train_test_ratio)
+			num_examples = len(dataset)
+			num_train_examples = int(num_examples * train_test_ratio)
+			train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+			train_dataset = MySubsetDataset(train_subset, transform=train_transform)
+			test_dataset = MySubsetDataset(test_subset, transform=test_transform)
+		assert train_datasets, 'NO train dataset'
+		assert test_datasets, 'NO test dataset'
 
-		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
-		train_dataset = MySubsetDataset(train_subset, transform=train_transform)
-		test_dataset = MySubsetDataset(test_subset, transform=test_transform)
+		train_dataset = torch.utils.data.ConcatDataset(train_datasets)
+		test_dataset = torch.utils.data.ConcatDataset(test_datasets)
 	else:
 		raise ValueError('Invalid dataset type: {}'.format(char_type))
 	glogger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
@@ -538,49 +567,79 @@ def create_mixed_char_data_loaders(label_converter, charset, num_simple_char_exa
 
 	glogger.info('Start creating datasets...')
 	start_time = time.time()
-	datasets = list()
+	train_datasets, test_datasets = list(), list()
 	if True:
 		chars = list(charset * num_simple_char_examples_per_class)
 		random.shuffle(chars)
-		datasets.append(text_data.SimpleCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, color_functor=color_functor))
+		num_train_examples = int(len(chars) * train_test_ratio)
+		train_datasets.append(text_data.SimpleCharacterDataset(label_converter, chars[:num_train_examples], image_channel, font_list, font_size_interval, color_functor=color_functor, transform=train_transform))
+		test_datasets.append(text_data.SimpleCharacterDataset(label_converter, chars[num_train_examples:], image_channel, font_list, font_size_interval, color_functor=color_functor, transform=test_transform))
 	if True:
 		chars = list(charset * num_noisy_examples_per_class)
 		random.shuffle(chars)
-		datasets.append(text_data.NoisyCharacterDataset(label_converter, chars, image_channel, char_clipping_ratio_interval, font_list, font_size_interval, color_functor=color_functor))
+		num_train_examples = int(len(chars) * train_test_ratio)
+		train_datasets.append(text_data.NoisyCharacterDataset(label_converter, chars[:num_train_examples], image_channel, char_clipping_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform))
+		test_datasets.append(text_data.NoisyCharacterDataset(label_converter, chars[num_train_examples:], image_channel, char_clipping_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform))
 	if True:
 		# REF [function] >> generate_chars_from_chars74k_data() in chars74k_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/chars74k/English/Img/char_images.txt'
 		is_preloaded_image_used = True
-		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
+		dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used)
+
+		num_examples = len(dataset)
+		num_train_examples = int(num_examples * train_test_ratio)
+		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+		train_datasets.append(MySubsetDataset(train_subset, transform=train_transform))
+		test_datasets.append(MySubsetDataset(test_subset, transform=test_transform))
 	if True:
 		# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_kr.txt'
 		is_preloaded_image_used = True
-		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
+		dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used)
+
+		num_examples = len(dataset)
+		num_train_examples = int(num_examples * train_test_ratio)
+		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+		train_datasets.append(MySubsetDataset(train_subset, transform=train_transform))
+		test_datasets.append( MySubsetDataset(test_subset, transform=test_transform))
 	if True:
 		# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_en.txt'
 		is_preloaded_image_used = True
-		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
+		dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used)
+
+		num_examples = len(dataset)
+		num_train_examples = int(num_examples * train_test_ratio)
+		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+		train_datasets.append(MySubsetDataset(train_subset, transform=train_transform))
+		test_datasets.append(MySubsetDataset(test_subset, transform=test_transform))
 	if True:
 		# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_kr.txt'
 		is_preloaded_image_used = True
-		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
+		dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used)
+
+		num_examples = len(dataset)
+		num_train_examples = int(num_examples * train_test_ratio)
+		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+		train_datasets.append(MySubsetDataset(train_subset, transform=train_transform))
+		test_datasets.append(MySubsetDataset(test_subset, transform=test_transform))
 	if True:
 		# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_en.txt'
 		is_preloaded_image_used = True
-		datasets.append(text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used))
-	assert datasets, 'NO Dataset'
+		dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used)
 
-	dataset = torch.utils.data.ConcatDataset(datasets)
-	num_examples = len(dataset)
-	num_train_examples = int(num_examples * train_test_ratio)
+		num_examples = len(dataset)
+		num_train_examples = int(num_examples * train_test_ratio)
+		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+		train_datasets.append(MySubsetDataset(train_subset, transform=train_transform))
+		test_datasets.append(MySubsetDataset(test_subset, transform=test_transform))
+	assert train_datasets, 'NO train dataset'
+	assert test_datasets, 'NO test dataset'
 
-	train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
-	train_dataset = MySubsetDataset(train_subset, transform=train_transform)
-	test_dataset = MySubsetDataset(test_subset, transform=test_transform)
+	train_dataset = torch.utils.data.ConcatDataset(train_datasets)
+	test_dataset = torch.utils.data.ConcatDataset(test_datasets)
 	glogger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
 	glogger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
@@ -625,7 +684,7 @@ def create_word_data_loaders(word_type, label_converter, wordset, chars, num_tra
 	elif word_type == 'random_word':
 		train_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
 		test_dataset = text_data.RandomWordDataset(label_converter, chars, num_test_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
-	elif textline_type == 'aihub_word':
+	elif word_type == 'aihub_word':
 		if 'posix' == os.name:
 			data_base_dir_path = '/home/sangwook/work/dataset'
 		else:
@@ -641,7 +700,6 @@ def create_word_data_loaders(word_type, label_converter, wordset, chars, num_tra
 
 		num_examples = len(dataset)
 		num_train_examples = int(num_examples * train_test_ratio)
-
 		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
 		train_dataset = MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform)
 		test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
@@ -651,40 +709,60 @@ def create_word_data_loaders(word_type, label_converter, wordset, chars, num_tra
 		else:
 			data_base_dir_path = 'D:/work/dataset'
 
-		datasets = list()
+		train_datasets, test_datasets = list(), list()
 		if True:
 			# E2E-MLT Korean dataset.
 			# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
 			is_preloaded_image_used = False
-			datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
+			dataset = text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used)
+
+			num_examples = len(dataset)
+			num_train_examples = int(num_examples * train_test_ratio)
+			train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+			train_datasets.append(MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform))
+			test_datasets.append(MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform))
 		if True:
 			# E2E-MLT English dataset.
 			# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_en.txt'
 			is_preloaded_image_used = False
-			datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
+			dataset = text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used)
+
+			num_examples = len(dataset)
+			num_train_examples = int(num_examples * train_test_ratio)
+			train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+			train_datasets.append(MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform))
+			test_datasets.append(MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform))
 		if True:
 			# ICDAR RRC-MLT 2019 Korean dataset.
 			# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
 			is_preloaded_image_used = True
-			datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
+			dataset = text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used)
+
+			num_examples = len(dataset)
+			num_train_examples = int(num_examples * train_test_ratio)
+			train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+			train_datasets.append(MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform))
+			test_datasets.append(MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform))
 		if True:
 			# ICDAR RRC-MLT 2019 English dataset.
 			# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
 			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_en.txt'
 			is_preloaded_image_used = True
-			datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
-		assert datasets, 'NO Dataset'
+			dataset = text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used)
 
-		dataset = torch.utils.data.ConcatDataset(datasets)
-		num_examples = len(dataset)
-		num_train_examples = int(num_examples * train_test_ratio)
+			num_examples = len(dataset)
+			num_train_examples = int(num_examples * train_test_ratio)
+			train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+			train_datasets.append(MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform))
+			test_datasets.append(MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform))
+		assert train_datasets, 'NO train dataset'
+		assert test_datasets, 'NO test dataset'
 
-		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
-		train_dataset = MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform)
-		test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
+		train_dataset = torch.utils.data.ConcatDataset(train_datasets)
+		test_dataset = torch.utils.data.ConcatDataset(test_datasets)
 	else:
 		raise ValueError('Invalid dataset type: {}'.format(word_type))
 	glogger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
@@ -730,11 +808,15 @@ def create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_e
 
 	glogger.info('Start creating datasets...')
 	start_time = time.time()
-	datasets = list()
+	train_datasets, test_datasets = list(), list()
 	if True:
-		datasets.append(text_data.SimpleWordDataset(label_converter, wordset, num_simple_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor))
+		num_train_examples = int(num_simple_examples * train_test_ratio)
+		train_datasets.append(text_data.SimpleWordDataset(label_converter, wordset, num_train_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform))
+		test_datasets.append(text_data.SimpleWordDataset(label_converter, wordset, num_simple_examples - num_train_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform))
 	if True:
-		datasets.append(text_data.RandomWordDataset(label_converter, chars, num_random_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor))
+		num_train_examples = int(num_random_examples * train_test_ratio)
+		train_datasets.append(text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform))
+		test_datasets.append(text_data.RandomWordDataset(label_converter, chars, num_random_examples - num_train_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform))
 	if True:
 		# AI-Hub printed text dataset.
 		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
@@ -742,40 +824,66 @@ def create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_e
 
 		image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
 		is_preloaded_image_used = False
-		datasets.append(aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_word_len, is_preloaded_image_used))
+		dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_word_len, is_preloaded_image_used)
+
+		num_examples = len(dataset)
+		num_train_examples = int(num_examples * train_test_ratio)
+		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+		train_datasets.append(MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform))
+		test_datasets.append(MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform))
 	if True:
 		# E2E-MLT Korean dataset.
 		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
 		is_preloaded_image_used = False
-		datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
+		dataset = text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used)
+
+		num_examples = len(dataset)
+		num_train_examples = int(num_examples * train_test_ratio)
+		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+		train_datasets.append(MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform))
+		test_datasets.append(MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform))
 	if True:
 		# E2E-MLT English dataset.
 		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_en.txt'
 		is_preloaded_image_used = False
-		datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
+		dataset = text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used)
+
+		num_examples = len(dataset)
+		num_train_examples = int(num_examples * train_test_ratio)
+		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+		train_datasets.append(MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform))
+		test_datasets.append(MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform))
 	if True:
 		# ICDAR RRC-MLT 2019 Korean dataset.
 		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
 		is_preloaded_image_used = True
-		datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
+		dataset = text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used)
+
+		num_examples = len(dataset)
+		num_train_examples = int(num_examples * train_test_ratio)
+		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+		train_datasets.append(MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform))
+		test_datasets.append(MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform))
 	if True:
 		# ICDAR RRC-MLT 2019 English dataset.
 		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
 		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_en.txt'
 		is_preloaded_image_used = True
-		datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used))
-	assert datasets, 'NO Dataset'
+		dataset = text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used)
 
-	dataset = torch.utils.data.ConcatDataset(datasets)
-	num_examples = len(dataset)
-	num_train_examples = int(num_examples * train_test_ratio)
+		num_examples = len(dataset)
+		num_train_examples = int(num_examples * train_test_ratio)
+		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+		train_datasets.append(MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform))
+		test_datasets.append(MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform))
+	assert train_datasets, 'NO train dataset'
+	assert test_datasets, 'NO test dataset'
 
-	train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
-	train_dataset = MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform)
-	test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
+	train_dataset = torch.utils.data.ConcatDataset(train_datasets)
+	test_dataset = torch.utils.data.ConcatDataset(test_datasets)
 	glogger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
 	glogger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
@@ -848,31 +956,37 @@ def create_textline_data_loaders(textline_type, label_converter, wordset, chars,
 			'word_split': False  # Split on word instead of per-character. This is useful for ligature-based languages.
 		}
 
+		train_datasets, test_datasets = list(), list()
 		if True:
 			lang = 'en'  # {'ar', 'cn', 'de', 'en', 'es', 'fr', 'hi'}.
 			#font_filepaths = trdg.utils.load_fonts(lang)
 			font_filepaths = list()
 
 			is_randomly_generated = False
-			train_dataset_en = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs)
-			test_dataset_en = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs)
+			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+			test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 			is_randomly_generated = True
-			train_dataset_en_rnd = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs)
-			test_dataset_en_rnd = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs)
+			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+			test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 		if True:
 			lang = 'kr'
 			font_filepaths = construct_font(korean=True, english=False)
 			font_filepaths, _ = zip(*font_filepaths)
 
 			is_randomly_generated = False
-			train_dataset_kr = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs)
-			test_dataset_kr = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs)
+			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+			test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 			is_randomly_generated = True
-			train_dataset_kr_rnd = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs)
-			test_dataset_kr_rnd = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs)
-		train_dataset = torch.utils.data.ConcatDataset([train_dataset_en, train_dataset_en_rnd, train_dataset_kr, train_dataset_kr_rnd])
-		test_dataset = torch.utils.data.ConcatDataset([test_dataset_en, test_dataset_en_rnd, test_dataset_kr, test_dataset_kr_rnd])
+			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+			test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
+		train_dataset = torch.utils.data.ConcatDataset(train_datasets)
+		test_dataset = torch.utils.data.ConcatDataset(test_datasets)
 	elif textline_type == 'aihub_textline':
+		if 'posix' == os.name:
+			data_base_dir_path = '/home/sangwook/work/dataset'
+		else:
+			data_base_dir_path = 'D:/work/dataset'
+
 		# AI-Hub printed text dataset.
 		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
 		aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
@@ -884,7 +998,6 @@ def create_textline_data_loaders(textline_type, label_converter, wordset, chars,
 
 		num_examples = len(dataset)
 		num_train_examples = int(num_examples * train_test_ratio)
-
 		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
 		train_dataset = MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform)
 		test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
@@ -894,36 +1007,43 @@ def create_textline_data_loaders(textline_type, label_converter, wordset, chars,
 		else:
 			data_base_dir_path = 'D:/work/dataset'
 
-		datasets = list()
+		train_datasets, test_datasets = list(), list()
 		if True:
 			# ICDAR 2019 SROIE dataset.
 			is_preloaded_image_used = False
 			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.jpg', recursive=False))
 			labels_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
-			datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, labels_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
-			if True:
-				image_label_info_filepath = data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_test_text_line/labels.txt'
-				datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
+			train_datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, labels_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used, transform=train_transform, target_transform=train_target_transform))
+			image_label_info_filepath = data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_test_text_line/labels.txt'
+			test_datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform))
+		if True:
+			# SiliconMinds data.
+			image_label_info_filepath = data_base_dir_path + '/text/receipt/sminds/receipt_text_line/labels.txt'
+			is_preloaded_image_used = True
+			dataset = text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used)
+
+			num_examples = len(dataset)
+			num_train_examples = int(num_examples * train_test_ratio)
+			train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+			train_datasets.append(MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform))
+			test_datasets.append(MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform))
 		if True:
 			# ePapyrus data.
 			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.png', recursive=False))
 			label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.txt', recursive=False))
 			is_preloaded_image_used = True
-			datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
-		if True:
-			# SiliconMinds data.
-			image_label_info_filepath = data_base_dir_path + '/text/receipt/sminds/receipt_text_line/labels.txt'
-			is_preloaded_image_used = True
-			datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
-		assert datasets, 'NO Dataset'
+			dataset = text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used)
 
-		dataset = torch.utils.data.ConcatDataset(datasets)
-		num_examples = len(dataset)
-		num_train_examples = int(num_examples * train_test_ratio)
+			num_examples = len(dataset)
+			num_train_examples = int(num_examples * train_test_ratio)
+			train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+			train_datasets.append(MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform))
+			test_datasets.append(MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform))
+		assert train_datasets, 'NO train dataset'
+		assert test_datasets, 'NO test dataset'
 
-		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
-		train_dataset = MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform)
-		test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
+		train_dataset = torch.utils.data.ConcatDataset(train_datasets)
+		test_dataset = torch.utils.data.ConcatDataset(test_datasets)
 	else:
 		raise ValueError('Invalid dataset type: {}'.format(textline_type))
 	glogger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
@@ -969,11 +1089,15 @@ def create_mixed_textline_data_loaders(label_converter, wordset, chars, num_simp
 
 	glogger.info('Start creating datasets...')
 	start_time = time.time()
-	datasets = list()
+	train_datasets, test_datasets = list(), list()
 	if True:
-		datasets.append(text_data.SimpleTextLineDataset(label_converter, wordset, num_simple_examples, image_channel, max_textline_len, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor))
+		num_train_examples = int(num_simple_examples * train_test_ratio)
+		train_datasets.append(text_data.SimpleTextLineDataset(label_converter, wordset, num_train_examples, image_channel, max_textline_len, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform))
+		test_datasets.append(text_data.SimpleTextLineDataset(label_converter, wordset, num_simple_examples - num_train_examples, image_channel, max_textline_len, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform))
 	if True:
-		datasets.append(text_data.RandomTextLineDataset(label_converter, chars, num_random_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor))
+		num_train_examples = int(num_random_examples * train_test_ratio)
+		train_datasets.append(text_data.RandomTextLineDataset(label_converter, chars, num_train_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform))
+		test_datasets.append(text_data.RandomTextLineDataset(label_converter, chars, num_random_examples - num_train_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform))
 	if True:
 		# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
 		font_size = image_height
@@ -1002,24 +1126,30 @@ def create_mixed_textline_data_loaders(label_converter, wordset, chars, num_simp
 			'word_split': False  # Split on word instead of per-character. This is useful for ligature-based languages.
 		}
 
+		num_train_examples = int(num_trdg_examples * train_test_ratio)
+		num_test_examples = num_trdg_examples - num_train_examples
 		if True:
 			lang = 'en'  # {'ar', 'cn', 'de', 'en', 'es', 'fr', 'hi'}.
 			#font_filepaths = trdg.utils.load_fonts(lang)
 			font_filepaths = list()
 
 			is_randomly_generated = False
-			datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_trdg_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=None, target_transform=None, **generator_kwargs))
+			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+			test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 			is_randomly_generated = True
-			datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_trdg_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=None, target_transform=None, **generator_kwargs))
+			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+			test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 		if True:
 			lang = 'kr'
 			font_filepaths = construct_font(korean=True, english=False)
 			font_filepaths, _ = zip(*font_filepaths)
 
 			is_randomly_generated = False
-			datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_trdg_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=None, target_transform=None, **generator_kwargs))
+			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+			test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 			is_randomly_generated = True
-			datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_trdg_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=None, target_transform=None, **generator_kwargs))
+			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+			test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 	if True:
 		# AI-Hub printed text dataset.
 		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
@@ -1028,36 +1158,49 @@ def create_mixed_textline_data_loaders(label_converter, wordset, chars, num_simp
 		image_types_to_load = ['sentence']  # {'syllable', 'word', 'sentence'}.
 		#image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
 		is_preloaded_image_used = False
-		datasets.append(aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_textline_len, is_preloaded_image_used))
+		dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_textline_len, is_preloaded_image_used)
+
+		num_examples = len(dataset)
+		num_train_examples = int(num_examples * train_test_ratio)
+		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+		train_datasets.append(MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform))
+		test_datasets.append(MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform))
 	if True:
 		# ICDAR 2019 SROIE dataset.
 		is_preloaded_image_used = False
 		image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.jpg', recursive=False))
 		labels_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
-		datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, labels_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
-		if True:
-			image_label_info_filepath = data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_test_text_line/labels.txt'
-			datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
+		train_datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, labels_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used, transform=train_transform, target_transform=train_target_transform))
+		image_label_info_filepath = data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_test_text_line/labels.txt'
+		test_datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform))
+	if True:
+		# SiliconMinds data.
+		image_label_info_filepath = data_base_dir_path + '/text/receipt/sminds/receipt_text_line/labels.txt'
+		is_preloaded_image_used = True
+		dataset = text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used)
+
+		num_examples = len(dataset)
+		num_train_examples = int(num_examples * train_test_ratio)
+		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+		train_datasets.append(MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform))
+		test_datasets.append(MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform))
 	if True:
 		# ePapyrus data.
 		image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.png', recursive=False))
 		label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.txt', recursive=False))
 		is_preloaded_image_used = True
-		datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
-	if True:
-		# SiliconMinds data.
-		image_label_info_filepath = data_base_dir_path + '/text/receipt/sminds/receipt_text_line/labels.txt'
-		is_preloaded_image_used = True
-		datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used))
-	assert datasets, 'NO Dataset'
+		dataset = text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used)
 
-	dataset = torch.utils.data.ConcatDataset(datasets)
-	num_examples = len(dataset)
-	num_train_examples = int(num_examples * train_test_ratio)
+		num_examples = len(dataset)
+		num_train_examples = int(num_examples * train_test_ratio)
+		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+		train_datasets.append(MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform))
+		test_datasets.append(MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform))
+	assert train_datasets, 'NO train dataset'
+	assert test_datasets, 'NO test dataset'
 
-	train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
-	train_dataset = MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform)
-	test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
+	train_dataset = torch.utils.data.ConcatDataset(train_datasets)
+	test_dataset = torch.utils.data.ConcatDataset(test_datasets)
 	glogger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
 	glogger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
@@ -1099,7 +1242,7 @@ def show_char_data_info(dataloader, label_converter, visualize=True, mode='Train
 
 	if visualize:
 		glogger.info('Labels: {}.'.format(' '.join(label_converter.decode(labels_np))))
-		show_image(torchvision.utils.make_grid(images))
+		show_image(torchvision.utils.make_grid(images, nrow=8))
 
 def show_text_data_info(dataloader, label_converter, visualize=True, mode='Train'):
 	dataiter = iter(dataloader)
@@ -1114,7 +1257,7 @@ def show_text_data_info(dataloader, label_converter, visualize=True, mode='Train
 		#glogger.info('Labels: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in images_np])))
 		for idx, (lbl, ll) in enumerate(zip(labels_np, label_lens_np)):
 			glogger.info('Label #{} (len = {}): {} (int), {} (str).'.format(idx, ll, lbl, label_converter.decode(lbl)))
-		show_image(torchvision.utils.make_grid(images))
+		show_image(torchvision.utils.make_grid(images, nrow=2))
 
 def show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char=False):
 	#for idx in range(num_classes):
@@ -1288,9 +1431,9 @@ def evaluate_char_recognition_model(model, label_converter, dataloader, is_case_
 			glogger.warning('File not found, {}: {}.'.format(err_fpath, ex))
 
 	show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char)
-	glogger.info('Char accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
+	glogger.info('Char accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else -1))
 
-	return correct_char_count / total_char_count
+	return correct_char_count / total_char_count if total_char_count > 0 else -1
 
 def compute_simple_matching_accuracy(inputs, outputs, predictions, label_converter, is_case_sensitive, show_acc_per_char, error_cases_dir_path=None, error_idx=0):
 	is_error_cases_saved = error_cases_dir_path is not None
@@ -1424,17 +1567,17 @@ def evaluate_text_recognition_model(model, infer_functor, label_converter, datal
 	show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char)
 	if is_sequence_matching_ratio_used:
 		#num_examples = len(dataloader)
-		ave_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else 0
+		ave_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
 		glogger.info('Average sequence matching ratio = {}.'.format(ave_matching_ratio))
 	if is_simple_matching_accuracy_used:
-		glogger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else 0))
-		glogger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else 0))
-		glogger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else 0))
+		glogger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else -1))
+		glogger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else -1))
+		glogger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else -1))
 
 	if is_sequence_matching_ratio_used:
 		return ave_matching_ratio
 	elif is_simple_matching_accuracy_used:
-		return correct_char_count / total_char_count if total_char_count > 0 else 0
+		return correct_char_count / total_char_count if total_char_count > 0 else -1
 	else: return -1
 
 def infer_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=None, batch_size=None, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, device='cpu'):
@@ -1506,12 +1649,12 @@ def infer_using_text_recognition_model(model, infer_functor, label_converter, in
 		if is_sequence_matching_ratio_used:
 			#num_examples = len(outputs)
 			num_examples = min(len(inputs), len(outputs), len(predictions))
-			ave_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else 0
+			ave_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
 			glogger.info('Average sequence matching ratio = {}.'.format(ave_matching_ratio))
 		if is_simple_matching_accuracy_used:
-			glogger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else 0))
-			glogger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else 0))
-			glogger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else 0))
+			glogger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else -1))
+			glogger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else -1))
+			glogger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else -1))
 
 def infer_one_by_one_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=None, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, device='cpu'):
 	num_examples_to_show = 50
@@ -1559,12 +1702,12 @@ def infer_one_by_one_using_text_recognition_model(model, infer_functor, label_co
 		if is_sequence_matching_ratio_used:
 			#num_examples = len(outputs)
 			num_examples = min(len(inputs), len(outputs), len(predictions))
-			ave_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else 0
+			ave_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
 			glogger.info('Average sequence matching ratio = {}.'.format(ave_matching_ratio))
 		if is_simple_matching_accuracy_used:
-			glogger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else 0))
-			glogger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else 0))
-			glogger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else 0))
+			glogger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else -1))
+			glogger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else -1))
+			glogger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else -1))
 
 def build_char_model(label_converter, image_channel, loss_type, lang):
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
@@ -2756,12 +2899,11 @@ def build_transformer_ocr_model(label_converter, image_height, image_width, imag
 	return model, infer, train_forward, criterion
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
-def train_character_recognizer(num_epochs=100, batch_size=128, device='cpu'):
+def train_character_recognizer(lang, num_epochs=100, batch_size=128, device='cpu'):
 	image_height, image_width, image_channel = 64, 64, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	lang = 'kor'  # {'kor', 'eng'}.
 	# File-based chars: 78,838.
 	is_mixed_chars_used = True
 	if is_mixed_chars_used:
@@ -2895,12 +3037,11 @@ def train_character_recognizer(num_epochs=100, batch_size=128, device='cpu'):
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
-def train_character_recognizer_using_mixup(num_epochs=100, batch_size=128, device='cpu'):
+def train_character_recognizer_using_mixup(lang, num_epochs=100, batch_size=128, device='cpu'):
 	image_height, image_width, image_channel = 64, 64, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	lang = 'kor'  # {'kor', 'eng'}.
 	# File-based chars: 78,838.
 	is_mixed_chars_used = True
 	if is_mixed_chars_used:
@@ -3033,15 +3174,13 @@ def train_character_recognizer_using_mixup(num_epochs=100, batch_size=128, devic
 	evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def train_word_recognizer_based_on_rare1(num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_rare1(lang, max_word_len, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	lang = 'kor'  # {'kor', 'eng'}.
-	max_word_len = 5  # Max. word length.
 	# File-based words: 504,279.
 	is_mixed_words_used = True
 	if is_mixed_words_used:
@@ -3064,7 +3203,7 @@ def train_word_recognizer_based_on_rare1(num_epochs=20, batch_size=64, device='c
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_separate_pad_id_used = False
+	is_separate_pad_id_used = True
 
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
@@ -3110,8 +3249,8 @@ def train_word_recognizer_based_on_rare1(num_epochs=20, batch_size=64, device='c
 			assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 			assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 		else:
-			#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
-			label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+			label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+			#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
 		del SOS_TOKEN, EOS_TOKEN
 		assert label_converter.PAD is not None
 		SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
@@ -3210,15 +3349,13 @@ def train_word_recognizer_based_on_rare1(num_epochs=20, batch_size=64, device='c
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def train_word_recognizer_based_on_rare2(num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_rare2(lang, max_word_len, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	lang = 'kor'  # {'kor', 'eng'}.
-	max_word_len = 5  # Max. word length.
 	# File-based words: 504,279.
 	is_mixed_words_used = True
 	if is_mixed_words_used:
@@ -3241,7 +3378,7 @@ def train_word_recognizer_based_on_rare2(num_epochs=20, batch_size=64, device='c
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_separate_pad_id_used = False
+	is_separate_pad_id_used = True
 
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
@@ -3273,8 +3410,8 @@ def train_word_recognizer_based_on_rare2(num_epochs=20, batch_size=64, device='c
 		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
 	del SOS_TOKEN, EOS_TOKEN
 	assert label_converter.PAD is not None
 	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
@@ -3373,15 +3510,13 @@ def train_word_recognizer_based_on_rare2(num_epochs=20, batch_size=64, device='c
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def train_word_recognizer_based_on_aster(num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_aster(lang, max_word_len, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	lang = 'kor'  # {'kor', 'eng'}.
-	max_word_len = 5  # Max. word length.
 	# File-based words: 504,279.
 	is_mixed_words_used = True
 	if is_mixed_words_used:
@@ -3405,7 +3540,7 @@ def train_word_recognizer_based_on_aster(num_epochs=20, batch_size=64, device='c
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_separate_pad_id_used = False
+	is_separate_pad_id_used = True
 
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
@@ -3437,8 +3572,8 @@ def train_word_recognizer_based_on_aster(num_epochs=20, batch_size=64, device='c
 		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
 	del SOS_TOKEN, EOS_TOKEN
 	assert label_converter.PAD is not None
 	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
@@ -3536,7 +3671,7 @@ def train_word_recognizer_based_on_aster(num_epochs=20, batch_size=64, device='c
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def train_word_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_opennmt(lang, max_word_len, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3545,8 +3680,6 @@ def train_word_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, device=
 
 	encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
 
-	lang = 'kor'  # {'kor', 'eng'}.
-	max_word_len = 5  # Max. word length.
 	# File-based words: 504,279.
 	is_mixed_words_used = True
 	if is_mixed_words_used:
@@ -3570,7 +3703,7 @@ def train_word_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, device=
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_separate_pad_id_used = False
+	is_separate_pad_id_used = True
 
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
@@ -3602,8 +3735,8 @@ def train_word_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, device=
 		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
 	del SOS_TOKEN, EOS_TOKEN
 	assert label_converter.PAD is not None
 
@@ -3701,15 +3834,13 @@ def train_word_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, device=
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def train_word_recognizer_based_on_rare1_and_opennmt(num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_rare1_and_opennmt(lang, max_word_len, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	lang = 'kor'  # {'kor', 'eng'}.
-	max_word_len = 5  # Max. word length.
 	# File-based words: 504,279.
 	is_mixed_words_used = True
 	if is_mixed_words_used:
@@ -3733,7 +3864,7 @@ def train_word_recognizer_based_on_rare1_and_opennmt(num_epochs=20, batch_size=6
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_separate_pad_id_used = False
+	is_separate_pad_id_used = True
 
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
@@ -3765,8 +3896,8 @@ def train_word_recognizer_based_on_rare1_and_opennmt(num_epochs=20, batch_size=6
 		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
 	del SOS_TOKEN, EOS_TOKEN
 	assert label_converter.PAD is not None
 
@@ -3863,15 +3994,13 @@ def train_word_recognizer_based_on_rare1_and_opennmt(num_epochs=20, batch_size=6
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def train_word_recognizer_based_on_rare2_and_opennmt(num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_rare2_and_opennmt(lang, max_word_len, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	lang = 'kor'  # {'kor', 'eng'}.
-	max_word_len = 5  # Max. word length.
 	# File-based words: 504,279.
 	is_mixed_words_used = True
 	if is_mixed_words_used:
@@ -3895,7 +4024,7 @@ def train_word_recognizer_based_on_rare2_and_opennmt(num_epochs=20, batch_size=6
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_separate_pad_id_used = False
+	is_separate_pad_id_used = True
 
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
@@ -3927,8 +4056,8 @@ def train_word_recognizer_based_on_rare2_and_opennmt(num_epochs=20, batch_size=6
 		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
 	del SOS_TOKEN, EOS_TOKEN
 	assert label_converter.PAD is not None
 
@@ -4025,15 +4154,13 @@ def train_word_recognizer_based_on_rare2_and_opennmt(num_epochs=20, batch_size=6
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def train_word_recognizer_based_on_aster_and_opennmt(num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_aster_and_opennmt(lang, max_word_len, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	lang = 'kor'  # {'kor', 'eng'}.
-	max_word_len = 5  # Max. word length.
 	# File-based words: 504,279.
 	is_mixed_words_used = True
 	if is_mixed_words_used:
@@ -4057,7 +4184,7 @@ def train_word_recognizer_based_on_aster_and_opennmt(num_epochs=20, batch_size=6
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_separate_pad_id_used = False
+	is_separate_pad_id_used = True
 
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
@@ -4089,8 +4216,8 @@ def train_word_recognizer_based_on_aster_and_opennmt(num_epochs=20, batch_size=6
 		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
 	del SOS_TOKEN, EOS_TOKEN
 	assert label_converter.PAD is not None
 
@@ -4187,15 +4314,13 @@ def train_word_recognizer_based_on_aster_and_opennmt(num_epochs=20, batch_size=6
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def train_word_recognizer_using_mixup(num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_using_mixup(lang, max_word_len, num_epochs=20, batch_size=64, device='cpu'):
 	image_height, image_width, image_channel = 32, 100, 3
 	#image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	lang = 'kor'  # {'kor', 'eng'}.
-	max_word_len = 25  # Max. word length.
 	# File-based words: 504,279.
 	is_mixed_words_used = True
 	if is_mixed_words_used:
@@ -4218,7 +4343,7 @@ def train_word_recognizer_using_mixup(num_epochs=20, batch_size=64, device='cpu'
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_separate_pad_id_used = False
+	is_separate_pad_id_used = True
 
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
@@ -4264,8 +4389,8 @@ def train_word_recognizer_using_mixup(num_epochs=20, batch_size=64, device='cpu'
 			assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 			assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 		else:
-			#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
-			label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+			label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+			#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
 		del SOS_TOKEN, EOS_TOKEN
 		assert label_converter.PAD is not None
 		SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
@@ -4364,7 +4489,7 @@ def train_word_recognizer_using_mixup(num_epochs=20, batch_size=64, device='cpu'
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def evaluate_word_recognizer_using_aihub_data(max_label_len, batch_size, is_separate_pad_id_used=False, device='cpu'):
+def evaluate_word_recognizer_using_aihub_data(lang, max_word_len, batch_size, is_separate_pad_id_used=True, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -4372,7 +4497,6 @@ def evaluate_word_recognizer_using_aihub_data(max_label_len, batch_size, is_sepa
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	lang = 'kor'  # {'kor', 'eng'}.
 	image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
 	is_preloaded_image_used = False
 
@@ -4388,10 +4512,6 @@ def evaluate_word_recognizer_using_aihub_data(max_label_len, batch_size, is_sepa
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
 
-	gpu = 0
-	device = torch.device('cuda:{}'.format(gpu) if torch.cuda.is_available() and gpu >= 0 else 'cpu')
-	glogger.info('Device: {}.'.format(device))
-
 	#--------------------
 	# Prepare data.
 
@@ -4404,8 +4524,8 @@ def evaluate_word_recognizer_using_aihub_data(max_label_len, batch_size, is_sepa
 		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
 	del SOS_TOKEN, EOS_TOKEN
 	assert label_converter.PAD is not None
 	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
@@ -4431,7 +4551,7 @@ def evaluate_word_recognizer_using_aihub_data(max_label_len, batch_size, is_sepa
 
 	glogger.info('Start creating a dataset and a dataloader...')
 	start_time = time.time()
-	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
+	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_word_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	glogger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
@@ -4451,17 +4571,17 @@ def evaluate_word_recognizer_using_aihub_data(max_label_len, batch_size, is_sepa
 		# For RARE2.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2_attn_xent_gradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9514_epoch3.pth'
 
-		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID)
+		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_word_len + num_suffixes, sos_id=SOS_ID)
 	elif False:
 		# For ASTER + OpenNMT.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster_sxent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.8449_epoch3.pth'
 
-		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_ID)
+		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_word_len, EOS_ID)
 	elif False:
 		# For ASTER + OpenNMT.
 		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_xent_nogradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9325_epoch2.pth'
 
-		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
+		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_word_len, lang, loss_type=None, device=device)
 	else:
 		raise ValueError('Undefined model')
 	assert model_filepath_to_load is not None
@@ -4485,7 +4605,7 @@ def evaluate_word_recognizer_using_aihub_data(max_label_len, batch_size, is_sepa
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def train_textline_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, device='cpu'):
+def train_textline_recognizer_based_on_opennmt(lang, max_textline_len, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	#image_height, image_width, image_channel = 64, 640, 3
 	image_height, image_width, image_channel = 64, 1280, 3
@@ -4495,8 +4615,6 @@ def train_textline_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, dev
 
 	encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
 
-	lang = 'kor'  # {'kor', 'eng'}.
-	max_textline_len = 50  # Max. text line length.
 	# File-based text lines: 55,835.
 	is_mixed_textlines_used = True
 	if is_mixed_textlines_used:
@@ -4523,7 +4641,7 @@ def train_textline_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, dev
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_separate_pad_id_used = False
+	is_separate_pad_id_used = True
 
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
@@ -4555,8 +4673,8 @@ def train_textline_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, dev
 		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
 	del SOS_TOKEN, EOS_TOKEN
 	assert label_converter.PAD is not None
 
@@ -4654,7 +4772,7 @@ def train_textline_recognizer_based_on_opennmt(num_epochs=20, batch_size=64, dev
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def train_textline_recognizer_based_on_transformer(num_epochs=40, batch_size=64, device='cpu'):
+def train_textline_recognizer_based_on_transformer(lang, max_textline_len, num_epochs=40, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	#image_height, image_width, image_channel = 64, 640, 3
 	image_height, image_width, image_channel = 64, 1280, 3
@@ -4662,8 +4780,6 @@ def train_textline_recognizer_based_on_transformer(num_epochs=40, batch_size=64,
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	lang = 'kor'  # {'kor', 'eng'}.
-	max_textline_len = 50  # Max. text line length.
 	# File-based text lines: 55,835.
 	is_mixed_textlines_used = True
 	if is_mixed_textlines_used:
@@ -4690,7 +4806,7 @@ def train_textline_recognizer_based_on_transformer(num_epochs=40, batch_size=64,
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_separate_pad_id_used = False
+	is_separate_pad_id_used = True
 
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
@@ -4722,8 +4838,8 @@ def train_textline_recognizer_based_on_transformer(num_epochs=40, batch_size=64,
 		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
 	del SOS_TOKEN, EOS_TOKEN
 	assert label_converter.PAD is not None
 
@@ -4984,7 +5100,7 @@ def recognize_word_using_craft(device='cpu'):
 		SOS_ID, EOS_ID = None, None
 		num_suffixes = 0
 	else:
-		is_separate_pad_id_used = False
+		is_separate_pad_id_used = True
 		BLANK_LABEL = None
 		SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
 		if is_separate_pad_id_used:
@@ -4995,8 +5111,8 @@ def recognize_word_using_craft(device='cpu'):
 			assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 			assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 		else:
-			#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
-			label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+			label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+			#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
 		del SOS_TOKEN, EOS_TOKEN
 		assert label_converter.PAD is not None
 		SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
@@ -5082,7 +5198,7 @@ def recognize_word_using_craft(device='cpu'):
 	else:
 		glogger.info('No text detected.')
 
-def recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_size, is_separate_pad_id_used=True, device='cpu'):
+def recognize_text_using_aihub_data(lang, max_label_len, image_types_to_load, batch_size, is_separate_pad_id_used=True, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -5090,9 +5206,7 @@ def recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_si
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	lang = 'kor'  # {'kor', 'eng'}.
 	is_preloaded_image_used = False
-
 	shuffle = False
 	num_workers = 8
 
@@ -5117,8 +5231,8 @@ def recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_si
 		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
 	del SOS_TOKEN, EOS_TOKEN
 	assert label_converter.PAD is not None
 	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
@@ -5225,7 +5339,7 @@ def recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_si
 	infer_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, batch_size=batch_size, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, device=device)
 	glogger.info('End inferring: {} secs.'.format(time.time() - start_time))
 
-def recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_len, is_separate_pad_id_used=True, device='cpu'):
+def recognize_text_one_by_one_using_aihub_data(lang, max_label_len, image_types_to_load, is_separate_pad_id_used=True, device='cpu'):
 	batch_size = 1
 
 	#image_height, image_width, image_channel = 32, 100, 3
@@ -5235,9 +5349,7 @@ def recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_le
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	lang = 'kor'  # {'kor', 'eng'}.
 	is_preloaded_image_used = False
-
 	shuffle = False
 	num_workers = 8
 
@@ -5262,8 +5374,8 @@ def recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_le
 		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
 		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
 	else:
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
 	del SOS_TOKEN, EOS_TOKEN
 	assert label_converter.PAD is not None
 	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
@@ -5543,29 +5655,35 @@ def main():
 			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 		model_filepath = os.path.join(output_dir_path, 'model.pth')
 
-	#--------------------
-	#train_character_recognizer(args.epoch, args.batch_size, device)
-	#train_character_recognizer_using_mixup(args.epoch, args.batch_size, device)
+	lang = 'kor'  # {'kor', 'eng'}.
 
 	#--------------------
-	#train_word_recognizer_based_on_rare1(args.epoch, args.batch_size, device)  # Use RARE #1.
-	#train_word_recognizer_based_on_rare2(args.epoch, args.batch_size, device)  # Use RARE #2.
-	#train_word_recognizer_based_on_aster(args.epoch, args.batch_size, device)  # Use ASTER.
-
-	#train_word_recognizer_based_on_opennmt(args.epoch, args.batch_size, device)  # Use OpenNMT.
-
-	#train_word_recognizer_based_on_rare1_and_opennmt(args.epoch, args.batch_size, device)  # Use RARE #1 (encoder) + OpenNMT (decoder).
-	#train_word_recognizer_based_on_rare2_and_opennmt(args.epoch, args.batch_size, device)  # Use RARE #2 (encoder) + OpenNMT (decoder).
-	#train_word_recognizer_based_on_aster_and_opennmt(args.epoch, args.batch_size, device)  # Use ASTER (encoder) + OpenNMT (decoder).
-
-	#train_word_recognizer_using_mixup(args.epoch, args.batch_size, device)  # Use RARE #1. Not working.
-
-	#evaluate_word_recognizer_using_aihub_data(max_label_len=10, batch_size=args.batch_size, is_separate_pad_id_used=False, device=device)
+	#train_character_recognizer(lang, args.epoch, args.batch_size, device)
+	#train_character_recognizer_using_mixup(lang, args.epoch, args.batch_size, device)
 
 	#--------------------
-	#train_textline_recognizer_based_on_opennmt(args.epoch, args.batch_size, device)  # Use OpenNMT.
+	max_word_len = 5  # Max. word length.
 
-	train_textline_recognizer_based_on_transformer(args.epoch, args.batch_size, device)  # Use Transformer.
+	#train_word_recognizer_based_on_rare1(lang, max_word_len, args.epoch, args.batch_size, device)  # Use RARE #1.
+	#train_word_recognizer_based_on_rare2(lang, max_word_len, args.epoch, args.batch_size, device)  # Use RARE #2.
+	#train_word_recognizer_based_on_aster(lang, max_word_len, args.epoch, args.batch_size, device)  # Use ASTER.
+
+	#train_word_recognizer_based_on_opennmt(lang, max_word_len, args.epoch, args.batch_size, device)  # Use OpenNMT.
+
+	#train_word_recognizer_based_on_rare1_and_opennmt(lang, max_word_len, args.epoch, args.batch_size, device)  # Use RARE #1 (encoder) + OpenNMT (decoder).
+	#train_word_recognizer_based_on_rare2_and_opennmt(lang, max_word_len, args.epoch, args.batch_size, device)  # Use RARE #2 (encoder) + OpenNMT (decoder).
+	#train_word_recognizer_based_on_aster_and_opennmt(lang, max_word_len, args.epoch, args.batch_size, device)  # Use ASTER (encoder) + OpenNMT (decoder).
+
+	#train_word_recognizer_using_mixup(lang, max_word_len, args.epoch, args.batch_size, device)  # Use RARE #1. Not working.
+
+	#evaluate_word_recognizer_using_aihub_data(lang, max_word_len, batch_size=args.batch_size, is_separate_pad_id_used=True, device=device)
+
+	#--------------------
+	max_textline_len = 50  # Max. text line length.
+
+	#train_textline_recognizer_based_on_opennmt(lang, max_textline_len, args.epoch, args.batch_size, device)  # Use OpenNMT.
+
+	train_textline_recognizer_based_on_transformer(lang, max_textline_len, args.epoch, args.batch_size, device)  # Use Transformer.
 
 	#--------------------
 	# Recognize text using CRAFT (scene text detector) + character recognizer.
@@ -5576,14 +5694,14 @@ def main():
 
 	if False:
 		# For word recognition.
-		image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
 		max_label_len = 10
+		image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
 	else:
 		# For textline recognition.
-		image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
 		max_label_len = 30
-	#recognize_text_using_aihub_data(image_types_to_load, max_label_len, batch_size=args.batch_size, is_separate_pad_id_used=True, device=device)
-	#recognize_text_one_by_one_using_aihub_data(image_types_to_load, max_label_len, is_separate_pad_id_used=True, device=device)  # batch_size = 1.
+		image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
+	#recognize_text_using_aihub_data(lang, max_label_len, image_types_to_load, batch_size=args.batch_size, is_separate_pad_id_used=True, device=device)
+	#recognize_text_one_by_one_using_aihub_data(lang, max_label_len, image_types_to_load, is_separate_pad_id_used=True, device=device)  # batch_size = 1.
 
 #--------------------------------------------------------------------
 
