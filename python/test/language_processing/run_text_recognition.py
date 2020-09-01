@@ -1761,7 +1761,7 @@ def build_char_mixup_model(label_converter, image_channel, loss_type, lang):
 
 	return model, train_forward, criterion
 
-def build_rare1_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_text_len, num_suffixes, sos_id, blank_label=None):
+def build_rare1_model(label_converter, image_height, image_width, image_channel, lang, loss_type, max_time_steps, sos_id, blank_label=None):
 	transformer = None  # The type of transformer. {None, 'TPS'}.
 	feature_extractor = 'VGG'  # The type of feature extractor. {'VGG', 'RCNN', 'ResNet'}.
 	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
@@ -1778,80 +1778,84 @@ def build_rare1_model(label_converter, image_height, image_width, image_channel,
 	else:
 		hidden_size = 512  # The size of the LSTM hidden states.
 
-	if loss_type == 'ctc':
-		# Define a loss function.
-		criterion = torch.nn.CTCLoss(blank=blank_label, zero_infinity=True)  # The BLANK label.
+	if loss_type is not None:
+		if loss_type == 'ctc':
+			# Define a loss function.
+			criterion = torch.nn.CTCLoss(blank=blank_label, zero_infinity=True)  # The BLANK label.
 
-		def train_forward(model, criterion, batch, device):
-			inputs, outputs, output_lens = batch
+			def train_forward(model, criterion, batch, device):
+				inputs, outputs, output_lens = batch
 
-			model_outputs = model(inputs.to(device), None, is_train=True, device=device).log_softmax(2)
+				model_outputs = model(inputs.to(device), None, is_train=True, device=device).log_softmax(2)
 
-			N, T = model_outputs.shape[:2]
-			model_outputs = model_outputs.permute(1, 0, 2)  # (N, T, C) -> (T, N, C).
-			model_output_lens = torch.full([N], T, dtype=torch.int32, device=device)
+				N, T = model_outputs.shape[:2]
+				model_outputs = model_outputs.permute(1, 0, 2)  # (N, T, C) -> (T, N, C).
+				model_output_lens = torch.full([N], T, dtype=torch.int32, device=device)
 
-			# TODO [check] >> To avoid CTC loss issue, disable cuDNN for the computation of the CTC loss.
-			# https://github.com/jpuigcerver/PyLaia/issues/16
-			torch.backends.cudnn.enabled = False
-			cost = criterion(model_outputs, outputs.to(device), model_output_lens, output_lens.to(device))
-			torch.backends.cudnn.enabled = True
-			return cost
+				# TODO [check] >> To avoid CTC loss issue, disable cuDNN for the computation of the CTC loss.
+				# https://github.com/jpuigcerver/PyLaia/issues/16
+				torch.backends.cudnn.enabled = False
+				cost = criterion(model_outputs, outputs.to(device), model_output_lens, output_lens.to(device))
+				torch.backends.cudnn.enabled = True
+				return cost
 
-		def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
-			raise NotImplementedError
+			def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
+				raise NotImplementedError
 
-	elif loss_type in ['xent', 'nll']:
-		# Define a loss function.
-		if loss_type == 'xent':
-			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id)  # Ignore the PAD ID.
-		elif loss_type == 'nll':
-			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum')  # Ignore the PAD ID.
+		elif loss_type in ['xent', 'nll']:
+			# Define a loss function.
+			if loss_type == 'xent':
+				criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id)  # Ignore the PAD ID.
+			elif loss_type == 'nll':
+				criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum')  # Ignore the PAD ID.
 
-		def train_forward(model, criterion, batch, device):
-			inputs, outputs, output_lens = batch
-			outputs = outputs.long()
+			def train_forward(model, criterion, batch, device):
+				inputs, outputs, output_lens = batch
+				outputs = outputs.long()
 
-			# Construct inputs for one-step look-ahead.
-			decoder_inputs = outputs[:,:-1]
-			# Construct outputs for one-step look-ahead.
-			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
-			decoder_output_lens = output_lens - 1
+				# Construct inputs for one-step look-ahead.
+				decoder_inputs = outputs[:,:-1]
+				# Construct outputs for one-step look-ahead.
+				decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
+				decoder_output_lens = output_lens - 1
 
-			model_outputs = model(inputs.to(device), decoder_inputs.to(device), is_train=True, device=device)
+				model_outputs = model(inputs.to(device), decoder_inputs.to(device), is_train=True, device=device)
 
-			# TODO [check] >> How to compute loss?
-			# NOTE [info] >> All examples in a batch are concatenated together.
-			#	Can each example be handled individually?
-			#return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.to(device).contiguous().view(-1))
-			"""
-			mask = torch.full(decoder_outputs.shape[:2], False, dtype=torch.bool)
-			for idx, ll in enumerate(decoder_output_lens):
-				mask[idx,:ll].fill_(True)
-			model_outputs[mask == False] = label_converter.pad_id
-			return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.to(device).contiguous().view(-1))
-			"""
-			concat_model_outputs, concat_decoder_outputs = list(), list()
-			for mo, do, dl in zip(model_outputs, decoder_outputs, decoder_output_lens):
-				concat_model_outputs.append(mo[:dl])
-				concat_decoder_outputs.append(do[:dl])
-			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
+				# TODO [check] >> How to compute loss?
+				# NOTE [info] >> All examples in a batch are concatenated together.
+				#	Can each example be handled individually?
+				#return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.to(device).contiguous().view(-1))
+				"""
+				mask = torch.full(decoder_outputs.shape[:2], False, dtype=torch.bool)
+				for idx, ll in enumerate(decoder_output_lens):
+					mask[idx,:ll].fill_(True)
+				model_outputs[mask == False] = label_converter.pad_id
+				return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.to(device).contiguous().view(-1))
+				"""
+				concat_model_outputs, concat_decoder_outputs = list(), list()
+				for mo, do, dl in zip(model_outputs, decoder_outputs, decoder_output_lens):
+					concat_model_outputs.append(mo[:dl])
+					concat_decoder_outputs.append(do[:dl])
+				return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
 
-		def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
-			model_outputs = model(inputs.to(device), None, is_train=False, device=device)
+			def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
+				model_outputs = model(inputs.to(device), None, is_train=False, device=device)
 
-			_, model_outputs = torch.max(model_outputs, dim=-1)
-			if outputs is None or output_lens is None:
-				return model_outputs.cpu().numpy(), None
-			else:
-				return model_outputs.cpu().numpy(), outputs.numpy()
+				_, model_outputs = torch.max(model_outputs, dim=-1)
+				if outputs is None or output_lens is None:
+					return model_outputs.cpu().numpy(), None
+				else:
+					return model_outputs.cpu().numpy(), outputs.numpy()
+	else:
+		criterion = None
+		train_forward = None
 
 	import rare.model
-	model = rare.model.Model(image_height, image_width, label_converter.num_tokens, num_fiducials, input_channel, output_channel, hidden_size, max_text_len + num_suffixes, sos_id, label_converter.pad_id, transformer, feature_extractor, sequence_model, decoder)
+	model = rare.model.Model(image_height, image_width, label_converter.num_tokens, num_fiducials, input_channel, output_channel, hidden_size, max_time_steps, sos_id, label_converter.pad_id, transformer, feature_extractor, sequence_model, decoder)
 
 	return model, infer, train_forward, criterion
 
-def build_rare1_mixup_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_text_len, num_suffixes, sos_id, blank_label=None):
+def build_rare1_mixup_model(label_converter, image_height, image_width, image_channel, lang, loss_type, max_time_steps, sos_id, blank_label=None):
 	transformer = None  # The type of transformer. {None, 'TPS'}.
 	feature_extractor = 'VGG'  # The type of feature extractor. {'VGG', 'RCNN', 'ResNet'}.
 	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
@@ -1871,77 +1875,81 @@ def build_rare1_mixup_model(label_converter, image_height, image_width, image_ch
 	mixup_input, mixup_hidden, mixup_alpha = True, True, 2.0
 	cutout, cutout_size = True, 4
 
-	if loss_type == 'ctc':
-		# Define a loss function.
-		criterion = torch.nn.CTCLoss(blank=blank_label, zero_infinity=True)  # The BLANK label.
+	if loss_type is not None:
+		if loss_type == 'ctc':
+			# Define a loss function.
+			criterion = torch.nn.CTCLoss(blank=blank_label, zero_infinity=True)  # The BLANK label.
 
-		def train_forward(model, criterion, batch, device):
-			inputs, outputs, output_lens = batch
+			def train_forward(model, criterion, batch, device):
+				inputs, outputs, output_lens = batch
 
-			model_outputs = model(inputs.to(device), None, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, is_train=True, device=device).log_softmax(2)
+				model_outputs = model(inputs.to(device), None, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, is_train=True, device=device).log_softmax(2)
 
-			N, T = model_outputs.shape[:2]
-			model_outputs = model_outputs.permute(1, 0, 2)  # (N, T, C) -> (T, N, C).
-			model_output_lens = torch.full([N], T, dtype=torch.int32, device=device)
+				N, T = model_outputs.shape[:2]
+				model_outputs = model_outputs.permute(1, 0, 2)  # (N, T, C) -> (T, N, C).
+				model_output_lens = torch.full([N], T, dtype=torch.int32, device=device)
 
-			# TODO [check] >> To avoid CTC loss issue, disable cuDNN for the computation of the CTC loss.
-			# https://github.com/jpuigcerver/PyLaia/issues/16
-			torch.backends.cudnn.enabled = False
-			cost = criterion(model_outputs, outputs.to(device), model_output_lens, output_lens.to(device))
-			torch.backends.cudnn.enabled = True
-			return cost
+				# TODO [check] >> To avoid CTC loss issue, disable cuDNN for the computation of the CTC loss.
+				# https://github.com/jpuigcerver/PyLaia/issues/16
+				torch.backends.cudnn.enabled = False
+				cost = criterion(model_outputs, outputs.to(device), model_output_lens, output_lens.to(device))
+				torch.backends.cudnn.enabled = True
+				return cost
 
-		def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
-			raise NotImplementedError
+			def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
+				raise NotImplementedError
 
-	elif loss_type in ['xent', 'nll']:
-		# Define a loss function.
-		if loss_type == 'xent':
-			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id)  # Ignore the PAD ID.
-		elif loss_type == 'nll':
-			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum')  # Ignore the PAD ID.
+		elif loss_type in ['xent', 'nll']:
+			# Define a loss function.
+			if loss_type == 'xent':
+				criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id)  # Ignore the PAD ID.
+			elif loss_type == 'nll':
+				criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum')  # Ignore the PAD ID.
 
-		def train_forward(model, criterion, batch, device):
-			inputs, outputs, output_lens = batch
-			outputs = outputs.long()
+			def train_forward(model, criterion, batch, device):
+				inputs, outputs, output_lens = batch
+				outputs = outputs.long()
 
-			# Construct inputs for one-step look-ahead.
-			decoder_inputs = outputs[:,:-1]
-			# Construct outputs for one-step look-ahead.
-			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
-			decoder_output_lens = output_lens - 1
+				# Construct inputs for one-step look-ahead.
+				decoder_inputs = outputs[:,:-1]
+				# Construct outputs for one-step look-ahead.
+				decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
+				decoder_output_lens = output_lens - 1
 
-			model_outputs = model(inputs.to(device), decoder_inputs.to(device), is_train=True, device=device)
+				model_outputs = model(inputs.to(device), decoder_inputs.to(device), is_train=True, device=device)
 
-			# TODO [check] >> How to compute loss?
-			# NOTE [info] >> All examples in a batch are concatenated together.
-			#	Can each example be handled individually?
-			#return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.to(device).contiguous().view(-1))
-			"""
-			mask = torch.full(decoder_outputs.shape[:2], False, dtype=torch.bool)
-			for idx, ll in enumerate(decoder_output_lens):
-				mask[idx,:ll].fill_(True)
-			model_outputs[mask == False] = label_converter.pad_id
-			return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.to(device).contiguous().view(-1))
-			"""
-			concat_model_outputs, concat_decoder_outputs = list(), list()
-			for mo, do, dl in zip(model_outputs, decoder_outputs, decoder_output_lens):
-				concat_model_outputs.append(mo[:dl])
-				concat_decoder_outputs.append(do[:dl])
-			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
+				# TODO [check] >> How to compute loss?
+				# NOTE [info] >> All examples in a batch are concatenated together.
+				#	Can each example be handled individually?
+				#return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.to(device).contiguous().view(-1))
+				"""
+				mask = torch.full(decoder_outputs.shape[:2], False, dtype=torch.bool)
+				for idx, ll in enumerate(decoder_output_lens):
+					mask[idx,:ll].fill_(True)
+				model_outputs[mask == False] = label_converter.pad_id
+				return criterion(model_outputs.contiguous().view(-1, model_outputs.shape[-1]), decoder_outputs.to(device).contiguous().view(-1))
+				"""
+				concat_model_outputs, concat_decoder_outputs = list(), list()
+				for mo, do, dl in zip(model_outputs, decoder_outputs, decoder_output_lens):
+					concat_model_outputs.append(mo[:dl])
+					concat_decoder_outputs.append(do[:dl])
+				return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
 
-		def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
-			model_outputs = model(inputs.to(device), None, is_train=False, device=device)
+			def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
+				model_outputs = model(inputs.to(device), None, is_train=False, device=device)
 
-			_, model_outputs = torch.max(model_outputs, dim=-1)
-			if outputs is None or output_lens is None:
-				return model_outputs.cpu().numpy(), None
-			else:
-				return model_outputs.cpu().numpy(), outputs.numpy()
+				_, model_outputs = torch.max(model_outputs, dim=-1)
+				if outputs is None or output_lens is None:
+					return model_outputs.cpu().numpy(), None
+				else:
+					return model_outputs.cpu().numpy(), outputs.numpy()
+	else:
+		criterion = None
+		train_forward = None
 
 	# FIXME [error] >> rare.model.Model_MixUp is not working.
 	import rare.model
-	model = rare.model.Model_MixUp(image_height, image_width, label_converter.num_tokens, num_fiducials, input_channel, output_channel, hidden_size, max_text_len + num_suffixes, sos_id, label_converter.pad_id, transformer, feature_extractor, sequence_model, decoder)
+	model = rare.model.Model_MixUp(image_height, image_width, label_converter.num_tokens, num_fiducials, input_channel, output_channel, hidden_size, max_time_steps, sos_id, label_converter.pad_id, transformer, feature_extractor, sequence_model, decoder)
 
 	return model, infer, train_forward, criterion
 
@@ -2037,7 +2045,7 @@ def build_rare2_model(label_converter, image_height, image_width, image_channel,
 
 	return model, infer, train_forward, criterion
 
-def build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_text_len, eos_id):
+def build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, eos_id):
 	if lang == 'kor':
 		hidden_size = 512  # The size of the LSTM hidden states.
 	else:
@@ -2121,7 +2129,7 @@ def build_aster_model(label_converter, image_height, image_width, image_channel,
 		sys_args, arch=sys_args.arch, input_height=image_height, input_channel=image_channel,
 		hidden_size=hidden_size, rec_num_classes=label_converter.num_tokens,
 		sDim=sys_args.decoder_sdim, attDim=sys_args.attDim,
-		max_len_labels=max_text_len + label_converter.num_affixes, eos=eos_id,
+		max_len_labels=max_label_len + label_converter.num_affixes, eos=eos_id,
 		STN_ON=sys_args.STN_ON
 	)
 
@@ -2833,7 +2841,7 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 	return model, infer, train_forward, criterion
 
 # REF [site] >> https://github.com/fengxinjie/Transformer-OCR
-def build_transformer_ocr_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, is_train=False):
+def build_transformer_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, is_train=False):
 	import transformer_ocr.model, transformer_ocr.train, transformer_ocr.predict, transformer_ocr.dataset
 
 	num_layers = 4
@@ -2899,7 +2907,7 @@ def build_transformer_ocr_model(label_converter, image_height, image_width, imag
 	return model, infer, train_forward, criterion
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
-def train_character_recognizer(lang, num_epochs=100, batch_size=128, device='cpu'):
+def train_character_recognizer(lang, model_filepath_to_load=None, num_epochs=100, batch_size=128, device='cpu'):
 	image_height, image_width, image_channel = 64, 64, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
@@ -2923,7 +2931,6 @@ def train_character_recognizer(lang, num_epochs=100, batch_size=128, device='cpu
 	num_workers = 8
 	log_print_freq = 1000
 
-	model_filepath_to_load = None
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
@@ -3022,10 +3029,10 @@ def train_character_recognizer(lang, num_epochs=100, batch_size=128, device='cpu
 			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
 			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-	else:
-		if model:
-			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			save_model(model_filepath, model)
+	elif model:
+		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		save_model(model_filepath, model)
+	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
@@ -3036,8 +3043,10 @@ def train_character_recognizer(lang, num_epochs=100, batch_size=128, device='cpu
 	evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
+	return model_filepath
+
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
-def train_character_recognizer_using_mixup(lang, num_epochs=100, batch_size=128, device='cpu'):
+def train_character_recognizer_using_mixup(lang, model_filepath_to_load=None, num_epochs=100, batch_size=128, device='cpu'):
 	image_height, image_width, image_channel = 64, 64, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
@@ -3061,7 +3070,6 @@ def train_character_recognizer_using_mixup(lang, num_epochs=100, batch_size=128,
 	num_workers = 8
 	log_print_freq = 1000
 
-	model_filepath_to_load = None
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
@@ -3160,10 +3168,10 @@ def train_character_recognizer_using_mixup(lang, num_epochs=100, batch_size=128,
 			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
 			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-	else:
-		if model:
-			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			save_model(model_filepath, model)
+	elif model:
+		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		save_model(model_filepath, model)
+	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
@@ -3174,7 +3182,9 @@ def train_character_recognizer_using_mixup(lang, num_epochs=100, batch_size=128,
 	evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def train_word_recognizer_based_on_rare1(lang, max_word_len, num_epochs=20, batch_size=64, device='cpu'):
+	return model_filepath
+
+def train_word_recognizer_based_on_rare1(lang, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3199,7 +3209,6 @@ def train_word_recognizer_based_on_rare1(lang, max_word_len, num_epochs=20, batc
 	num_workers = 8
 	log_print_freq = 1000
 
-	model_filepath_to_load = None
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
@@ -3272,7 +3281,7 @@ def train_word_recognizer_based_on_rare1(lang, max_word_len, num_epochs=20, batc
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, train_forward_functor, criterion = build_rare1_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_word_len, num_suffixes, SOS_ID, BLANK_LABEL if loss_type == 'ctc' else None)
+	model, infer_functor, train_forward_functor, criterion = build_rare1_model(label_converter, image_height, image_width, image_channel, lang, loss_type, max_word_len + num_suffixes, SOS_ID, BLANK_LABEL if loss_type == 'ctc' else None)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3335,10 +3344,10 @@ def train_word_recognizer_based_on_rare1(lang, max_word_len, num_epochs=20, batc
 			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
 			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-	else:
-		if model:
-			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			save_model(model_filepath, model)
+	elif model:
+		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		save_model(model_filepath, model)
+	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
@@ -3349,7 +3358,9 @@ def train_word_recognizer_based_on_rare1(lang, max_word_len, num_epochs=20, batc
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def train_word_recognizer_based_on_rare2(lang, max_word_len, num_epochs=20, batch_size=64, device='cpu'):
+	return model_filepath
+
+def train_word_recognizer_based_on_rare2(lang, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3374,7 +3385,6 @@ def train_word_recognizer_based_on_rare2(lang, max_word_len, num_epochs=20, batc
 	num_workers = 8
 	log_print_freq = 1000
 
-	model_filepath_to_load = None
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
@@ -3496,10 +3506,10 @@ def train_word_recognizer_based_on_rare2(lang, max_word_len, num_epochs=20, batc
 			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
 			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-	else:
-		if model:
-			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			save_model(model_filepath, model)
+	elif model:
+		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		save_model(model_filepath, model)
+	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
@@ -3510,7 +3520,9 @@ def train_word_recognizer_based_on_rare2(lang, max_word_len, num_epochs=20, batc
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def train_word_recognizer_based_on_aster(lang, max_word_len, num_epochs=20, batch_size=64, device='cpu'):
+	return model_filepath
+
+def train_word_recognizer_based_on_aster(lang, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3536,7 +3548,6 @@ def train_word_recognizer_based_on_aster(lang, max_word_len, num_epochs=20, batc
 	num_workers = 8
 	log_print_freq = 1000
 
-	model_filepath_to_load = None
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
@@ -3657,10 +3668,10 @@ def train_word_recognizer_based_on_aster(lang, max_word_len, num_epochs=20, batc
 			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
 			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-	else:
-		if model:
-			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			save_model(model_filepath, model)
+	elif model:
+		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		save_model(model_filepath, model)
+	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
@@ -3671,7 +3682,9 @@ def train_word_recognizer_based_on_aster(lang, max_word_len, num_epochs=20, batc
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def train_word_recognizer_based_on_opennmt(lang, max_word_len, num_epochs=20, batch_size=64, device='cpu'):
+	return model_filepath
+
+def train_word_recognizer_based_on_opennmt(lang, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3699,7 +3712,6 @@ def train_word_recognizer_based_on_opennmt(lang, max_word_len, num_epochs=20, ba
 	num_workers = 8
 	log_print_freq = 1000
 
-	model_filepath_to_load = None
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
@@ -3820,10 +3832,10 @@ def train_word_recognizer_based_on_opennmt(lang, max_word_len, num_epochs=20, ba
 			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
 			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-	else:
-		if model:
-			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			save_model(model_filepath, model)
+	elif model:
+		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		save_model(model_filepath, model)
+	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
@@ -3834,7 +3846,9 @@ def train_word_recognizer_based_on_opennmt(lang, max_word_len, num_epochs=20, ba
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def train_word_recognizer_based_on_rare1_and_opennmt(lang, max_word_len, num_epochs=20, batch_size=64, device='cpu'):
+	return model_filepath
+
+def train_word_recognizer_based_on_rare1_and_opennmt(lang, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3860,7 +3874,6 @@ def train_word_recognizer_based_on_rare1_and_opennmt(lang, max_word_len, num_epo
 	num_workers = 8
 	log_print_freq = 1000
 
-	model_filepath_to_load = None
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
@@ -3980,10 +3993,10 @@ def train_word_recognizer_based_on_rare1_and_opennmt(lang, max_word_len, num_epo
 			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
 			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-	else:
-		if model:
-			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			save_model(model_filepath, model)
+	elif model:
+		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		save_model(model_filepath, model)
+	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
@@ -3994,7 +4007,9 @@ def train_word_recognizer_based_on_rare1_and_opennmt(lang, max_word_len, num_epo
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def train_word_recognizer_based_on_rare2_and_opennmt(lang, max_word_len, num_epochs=20, batch_size=64, device='cpu'):
+	return model_filepath
+
+def train_word_recognizer_based_on_rare2_and_opennmt(lang, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -4020,7 +4035,6 @@ def train_word_recognizer_based_on_rare2_and_opennmt(lang, max_word_len, num_epo
 	num_workers = 8
 	log_print_freq = 1000
 
-	model_filepath_to_load = None
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
@@ -4140,10 +4154,10 @@ def train_word_recognizer_based_on_rare2_and_opennmt(lang, max_word_len, num_epo
 			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
 			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-	else:
-		if model:
-			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			save_model(model_filepath, model)
+	elif model:
+		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		save_model(model_filepath, model)
+	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
@@ -4154,7 +4168,9 @@ def train_word_recognizer_based_on_rare2_and_opennmt(lang, max_word_len, num_epo
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def train_word_recognizer_based_on_aster_and_opennmt(lang, max_word_len, num_epochs=20, batch_size=64, device='cpu'):
+	return model_filepath
+
+def train_word_recognizer_based_on_aster_and_opennmt(lang, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -4180,7 +4196,6 @@ def train_word_recognizer_based_on_aster_and_opennmt(lang, max_word_len, num_epo
 	num_workers = 8
 	log_print_freq = 1000
 
-	model_filepath_to_load = None
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
@@ -4300,10 +4315,10 @@ def train_word_recognizer_based_on_aster_and_opennmt(lang, max_word_len, num_epo
 			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
 			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-	else:
-		if model:
-			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			save_model(model_filepath, model)
+	elif model:
+		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		save_model(model_filepath, model)
+	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
@@ -4314,7 +4329,9 @@ def train_word_recognizer_based_on_aster_and_opennmt(lang, max_word_len, num_epo
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def train_word_recognizer_using_mixup(lang, max_word_len, num_epochs=20, batch_size=64, device='cpu'):
+	return model_filepath
+
+def train_word_recognizer_using_mixup(lang, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
 	image_height, image_width, image_channel = 32, 100, 3
 	#image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -4339,7 +4356,6 @@ def train_word_recognizer_using_mixup(lang, max_word_len, num_epochs=20, batch_s
 	num_workers = 8
 	log_print_freq = 1000
 
-	model_filepath_to_load = None
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
@@ -4412,7 +4428,7 @@ def train_word_recognizer_using_mixup(lang, max_word_len, num_epochs=20, batch_s
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, train_forward_functor, criterion = build_rare1_mixup_model(label_converter, image_height, image_width, image_channel, loss_type, lang, max_word_len, num_suffixes, SOS_ID, BLANK_LABEL if loss_type == 'ctc' else None)
+	model, infer_functor, train_forward_functor, criterion = build_rare1_mixup_model(label_converter, image_height, image_width, image_channel, lang, loss_type, max_word_len + num_suffixes, SOS_ID, BLANK_LABEL if loss_type == 'ctc' else None)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -4475,10 +4491,10 @@ def train_word_recognizer_using_mixup(lang, max_word_len, num_epochs=20, batch_s
 			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
 			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-	else:
-		if model:
-			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			save_model(model_filepath, model)
+	elif model:
+		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		save_model(model_filepath, model)
+	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
@@ -4489,123 +4505,9 @@ def train_word_recognizer_using_mixup(lang, max_word_len, num_epochs=20, batch_s
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def evaluate_word_recognizer_using_aihub_data(lang, max_word_len, batch_size, is_separate_pad_id_used=True, device='cpu'):
-	#image_height, image_width, image_channel = 32, 100, 3
-	image_height, image_width, image_channel = 64, 640, 3
-	#image_height, image_width, image_channel = 64, 1280, 3
-	#image_height, image_width, image_channel = 64, 1920, 3
-	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
-	image_height_before_crop, image_width_before_crop = image_height, image_width
+	return model_filepath
 
-	image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
-	is_preloaded_image_used = False
-
-	shuffle = False
-	num_workers = 8
-
-	if lang == 'kor':
-		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
-	elif lang == 'eng':
-		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
-	else:
-		raise ValueError('Invalid language, {}'.format(lang))
-
-	#--------------------
-	# Prepare data.
-
-	SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
-	if is_separate_pad_id_used:
-		# When <PAD> token has a separate valid token ID.
-		PAD_TOKEN = '<PAD>'
-		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
-		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
-		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
-	else:
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
-	del SOS_TOKEN, EOS_TOKEN
-	assert label_converter.PAD is not None
-	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
-	num_suffixes = 1
-
-	if 'posix' == os.name:
-		data_base_dir_path = '/home/sangwook/work/dataset'
-	else:
-		data_base_dir_path = 'D:/work/dataset'
-
-	aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
-	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
-
-	test_transform = torchvision.transforms.Compose([
-		#ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True),
-		ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True),  # batch_size must be 1.
-		#torchvision.transforms.Resize((image_height, image_width)),
-		#torchvision.transforms.CenterCrop((image_height, image_width)),
-		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
-	])
-	test_target_transform = ToIntTensor()
-
-	glogger.info('Start creating a dataset and a dataloader...')
-	start_time = time.time()
-	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_word_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
-	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	glogger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
-	glogger.info('#examples = {}.'.format(len(test_dataset)))
-	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
-
-	# Show data info.
-	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
-
-	#--------------------
-	# Build a model.
-
-	glogger.info('Start building a model...')
-	start_time = time.time()
-	if True:
-		# For RARE2.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2_attn_xent_gradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9514_epoch3.pth'
-
-		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_word_len + num_suffixes, sos_id=SOS_ID)
-	elif False:
-		# For ASTER + OpenNMT.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster_sxent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.8449_epoch3.pth'
-
-		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_word_len, EOS_ID)
-	elif False:
-		# For ASTER + OpenNMT.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_xent_nogradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9325_epoch2.pth'
-
-		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_word_len, lang, loss_type=None, device=device)
-	else:
-		raise ValueError('Undefined model')
-	assert model_filepath_to_load is not None
-	glogger.info('End building a model: {} secs.'.format(time.time() - start_time))
-
-	# Load a model.
-	glogger.info('Start loading a pretrained model from {}.'.format(model_filepath_to_load))
-	start_time = time.time()
-	model = load_model(model_filepath_to_load, model, device=device)
-	glogger.info('End loading a pretrained model: {} secs.'.format(time.time() - start_time))
-
-	model = model.to(device)
-
-	#--------------------
-	# Evaluate the model.
-
-	glogger.info('Start evaluating...')
-	start_time = time.time()
-	model.eval()
-	error_cases_dir_path = './text_error_cases'
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, device=device)
-	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
-
-def train_textline_recognizer_based_on_opennmt(lang, max_textline_len, num_epochs=20, batch_size=64, device='cpu'):
+def train_textline_recognizer_based_on_opennmt(lang, model_filepath_to_load=None, max_textline_len=30, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	#image_height, image_width, image_channel = 64, 640, 3
 	image_height, image_width, image_channel = 64, 1280, 3
@@ -4637,7 +4539,6 @@ def train_textline_recognizer_based_on_opennmt(lang, max_textline_len, num_epoch
 	num_workers = 8
 	log_print_freq = 1000
 
-	model_filepath_to_load = None
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
@@ -4758,10 +4659,10 @@ def train_textline_recognizer_based_on_opennmt(lang, max_textline_len, num_epoch
 			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
 			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-	else:
-		if model:
-			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			save_model(model_filepath, model)
+	elif model:
+		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		save_model(model_filepath, model)
+	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
@@ -4772,7 +4673,9 @@ def train_textline_recognizer_based_on_opennmt(lang, max_textline_len, num_epoch
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def train_textline_recognizer_based_on_transformer(lang, max_textline_len, num_epochs=40, batch_size=64, device='cpu'):
+	return model_filepath
+
+def train_textline_recognizer_based_on_transformer(lang, model_filepath_to_load=None, max_textline_len=50, num_epochs=40, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	#image_height, image_width, image_channel = 64, 640, 3
 	image_height, image_width, image_channel = 64, 1280, 3
@@ -4802,7 +4705,6 @@ def train_textline_recognizer_based_on_transformer(lang, max_textline_len, num_e
 	num_workers = 8
 	log_print_freq = 1000
 
-	model_filepath_to_load = None
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
@@ -4859,7 +4761,7 @@ def train_textline_recognizer_based_on_transformer(lang, max_textline_len, num_e
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, train_forward_functor, criterion = build_transformer_ocr_model(label_converter, image_height, image_width, image_channel, max_textline_len, lang, is_train=True)
+	model, infer_functor, train_forward_functor, criterion = build_transformer_model(label_converter, image_height, image_width, image_channel, max_textline_len, lang, is_train=True)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -4925,10 +4827,10 @@ def train_textline_recognizer_based_on_transformer(lang, max_textline_len, num_e
 			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
 			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-	else:
-		if model:
-			model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-			save_model(model_filepath, model)
+	elif model:
+		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		save_model(model_filepath, model)
+	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
@@ -4939,7 +4841,399 @@ def train_textline_recognizer_based_on_transformer(lang, max_textline_len, num_e
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def recognize_character_using_craft(device='cpu'):
+	return model_filepath
+
+def evaluate_text_recognizer_using_aihub_data(lang, target_type, model_type, model_filepath_to_load, max_label_len, batch_size, is_separate_pad_id_used=True, device='cpu'):
+	assert model_filepath_to_load is not None
+
+	#image_height, image_width, image_channel = 32, 100, 3
+	image_height, image_width, image_channel = 64, 640, 3
+	#image_height, image_width, image_channel = 64, 1280, 3
+	#image_height, image_width, image_channel = 64, 1920, 3
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
+	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	if target_type == 'word':
+		image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
+	elif target_type == 'textline':
+		image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
+	else:
+		raise ValueError('Invalid target type, {}'.format(target_type))
+	is_preloaded_image_used = False
+	shuffle = False
+	num_workers = 8
+
+	if lang == 'kor':
+		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
+		font_list = construct_font(korean=True, english=False)
+	elif lang == 'eng':
+		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
+		font_list = construct_font(korean=False, english=True)
+	else:
+		raise ValueError('Invalid language, {}'.format(lang))
+
+	#--------------------
+	# Prepare data.
+
+	SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
+	if is_separate_pad_id_used:
+		# When <PAD> token has a separate valid token ID.
+		PAD_TOKEN = '<PAD>'
+		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
+		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
+		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
+	else:
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+	del SOS_TOKEN, EOS_TOKEN
+	assert label_converter.PAD is not None
+	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
+	num_suffixes = 1
+
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+
+	aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
+	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
+
+	test_transform = torchvision.transforms.Compose([
+		#ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True),
+		ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True),  # batch_size must be 1.
+		#torchvision.transforms.Resize((image_height, image_width)),
+		#torchvision.transforms.CenterCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
+	])
+	test_target_transform = ToIntTensor()
+
+	glogger.info('Start creating a dataset and a dataloader...')
+	start_time = time.time()
+	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
+	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+	glogger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
+	glogger.info('#examples = {}.'.format(len(test_dataset)))
+	glogger.info('#classes = {}.'.format(num_classes))
+	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+
+	# Show data info.
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+
+	#--------------------
+	# Build a model.
+
+	glogger.info('Start building a model...')
+	start_time = time.time()
+	if model_type == 'rara1':
+		model, infer_functor, _, _ = build_rare1_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID, blank_label=None)
+	elif model_type == 'rara2':
+		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID)
+	elif model_type == 'aster':
+		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_ID)
+	elif model_type == 'onmt':
+		encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
+		model, infer_functor, _, _ = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, encoder_type, lang, loss_type=None)
+	elif model_type == 'rare1+onmt':
+		model, infer_functor, _, _ = build_rare1_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
+	elif model_type == 'rare2+onmt':
+		model, infer_functor, _, _ = build_rare2_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
+	elif model_type == 'aster+onmt':
+		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
+	elif model_type == 'transformer':
+		model, infer_functor, _, _ = build_transformer_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, is_train=False)
+	else:
+		raise ValueError('Invalid model type, {}'.format(model_type))
+	glogger.info('End building a model: {} secs.'.format(time.time() - start_time))
+
+	# Load a model.
+	glogger.info('Start loading a pretrained model from {}.'.format(model_filepath_to_load))
+	start_time = time.time()
+	model = load_model(model_filepath_to_load, model, device=device)
+	glogger.info('End loading a pretrained model: {} secs.'.format(time.time() - start_time))
+
+	model = model.to(device)
+
+	#--------------------
+	# Evaluate the model.
+
+	glogger.info('Start evaluating...')
+	start_time = time.time()
+	model.eval()
+	error_cases_dir_path = './text_error_cases'
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, device=device)
+	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
+
+def recognize_text_using_aihub_data(lang, target_type, model_type, model_filepath_to_load, max_label_len, batch_size, is_separate_pad_id_used=True, device='cpu'):
+	assert model_filepath_to_load is not None
+
+	#image_height, image_width, image_channel = 32, 100, 3
+	image_height, image_width, image_channel = 64, 640, 3
+	#image_height, image_width, image_channel = 64, 1280, 3
+	#image_height, image_width, image_channel = 64, 1920, 3
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
+	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	if target_type == 'word':
+		image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
+	elif target_type == 'textline':
+		image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
+	else:
+		raise ValueError('Invalid target type, {}'.format(target_type))
+	is_preloaded_image_used = False
+	shuffle = False
+	num_workers = 8
+
+	if lang == 'kor':
+		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
+		font_list = construct_font(korean=True, english=False)
+	elif lang == 'eng':
+		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
+		font_list = construct_font(korean=False, english=True)
+	else:
+		raise ValueError('Invalid language, {}'.format(lang))
+
+	#--------------------
+	# Prepare data.
+
+	SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
+	if is_separate_pad_id_used:
+		# When <PAD> token has a separate valid token ID.
+		PAD_TOKEN = '<PAD>'
+		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
+		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
+		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
+	else:
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+	del SOS_TOKEN, EOS_TOKEN
+	assert label_converter.PAD is not None
+	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
+	num_suffixes = 1
+
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+
+	aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
+	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
+
+	test_transform = torchvision.transforms.Compose([
+		#ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True),
+		ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True),  # batch_size must be 1.
+		#torchvision.transforms.Resize((image_height, image_width)),
+		#torchvision.transforms.CenterCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
+	])
+	test_target_transform = ToIntTensor()
+
+	glogger.info('Start creating a dataset and a dataloader...')
+	start_time = time.time()
+	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
+	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+	glogger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
+	glogger.info('#examples = {}.'.format(len(test_dataset)))
+	glogger.info('#classes = {}.'.format(num_classes))
+	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+
+	# Show data info.
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+
+	inputs, outputs = list(), list()
+	try:
+		for images, labels, _ in test_dataloader:
+			inputs.append(images)
+			outputs.append(labels)
+	except Exception as ex:
+		glogger.warning('Exception raised: {}.'.format(ex))
+	inputs = torch.cat(inputs)
+	outputs = torch.cat(outputs)
+
+	#--------------------
+	# Build a model.
+
+	glogger.info('Start building a model...')
+	start_time = time.time()
+	if model_type == 'rara1':
+		model, infer_functor, _, _ = build_rare1_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID, blank_label=None)
+	elif model_type == 'rare2':
+		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID)
+	elif model_type == 'aster':
+		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_ID)
+	elif model_type == 'onmt':
+		encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
+		model, infer_functor, _, _ = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, encoder_type, lang, loss_type=None)
+	elif model_type == 'rare1+onmt':
+		model, infer_functor, _, _ = build_rare1_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
+	elif model_type == 'rare2+onmt':
+		model, infer_functor, _, _ = build_rare2_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
+	elif model_type == 'aster+onmt':
+		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
+	elif model_type == 'transformer':
+		model, infer_functor, _, _ = build_transformer_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, is_train=False)
+	else:
+		raise ValueError('Invalid model type, {}'.format(model_type))
+	glogger.info('End building a model: {} secs.'.format(time.time() - start_time))
+
+	# Load a model.
+	glogger.info('Start loading a pretrained model from {}.'.format(model_filepath_to_load))
+	start_time = time.time()
+	model = load_model(model_filepath_to_load, model, device=device)
+	glogger.info('End loading a pretrained model: {} secs.'.format(time.time() - start_time))
+
+	model = model.to(device)
+
+	#--------------------
+	# Infer by the model.
+
+	glogger.info('Start inferring...')
+	start_time = time.time()
+	model.eval()
+	#outputs = None
+	error_cases_dir_path = './text_error_cases'
+	infer_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, batch_size=batch_size, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, device=device)
+	glogger.info('End inferring: {} secs.'.format(time.time() - start_time))
+
+def recognize_text_one_by_one_using_aihub_data(lang, target_type, model_type, model_filepath_to_load, max_label_len, is_separate_pad_id_used=True, device='cpu'):
+	assert model_filepath_to_load is not None
+	batch_size = 1
+
+	#image_height, image_width, image_channel = 32, 100, 3
+	image_height, image_width, image_channel = 64, 640, 3
+	#image_height, image_width, image_channel = 64, 1280, 3
+	#image_height, image_width, image_channel = 64, 1920, 3
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
+	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	if target_type == 'word':
+		image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
+	elif target_type == 'textline':
+		image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
+	else:
+		raise ValueError('Invalid target type, {}'.format(target_type))
+	is_preloaded_image_used = False
+	shuffle = False
+	num_workers = 8
+
+	if lang == 'kor':
+		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
+		font_list = construct_font(korean=True, english=False)
+	elif lang == 'eng':
+		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
+		font_list = construct_font(korean=False, english=True)
+	else:
+		raise ValueError('Invalid language, {}'.format(lang))
+
+	#--------------------
+	# Prepare data.
+
+	SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
+	if is_separate_pad_id_used:
+		# When <PAD> token has a separate valid token ID.
+		PAD_TOKEN = '<PAD>'
+		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
+		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
+		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
+	else:
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
+		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
+	del SOS_TOKEN, EOS_TOKEN
+	assert label_converter.PAD is not None
+	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
+	num_suffixes = 1
+
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+
+	aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
+	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
+
+	test_transform = torchvision.transforms.Compose([
+		#ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True),
+		ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True),  # batch_size must be 1.
+		#torchvision.transforms.Resize((image_height, image_width)),
+		#torchvision.transforms.CenterCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
+	])
+	test_target_transform = ToIntTensor()
+
+	glogger.info('Start creating a dataset and a dataloader...')
+	start_time = time.time()
+	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
+	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+	glogger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
+	glogger.info('#examples = {}.'.format(len(test_dataset)))
+	glogger.info('#classes = {}.'.format(num_classes))
+	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+
+	# Show data info.
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+
+	inputs, outputs = list(), list()
+	try:
+		for images, labels, _ in test_dataloader:
+			inputs.append(images)
+			outputs.append(labels)
+	except Exception as ex:
+		glogger.warning('Exception raised: {}.'.format(ex))
+
+	#--------------------
+	# Build a model.
+
+	glogger.info('Start building a model...')
+	start_time = time.time()
+	if model_type == 'rara1':
+		model, infer_functor, _, _ = build_rare1_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID, blank_label=None)
+	elif model_type == 'rare2':
+		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID)
+	elif model_type == 'aster':
+		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_ID)
+	elif model_type == 'onmt':
+		encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
+		model, infer_functor, _, _ = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, encoder_type, lang, loss_type=None)
+	elif model_type == 'rare1+onmt':
+		model, infer_functor, _, _ = build_rare1_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
+	elif model_type == 'rare2+onmt':
+		model, infer_functor, _, _ = build_rare2_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
+	elif model_type == 'aster+onmt':
+		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
+	elif model_type == 'transformer':
+		model, infer_functor, _, _ = build_transformer_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, is_train=False)
+	else:
+		raise ValueError('Invalid model type, {}'.format(model_type))
+	glogger.info('End building a model: {} secs.'.format(time.time() - start_time))
+
+	# Load a model.
+	glogger.info('Start loading a pretrained model from {}.'.format(model_filepath_to_load))
+	start_time = time.time()
+	model = load_model(model_filepath_to_load, model, device=device)
+	glogger.info('End loading a pretrained model: {} secs.'.format(time.time() - start_time))
+
+	model = model.to(device)
+
+	#--------------------
+	# Infer by the model.
+
+	glogger.info('Start inferring...')
+	start_time = time.time()
+	model.eval()
+	#outputs = None
+	error_cases_dir_path = './text_error_cases'
+	infer_one_by_one_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, device=device)
+	glogger.info('End inferring: {} secs.'.format(time.time() - start_time))
+
+def recognize_character_using_craft(is_cuda_used, device='cpu'):
 	import craft.imgproc as imgproc
 	#import craft.file_utils as file_utils
 	import craft.test_utils as test_utils
@@ -4955,7 +5249,7 @@ def recognize_character_using_craft(device='cpu'):
 	craft_trained_model_filepath = './craft/craft_mlt_25k.pth'
 	craft_refiner_model_filepath = './craft/craft_refiner_CTW1500.pth'  # Pretrained refiner model.
 	craft_refine = False  # Enable link refiner.
-	craft_cuda = gpu >= 0  # Use cuda for inference.
+	craft_cuda = is_cuda_used  # Use cuda for inference.
 
 	# For char recognizer.
 	#recognizer_model_filepath = './craft/char_recognition.pth'
@@ -5056,7 +5350,7 @@ def recognize_character_using_craft(device='cpu'):
 	else:
 		glogger.info('No text detected.')
 
-def recognize_word_using_craft(device='cpu'):
+def recognize_word_using_craft(is_cuda_used, device='cpu'):
 	import craft.imgproc as imgproc
 	#import craft.file_utils as file_utils
 	import craft.test_utils as test_utils
@@ -5079,7 +5373,7 @@ def recognize_word_using_craft(device='cpu'):
 	craft_trained_model_filepath = './craft/craft_mlt_25k.pth'
 	craft_refiner_model_filepath = './craft/craft_refiner_CTW1500.pth'  # Pretrained refiner model.
 	craft_refine = False  # Enable link refiner.
-	craft_cuda = gpu >= 0  # Use cuda for inference.
+	craft_cuda = is_cuda_used  # Use cuda for inference.
 
 	# For word recognizer.
 	recognizer_model_filepath = './craft/word_recognition.pth'
@@ -5198,312 +5492,48 @@ def recognize_word_using_craft(device='cpu'):
 	else:
 		glogger.info('No text detected.')
 
-def recognize_text_using_aihub_data(lang, max_label_len, image_types_to_load, batch_size, is_separate_pad_id_used=True, device='cpu'):
-	#image_height, image_width, image_channel = 32, 100, 3
-	image_height, image_width, image_channel = 64, 640, 3
-	#image_height, image_width, image_channel = 64, 1280, 3
-	#image_height, image_width, image_channel = 64, 1920, 3
-	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
-	image_height_before_crop, image_width_before_crop = image_height, image_width
-
-	is_preloaded_image_used = False
-	shuffle = False
-	num_workers = 8
-
-	if lang == 'kor':
-		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
-	elif lang == 'eng':
-		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
-	else:
-		raise ValueError('Invalid language, {}'.format(lang))
-
-	#--------------------
-	# Prepare data.
-
-	SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
-	if is_separate_pad_id_used:
-		# When <PAD> token has a separate valid token ID.
-		PAD_TOKEN = '<PAD>'
-		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
-		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
-		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
-	else:
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
-	del SOS_TOKEN, EOS_TOKEN
-	assert label_converter.PAD is not None
-	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
-	num_suffixes = 1
-
-	if 'posix' == os.name:
-		data_base_dir_path = '/home/sangwook/work/dataset'
-	else:
-		data_base_dir_path = 'D:/work/dataset'
-
-	aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
-	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
-
-	test_transform = torchvision.transforms.Compose([
-		#ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True),
-		ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True),  # batch_size must be 1.
-		#torchvision.transforms.Resize((image_height, image_width)),
-		#torchvision.transforms.CenterCrop((image_height, image_width)),
-		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
-	])
-	test_target_transform = ToIntTensor()
-
-	glogger.info('Start creating a dataset and a dataloader...')
-	start_time = time.time()
-	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
-	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	glogger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
-	glogger.info('#examples = {}.'.format(len(test_dataset)))
-	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
-
-	# Show data info.
-	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
-
-	inputs, outputs = list(), list()
-	try:
-		for images, labels, _ in test_dataloader:
-			inputs.append(images)
-			outputs.append(labels)
-	except Exception as ex:
-		glogger.warning('Exception raised: {}.'.format(ex))
-	inputs = torch.cat(inputs)
-	outputs = torch.cat(outputs)
-
-	#--------------------
-	# Build a model.
-
-	glogger.info('Start building a model...')
-	start_time = time.time()
-	if False:
-		# For RARE2.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2_attn_xent_gradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9514_epoch3.pth'
-
-		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID)
-	elif False:
-		# For ASTER.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster_sxent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.8449_epoch3.pth'
-
-		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_ID)
-	elif True:
-		# For OpenNMT.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_onmt_xent_nogradclip_allparams_nopad_kor_ch5_64x640x3_best_20200725T115106.pth'
-
-		encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
-		model, infer_functor, _, _ = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, encoder_type, lang, loss_type=None)
-	elif False:
-		# For RARE2 + OpenNMT.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2+onmt_xent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.9441_epoch20_new.pth'
-
-		model, infer_functor, _, _ = build_rare2_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
-	elif False:
-		# For ASTER + OpenNMT.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_xent_nogradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9325_epoch2_new.pth'
-
-		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
-	elif False:
-		# For transformer.
-		model_filepath_to_load = './training_outputs_textline_recognition/textline_recognition_transformer_kldiv_nogradclip_allparams_pad_kor_ch10_64x1280x3_acc0.9794_epoch19.pth'
-
-		model, infer_functor, _, _ = build_transformer_ocr_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, is_train=False)
-	else:
-		raise ValueError('Undefined model')
-	assert model_filepath_to_load is not None
-	glogger.info('End building a model: {} secs.'.format(time.time() - start_time))
-
-	# Load a model.
-	glogger.info('Start loading a pretrained model from {}.'.format(model_filepath_to_load))
-	start_time = time.time()
-	model = load_model(model_filepath_to_load, model, device=device)
-	glogger.info('End loading a pretrained model: {} secs.'.format(time.time() - start_time))
-
-	model = model.to(device)
-
-	#--------------------
-	# Infer by the model.
-
-	glogger.info('Start inferring...')
-	start_time = time.time()
-	model.eval()
-	#outputs = None
-	error_cases_dir_path = './text_error_cases'
-	infer_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, batch_size=batch_size, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, device=device)
-	glogger.info('End inferring: {} secs.'.format(time.time() - start_time))
-
-def recognize_text_one_by_one_using_aihub_data(lang, max_label_len, image_types_to_load, is_separate_pad_id_used=True, device='cpu'):
-	batch_size = 1
-
-	#image_height, image_width, image_channel = 32, 100, 3
-	image_height, image_width, image_channel = 64, 640, 3
-	#image_height, image_width, image_channel = 64, 1280, 3
-	#image_height, image_width, image_channel = 64, 1920, 3
-	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
-	image_height_before_crop, image_width_before_crop = image_height, image_width
-
-	is_preloaded_image_used = False
-	shuffle = False
-	num_workers = 8
-
-	if lang == 'kor':
-		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
-	elif lang == 'eng':
-		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
-	else:
-		raise ValueError('Invalid language, {}'.format(lang))
-
-	#--------------------
-	# Prepare data.
-
-	SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
-	if is_separate_pad_id_used:
-		# When <PAD> token has a separate valid token ID.
-		PAD_TOKEN = '<PAD>'
-		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
-		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
-		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
-		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
-	else:
-		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
-		#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
-	del SOS_TOKEN, EOS_TOKEN
-	assert label_converter.PAD is not None
-	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
-	num_suffixes = 1
-
-	if 'posix' == os.name:
-		data_base_dir_path = '/home/sangwook/work/dataset'
-	else:
-		data_base_dir_path = 'D:/work/dataset'
-
-	aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
-	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
-
-	test_transform = torchvision.transforms.Compose([
-		#ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True),
-		ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True),  # batch_size must be 1.
-		#torchvision.transforms.Resize((image_height, image_width)),
-		#torchvision.transforms.CenterCrop((image_height, image_width)),
-		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
-	])
-	test_target_transform = ToIntTensor()
-
-	glogger.info('Start creating a dataset and a dataloader...')
-	start_time = time.time()
-	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
-	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	glogger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
-	glogger.info('#examples = {}.'.format(len(test_dataset)))
-	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
-
-	# Show data info.
-	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
-
-	inputs, outputs = list(), list()
-	try:
-		for images, labels, _ in test_dataloader:
-			inputs.append(images)
-			outputs.append(labels)
-	except Exception as ex:
-		glogger.warning('Exception raised: {}.'.format(ex))
-
-	#--------------------
-	# Build a model.
-
-	glogger.info('Start building a model...')
-	start_time = time.time()
-	if False:
-		# For RARE2.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2_attn_xent_gradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9514_epoch3.pth'
-
-		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID)
-	elif False:
-		# For ASTER.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster_sxent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.8449_epoch3.pth'
-
-		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_ID)
-	elif True:
-		# For OpenNMT.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_onmt_xent_nogradclip_allparams_nopad_kor_ch5_64x640x3_best_20200725T115106.pth'
-
-		encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
-		model, infer_functor, _, _ = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, encoder_type, lang, loss_type=None)
-	elif False:
-		# For RARE2 + OpenNMT.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_rare2+onmt_xent_nogradclip_allparams_nopad_kor_ch5_64x640x3_acc0.9441_epoch20_new.pth'
-
-		model, infer_functor, _, _ = build_rare2_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
-	elif False:
-		# For ASTER + OpenNMT.
-		model_filepath_to_load = './training_outputs_word_recognition/word_recognition_aster+onmt_xent_nogradclip_allparams_nopad_kor_large_ch20_64x1280x3_acc0.9325_epoch2_new.pth'
-
-		model, infer_functor, _, _ = build_aster_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device=device)
-	elif False:
-		# For transformer.
-		model_filepath_to_load = './training_outputs_textline_recognition/textline_recognition_transformer_kldiv_nogradclip_allparams_pad_kor_ch10_64x1280x3_acc0.9794_epoch19.pth'
-
-		model, infer_functor, _, _ = build_transformer_ocr_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, is_train=False)
-	else:
-		raise ValueError('Undefined model')
-	assert model_filepath_to_load is not None
-	glogger.info('End building a model: {} secs.'.format(time.time() - start_time))
-
-	# Load a model.
-	glogger.info('Start loading a pretrained model from {}.'.format(model_filepath_to_load))
-	start_time = time.time()
-	model = load_model(model_filepath_to_load, model, device=device)
-	glogger.info('End loading a pretrained model: {} secs.'.format(time.time() - start_time))
-
-	model = model.to(device)
-
-	#--------------------
-	# Infer by the model.
-
-	glogger.info('Start inferring...')
-	start_time = time.time()
-	model.eval()
-	#outputs = None
-	error_cases_dir_path = './text_error_cases'
-	infer_one_by_one_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, device=device)
-	glogger.info('End inferring: {} secs.'.format(time.time() - start_time))
-
 #--------------------------------------------------------------------
 
 def parse_command_line_options():
 	parser = argparse.ArgumentParser(description='Runner for text recognition models.')
 
-	"""
 	parser.add_argument(
 		'--train',
 		action='store_true',
 		help='Specify whether to train a model'
 	)
 	parser.add_argument(
-		'--test',
+		'--eval',
 		action='store_true',
-		help='Specify whether to test a trained model'
+		help='Specify whether to evaluate a trained model'
 	)
 	parser.add_argument(
 		'--infer',
 		action='store_true',
 		help='Specify whether to infer by a trained model'
 	)
-	"""
 	parser.add_argument(
-		'-m',
+		'--lang',
+		choices={'kor', 'eng'},
+		help='Language',
+		default='kor'
+	)
+	parser.add_argument(
+		'-tt',
+		'--target_type',
+		choices={'char', 'word', 'textline'},
+		help='Target type',
+		default='textline'
+	)
+	parser.add_argument(
+		'-mt',
+		'--model_type',
+		choices={'char', 'char-mixup', 'rare1', 'rare1-mixup', 'rare2', 'aster', 'onmt', 'rare1+onmt', 'rare2+onmt', 'aster+onmt', 'transformer'},
+		help='Model type',
+		default='transformer'
+	)
+	parser.add_argument(
+		'-mf',
 		'--model_file',
 		type=str,
 		#nargs='?',
@@ -5519,6 +5549,13 @@ def parse_command_line_options():
 		help='The output directory path to save results such as images and log',
 		#required=True,
 		default=None
+	)
+	parser.add_argument(
+		'-ml',
+		'--max_len',
+		type=int,
+		help='Max. label length',
+		default=50
 	)
 	"""
 	parser.add_argument(
@@ -5543,11 +5580,11 @@ def parse_command_line_options():
 		'--epoch',
 		type=int,
 		help='Number of epochs to train',
-		default=20
+		default=40
 	)
 	parser.add_argument(
 		'-b',
-		'--batch_size',
+		'--batch',
 		type=int,
 		help='Batch size',
 		default=64
@@ -5620,6 +5657,10 @@ def main():
 	logger.info('Torch version: {}.'.format(torch.__version__))
 	logger.info('cuDNN version: {}.'.format(torch.backends.cudnn.version()))
 
+	if not args.train and not args.eval and not args.infer:
+		logger.error('At least one of command line options "--train", "--eval", and "--infer" has to be specified.')
+		return
+
 	global glogger
 	glogger = logger
 	if glogger is not None:
@@ -5642,8 +5683,6 @@ def main():
 	logger.info('Device: {}.'.format(device))
 
 	#--------------------
-	is_resumed = args.model_file is not None
-
 	model_filepath, output_dir_path = os.path.normpath(args.model_file) if args.model_file else None, os.path.normpath(args.out_dir) if args.out_dir else None
 	if model_filepath:
 		if not output_dir_path:
@@ -5655,58 +5694,73 @@ def main():
 			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 		model_filepath = os.path.join(output_dir_path, 'model.pth')
 
-	lang = 'kor'  # {'kor', 'eng'}.
+	#--------------------
+	if args.train:
+		#is_resumed = args.model_file is not None
+
+		if args.target_type == 'char':
+			if args.model_type == 'char':
+				model_filepath = train_character_recognizer(args.lang, model_filepath, args.epoch, args.batch_size, device)
+			elif args.model_type == 'char-mixup':
+				model_filepath = train_character_recognizer_using_mixup(args.lang, model_filepath, args.epoch, args.batch_size, device)
+			else:
+				raise ValueError('Invalid character model type, {}'.format(args.model_type))
+
+		#--------------------
+		elif args.target_type == 'word':
+			if args.model_type == 'rare1':
+				model_filepath = train_word_recognizer_based_on_rare1(args.lang, model_filepath, args.max_len, args.epoch, args.batch_size, device)  # Use RARE #1.
+			elif args.model_type == 'rare2':
+				model_filepath = train_word_recognizer_based_on_rare2(args.lang, model_filepath, args.max_len, args.epoch, args.batch_size, device)  # Use RARE #2.
+			elif args.model_type == 'aster':
+				model_filepath = train_word_recognizer_based_on_aster(args.lang, model_filepath, args.max_len, args.epoch, args.batch_size, device)  # Use ASTER.
+			elif args.model_type == 'rare1-mixup':
+				model_filepath = train_word_recognizer_using_mixup(args.lang, model_filepath, args.max_len, args.epoch, args.batch_size, device)  # Use RARE #1. Not working.
+
+			elif args.model_type == 'onmt':
+				model_filepath = train_word_recognizer_based_on_opennmt(args.lang, model_filepath, args.max_len, args.epoch, args.batch_size, device)  # Use OpenNMT.
+
+			elif args.model_type == 'rare1+onmt':
+				model_filepath = train_word_recognizer_based_on_rare1_and_opennmt(args.lang, model_filepath, args.max_len, args.epoch, args.batch_size, device)  # Use RARE #1 (encoder) + OpenNMT (decoder).
+			elif args.model_type == 'rare2+onmt':
+				model_filepath = train_word_recognizer_based_on_rare2_and_opennmt(args.lang, model_filepath, args.max_len, args.epoch, args.batch_size, device)  # Use RARE #2 (encoder) + OpenNMT (decoder).
+			elif args.model_type == 'aster+onmt':
+				model_filepath = train_word_recognizer_based_on_aster_and_opennmt(args.lang, model_filepath, args.max_len, args.epoch, args.batch_size, device)  # Use ASTER (encoder) + OpenNMT (decoder).
+			else:
+				raise ValueError('Invalid word model type, {}'.format(args.model_type))
+
+		#--------------------
+		elif args.target_type == 'textline':
+			if args.model_type == 'onmt':
+				model_filepath = train_textline_recognizer_based_on_opennmt(args.lang, model_filepath, args.max_len, args.epoch, args.batch_size, device)  # Use OpenNMT.
+			elif args.model_type == 'transformer':
+				model_filepath = train_textline_recognizer_based_on_transformer(args.lang, model_filepath, args.max_len, args.epoch, args.batch_size, device)  # Use Transformer.
+			else:
+				raise ValueError('Invalid text line model type, {}'.format(args.model_type))
+
+		else:
+			raise ValueError('Invalid target type, {}'.format(args.target_type))
 
 	#--------------------
-	#train_character_recognizer(lang, args.epoch, args.batch_size, device)
-	#train_character_recognizer_using_mixup(lang, args.epoch, args.batch_size, device)
+	if args.eval and model_filepath:
+		evaluate_text_recognizer_using_aihub_data(args.lang, args.target_type, args.model_type, model_filepath, args.max_len, batch_size=args.batch_size, is_separate_pad_id_used=True, device=device)
 
 	#--------------------
-	max_word_len = 5  # Max. word length.
-
-	#train_word_recognizer_based_on_rare1(lang, max_word_len, args.epoch, args.batch_size, device)  # Use RARE #1.
-	#train_word_recognizer_based_on_rare2(lang, max_word_len, args.epoch, args.batch_size, device)  # Use RARE #2.
-	#train_word_recognizer_based_on_aster(lang, max_word_len, args.epoch, args.batch_size, device)  # Use ASTER.
-
-	#train_word_recognizer_based_on_opennmt(lang, max_word_len, args.epoch, args.batch_size, device)  # Use OpenNMT.
-
-	#train_word_recognizer_based_on_rare1_and_opennmt(lang, max_word_len, args.epoch, args.batch_size, device)  # Use RARE #1 (encoder) + OpenNMT (decoder).
-	#train_word_recognizer_based_on_rare2_and_opennmt(lang, max_word_len, args.epoch, args.batch_size, device)  # Use RARE #2 (encoder) + OpenNMT (decoder).
-	#train_word_recognizer_based_on_aster_and_opennmt(lang, max_word_len, args.epoch, args.batch_size, device)  # Use ASTER (encoder) + OpenNMT (decoder).
-
-	#train_word_recognizer_using_mixup(lang, max_word_len, args.epoch, args.batch_size, device)  # Use RARE #1. Not working.
-
-	#evaluate_word_recognizer_using_aihub_data(lang, max_word_len, batch_size=args.batch_size, is_separate_pad_id_used=True, device=device)
-
-	#--------------------
-	max_textline_len = 50  # Max. text line length.
-
-	#train_textline_recognizer_based_on_opennmt(lang, max_textline_len, args.epoch, args.batch_size, device)  # Use OpenNMT.
-
-	train_textline_recognizer_based_on_transformer(lang, max_textline_len, args.epoch, args.batch_size, device)  # Use Transformer.
+	if args.infer and model_filepath:
+		recognize_text_using_aihub_data(args.lang, args.target_type, args.model_type, model_filepath, args.max_len, batch_size=args.batch_size, is_separate_pad_id_used=True, device=device)
+		#recognize_text_one_by_one_using_aihub_data(args.lang, args.target_type, args.model_type, model_filepath, args.max_len, is_separate_pad_id_used=True, device=device)  # batch_size = 1.
 
 	#--------------------
 	# Recognize text using CRAFT (scene text detector) + character recognizer.
-	#recognize_character_using_craft(device)
+	#recognize_character_using_craft(int(args.gpu) >= 0, device)
 
 	# Recognize word using CRAFT (scene text detector) + word recognizer.
-	#recognize_word_using_craft(device)  # Use RARE #1.
-
-	if False:
-		# For word recognition.
-		max_label_len = 10
-		image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
-	else:
-		# For textline recognition.
-		max_label_len = 30
-		image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
-	#recognize_text_using_aihub_data(lang, max_label_len, image_types_to_load, batch_size=args.batch_size, is_separate_pad_id_used=True, device=device)
-	#recognize_text_one_by_one_using_aihub_data(lang, max_label_len, image_types_to_load, is_separate_pad_id_used=True, device=device)  # batch_size = 1.
+	#recognize_word_using_craft(int(args.gpu) >= 0, device)  # Use RARE #1.
 
 #--------------------------------------------------------------------
 
 # Usage:
-#	python run_text_recognition.py --epoch 20 --batch 64 --gpu 0 --log text_recognition --log_dir ./log
+#	python run_text_recognition.py --train --eval --infer --lang kor --target_type textline --model_type transformer --max_len 50 --epoch 40 --batch 64 --gpu 0 --log text_recognition --log_dir ./log
 
 if '__main__' == __name__:
 	main()

@@ -718,7 +718,7 @@ def parse_command_line_options():
 	)
 	parser.add_argument(
 		'-b',
-		'--batch_size',
+		'--batch',
 		type=int,
 		help='Batch size',
 		default=32
