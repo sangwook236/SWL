@@ -305,20 +305,35 @@ def compute_sequence_precision_and_recall(seq_pairs, classes=None, isjunk=None):
 		classes = list(zip(*seq_pairs))
 		classes = sorted(functools.reduce(lambda x, txt: x.union(txt), classes[0] + classes[1], set()))
 
-	def compute_metric(seq_pairs, ch):
+	"""
+	# Too slow.
+	def compute_metric(seq_pairs, cls):
 		TP_FP, TP_FN, TP = 0, 0, 0
 		for inf, gt in seq_pairs:
-			TP_FP += inf.count(ch)  # Retrieved examples. TP + FP.
-			TP_FN += gt.count(ch)  # Relevant examples. TP + FN.
-			#TP += len(list(filter(lambda ig: ig[0] == ig[1] == ch, zip(inf, gt))))  # Too simple.
-			#TP += sum([inf[mth.a:mth.a+mth.size].count(ch) for mth in difflib.SequenceMatcher(isjunk, inf, gt).get_matching_blocks() if mth.size > 0])
-			TP = functools.reduce(lambda tot, mth: tot + inf[mth.a:mth.a+mth.size].count(ch) if mth.size > 0 else tot, difflib.SequenceMatcher(isjunk, inf, gt).get_matching_blocks(), TP)
+			TP_FP += inf.count(cls)  # Retrieved examples. TP + FP.
+			TP_FN += gt.count(cls)  # Relevant examples. TP + FN.
+			#TP += len(list(filter(lambda ig: ig[0] == ig[1] == cls, zip(inf, gt))))  # Too simple.
+			#TP += sum([inf[mth.a:mth.a+mth.size].count(cls) for mth in difflib.SequenceMatcher(isjunk, inf, gt).get_matching_blocks() if mth.size > 0])
+			TP = functools.reduce(lambda tot, mth: tot + inf[mth.a:mth.a+mth.size].count(cls) if mth.size > 0 else tot, difflib.SequenceMatcher(isjunk, inf, gt).get_matching_blocks(), TP)
 		return TP_FP, TP_FN, TP
 
 	# A list of (TP + FP, TP + FN, TP)'s.
-	return list(map(lambda cls: compute_metric(seq_pairs, cls), classes)), classes
-	# A dictionary of {class: (TP + FP, TP + FN, TP)}'s.
-	#return {cls: metric for cls, metric in zip(classes, map(lambda cls: compute_metric(seq_pairs, cls), classes))}
+	#return list(map(lambda cls: compute_metric(seq_pairs, cls), classes)), classes
+	# A dictionary of {class: (TP + FP, TP + FN, TP)} pairs.
+	return {cls: metric for cls, metric in zip(classes, map(lambda cls: compute_metric(seq_pairs, cls), classes))}
+	"""
+	metrics = {cls: [0, 0, 0] for cls in classes}  # A dictionary of {class: (TP + FP, TP + FN, TP)} pairs.
+	for inf, gt in seq_pairs:
+		#for cls in set(inf): metrics[cls][0] += inf.count(cls)  # Retrieved examples. TP + FP.
+		#for cls in set(gt): metrics[cls][1] += gt.count(cls)  # Relevant examples. TP + FN.
+		for cls in inf: metrics[cls][0] += 1  # Retrieved examples. TP + FP.
+		for cls in gt: metrics[cls][1] += 1  # Relevant examples. TP + FN.
+		matches = difflib.SequenceMatcher(isjunk, inf, gt).get_matching_blocks()
+		for mth in matches:
+			if mth.size > 0:
+				#for cls in set(inf[mth.a:mth.a+mth.size]): metrics[cls][2] += inf[mth.a:mth.a+mth.size].count(cls)
+				for cls in inf[mth.a:mth.a+mth.size]: metrics[cls][2] += 1
+	return metrics
 
 #--------------------------------------------------------------------
 

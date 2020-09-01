@@ -516,14 +516,17 @@ def compute_accuracy_from_inference_result():
 	#--------------------
 	print('[SWL] Info: Start computing sequence precision and recall...')
 	start_time = time.time()
-	metrics, classes = swl_langproc_util.compute_sequence_precision_and_recall(text_pairs, classes=None, isjunk=None)  # A list of (TP + FP, TP + FN, TP)'s.
+	#metrics, classes = swl_langproc_util.compute_sequence_precision_and_recall(text_pairs, classes=None, isjunk=None)  # A list of (TP + FP, TP + FN, TP)'s.
+	metrics = swl_langproc_util.compute_sequence_precision_and_recall(text_pairs, classes=None, isjunk=None)  # A dictionary of {class: (TP + FP, TP + FN, TP)} pairs.
 	print('[SWL] Info: End computing sequence precision and recall: {} secs.'.format(time.time() - start_time))
 
+	classes = metrics.keys()
 	print('Classes = {}.'.format(classes))
 	print('#classes = {}.'.format(len(classes)))
 
 	precisions, recalls, precisions_for_nonzero_tp, recalls_for_nonzero_tp = list(), list(), list(), list()
-	for idx, (cls, (TP_FP, TP_FN, TP)) in enumerate(zip(classes, metrics)):
+	#for idx, (cls, (TP_FP, TP_FN, TP)) in enumerate(zip(classes, metrics)):
+	for idx, (cls, (TP_FP, TP_FN, TP)) in enumerate(metrics.items()):
 		prec = (TP / TP_FP) if TP_FP != 0 else None
 		recall = (TP / TP_FN) if TP_FN != 0 else None
 		if prec is not None:
