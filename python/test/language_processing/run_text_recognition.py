@@ -37,7 +37,7 @@ def load_model(model_filepath, model, device='cpu'):
 	return model
 
 # REF [function] >> construct_font() in font_test.py.
-def construct_font(korean=True, english=True):
+def construct_font(font_types):
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
 		font_base_dir_path = '/home/sangwook/work/font'
@@ -46,16 +46,19 @@ def construct_font(korean=True, english=True):
 		font_base_dir_path = 'D:/work/font'
 
 	font_dir_paths = list()
-	if korean:
-		font_dir_paths.append(font_base_dir_path + '/kor')
-		#font_dir_paths.append(font_base_dir_path + '/kor_small')
-		#font_dir_paths.append(font_base_dir_path + '/kor_large')
-		#font_dir_paths.append(font_base_dir_path + '/kor_receipt')
-	if english:
-		font_dir_paths.append(font_base_dir_path + '/eng')
-		#font_dir_paths.append(font_base_dir_path + '/eng_small')
-		#font_dir_paths.append(font_base_dir_path + '/eng_large')
-		#font_dir_paths.append(font_base_dir_path + '/eng_receipt')
+	if 'kor-small' in font_types:
+		font_dir_paths.append(font_base_dir_path + '/kor_small')
+	if 'kor-large' in font_types:
+		font_dir_paths.append(font_base_dir_path + '/kor_large')
+	if 'kor-receipt' in font_types:
+		font_dir_paths.append(font_base_dir_path + '/kor_receipt')
+	if 'eng-small' in font_types:
+		font_dir_paths.append(font_base_dir_path + '/eng_small')
+	if 'eng-large' in font_types:
+		font_dir_paths.append(font_base_dir_path + '/eng_large')
+	if 'eng-receipt' in font_types:
+		font_dir_paths.append(font_base_dir_path + '/eng_receipt')
+	assert font_dir_paths
 
 	return tg_util.construct_font(font_dir_paths)
 
@@ -293,7 +296,7 @@ class ConvertNumpyToRGB(object):
 			return np.repeat(np.expand_dims(x, axis=0), 3, axis=0)
 		elif x.ndim == 3:
 			return x
-		else: raise ValueError('Invalid dimension, {}.'.format(x.ndim))
+		else: raise ValueError('Invalid dimension, {}'.format(x.ndim))
 
 class ResizeImageToFixedSizeWithPadding(object):
 	def __init__(self, height, width, warn_about_small_image=False, is_pil=True):
@@ -970,7 +973,8 @@ def create_textline_data_loaders(textline_type, label_converter, wordset, chars,
 			test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 		if True:
 			lang = 'kr'
-			font_filepaths = construct_font(korean=True, english=False)
+			font_types = ['kor-large']  # {'kor-small', 'kor-large', 'kor-receipt'}.
+			font_filepaths = construct_font(font_types)
 			font_filepaths, _ = zip(*font_filepaths)
 
 			is_randomly_generated = False
@@ -1141,7 +1145,8 @@ def create_mixed_textline_data_loaders(label_converter, wordset, chars, num_simp
 			test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 		if True:
 			lang = 'kr'
-			font_filepaths = construct_font(korean=True, english=False)
+			font_types = ['kor-large']  # {'kor-small', 'kor-large', 'kor-receipt'}.
+			font_filepaths = construct_font(font_types)
 			font_filepaths, _ = zip(*font_filepaths)
 
 			is_randomly_generated = False
@@ -1700,7 +1705,7 @@ def infer_one_by_one_using_text_recognition_model(model, infer_functor, label_co
 			glogger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else -1))
 			glogger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else -1))
 
-def build_char_model(label_converter, image_channel, loss_type, lang):
+def build_char_model(label_converter, image_channel, loss_type):
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
 
@@ -1724,7 +1729,7 @@ def build_char_model(label_converter, image_channel, loss_type, lang):
 
 	return model, train_forward, criterion
 
-def build_char_mixup_model(label_converter, image_channel, loss_type, lang):
+def build_char_mixup_model(label_converter, image_channel, loss_type):
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
 
@@ -2335,7 +2340,7 @@ def build_opennmt_model(label_converter, image_height, image_width, image_channe
 			num_fiducials = 0  # No TPS-STN.
 
 		encoder = opennmt_util.AsterImageEncoder(
-			image_height, image_width, image_channel, num_classes,
+			image_height, image_width, image_channel, label_converter.num_tokens,
 			hidden_size=encoder_rnn_size,
 			num_fiducials=num_fiducials
 		)
@@ -2898,7 +2903,7 @@ def build_transformer_model(label_converter, image_height, image_width, image_ch
 	return model, infer, train_forward, criterion
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
-def train_character_recognizer(lang, output_dir_path, model_filepath_to_load=None, num_epochs=100, batch_size=128, device='cpu'):
+def train_character_recognizer(output_dir_path, model_filepath_to_load=None, font_type='kor-large', num_epochs=100, batch_size=128, device='cpu'):
 	image_height, image_width, image_channel = 64, 64, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
@@ -2930,18 +2935,18 @@ def train_character_recognizer(lang, output_dir_path, model_filepath_to_load=Non
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	model_filepath_base = os.path.join(output_dir_path, 'char_recognition_{}_{}_{}_{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, lang, image_height, image_width, image_channel))
+	model_filepath_base = os.path.join(output_dir_path, 'char_recognition_{}_{}_{}_{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, font_type, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
+	lang = font_type[:3]
 	if lang == 'kor':
 		charset = tg_util.construct_charset()
-		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
 		charset = tg_util.construct_charset(hangeul=False)
-		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+	font_list = construct_font([font_type])
 
 	#--------------------
 	# Prepare data.
@@ -2961,7 +2966,7 @@ def train_character_recognizer(lang, output_dir_path, model_filepath_to_load=Non
 	#--------------------
 	# Build a model.
 
-	model, train_forward_functor, criterion = build_char_model(label_converter, image_channel, loss_type, lang)
+	model, train_forward_functor, criterion = build_char_model(label_converter, image_channel, loss_type)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3037,7 +3042,7 @@ def train_character_recognizer(lang, output_dir_path, model_filepath_to_load=Non
 	return model_filepath
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
-def train_character_recognizer_using_mixup(lang, output_dir_path, model_filepath_to_load=None, num_epochs=100, batch_size=128, device='cpu'):
+def train_character_recognizer_using_mixup(output_dir_path, model_filepath_to_load=None, font_type='kor-large', num_epochs=100, batch_size=128, device='cpu'):
 	image_height, image_width, image_channel = 64, 64, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
@@ -3069,18 +3074,18 @@ def train_character_recognizer_using_mixup(lang, output_dir_path, model_filepath
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	model_filepath_base = os.path.join(output_dir_path, 'char_recognition_mixup_{}_{}_{}_{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, lang, image_height, image_width, image_channel))
+	model_filepath_base = os.path.join(output_dir_path, 'char_recognition_mixup_{}_{}_{}_{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, font_type, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
+	lang = font_type[:3]
 	if lang == 'kor':
 		charset = tg_util.construct_charset()
-		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
 		charset = tg_util.construct_charset(hangeul=False)
-		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+	font_list = construct_font([font_type])
 
 	#--------------------
 	# Prepare data.
@@ -3100,7 +3105,7 @@ def train_character_recognizer_using_mixup(lang, output_dir_path, model_filepath
 	#--------------------
 	# Build a model.
 
-	model, train_forward_functor, criterion = build_char_mixup_model(label_converter, image_channel, loss_type, lang)
+	model, train_forward_functor, criterion = build_char_mixup_model(label_converter, image_channel, loss_type)
 
 	if is_model_initialized:
 		# Initialize model weights.
@@ -3175,7 +3180,7 @@ def train_character_recognizer_using_mixup(lang, output_dir_path, model_filepath
 
 	return model_filepath
 
-def train_word_recognizer_based_on_rare1(lang, output_dir_path, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_rare1(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3211,22 +3216,22 @@ def train_word_recognizer_based_on_rare1(lang, output_dir_path, model_filepath_t
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	if loss_type == 'ctc':
-		model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare1_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel))
+		model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare1_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	elif loss_type in ['xent', 'nll']:
-		model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare1_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel))
+		model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare1_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	else:
 		raise ValueError('Invalid loss type, {}'.format(loss_type))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
+	lang = font_type[:3]
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
 		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+	font_list = construct_font([font_type])
 
 	#--------------------
 	# Prepare data.
@@ -3351,7 +3356,7 @@ def train_word_recognizer_based_on_rare1(lang, output_dir_path, model_filepath_t
 
 	return model_filepath
 
-def train_word_recognizer_based_on_rare2(lang, output_dir_path, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_rare2(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3386,18 +3391,18 @@ def train_word_recognizer_based_on_rare2(lang, output_dir_path, model_filepath_t
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare2_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel))
+	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare2_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
+	lang = font_type[:3]
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
 		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+	font_list = construct_font([font_type])
 
 	#--------------------
 	# Prepare data.
@@ -3513,7 +3518,7 @@ def train_word_recognizer_based_on_rare2(lang, output_dir_path, model_filepath_t
 
 	return model_filepath
 
-def train_word_recognizer_based_on_aster(lang, output_dir_path, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_aster(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3549,18 +3554,18 @@ def train_word_recognizer_based_on_aster(lang, output_dir_path, model_filepath_t
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_aster_sxent_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel))
+	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_aster_sxent_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
+	lang = font_type[:3]
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
 		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+	font_list = construct_font([font_type])
 
 	#--------------------
 	# Prepare data.
@@ -3675,7 +3680,7 @@ def train_word_recognizer_based_on_aster(lang, output_dir_path, model_filepath_t
 
 	return model_filepath
 
-def train_word_recognizer_based_on_opennmt(lang, output_dir_path, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_opennmt(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3713,18 +3718,18 @@ def train_word_recognizer_based_on_opennmt(lang, output_dir_path, model_filepath
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel))
+	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
+	lang = font_type[:3]
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
 		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+	font_list = construct_font([font_type])
 
 	#--------------------
 	# Prepare data.
@@ -3839,7 +3844,7 @@ def train_word_recognizer_based_on_opennmt(lang, output_dir_path, model_filepath
 
 	return model_filepath
 
-def train_word_recognizer_based_on_rare1_and_opennmt(lang, output_dir_path, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_rare1_and_opennmt(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3875,18 +3880,18 @@ def train_word_recognizer_based_on_rare1_and_opennmt(lang, output_dir_path, mode
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare1+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel))
+	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare1+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
+	lang = font_type[:3]
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
 		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+	font_list = construct_font([font_type])
 
 	#--------------------
 	# Prepare data.
@@ -4000,7 +4005,7 @@ def train_word_recognizer_based_on_rare1_and_opennmt(lang, output_dir_path, mode
 
 	return model_filepath
 
-def train_word_recognizer_based_on_rare2_and_opennmt(lang, output_dir_path, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_rare2_and_opennmt(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -4036,18 +4041,18 @@ def train_word_recognizer_based_on_rare2_and_opennmt(lang, output_dir_path, mode
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare2+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel))
+	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare2+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
+	lang = font_type[:3]
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
 		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+	font_list = construct_font([font_type])
 
 	#--------------------
 	# Prepare data.
@@ -4161,7 +4166,7 @@ def train_word_recognizer_based_on_rare2_and_opennmt(lang, output_dir_path, mode
 
 	return model_filepath
 
-def train_word_recognizer_based_on_aster_and_opennmt(lang, output_dir_path, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_aster_and_opennmt(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -4197,18 +4202,18 @@ def train_word_recognizer_based_on_aster_and_opennmt(lang, output_dir_path, mode
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_aster+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel))
+	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_aster+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
+	lang = font_type[:3]
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
 		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+	font_list = construct_font([font_type])
 
 	#--------------------
 	# Prepare data.
@@ -4322,7 +4327,7 @@ def train_word_recognizer_based_on_aster_and_opennmt(lang, output_dir_path, mode
 
 	return model_filepath
 
-def train_word_recognizer_using_mixup(lang, output_dir_path, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_using_mixup(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, device='cpu'):
 	image_height, image_width, image_channel = 32, 100, 3
 	#image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -4358,22 +4363,22 @@ def train_word_recognizer_using_mixup(lang, output_dir_path, model_filepath_to_l
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	if loss_type == 'ctc':
-		model_filepath_base = os.path.join(output_dir_path, 'word_recognition_mixup_rare1_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel))
+		model_filepath_base = os.path.join(output_dir_path, 'word_recognition_mixup_rare1_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	elif loss_type in ['xent', 'nll']:
-		model_filepath_base = os.path.join(output_dir_path, 'word_recognition_mixup_rare1_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel))
+		model_filepath_base = os.path.join(output_dir_path, 'word_recognition_mixup_rare1_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	else:
 		raise ValueError('Invalid loss type, {}'.format(loss_type))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
+	lang = font_type[:3]
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
 		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+	font_list = construct_font([font_type])
 
 	#--------------------
 	# Prepare data.
@@ -4498,7 +4503,7 @@ def train_word_recognizer_using_mixup(lang, output_dir_path, model_filepath_to_l
 
 	return model_filepath
 
-def train_textline_recognizer_based_on_opennmt(lang, output_dir_path, model_filepath_to_load=None, max_textline_len=30, num_epochs=20, batch_size=64, device='cpu'):
+def train_textline_recognizer_based_on_opennmt(output_dir_path, model_filepath_to_load=None, max_textline_len=30, font_type='kor-large', num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	#image_height, image_width, image_channel = 64, 640, 3
 	image_height, image_width, image_channel = 64, 1280, 3
@@ -4540,18 +4545,18 @@ def train_textline_recognizer_based_on_opennmt(lang, output_dir_path, model_file
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = os.path.join(output_dir_path, 'textline_recognition_onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_textline_len, image_height, image_width, image_channel))
+	model_filepath_base = os.path.join(output_dir_path, 'textline_recognition_onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_textline_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
+	lang = font_type[:3]
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
 		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+	font_list = construct_font([font_type])
 
 	#--------------------
 	# Prepare data.
@@ -4666,7 +4671,7 @@ def train_textline_recognizer_based_on_opennmt(lang, output_dir_path, model_file
 
 	return model_filepath
 
-def train_textline_recognizer_based_on_transformer(lang, output_dir_path, model_filepath_to_load=None, max_textline_len=50, num_epochs=40, batch_size=64, device='cpu'):
+def train_textline_recognizer_based_on_transformer(output_dir_path, model_filepath_to_load=None, max_textline_len=50, font_type='kor-large', num_epochs=40, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	#image_height, image_width, image_channel = 64, 640, 3
 	image_height, image_width, image_channel = 64, 1280, 3
@@ -4706,18 +4711,18 @@ def train_textline_recognizer_based_on_transformer(lang, output_dir_path, model_
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = os.path.join(output_dir_path, 'textline_recognition_transformer_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_textline_len, image_height, image_width, image_channel))
+	model_filepath_base = os.path.join(output_dir_path, 'textline_recognition_transformer_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_textline_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
+	lang = font_type[:3]
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
 		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+	font_list = construct_font([font_type])
 
 	#--------------------
 	# Prepare data.
@@ -4834,7 +4839,7 @@ def train_textline_recognizer_based_on_transformer(lang, output_dir_path, model_
 
 	return model_filepath
 
-def evaluate_text_recognizer_using_aihub_data(lang, target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, batch_size, is_separate_pad_id_used=True, device='cpu'):
+def evaluate_text_recognizer_using_aihub_data(target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, font_type, batch_size, is_separate_pad_id_used=True, device='cpu'):
 	assert model_filepath_to_load is not None
 
 	#image_height, image_width, image_channel = 32, 100, 3
@@ -4854,14 +4859,14 @@ def evaluate_text_recognizer_using_aihub_data(lang, target_type, model_type, mod
 	shuffle = False
 	num_workers = 8
 
+	lang = font_type[:3]
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
 		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+	font_list = construct_font([font_type])
 
 	#--------------------
 	# Prepare data.
@@ -4960,7 +4965,7 @@ def evaluate_text_recognizer_using_aihub_data(lang, target_type, model_type, mod
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def recognize_text_using_aihub_data(lang, target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, batch_size, is_separate_pad_id_used=True, device='cpu'):
+def recognize_text_using_aihub_data(target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, font_type, batch_size, is_separate_pad_id_used=True, device='cpu'):
 	assert model_filepath_to_load is not None
 
 	#image_height, image_width, image_channel = 32, 100, 3
@@ -4980,14 +4985,14 @@ def recognize_text_using_aihub_data(lang, target_type, model_type, model_filepat
 	shuffle = False
 	num_workers = 8
 
+	lang = font_type[:3]
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
 		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+	font_list = construct_font([font_type])
 
 	#--------------------
 	# Prepare data.
@@ -5097,7 +5102,7 @@ def recognize_text_using_aihub_data(lang, target_type, model_type, model_filepat
 	infer_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, batch_size=batch_size, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, device=device)
 	glogger.info('End inferring: {} secs.'.format(time.time() - start_time))
 
-def recognize_text_one_by_one_using_aihub_data(lang, target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, is_separate_pad_id_used=True, device='cpu'):
+def recognize_text_one_by_one_using_aihub_data(target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, font_type, is_separate_pad_id_used=True, device='cpu'):
 	assert model_filepath_to_load is not None
 	batch_size = 1
 
@@ -5118,14 +5123,14 @@ def recognize_text_one_by_one_using_aihub_data(lang, target_type, model_type, mo
 	shuffle = False
 	num_workers = 8
 
+	lang = font_type[:3]
 	if lang == 'kor':
 		charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
-		font_list = construct_font(korean=True, english=False)
 	elif lang == 'eng':
 		charset, wordset = tg_util.construct_charset(hangeul=False), tg_util.construct_word_set(korean=False, english=True)
-		font_list = construct_font(korean=False, english=True)
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
+	font_list = construct_font([font_type])
 
 	#--------------------
 	# Prepare data.
@@ -5513,12 +5518,6 @@ def parse_command_line_options():
 		help='Specify whether to infer by a trained model'
 	)
 	parser.add_argument(
-		'--lang',
-		choices={'kor', 'eng'},
-		help='Language',
-		default='kor'
-	)
-	parser.add_argument(
 		'-tt',
 		'--target_type',
 		choices={'char', 'word', 'textline'},
@@ -5542,6 +5541,20 @@ def parse_command_line_options():
 		default=None
 	)
 	parser.add_argument(
+		'-ml',
+		'--max_len',
+		type=int,
+		help='Max. label length',
+		default=50
+	)
+	parser.add_argument(
+		'-ft',
+		'--font_type',
+		choices={'kor-small', 'kor-large', 'kor-receipt', 'eng-small', 'eng-large', 'eng-receipt'},
+		help='Font type',
+		default='kor-large'
+	)
+	parser.add_argument(
 		'-o',
 		'--out_dir',
 		type=str,
@@ -5549,13 +5562,6 @@ def parse_command_line_options():
 		help='The output directory path to save results such as images and log',
 		#required=True,
 		default=None
-	)
-	parser.add_argument(
-		'-ml',
-		'--max_len',
-		type=int,
-		help='Max. label length',
-		default=50
 	)
 	"""
 	parser.add_argument(
@@ -5696,41 +5702,41 @@ def main():
 
 		if args.target_type == 'char':
 			if args.model_type == 'char':
-				model_filepath = train_character_recognizer(args.lang, output_dir_path, model_filepath, args.epoch, args.batch, device)
+				model_filepath = train_character_recognizer(output_dir_path, model_filepath, args.font_type, args.epoch, args.batch, device)
 			elif args.model_type == 'char-mixup':
-				model_filepath = train_character_recognizer_using_mixup(args.lang, output_dir_path, model_filepath, args.epoch, args.batch, device)
+				model_filepath = train_character_recognizer_using_mixup(output_dir_path, model_filepath, args.font_type, args.epoch, args.batch, device)
 			else:
 				raise ValueError('Invalid character model type, {}'.format(args.model_type))
 
 		#--------------------
 		elif args.target_type == 'word':
 			if args.model_type == 'rare1':
-				model_filepath = train_word_recognizer_based_on_rare1(args.lang, output_dir_path, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use RARE #1.
+				model_filepath = train_word_recognizer_based_on_rare1(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, device)  # Use RARE #1.
 			elif args.model_type == 'rare2':
-				model_filepath = train_word_recognizer_based_on_rare2(args.lang, output_dir_path, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use RARE #2.
+				model_filepath = train_word_recognizer_based_on_rare2(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, device)  # Use RARE #2.
 			elif args.model_type == 'aster':
-				model_filepath = train_word_recognizer_based_on_aster(args.lang, output_dir_path, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use ASTER.
+				model_filepath = train_word_recognizer_based_on_aster(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, device)  # Use ASTER.
 			elif args.model_type == 'rare1-mixup':
-				model_filepath = train_word_recognizer_using_mixup(args.lang, output_dir_path, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use RARE #1. Not working.
+				model_filepath = train_word_recognizer_using_mixup(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, device)  # Use RARE #1. Not working.
 
 			elif args.model_type == 'onmt':
-				model_filepath = train_word_recognizer_based_on_opennmt(args.lang, output_dir_path, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use OpenNMT.
+				model_filepath = train_word_recognizer_based_on_opennmt(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, device)  # Use OpenNMT.
 
 			elif args.model_type == 'rare1+onmt':
-				model_filepath = train_word_recognizer_based_on_rare1_and_opennmt(args.lang, output_dir_path, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use RARE #1 (encoder) + OpenNMT (decoder).
+				model_filepath = train_word_recognizer_based_on_rare1_and_opennmt(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, device)  # Use RARE #1 (encoder) + OpenNMT (decoder).
 			elif args.model_type == 'rare2+onmt':
-				model_filepath = train_word_recognizer_based_on_rare2_and_opennmt(args.lang, output_dir_path, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use RARE #2 (encoder) + OpenNMT (decoder).
+				model_filepath = train_word_recognizer_based_on_rare2_and_opennmt(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, device)  # Use RARE #2 (encoder) + OpenNMT (decoder).
 			elif args.model_type == 'aster+onmt':
-				model_filepath = train_word_recognizer_based_on_aster_and_opennmt(args.lang, output_dir_path, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use ASTER (encoder) + OpenNMT (decoder).
+				model_filepath = train_word_recognizer_based_on_aster_and_opennmt(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, device)  # Use ASTER (encoder) + OpenNMT (decoder).
 			else:
 				raise ValueError('Invalid word model type, {}'.format(args.model_type))
 
 		#--------------------
 		elif args.target_type == 'textline':
 			if args.model_type == 'onmt':
-				model_filepath = train_textline_recognizer_based_on_opennmt(args.lang, output_dir_path, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use OpenNMT.
+				model_filepath = train_textline_recognizer_based_on_opennmt(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, device)  # Use OpenNMT.
 			elif args.model_type == 'transformer':
-				model_filepath = train_textline_recognizer_based_on_transformer(args.lang, output_dir_path, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use Transformer.
+				model_filepath = train_textline_recognizer_based_on_transformer(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, device)  # Use Transformer.
 			else:
 				raise ValueError('Invalid text line model type, {}'.format(args.model_type))
 
@@ -5739,12 +5745,12 @@ def main():
 
 	#--------------------
 	if args.eval and model_filepath:
-		evaluate_text_recognizer_using_aihub_data(args.lang, args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, batch_size=args.batch, is_separate_pad_id_used=True, device=device)
+		evaluate_text_recognizer_using_aihub_data(args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, args.font_type, args.batch, is_separate_pad_id_used=True, device=device)
 
 	#--------------------
 	if args.infer and model_filepath:
-		recognize_text_using_aihub_data(args.lang, args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, batch_size=args.batch, is_separate_pad_id_used=True, device=device)
-		#recognize_text_one_by_one_using_aihub_data(args.lang, args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, is_separate_pad_id_used=True, device=device)  # batch_size = 1.
+		recognize_text_using_aihub_data(args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, args.font_type, args.batch, is_separate_pad_id_used=True, device=device)
+		#recognize_text_one_by_one_using_aihub_data(args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, args.font_type, is_separate_pad_id_used=True, device=device)  # batch_size = 1.
 
 	#--------------------
 	# Recognize text using CRAFT (scene text detector) + character recognizer.
@@ -5756,7 +5762,7 @@ def main():
 #--------------------------------------------------------------------
 
 # Usage:
-#	python run_text_recognition.py --train --eval --infer --lang kor --target_type textline --model_type transformer --max_len 50 --epoch 40 --batch 64 --gpu 0 --log text_recognition --log_dir ./log
+#	python run_text_recognition.py --train --eval --infer --target_type textline --model_type transformer --max_len 50 --font_type kor-large --epoch 40 --batch 64 --gpu 0 --log text_recognition --log_dir ./log
 
 if '__main__' == __name__:
 	main()
