@@ -5700,41 +5700,41 @@ def main():
 
 		if args.target_type == 'char':
 			if args.model_type == 'char':
-				model_filepath = train_character_recognizer(args.lang, model_filepath, args.epoch, args.batch_size, device)
+				model_filepath = train_character_recognizer(args.lang, model_filepath, args.epoch, args.batch, device)
 			elif args.model_type == 'char-mixup':
-				model_filepath = train_character_recognizer_using_mixup(args.lang, model_filepath, args.epoch, args.batch_size, device)
+				model_filepath = train_character_recognizer_using_mixup(args.lang, model_filepath, args.epoch, args.batch, device)
 			else:
 				raise ValueError('Invalid character model type, {}'.format(args.model_type))
 
 		#--------------------
 		elif args.target_type == 'word':
 			if args.model_type == 'rare1':
-				model_filepath = train_word_recognizer_based_on_rare1(args.lang, model_filepath, args.max_len, args.epoch, args.batch_size, device)  # Use RARE #1.
+				model_filepath = train_word_recognizer_based_on_rare1(args.lang, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use RARE #1.
 			elif args.model_type == 'rare2':
-				model_filepath = train_word_recognizer_based_on_rare2(args.lang, model_filepath, args.max_len, args.epoch, args.batch_size, device)  # Use RARE #2.
+				model_filepath = train_word_recognizer_based_on_rare2(args.lang, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use RARE #2.
 			elif args.model_type == 'aster':
-				model_filepath = train_word_recognizer_based_on_aster(args.lang, model_filepath, args.max_len, args.epoch, args.batch_size, device)  # Use ASTER.
+				model_filepath = train_word_recognizer_based_on_aster(args.lang, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use ASTER.
 			elif args.model_type == 'rare1-mixup':
-				model_filepath = train_word_recognizer_using_mixup(args.lang, model_filepath, args.max_len, args.epoch, args.batch_size, device)  # Use RARE #1. Not working.
+				model_filepath = train_word_recognizer_using_mixup(args.lang, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use RARE #1. Not working.
 
 			elif args.model_type == 'onmt':
-				model_filepath = train_word_recognizer_based_on_opennmt(args.lang, model_filepath, args.max_len, args.epoch, args.batch_size, device)  # Use OpenNMT.
+				model_filepath = train_word_recognizer_based_on_opennmt(args.lang, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use OpenNMT.
 
 			elif args.model_type == 'rare1+onmt':
-				model_filepath = train_word_recognizer_based_on_rare1_and_opennmt(args.lang, model_filepath, args.max_len, args.epoch, args.batch_size, device)  # Use RARE #1 (encoder) + OpenNMT (decoder).
+				model_filepath = train_word_recognizer_based_on_rare1_and_opennmt(args.lang, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use RARE #1 (encoder) + OpenNMT (decoder).
 			elif args.model_type == 'rare2+onmt':
-				model_filepath = train_word_recognizer_based_on_rare2_and_opennmt(args.lang, model_filepath, args.max_len, args.epoch, args.batch_size, device)  # Use RARE #2 (encoder) + OpenNMT (decoder).
+				model_filepath = train_word_recognizer_based_on_rare2_and_opennmt(args.lang, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use RARE #2 (encoder) + OpenNMT (decoder).
 			elif args.model_type == 'aster+onmt':
-				model_filepath = train_word_recognizer_based_on_aster_and_opennmt(args.lang, model_filepath, args.max_len, args.epoch, args.batch_size, device)  # Use ASTER (encoder) + OpenNMT (decoder).
+				model_filepath = train_word_recognizer_based_on_aster_and_opennmt(args.lang, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use ASTER (encoder) + OpenNMT (decoder).
 			else:
 				raise ValueError('Invalid word model type, {}'.format(args.model_type))
 
 		#--------------------
 		elif args.target_type == 'textline':
 			if args.model_type == 'onmt':
-				model_filepath = train_textline_recognizer_based_on_opennmt(args.lang, model_filepath, args.max_len, args.epoch, args.batch_size, device)  # Use OpenNMT.
+				model_filepath = train_textline_recognizer_based_on_opennmt(args.lang, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use OpenNMT.
 			elif args.model_type == 'transformer':
-				model_filepath = train_textline_recognizer_based_on_transformer(args.lang, model_filepath, args.max_len, args.epoch, args.batch_size, device)  # Use Transformer.
+				model_filepath = train_textline_recognizer_based_on_transformer(args.lang, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use Transformer.
 			else:
 				raise ValueError('Invalid text line model type, {}'.format(args.model_type))
 
@@ -5743,11 +5743,11 @@ def main():
 
 	#--------------------
 	if args.eval and model_filepath:
-		evaluate_text_recognizer_using_aihub_data(args.lang, args.target_type, args.model_type, model_filepath, args.max_len, batch_size=args.batch_size, is_separate_pad_id_used=True, device=device)
+		evaluate_text_recognizer_using_aihub_data(args.lang, args.target_type, args.model_type, model_filepath, args.max_len, batch_size=args.batch, is_separate_pad_id_used=True, device=device)
 
 	#--------------------
 	if args.infer and model_filepath:
-		recognize_text_using_aihub_data(args.lang, args.target_type, args.model_type, model_filepath, args.max_len, batch_size=args.batch_size, is_separate_pad_id_used=True, device=device)
+		recognize_text_using_aihub_data(args.lang, args.target_type, args.model_type, model_filepath, args.max_len, batch_size=args.batch, is_separate_pad_id_used=True, device=device)
 		#recognize_text_one_by_one_using_aihub_data(args.lang, args.target_type, args.model_type, model_filepath, args.max_len, is_separate_pad_id_used=True, device=device)  # batch_size = 1.
 
 	#--------------------

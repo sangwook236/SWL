@@ -541,7 +541,7 @@ def main():
 	logger.info('Device: {}.'.format(device))
 
 	#--------------------
-	initial_epoch, final_epoch, batch_size = 0, args.epoch, args.batch_size
+	initial_epoch, final_epoch, batch_size = 0, args.epoch, args.batch
 	is_resumed = args.model_file is not None
 	num_workers = 4
 

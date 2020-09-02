@@ -800,7 +800,7 @@ def main():
 		os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
 
 	#--------------------
-	initial_epoch, final_epoch, batch_size = 0, args.epoch, args.batch_size
+	initial_epoch, final_epoch, batch_size = 0, args.epoch, args.batch
 	is_resumed = args.model_dir is not None
 
 	checkpoint_dir_path, output_dir_path = os.path.normpath(args.model_dir) if args.model_dir else None, os.path.normpath(args.out_dir) if args.out_dir else None

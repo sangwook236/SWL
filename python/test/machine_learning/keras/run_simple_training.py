@@ -547,7 +547,7 @@ def main():
 		os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
 
 	#--------------------
-	initial_epoch, final_epoch, batch_size = 0, args.epoch, args.batch_size
+	initial_epoch, final_epoch, batch_size = 0, args.epoch, args.batch
 	is_resumed = args.model_file is not None
 
 	model_filepath, output_dir_path = os.path.normpath(args.model_file) if args.model_file else None, os.path.normpath(args.out_dir) if args.out_dir else None
