@@ -497,7 +497,7 @@ def parse_command_line_options():
 def get_logger(name, log_level=None, log_dir_path=None, is_rotating=True):
 	if not log_level: log_level = logging.INFO
 	if not log_dir_path: log_dir_path = './log'
-	if not os.path.isdir(log_dir_path):
+	if not os.path.exists(log_dir_path):
 		os.makedirs(log_dir_path, exist_ok=True)
 
 	log_filepath = os.path.join(log_dir_path, (name if name else 'swl') + '.log')

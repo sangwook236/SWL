@@ -1305,7 +1305,7 @@ def train_char_recognition_model(model, train_forward_functor, criterion, label_
 		glogger.info('Start evaluating...')
 		start_time = time.time()
 		model.eval()
-		acc = evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False, device=device)
+		acc = evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, device=device)
 		glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 		if scheduler: scheduler.step()
@@ -1363,12 +1363,9 @@ def train_text_recognition_model(model, criterion, train_forward_functor, infer_
 
 	return model, best_model_filepath
 
-def evaluate_char_recognition_model(model, label_converter, dataloader, is_case_sensitive=False, show_acc_per_char=False, is_error_cases_saved=False, device='cpu'):
+def evaluate_char_recognition_model(model, label_converter, dataloader, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, device='cpu'):
+	is_error_cases_saved = error_cases_dir_path is not None
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-
-	error_cases_dir_path = './char_error_cases'
-	if is_error_cases_saved:
-		os.makedirs(error_cases_dir_path, exist_ok=True)
 
 	correct_char_count, total_char_count = 0, 0
 	correct_char_class_count, total_char_class_count = [0] * num_classes, [0] * num_classes
@@ -1502,9 +1499,6 @@ def compute_sequence_matching_ratio(inputs, outputs, predictions, label_converte
 
 def evaluate_text_recognition_model(model, infer_functor, label_converter, dataloader, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, device='cpu'):
 	is_error_cases_saved = error_cases_dir_path is not None
-	if is_error_cases_saved:
-		os.makedirs(error_cases_dir_path, exist_ok=True)
-
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 
 	is_sequence_matching_ratio_used, is_simple_matching_accuracy_used = True, True
@@ -1601,9 +1595,6 @@ def infer_using_text_recognition_model(model, infer_functor, label_converter, in
 			num_iters += 1
 			if num_iters >= 5: break
 	else:
-		if error_cases_dir_path:
-			os.makedirs(error_cases_dir_path, exist_ok=True)
-
 		outputs = outputs.numpy()
 
 		num_iters = 0
@@ -2907,7 +2898,7 @@ def build_transformer_model(label_converter, image_height, image_width, image_ch
 	return model, infer, train_forward, criterion
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
-def train_character_recognizer(lang, model_filepath_to_load=None, num_epochs=100, batch_size=128, device='cpu'):
+def train_character_recognizer(lang, output_dir_path, model_filepath_to_load=None, num_epochs=100, batch_size=128, device='cpu'):
 	image_height, image_width, image_channel = 64, 64, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
@@ -2939,7 +2930,7 @@ def train_character_recognizer(lang, model_filepath_to_load=None, num_epochs=100
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	model_filepath_base = './char_recognition_{}_{}_{}_{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, lang, image_height, image_width, image_channel)
+	model_filepath_base = os.path.join(output_dir_path, 'char_recognition_{}_{}_{}_{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, lang, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
@@ -3040,13 +3031,13 @@ def train_character_recognizer(lang, model_filepath_to_load=None, num_epochs=100
 	glogger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
-def train_character_recognizer_using_mixup(lang, model_filepath_to_load=None, num_epochs=100, batch_size=128, device='cpu'):
+def train_character_recognizer_using_mixup(lang, output_dir_path, model_filepath_to_load=None, num_epochs=100, batch_size=128, device='cpu'):
 	image_height, image_width, image_channel = 64, 64, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
@@ -3078,7 +3069,7 @@ def train_character_recognizer_using_mixup(lang, model_filepath_to_load=None, nu
 
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	model_filepath_base = './char_recognition_mixup_{}_{}_{}_{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, lang, image_height, image_width, image_channel)
+	model_filepath_base = os.path.join(output_dir_path, 'char_recognition_mixup_{}_{}_{}_{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, lang, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
@@ -3179,12 +3170,12 @@ def train_character_recognizer_using_mixup(lang, model_filepath_to_load=None, nu
 	glogger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, is_error_cases_saved=False, device=device)
+	evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
 
-def train_word_recognizer_based_on_rare1(lang, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_rare1(lang, output_dir_path, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3220,9 +3211,9 @@ def train_word_recognizer_based_on_rare1(lang, model_filepath_to_load=None, max_
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	if loss_type == 'ctc':
-		model_filepath_base = './word_recognition_rare1_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+		model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare1_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel))
 	elif loss_type in ['xent', 'nll']:
-		model_filepath_base = './word_recognition_rare1_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+		model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare1_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel))
 	else:
 		raise ValueError('Invalid loss type, {}'.format(loss_type))
 	model_filepath_format = model_filepath_base + '{}.pth'
@@ -3360,7 +3351,7 @@ def train_word_recognizer_based_on_rare1(lang, model_filepath_to_load=None, max_
 
 	return model_filepath
 
-def train_word_recognizer_based_on_rare2(lang, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_rare2(lang, output_dir_path, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3395,7 +3386,7 @@ def train_word_recognizer_based_on_rare2(lang, model_filepath_to_load=None, max_
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = './word_recognition_rare2_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare2_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
@@ -3522,7 +3513,7 @@ def train_word_recognizer_based_on_rare2(lang, model_filepath_to_load=None, max_
 
 	return model_filepath
 
-def train_word_recognizer_based_on_aster(lang, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_aster(lang, output_dir_path, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3558,7 +3549,7 @@ def train_word_recognizer_based_on_aster(lang, model_filepath_to_load=None, max_
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = './word_recognition_aster_sxent_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_aster_sxent_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
@@ -3684,7 +3675,7 @@ def train_word_recognizer_based_on_aster(lang, model_filepath_to_load=None, max_
 
 	return model_filepath
 
-def train_word_recognizer_based_on_opennmt(lang, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_opennmt(lang, output_dir_path, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3722,7 +3713,7 @@ def train_word_recognizer_based_on_opennmt(lang, model_filepath_to_load=None, ma
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = './word_recognition_onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
@@ -3848,7 +3839,7 @@ def train_word_recognizer_based_on_opennmt(lang, model_filepath_to_load=None, ma
 
 	return model_filepath
 
-def train_word_recognizer_based_on_rare1_and_opennmt(lang, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_rare1_and_opennmt(lang, output_dir_path, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3884,7 +3875,7 @@ def train_word_recognizer_based_on_rare1_and_opennmt(lang, model_filepath_to_loa
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = './word_recognition_rare1+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare1+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
@@ -4009,7 +4000,7 @@ def train_word_recognizer_based_on_rare1_and_opennmt(lang, model_filepath_to_loa
 
 	return model_filepath
 
-def train_word_recognizer_based_on_rare2_and_opennmt(lang, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_rare2_and_opennmt(lang, output_dir_path, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -4045,7 +4036,7 @@ def train_word_recognizer_based_on_rare2_and_opennmt(lang, model_filepath_to_loa
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = './word_recognition_rare2+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare2+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
@@ -4170,7 +4161,7 @@ def train_word_recognizer_based_on_rare2_and_opennmt(lang, model_filepath_to_loa
 
 	return model_filepath
 
-def train_word_recognizer_based_on_aster_and_opennmt(lang, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_aster_and_opennmt(lang, output_dir_path, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -4206,7 +4197,7 @@ def train_word_recognizer_based_on_aster_and_opennmt(lang, model_filepath_to_loa
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = './word_recognition_aster+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_aster+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
@@ -4331,7 +4322,7 @@ def train_word_recognizer_based_on_aster_and_opennmt(lang, model_filepath_to_loa
 
 	return model_filepath
 
-def train_word_recognizer_using_mixup(lang, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_using_mixup(lang, output_dir_path, model_filepath_to_load=None, max_word_len=20, num_epochs=20, batch_size=64, device='cpu'):
 	image_height, image_width, image_channel = 32, 100, 3
 	#image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -4367,9 +4358,9 @@ def train_word_recognizer_using_mixup(lang, model_filepath_to_load=None, max_wor
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	if loss_type == 'ctc':
-		model_filepath_base = './word_recognition_mixup_rare1_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+		model_filepath_base = os.path.join(output_dir_path, 'word_recognition_mixup_rare1_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel))
 	elif loss_type in ['xent', 'nll']:
-		model_filepath_base = './word_recognition_mixup_rare1_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel)
+		model_filepath_base = os.path.join(output_dir_path, 'word_recognition_mixup_rare1_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_word_len, image_height, image_width, image_channel))
 	else:
 		raise ValueError('Invalid loss type, {}'.format(loss_type))
 	model_filepath_format = model_filepath_base + '{}.pth'
@@ -4507,7 +4498,7 @@ def train_word_recognizer_using_mixup(lang, model_filepath_to_load=None, max_wor
 
 	return model_filepath
 
-def train_textline_recognizer_based_on_opennmt(lang, model_filepath_to_load=None, max_textline_len=30, num_epochs=20, batch_size=64, device='cpu'):
+def train_textline_recognizer_based_on_opennmt(lang, output_dir_path, model_filepath_to_load=None, max_textline_len=30, num_epochs=20, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	#image_height, image_width, image_channel = 64, 640, 3
 	image_height, image_width, image_channel = 64, 1280, 3
@@ -4549,7 +4540,7 @@ def train_textline_recognizer_based_on_opennmt(lang, model_filepath_to_load=None
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = './textline_recognition_onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_textline_len, image_height, image_width, image_channel)
+	model_filepath_base = os.path.join(output_dir_path, 'textline_recognition_onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_textline_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
@@ -4675,7 +4666,7 @@ def train_textline_recognizer_based_on_opennmt(lang, model_filepath_to_load=None
 
 	return model_filepath
 
-def train_textline_recognizer_based_on_transformer(lang, model_filepath_to_load=None, max_textline_len=50, num_epochs=40, batch_size=64, device='cpu'):
+def train_textline_recognizer_based_on_transformer(lang, output_dir_path, model_filepath_to_load=None, max_textline_len=50, num_epochs=40, batch_size=64, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	#image_height, image_width, image_channel = 64, 640, 3
 	image_height, image_width, image_channel = 64, 1280, 3
@@ -4715,7 +4706,7 @@ def train_textline_recognizer_based_on_transformer(lang, model_filepath_to_load=
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = './textline_recognition_transformer_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_textline_len, image_height, image_width, image_channel)
+	model_filepath_base = os.path.join(output_dir_path, 'textline_recognition_transformer_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, lang, max_textline_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
@@ -4843,7 +4834,7 @@ def train_textline_recognizer_based_on_transformer(lang, model_filepath_to_load=
 
 	return model_filepath
 
-def evaluate_text_recognizer_using_aihub_data(lang, target_type, model_type, model_filepath_to_load, max_label_len, batch_size, is_separate_pad_id_used=True, device='cpu'):
+def evaluate_text_recognizer_using_aihub_data(lang, target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, batch_size, is_separate_pad_id_used=True, device='cpu'):
 	assert model_filepath_to_load is not None
 
 	#image_height, image_width, image_channel = 32, 100, 3
@@ -4959,14 +4950,17 @@ def evaluate_text_recognizer_using_aihub_data(lang, target_type, model_type, mod
 	#--------------------
 	# Evaluate the model.
 
+	error_cases_dir_path = os.path.join(output_dir_path, 'eval_text_error_cases')
+	if error_cases_dir_path and error_cases_dir_path.strip() and not os.path.exists(error_cases_dir_path):
+		os.makedirs(error_cases_dir_path, exist_ok=True)
+
 	glogger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	error_cases_dir_path = './text_error_cases'
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, device=device)
 	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def recognize_text_using_aihub_data(lang, target_type, model_type, model_filepath_to_load, max_label_len, batch_size, is_separate_pad_id_used=True, device='cpu'):
+def recognize_text_using_aihub_data(lang, target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, batch_size, is_separate_pad_id_used=True, device='cpu'):
 	assert model_filepath_to_load is not None
 
 	#image_height, image_width, image_channel = 32, 100, 3
@@ -5092,15 +5086,18 @@ def recognize_text_using_aihub_data(lang, target_type, model_type, model_filepat
 	#--------------------
 	# Infer by the model.
 
+	#outputs = None
+	error_cases_dir_path = os.path.join(output_dir_path, 'inf_text_error_cases')
+	if outputs is not None and error_cases_dir_path and error_cases_dir_path.strip() and not os.path.exists(error_cases_dir_path):
+		os.makedirs(error_cases_dir_path, exist_ok=True)
+
 	glogger.info('Start inferring...')
 	start_time = time.time()
 	model.eval()
-	#outputs = None
-	error_cases_dir_path = './text_error_cases'
 	infer_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, batch_size=batch_size, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, device=device)
 	glogger.info('End inferring: {} secs.'.format(time.time() - start_time))
 
-def recognize_text_one_by_one_using_aihub_data(lang, target_type, model_type, model_filepath_to_load, max_label_len, is_separate_pad_id_used=True, device='cpu'):
+def recognize_text_one_by_one_using_aihub_data(lang, target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, is_separate_pad_id_used=True, device='cpu'):
 	assert model_filepath_to_load is not None
 	batch_size = 1
 
@@ -5225,15 +5222,18 @@ def recognize_text_one_by_one_using_aihub_data(lang, target_type, model_type, mo
 	#--------------------
 	# Infer by the model.
 
+	#outputs = None
+	error_cases_dir_path = os.path.join(output_dir_path, 'inf_text_error_cases')
+	if outputs is not None and error_cases_dir_path and error_cases_dir_path.strip() and not os.path.exists(error_cases_dir_path):
+		os.makedirs(error_cases_dir_path, exist_ok=True)
+
 	glogger.info('Start inferring...')
 	start_time = time.time()
 	model.eval()
-	#outputs = None
-	error_cases_dir_path = './text_error_cases'
 	infer_one_by_one_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, device=device)
 	glogger.info('End inferring: {} secs.'.format(time.time() - start_time))
 
-def recognize_character_using_craft(is_cuda_used, device='cpu'):
+def recognize_character_using_craft(output_dir_path, is_cuda_used, device='cpu'):
 	import craft.imgproc as imgproc
 	#import craft.file_utils as file_utils
 	import craft.test_utils as test_utils
@@ -5259,7 +5259,7 @@ def recognize_character_using_craft(is_cuda_used, device='cpu'):
 	image_filepath = './craft/images/book_1.png'
 	#image_filepath = './craft/images/book_2.png'
 
-	output_dir_path = './char_recog_results'
+	output_dir_path = os.path.join(output_dir_path, 'char_recog_results')
 
 	#--------------------
 	label_converter = swl_langproc_util.TokenConverter(list(charset))
@@ -5350,7 +5350,7 @@ def recognize_character_using_craft(is_cuda_used, device='cpu'):
 	else:
 		glogger.info('No text detected.')
 
-def recognize_word_using_craft(is_cuda_used, device='cpu'):
+def recognize_word_using_craft(output_dir_path, is_cuda_used, device='cpu'):
 	import craft.imgproc as imgproc
 	#import craft.file_utils as file_utils
 	import craft.test_utils as test_utils
@@ -5383,7 +5383,7 @@ def recognize_word_using_craft(is_cuda_used, device='cpu'):
 	image_filepath = './craft/images/book_1.png'
 	#image_filepath = './craft/images/book_2.png'
 
-	output_dir_path = './word_recog_results'
+	output_dir_path = os.path.join(output_dir_path, 'word_recog_results')
 
 	#--------------------
 	if decoder == 'CTC':
@@ -5537,7 +5537,7 @@ def parse_command_line_options():
 		'--model_file',
 		type=str,
 		#nargs='?',
-		help='The model file path where a trained model is saved or a pretrained model is loaded',
+		help='The model file path to load a pretrained model',
 		#required=True,
 		default=None
 	)
@@ -5623,7 +5623,7 @@ def parse_command_line_options():
 def get_logger(name, log_level=None, log_dir_path=None, is_rotating=True):
 	if not log_level: log_level = logging.INFO
 	if not log_dir_path: log_dir_path = './log'
-	if not os.path.isdir(log_dir_path):
+	if not os.path.exists(log_dir_path):
 		os.makedirs(log_dir_path, exist_ok=True)
 
 	log_filepath = os.path.join(log_dir_path, (name if name else 'swl') + '.log')
@@ -5648,7 +5648,7 @@ def get_logger(name, log_level=None, log_dir_path=None, is_rotating=True):
 def main():
 	args = parse_command_line_options()
 
-	logger = get_logger(args.log if args.log else os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, args.log_dir, is_rotating=True)
+	logger = get_logger(args.log if args.log else os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, args.log_dir if args.log_dir else args.out_dir, is_rotating=True)
 	logger.info('----------------------------------------------------------------------')
 	logger.info('Logger: name = {}, level = {}.'.format(logger.name, logger.level))
 	logger.info('Command-line arguments: {}.'.format(sys.argv))
@@ -5671,12 +5671,6 @@ def main():
 	else:
 		raise ValueError('Invalid global logger: {}'.format(glogger))
 
-	"""
-	if not args.train and not args.test and not args.infer:
-		logger.error('At least one of command line options "--train", "--test", and "--infer" has to be specified.')
-		return
-	"""
-
 	#if args.gpu:
 	#	os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 	device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and int(args.gpu) >= 0 else 'cpu')
@@ -5692,7 +5686,9 @@ def main():
 			output_dir_prefix = 'text_recognition'
 			output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-		model_filepath = os.path.join(output_dir_path, 'model.pth')
+		#model_filepath = os.path.join(output_dir_path, 'model.pth')
+	if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
+		os.makedirs(output_dir_path, exist_ok=True)
 
 	#--------------------
 	if args.train:
@@ -5700,41 +5696,41 @@ def main():
 
 		if args.target_type == 'char':
 			if args.model_type == 'char':
-				model_filepath = train_character_recognizer(args.lang, model_filepath, args.epoch, args.batch, device)
+				model_filepath = train_character_recognizer(args.lang, output_dir_path, model_filepath, args.epoch, args.batch, device)
 			elif args.model_type == 'char-mixup':
-				model_filepath = train_character_recognizer_using_mixup(args.lang, model_filepath, args.epoch, args.batch, device)
+				model_filepath = train_character_recognizer_using_mixup(args.lang, output_dir_path, model_filepath, args.epoch, args.batch, device)
 			else:
 				raise ValueError('Invalid character model type, {}'.format(args.model_type))
 
 		#--------------------
 		elif args.target_type == 'word':
 			if args.model_type == 'rare1':
-				model_filepath = train_word_recognizer_based_on_rare1(args.lang, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use RARE #1.
+				model_filepath = train_word_recognizer_based_on_rare1(args.lang, output_dir_path, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use RARE #1.
 			elif args.model_type == 'rare2':
-				model_filepath = train_word_recognizer_based_on_rare2(args.lang, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use RARE #2.
+				model_filepath = train_word_recognizer_based_on_rare2(args.lang, output_dir_path, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use RARE #2.
 			elif args.model_type == 'aster':
-				model_filepath = train_word_recognizer_based_on_aster(args.lang, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use ASTER.
+				model_filepath = train_word_recognizer_based_on_aster(args.lang, output_dir_path, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use ASTER.
 			elif args.model_type == 'rare1-mixup':
-				model_filepath = train_word_recognizer_using_mixup(args.lang, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use RARE #1. Not working.
+				model_filepath = train_word_recognizer_using_mixup(args.lang, output_dir_path, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use RARE #1. Not working.
 
 			elif args.model_type == 'onmt':
-				model_filepath = train_word_recognizer_based_on_opennmt(args.lang, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use OpenNMT.
+				model_filepath = train_word_recognizer_based_on_opennmt(args.lang, output_dir_path, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use OpenNMT.
 
 			elif args.model_type == 'rare1+onmt':
-				model_filepath = train_word_recognizer_based_on_rare1_and_opennmt(args.lang, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use RARE #1 (encoder) + OpenNMT (decoder).
+				model_filepath = train_word_recognizer_based_on_rare1_and_opennmt(args.lang, output_dir_path, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use RARE #1 (encoder) + OpenNMT (decoder).
 			elif args.model_type == 'rare2+onmt':
-				model_filepath = train_word_recognizer_based_on_rare2_and_opennmt(args.lang, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use RARE #2 (encoder) + OpenNMT (decoder).
+				model_filepath = train_word_recognizer_based_on_rare2_and_opennmt(args.lang, output_dir_path, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use RARE #2 (encoder) + OpenNMT (decoder).
 			elif args.model_type == 'aster+onmt':
-				model_filepath = train_word_recognizer_based_on_aster_and_opennmt(args.lang, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use ASTER (encoder) + OpenNMT (decoder).
+				model_filepath = train_word_recognizer_based_on_aster_and_opennmt(args.lang, output_dir_path, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use ASTER (encoder) + OpenNMT (decoder).
 			else:
 				raise ValueError('Invalid word model type, {}'.format(args.model_type))
 
 		#--------------------
 		elif args.target_type == 'textline':
 			if args.model_type == 'onmt':
-				model_filepath = train_textline_recognizer_based_on_opennmt(args.lang, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use OpenNMT.
+				model_filepath = train_textline_recognizer_based_on_opennmt(args.lang, output_dir_path, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use OpenNMT.
 			elif args.model_type == 'transformer':
-				model_filepath = train_textline_recognizer_based_on_transformer(args.lang, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use Transformer.
+				model_filepath = train_textline_recognizer_based_on_transformer(args.lang, output_dir_path, model_filepath, args.max_len, args.epoch, args.batch, device)  # Use Transformer.
 			else:
 				raise ValueError('Invalid text line model type, {}'.format(args.model_type))
 
@@ -5743,19 +5739,19 @@ def main():
 
 	#--------------------
 	if args.eval and model_filepath:
-		evaluate_text_recognizer_using_aihub_data(args.lang, args.target_type, args.model_type, model_filepath, args.max_len, batch_size=args.batch, is_separate_pad_id_used=True, device=device)
+		evaluate_text_recognizer_using_aihub_data(args.lang, args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, batch_size=args.batch, is_separate_pad_id_used=True, device=device)
 
 	#--------------------
 	if args.infer and model_filepath:
-		recognize_text_using_aihub_data(args.lang, args.target_type, args.model_type, model_filepath, args.max_len, batch_size=args.batch, is_separate_pad_id_used=True, device=device)
-		#recognize_text_one_by_one_using_aihub_data(args.lang, args.target_type, args.model_type, model_filepath, args.max_len, is_separate_pad_id_used=True, device=device)  # batch_size = 1.
+		recognize_text_using_aihub_data(args.lang, args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, batch_size=args.batch, is_separate_pad_id_used=True, device=device)
+		#recognize_text_one_by_one_using_aihub_data(args.lang, args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, is_separate_pad_id_used=True, device=device)  # batch_size = 1.
 
 	#--------------------
 	# Recognize text using CRAFT (scene text detector) + character recognizer.
-	#recognize_character_using_craft(int(args.gpu) >= 0, device)
+	#recognize_character_using_craft(output_dir_path, int(args.gpu) >= 0, device)
 
 	# Recognize word using CRAFT (scene text detector) + word recognizer.
-	#recognize_word_using_craft(int(args.gpu) >= 0, device)  # Use RARE #1.
+	#recognize_word_using_craft(output_dir_path, int(args.gpu) >= 0, device)  # Use RARE #1.
 
 #--------------------------------------------------------------------
 
