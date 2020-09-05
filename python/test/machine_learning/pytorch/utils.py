@@ -1,4 +1,4 @@
-import os, sys, time, random, pickle
+import os, time, random, pickle
 import numpy as np
 import matplotlib
 matplotlib.use('agg')

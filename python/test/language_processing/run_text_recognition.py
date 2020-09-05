@@ -19,21 +19,16 @@ import text_data, aihub_data
 import opennmt_util
 #import mixup.vgg, mixup.resnet
 
-# Define a global logger.
-glogger = None
-# Define a global variable, print.
-print = print
-
-def save_model(model_filepath, model):
+def save_model(model_filepath, model, logger=None):
 	#torch.save(model.state_dict(), model_filepath)
 	torch.save({'state_dict': model.state_dict()}, model_filepath)
-	glogger.info('Saved a model to {}.'.format(model_filepath))
+	if logger: logger.info('Saved a model to {}.'.format(model_filepath))
 
-def load_model(model_filepath, model, device='cpu'):
+def load_model(model_filepath, model, logger=None, device='cpu'):
 	loaded_data = torch.load(model_filepath, map_location=device)
 	#model.load_state_dict(loaded_data)
 	model.load_state_dict(loaded_data['state_dict'])
-	glogger.info('Loaded a model from {}.'.format(model_filepath))
+	if logger: logger.info('Loaded a model from {}.'.format(model_filepath))
 	return model
 
 # REF [function] >> construct_font() in font_test.py.
@@ -299,9 +294,10 @@ class ConvertNumpyToRGB(object):
 		else: raise ValueError('Invalid dimension, {}'.format(x.ndim))
 
 class ResizeImageToFixedSizeWithPadding(object):
-	def __init__(self, height, width, warn_about_small_image=False, is_pil=True):
+	def __init__(self, height, width, warn_about_small_image=False, is_pil=True, logger=None):
 		self.height, self.width = height, width
 		self.resize_functor = self._resize_by_pil if is_pil else self._resize_by_opencv
+		self.logger = logger
 
 		self.min_height_threshold, self.min_width_threshold = 20, 20
 		self.warn = self._warn_about_small_image if warn_about_small_image else lambda *args, **kwargs: None
@@ -360,14 +356,15 @@ class ResizeImageToFixedSizeWithPadding(object):
 
 	def _warn_about_small_image(self, height, width):
 		if height < self.min_height_threshold:
-			glogger.info('Too small image: The image height {} should be larger than or equal to {}.'.format(height, self.min_height_threshold))
+			if self.logger: self.logger.info('Too small image: The image height {} should be larger than or equal to {}.'.format(height, self.min_height_threshold))
 		#if width < self.min_width_threshold:
-		#	glogger.info('Too small image: The image width {} should be larger than or equal to {}.'.format(width, self.min_width_threshold))
+		#	if self.logger: self.logger.info('Too small image: The image width {} should be larger than or equal to {}.'.format(width, self.min_width_threshold))
 
 class ResizeImageWithMaxWidth(object):
-	def __init__(self, height, max_width, warn_about_small_image, is_pil=True):
+	def __init__(self, height, max_width, warn_about_small_image, is_pil=True, logger=None):
 		self.height, self.max_width = height, max_width
 		self.resize_functor = self._resize_by_pil if is_pil else self._resize_by_opencv
+		self.logger = logger
 
 		self.min_height_threshold, self.min_width_threshold = 20, 20
 		self.warn = self._warn_about_small_image if warn_about_small_image else lambda *args, **kwargs: None
@@ -397,9 +394,9 @@ class ResizeImageWithMaxWidth(object):
 
 	def _warn_about_small_image(self, height, width):
 		if height < self.min_height_threshold:
-			glogger.info('Too small image: The image height {} should be larger than or equal to {}.'.format(height, self.min_height_threshold))
+			if self.logger: self.logger.info('Too small image: The image height {} should be larger than or equal to {}.'.format(height, self.min_height_threshold))
 		#if width < self.min_width_threshold:
-		#	glogger.info('Too small image: The image width {} should be larger than or equal to {}.'.format(width, self.min_width_threshold))
+		#	if self.logger: self.logger.info('Too small image: The image width {} should be larger than or equal to {}.'.format(width, self.min_width_threshold))
 
 class ToIntTensor(object):
 	def __call__(self, lst):
@@ -422,13 +419,13 @@ class MySubsetDataset(torch.utils.data.Dataset):
 	def __len__(self):
 		return len(self.subset)
 
-def create_char_data_loaders(char_type, label_converter, charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers):
+def create_char_data_loaders(char_type, label_converter, charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger=None):
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(create_char_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop, logger=logger),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -437,14 +434,14 @@ def create_char_data_loaders(char_type, label_converter, charset, num_train_exam
 	test_transform = torchvision.transforms.Compose([
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width, logger=logger),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 
-	glogger.info('Start creating datasets...')
+	if logger: logger.info('Start creating datasets...')
 	start_time = time.time()
 	if char_type == 'simple_char':
 		chars = list(charset * num_train_examples_per_class)
@@ -529,25 +526,25 @@ def create_char_data_loaders(char_type, label_converter, charset, num_train_exam
 		test_dataset = torch.utils.data.ConcatDataset(test_datasets)
 	else:
 		raise ValueError('Invalid dataset type: {}'.format(char_type))
-	glogger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
-	glogger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
+	if logger: logger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
 	#--------------------
-	glogger.info('Start creating data loaders...')
+	if logger: logger.info('Start creating data loaders...')
 	start_time = time.time()
 	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	glogger.info('End creating data loaders: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('End creating data loaders: {} secs.'.format(time.time() - start_time))
 
 	return train_dataloader, test_dataloader
 
-def create_mixed_char_data_loaders(label_converter, charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers):
+def create_mixed_char_data_loaders(label_converter, charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger=None):
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(create_char_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop, logger=logger),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -556,7 +553,7 @@ def create_mixed_char_data_loaders(label_converter, charset, num_simple_char_exa
 	test_transform = torchvision.transforms.Compose([
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width, logger=logger),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -568,7 +565,7 @@ def create_mixed_char_data_loaders(label_converter, charset, num_simple_char_exa
 	else:
 		data_base_dir_path = 'D:/work/dataset'
 
-	glogger.info('Start creating datasets...')
+	if logger: logger.info('Start creating datasets...')
 	start_time = time.time()
 	train_datasets, test_datasets = list(), list()
 	if True:
@@ -643,25 +640,25 @@ def create_mixed_char_data_loaders(label_converter, charset, num_simple_char_exa
 
 	train_dataset = torch.utils.data.ConcatDataset(train_datasets)
 	test_dataset = torch.utils.data.ConcatDataset(test_datasets)
-	glogger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
-	glogger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
+	if logger: logger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
 	#--------------------
-	glogger.info('Start creating data loaders...')
+	if logger: logger.info('Start creating data loaders...')
 	start_time = time.time()
 	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	glogger.info('End creating data loaders: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('End creating data loaders: {} secs.'.format(time.time() - start_time))
 
 	return train_dataloader, test_dataloader
 
-def create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers):
+def create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger=None):
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(create_word_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop, logger=logger),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -671,7 +668,7 @@ def create_word_data_loaders(word_type, label_converter, wordset, chars, num_tra
 	test_transform = torchvision.transforms.Compose([
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width, logger=logger),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -679,7 +676,7 @@ def create_word_data_loaders(word_type, label_converter, wordset, chars, num_tra
 	])
 	test_target_transform = ToIntTensor()
 
-	glogger.info('Start creating datasets...')
+	if logger: logger.info('Start creating datasets...')
 	start_time = time.time()
 	if word_type == 'simple_word':
 		train_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_train_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
@@ -768,25 +765,25 @@ def create_word_data_loaders(word_type, label_converter, wordset, chars, num_tra
 		test_dataset = torch.utils.data.ConcatDataset(test_datasets)
 	else:
 		raise ValueError('Invalid dataset type: {}'.format(word_type))
-	glogger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
-	glogger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
+	if logger: logger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
 	#--------------------
-	glogger.info('Start creating data loaders...')
+	if logger: logger.info('Start creating data loaders...')
 	start_time = time.time()
 	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	glogger.info('End creating data loaders: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('End creating data loaders: {} secs.'.format(time.time() - start_time))
 
 	return train_dataloader, test_dataloader
 
-def create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers):
+def create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger=None):
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(create_word_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop, logger=logger),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -796,7 +793,7 @@ def create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_e
 	test_transform = torchvision.transforms.Compose([
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width, logger=logger),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -809,7 +806,7 @@ def create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_e
 	else:
 		data_base_dir_path = 'D:/work/dataset'
 
-	glogger.info('Start creating datasets...')
+	if logger: logger.info('Start creating datasets...')
 	start_time = time.time()
 	train_datasets, test_datasets = list(), list()
 	if True:
@@ -887,25 +884,25 @@ def create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_e
 
 	train_dataset = torch.utils.data.ConcatDataset(train_datasets)
 	test_dataset = torch.utils.data.ConcatDataset(test_datasets)
-	glogger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
-	glogger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
+	if logger: logger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
 	#--------------------
-	glogger.info('Start creating data loaders...')
+	if logger: logger.info('Start creating data loaders...')
 	start_time = time.time()
 	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	glogger.info('End creating data loaders: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('End creating data loaders: {} secs.'.format(time.time() - start_time))
 
 	return train_dataloader, test_dataloader
 
-def create_textline_data_loaders(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers):
+def create_textline_data_loaders(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger=None):
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(create_textline_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop, logger=logger),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -915,7 +912,7 @@ def create_textline_data_loaders(textline_type, label_converter, wordset, chars,
 	test_transform = torchvision.transforms.Compose([
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width, logger=logger),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -923,7 +920,7 @@ def create_textline_data_loaders(textline_type, label_converter, wordset, chars,
 	])
 	test_target_transform = ToIntTensor()
 
-	glogger.info('Start creating datasets...')
+	if logger: logger.info('Start creating datasets...')
 	start_time = time.time()
 	if textline_type == 'simple_textline':
 		train_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_train_examples, image_channel, max_textline_len, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
@@ -1050,25 +1047,25 @@ def create_textline_data_loaders(textline_type, label_converter, wordset, chars,
 		test_dataset = torch.utils.data.ConcatDataset(test_datasets)
 	else:
 		raise ValueError('Invalid dataset type: {}'.format(textline_type))
-	glogger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
-	glogger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
+	if logger: logger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
 	#--------------------
-	glogger.info('Start creating data loaders...')
+	if logger: logger.info('Start creating data loaders...')
 	start_time = time.time()
 	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	glogger.info('End creating data loaders: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('End creating data loaders: {} secs.'.format(time.time() - start_time))
 
 	return train_dataloader, test_dataloader
 
-def create_mixed_textline_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers):
+def create_mixed_textline_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger=None):
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(create_textline_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop),
+		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop, logger=logger),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -1078,7 +1075,7 @@ def create_mixed_textline_data_loaders(label_converter, wordset, chars, num_simp
 	test_transform = torchvision.transforms.Compose([
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height, image_width),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width, logger=logger),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -1091,7 +1088,7 @@ def create_mixed_textline_data_loaders(label_converter, wordset, chars, num_simp
 	else:
 		data_base_dir_path = 'D:/work/dataset'
 
-	glogger.info('Start creating datasets...')
+	if logger: logger.info('Start creating datasets...')
 	start_time = time.time()
 	train_datasets, test_datasets = list(), list()
 	if True:
@@ -1206,15 +1203,15 @@ def create_mixed_textline_data_loaders(label_converter, wordset, chars, num_simp
 
 	train_dataset = torch.utils.data.ConcatDataset(train_datasets)
 	test_dataset = torch.utils.data.ConcatDataset(test_datasets)
-	glogger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
-	glogger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
+	if logger: logger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
 	#--------------------
-	glogger.info('Start creating data loaders...')
+	if logger: logger.info('Start creating data loaders...')
 	start_time = time.time()
 	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	glogger.info('End creating data loaders: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('End creating data loaders: {} secs.'.format(time.time() - start_time))
 
 	return train_dataloader, test_dataloader
 
@@ -1237,50 +1234,50 @@ def show_image(img):
 	plt.imshow(np.transpose(npimg, (1, 2, 0)))
 	plt.show()
 
-def show_char_data_info(dataloader, label_converter, visualize=True, mode='Train'):
+def show_char_data_info(dataloader, label_converter, visualize=True, mode='Train', logger=None):
 	dataiter = iter(dataloader)
 	images, labels = dataiter.next()
 	images_np, labels_np = images.numpy(), labels.numpy()
 
-	glogger.info('{} image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, images_np.shape, images_np.dtype, np.min(images_np), np.max(images_np)))
-	glogger.info('{} label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, labels_np.shape, labels_np.dtype, np.min(labels_np), np.max(labels_np)))
+	if logger: logger.info('{} image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, images_np.shape, images_np.dtype, np.min(images_np), np.max(images_np)))
+	if logger: logger.info('{} label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, labels_np.shape, labels_np.dtype, np.min(labels_np), np.max(labels_np)))
 
 	if visualize:
-		glogger.info('Labels: {}.'.format(' '.join(label_converter.decode(labels_np))))
+		if logger: logger.info('Labels: {}.'.format(' '.join(label_converter.decode(labels_np))))
 		show_image(torchvision.utils.make_grid(images, nrow=8))
 
-def show_text_data_info(dataloader, label_converter, visualize=True, mode='Train'):
+def show_text_data_info(dataloader, label_converter, visualize=True, mode='Train', logger=None):
 	dataiter = iter(dataloader)
 	images, labels, label_lens = dataiter.next()
 	images_np, labels_np, label_lens_np = images.numpy(), labels.numpy(), label_lens.numpy()
 
-	glogger.info('{} image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, images_np.shape, images_np.dtype, np.min(images_np), np.max(images_np)))
-	glogger.info('{} label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, labels_np.shape, labels_np.dtype, np.min(labels_np), np.max(labels_np)))
-	glogger.info('{} label length: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, label_lens_np.shape, label_lens_np.dtype, np.min(label_lens_np), np.max(label_lens_np)))
+	if logger: logger.info('{} image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, images_np.shape, images_np.dtype, np.min(images_np), np.max(images_np)))
+	if logger: logger.info('{} label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, labels_np.shape, labels_np.dtype, np.min(labels_np), np.max(labels_np)))
+	if logger: logger.info('{} label length: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(mode, label_lens_np.shape, label_lens_np.dtype, np.min(label_lens_np), np.max(label_lens_np)))
 
 	if visualize:
-		#glogger.info('Labels: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in images_np])))
+		#if logger: logger.info('Labels: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in images_np])))
 		for idx, (lbl, ll) in enumerate(zip(labels_np, label_lens_np)):
-			glogger.info('Label #{} (len = {}): {} (int), {} (str).'.format(idx, ll, lbl, label_converter.decode(lbl)))
+			if logger: logger.info('Label #{} (len = {}): {} (int), {} (str).'.format(idx, ll, lbl, label_converter.decode(lbl)))
 		show_image(torchvision.utils.make_grid(images, nrow=2))
 
-def show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char=False):
+def show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char=False, logger=None):
 	#for idx in range(num_classes):
-	#	glogger.info('Accuracy of {:5s} = {:2d} %.'.format(classes[idx], 100 * correct_char_class_count[idx] / total_char_class_count[idx] if total_char_class_count[idx] > 0 else -1))
+	#	if logger: logger.info('Accuracy of {:5s} = {:2d} %.'.format(classes[idx], 100 * correct_char_class_count[idx] / total_char_class_count[idx] if total_char_class_count[idx] > 0 else -1))
 	accuracies = [100 * correct_char_class_count[idx] / total_char_class_count[idx] if total_char_class_count[idx] > 0 else -1 for idx in range(num_classes)]
-	#glogger.info('Accuracy: {}.'.format(accuracies))
+	#if logger: logger.info('Accuracy: {}.'.format(accuracies))
 	hist, bin_edges = np.histogram(accuracies, bins=range(-1, 101), density=False)
 	#hist, bin_edges = np.histogram(accuracies, bins=range(0, 101), density=False)
-	#glogger.info('Per-character accuracy histogram: {}.'.format({bb: hh for bb, hh in zip(bin_edges, hist)}))
-	glogger.info('Per-character accuracy histogram: {}.'.format({bb: hh for bb, hh in zip(bin_edges, hist) if hh > 0}))
+	#if logger: logger.info('Per-character accuracy histogram: {}.'.format({bb: hh for bb, hh in zip(bin_edges, hist)}))
+	if logger: logger.info('Per-character accuracy histogram: {}.'.format({bb: hh for bb, hh in zip(bin_edges, hist) if hh > 0}))
 
 	if show_acc_per_char:
 		valid_accuracies = [100 * correct_char_class_count[idx] / total_char_class_count[idx] for idx in range(num_classes) if total_char_class_count[idx] > 0]
 		acc_thresh = 98
-		glogger.info('Per-character accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
-		glogger.info('Per-character accuracy (< {}) = {}.'.format(acc_thresh, {classes[idx]: round(acc, 2) for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]) if acc < acc_thresh}))
+		if logger: logger.info('Per-character accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
+		if logger: logger.info('Per-character accuracy (< {}) = {}.'.format(acc_thresh, {classes[idx]: round(acc, 2) for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]) if acc < acc_thresh}))
 
-def train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler=None, max_gradient_norm=None, model_params=None, device='cpu'):
+def train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler=None, max_gradient_norm=None, model_params=None, logger=None, device='cpu'):
 	best_measure = 0.0
 	best_model_filepath = None
 	for epoch in range(num_epochs):  # Loop over the dataset multiple times.
@@ -1300,31 +1297,31 @@ def train_char_recognition_model(model, train_forward_functor, criterion, label_
 			# Print statistics.
 			running_loss += loss.item()
 			if idx % log_print_freq == (log_print_freq - 1):
-				glogger.info('[{}, {:5d}] loss = {:.6g}: {:.3f} secs.'.format(epoch + 1, idx + 1, running_loss / log_print_freq, time.time() - start_time))
+				if logger: logger.info('[{}, {:5d}] loss = {:.6g}: {:.3f} secs.'.format(epoch + 1, idx + 1, running_loss / log_print_freq, time.time() - start_time))
 				running_loss = 0.0
 
 			sys.stdout.flush()
 			time.sleep(0)
-		glogger.info('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
+		if logger: logger.info('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
-		glogger.info('Start evaluating...')
+		if logger: logger.info('Start evaluating...')
 		start_time = time.time()
 		model.eval()
-		acc = evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, device=device)
-		glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
+		acc = evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, logger=logger, device=device)
+		if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 		if scheduler: scheduler.step()
 
 		if acc >= best_measure:
 			ckpt_fpath = model_filepath_format.format('_acc{:.4f}_epoch{}'.format(acc, epoch + 1))
 			# Save a checkpoint.
-			save_model(ckpt_fpath, model)
+			save_model(ckpt_fpath, model, logger)
 			best_measure = acc
 			best_model_filepath = ckpt_fpath
 
 	return model, best_model_filepath
 
-def train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler=None, max_gradient_norm=None, model_params=None, device='cpu'):
+def train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler=None, max_gradient_norm=None, model_params=None, logger=None, device='cpu'):
 	best_measure = 0.0
 	best_model_filepath = None
 	for epoch in range(num_epochs):  # Loop over the dataset multiple times.
@@ -1344,98 +1341,29 @@ def train_text_recognition_model(model, criterion, train_forward_functor, infer_
 			# Print statistics.
 			running_loss += loss.item()
 			if idx % log_print_freq == (log_print_freq - 1):
-				glogger.info('[{}, {:5d}] loss = {:.6g}: {:.3f} secs.'.format(epoch + 1, idx + 1, running_loss / log_print_freq, time.time() - start_time))
+				if logger: logger.info('[{}, {:5d}] loss = {:.6g}: {:.3f} secs.'.format(epoch + 1, idx + 1, running_loss / log_print_freq, time.time() - start_time))
 				running_loss = 0.0
 
 			sys.stdout.flush()
 			time.sleep(0)
-		glogger.info('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
+		if logger: logger.info('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
-		glogger.info('Start evaluating...')
+		if logger: logger.info('Start evaluating...')
 		start_time = time.time()
 		model.eval()
-		acc = evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, device=device)
-		glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
+		acc = evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, logger=logger, device=device)
+		if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 		if scheduler: scheduler.step()
 
 		if acc >= best_measure:
 			ckpt_fpath = model_filepath_format.format('_acc{:.4f}_epoch{}'.format(acc, epoch + 1))
 			# Save a checkpoint.
-			save_model(ckpt_fpath, model)
+			save_model(ckpt_fpath, model, logger)
 			best_measure = acc
 			best_model_filepath = ckpt_fpath
 
 	return model, best_model_filepath
-
-def evaluate_char_recognition_model(model, label_converter, dataloader, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, device='cpu'):
-	is_error_cases_saved = error_cases_dir_path is not None
-	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-
-	correct_char_count, total_char_count = 0, 0
-	correct_char_class_count, total_char_class_count = [0] * num_classes, [0] * num_classes
-	error_cases = list()
-	error_idx = 0
-	is_first = True
-	with torch.no_grad():
-		for images, labels in dataloader:
-			predictions = model(images.to(device))
-
-			_, predictions = torch.max(predictions, 1)
-			predictions = predictions.cpu().numpy()
-			gts = labels.numpy()
-
-			for gl, pl in zip(gts, predictions):
-				if gl == pl: correct_char_class_count[gl] += 1
-				total_char_class_count[gl] += 1
-
-			gts, predictions = label_converter.decode(gts), label_converter.decode(predictions)
-			gts_case, predictions_case = (gts, predictions) if is_case_sensitive else (gts.lower(), predictions.lower())
-
-			total_char_count += max(len(gts), len(predictions))
-			#correct_char_count += (gts_case == predictions_case).sum()
-			correct_char_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gts_case, predictions_case))))
-
-			if is_error_cases_saved:
-				images_np = images.numpy()
-				if images_np.ndim == 4: images_np = images_np.transpose(0, 2, 3, 1)
-				#minval, maxval = np.min(images_np), np.max(images_np)
-				minval, maxval = -1, 1
-				images_np = np.round((images_np - minval) * 255 / (maxval - minval)).astype(np.uint8)
-
-				for img, gt, pred, gt_case, pred_case in zip(images_np.numpy(), gts, predictions, gts_case, predictions_case):
-					if gt_case != pred_case:
-						cv2.imwrite(os.path.join(error_cases_dir_path, 'image_{}.png'.format(error_idx)), img)
-						error_cases.append((gt, pred))
-						error_idx += 1
-
-			if is_first:
-				# Show images.
-				#show_image(torchvision.utils.make_grid(images))
-
-				#glogger.info('G/T:        {}.'.format(' '.join(gts)))
-				#glogger.info('Prediction: {}.'.format(' '.join(predictions)))
-				#for gt, pred in zip(gts, predictions):
-				#	glogger.info('G/T - prediction: {}, {}.'.format(gt, pred))
-				glogger.info('G/T - prediction:\n{}.'.format([(gt, pred) for gt, pred in zip(gts, predictions)]))
-
-				is_first = False
-
-	if is_error_cases_saved:
-		err_fpath = os.path.join(error_cases_dir_path, 'error_cases.txt')
-		try:
-			with open(err_fpath, 'w', encoding='UTF8') as fd:
-				for idx, (gt, pred) in enumerate(error_cases):
-					fd.write('{}\t{}\t{}\n'.format(idx, gt, pred))
-		except UnicodeDecodeError as ex:
-			glogger.warning('Unicode decode error in {}: {}.'.format(err_fpath, ex))
-		except FileNotFoundError as ex:
-			glogger.warning('File not found, {}: {}.'.format(err_fpath, ex))
-
-	show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char)
-	glogger.info('Char accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else -1))
-
-	return correct_char_count / total_char_count if total_char_count > 0 else -1
 
 def compute_simple_matching_accuracy(inputs, outputs, predictions, label_converter, is_case_sensitive, show_acc_per_char, error_cases_dir_path=None, error_idx=0):
 	is_error_cases_saved = error_cases_dir_path is not None
@@ -1502,7 +1430,76 @@ def compute_sequence_matching_ratio(inputs, outputs, predictions, label_converte
 
 	return total_matching_ratio, correct_char_class_count, total_char_class_count, error_cases
 
-def evaluate_text_recognition_model(model, infer_functor, label_converter, dataloader, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, device='cpu'):
+def evaluate_char_recognition_model(model, label_converter, dataloader, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, logger=None, device='cpu'):
+	is_error_cases_saved = error_cases_dir_path is not None
+	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+
+	correct_char_count, total_char_count = 0, 0
+	correct_char_class_count, total_char_class_count = [0] * num_classes, [0] * num_classes
+	error_cases = list()
+	error_idx = 0
+	is_first = True
+	with torch.no_grad():
+		for images, labels in dataloader:
+			predictions = model(images.to(device))
+
+			_, predictions = torch.max(predictions, 1)
+			predictions = predictions.cpu().numpy()
+			gts = labels.numpy()
+
+			for gl, pl in zip(gts, predictions):
+				if gl == pl: correct_char_class_count[gl] += 1
+				total_char_class_count[gl] += 1
+
+			gts, predictions = label_converter.decode(gts), label_converter.decode(predictions)
+			gts_case, predictions_case = (gts, predictions) if is_case_sensitive else (gts.lower(), predictions.lower())
+
+			total_char_count += max(len(gts), len(predictions))
+			#correct_char_count += (gts_case == predictions_case).sum()
+			correct_char_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gts_case, predictions_case))))
+
+			if is_error_cases_saved:
+				images_np = images.numpy()
+				if images_np.ndim == 4: images_np = images_np.transpose(0, 2, 3, 1)
+				#minval, maxval = np.min(images_np), np.max(images_np)
+				minval, maxval = -1, 1
+				images_np = np.round((images_np - minval) * 255 / (maxval - minval)).astype(np.uint8)
+
+				for img, gt, pred, gt_case, pred_case in zip(images_np.numpy(), gts, predictions, gts_case, predictions_case):
+					if gt_case != pred_case:
+						cv2.imwrite(os.path.join(error_cases_dir_path, 'image_{}.png'.format(error_idx)), img)
+						error_cases.append((gt, pred))
+						error_idx += 1
+
+			if is_first:
+				# Show images.
+				#show_image(torchvision.utils.make_grid(images))
+
+				#if logger: logger.info('G/T:        {}.'.format(' '.join(gts)))
+				#if logger: logger.info('Prediction: {}.'.format(' '.join(predictions)))
+				#for gt, pred in zip(gts, predictions):
+				#	if logger: logger.info('G/T - prediction: {}, {}.'.format(gt, pred))
+				if logger: logger.info('G/T - prediction:\n{}.'.format([(gt, pred) for gt, pred in zip(gts, predictions)]))
+
+				is_first = False
+
+	if is_error_cases_saved:
+		err_fpath = os.path.join(error_cases_dir_path, 'error_cases.txt')
+		try:
+			with open(err_fpath, 'w', encoding='UTF8') as fd:
+				for idx, (gt, pred) in enumerate(error_cases):
+					fd.write('{}\t{}\t{}\n'.format(idx, gt, pred))
+		except UnicodeDecodeError as ex:
+			if logger: logger.warning('Unicode decode error in {}: {}.'.format(err_fpath, ex))
+		except FileNotFoundError as ex:
+			if logger: logger.warning('File not found, {}: {}.'.format(err_fpath, ex))
+
+	show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char, logger=logger)
+	if logger: logger.info('Char accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else -1))
+
+	return correct_char_count / total_char_count if total_char_count > 0 else -1
+
+def evaluate_text_recognition_model(model, infer_functor, label_converter, dataloader, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, logger=None, device='cpu'):
 	is_error_cases_saved = error_cases_dir_path is not None
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 
@@ -1544,11 +1541,11 @@ def evaluate_text_recognition_model(model, infer_functor, label_converter, datal
 				# Show images.
 				#show_image(torchvision.utils.make_grid(images))
 
-				#glogger.info('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in gts])))
-				#glogger.info('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in predictions])))
+				#if logger: logger.info('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in gts])))
+				#if logger: logger.info('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in predictions])))
 				#for gt, pred in zip(gts, predictions):
-				#	glogger.info('G/T - prediction: {}, {}.'.format(label_converter.decode(gt), label_converter.decode(pred)))
-				glogger.info('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(gts, predictions)]))
+				#	if logger: logger.info('G/T - prediction: {}, {}.'.format(label_converter.decode(gt), label_converter.decode(pred)))
+				if logger: logger.info('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(gts, predictions)]))
 
 				is_first = False
 
@@ -1559,19 +1556,19 @@ def evaluate_text_recognition_model(model, infer_functor, label_converter, datal
 				for idx, (gt, pred) in enumerate(error_cases):
 					fd.write('{}\t{}\t{}\n'.format(idx, gt, pred))
 		except UnicodeDecodeError as ex:
-			glogger.warning('Unicode decode error in {}: {}.'.format(err_fpath, ex))
+			if logger: logger.warning('Unicode decode error in {}: {}.'.format(err_fpath, ex))
 		except FileNotFoundError as ex:
-			glogger.warning('File not found, {}: {}.'.format(err_fpath, ex))
+			if logger: logger.warning('File not found, {}: {}.'.format(err_fpath, ex))
 
-	show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char)
+	show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char, logger=logger)
 	if is_sequence_matching_ratio_used:
 		#num_examples = len(dataloader)
 		ave_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
-		glogger.info('Average sequence matching ratio = {}.'.format(ave_matching_ratio))
+		if logger: logger.info('Average sequence matching ratio = {}.'.format(ave_matching_ratio))
 	if is_simple_matching_accuracy_used:
-		glogger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else -1))
-		glogger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else -1))
-		glogger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else -1))
+		if logger: logger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else -1))
+		if logger: logger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else -1))
+		if logger: logger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else -1))
 
 	if is_sequence_matching_ratio_used:
 		return ave_matching_ratio
@@ -1579,7 +1576,7 @@ def evaluate_text_recognition_model(model, infer_functor, label_converter, datal
 		return correct_char_count / total_char_count if total_char_count > 0 else -1
 	else: return -1
 
-def infer_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=None, batch_size=None, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, device='cpu'):
+def infer_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=None, batch_size=None, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, logger=None, device='cpu'):
 	if batch_size is None: batch_size = len(inputs)
 
 	with torch.no_grad():
@@ -1587,7 +1584,7 @@ def infer_using_text_recognition_model(model, infer_functor, label_converter, in
 		for idx in range(0, len(inputs), batch_size):
 			predictions.append(infer_functor(model, inputs[idx:idx+batch_size], device=device)[0])
 	inputs, predictions = inputs.numpy(), np.vstack(predictions)
-	glogger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(predictions.shape, predictions.dtype, np.min(predictions), np.max(predictions)))
+	if logger: logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(predictions.shape, predictions.dtype, np.min(predictions), np.max(predictions)))
 
 	if outputs is None:
 		num_iters = 0
@@ -1595,7 +1592,7 @@ def infer_using_text_recognition_model(model, infer_functor, label_converter, in
 			# Show images.
 			#show_image(torchvision.utils.make_grid(inputs[idx:idx+batch_size]))
 
-			glogger.info('Prediction:\n{}.'.format('\n'.join([label_converter.decode(pred) for pred in predictions[idx:idx+batch_size]])))
+			if logger: logger.info('Prediction:\n{}.'.format('\n'.join([label_converter.decode(pred) for pred in predictions[idx:idx+batch_size]])))
 
 			num_iters += 1
 			if num_iters >= 5: break
@@ -1609,11 +1606,11 @@ def infer_using_text_recognition_model(model, infer_functor, label_converter, in
 			# Show images.
 			#show_image(torchvision.utils.make_grid(inps))
 
-			#glogger.info('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in outps])))
-			#glogger.info('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in preds])))
+			#if logger: logger.info('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in outps])))
+			#if logger: logger.info('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in preds])))
 			#for gt, pred in zip(outps, preds):
-			#	glogger.info('G/T - prediction: {}, {}.'.format(label_converter.decode(gt), label_converter.decode(pred)))
-			glogger.info('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(outps, preds)]))
+			#	if logger: logger.info('G/T - prediction: {}, {}.'.format(label_converter.decode(gt), label_converter.decode(pred)))
+			if logger: logger.info('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(outps, preds)]))
 
 			num_iters += 1
 			if num_iters >= 5: break
@@ -1637,30 +1634,30 @@ def infer_using_text_recognition_model(model, infer_functor, label_converter, in
 					for idx, (gt, pred) in enumerate(error_cases):
 						fd.write('{}\t{}\t{}\n'.format(idx, gt, pred))
 			except UnicodeDecodeError as ex:
-				glogger.warning('Unicode decode error in {}: {}.'.format(err_fpath, ex))
+				if logger: logger.warning('Unicode decode error in {}: {}.'.format(err_fpath, ex))
 			except FileNotFoundError as ex:
-				glogger.warning('File not found, {}: {}.'.format(err_fpath, ex))
+				if logger: logger.warning('File not found, {}: {}.'.format(err_fpath, ex))
 
-		show_per_char_accuracy(correct_char_class_count, total_char_class_count, label_converter.tokens, label_converter.num_tokens, show_acc_per_char)
+		show_per_char_accuracy(correct_char_class_count, total_char_class_count, label_converter.tokens, label_converter.num_tokens, show_acc_per_char, logger=logger)
 		if is_sequence_matching_ratio_used:
 			#num_examples = len(outputs)
 			num_examples = min(len(inputs), len(outputs), len(predictions))
 			ave_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
-			glogger.info('Average sequence matching ratio = {}.'.format(ave_matching_ratio))
+			if logger: logger.info('Average sequence matching ratio = {}.'.format(ave_matching_ratio))
 		if is_simple_matching_accuracy_used:
-			glogger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else -1))
-			glogger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else -1))
-			glogger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else -1))
+			if logger: logger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else -1))
+			if logger: logger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else -1))
+			if logger: logger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else -1))
 
-def infer_one_by_one_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=None, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, device='cpu'):
+def infer_one_by_one_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=None, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, logger=None, device='cpu'):
 	num_examples_to_show = 50
 
 	with torch.no_grad():
 		predictions = list(infer_functor(model, inp, device=device)[0][0] for inp in inputs)
-	#glogger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(predictions.shape, predictions.dtype, np.min(predictions), np.max(predictions)))
+	#if logger: logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(predictions.shape, predictions.dtype, np.min(predictions), np.max(predictions)))
 
 	if outputs is None:
-		glogger.info('Prediction:\n{}.'.format('\n'.join([label_converter.decode(pred) for pred in predictions[:num_examples_to_show]])))
+		if logger: logger.info('Prediction:\n{}.'.format('\n'.join([label_converter.decode(pred) for pred in predictions[:num_examples_to_show]])))
 	else:
 		minval, maxval = -1, 1
 		def transform(img):
@@ -1670,11 +1667,11 @@ def infer_one_by_one_using_text_recognition_model(model, infer_functor, label_co
 		inputs = list(transform(inp[0].numpy()) for inp in inputs)
 		outputs = list(outp[0].numpy() for outp in outputs)
 
-		#glogger.info('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in outputs[:num_examples_to_show]])))
-		#glogger.info('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in predictions[:num_examples_to_show]])))
+		#if logger: logger.info('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in outputs[:num_examples_to_show]])))
+		#if logger: logger.info('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in predictions[:num_examples_to_show]])))
 		#for gt, pred in zip(outputs[:num_examples_to_show], predictions[:num_examples_to_show]):
-		#	glogger.info('G/T - prediction: {}, {}.'.format(label_converter.decode(gt), label_converter.decode(pred)))
-		glogger.info('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(outputs[:num_examples_to_show], predictions[:num_examples_to_show])]))
+		#	if logger: logger.info('G/T - prediction: {}, {}.'.format(label_converter.decode(gt), label_converter.decode(pred)))
+		if logger: logger.info('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(outputs[:num_examples_to_show], predictions[:num_examples_to_show])]))
 
 		#--------------------
 		is_sequence_matching_ratio_used, is_simple_matching_accuracy_used = True
@@ -1690,20 +1687,20 @@ def infer_one_by_one_using_text_recognition_model(model, infer_functor, label_co
 					for idx, (gt, pred) in enumerate(error_cases):
 						fd.write('{}\t{}\t{}\n'.format(idx, gt, pred))
 			except UnicodeDecodeError as ex:
-				glogger.warning('Unicode decode error in {}: {}.'.format(err_fpath, ex))
+				if logger: logger.warning('Unicode decode error in {}: {}.'.format(err_fpath, ex))
 			except FileNotFoundError as ex:
-				glogger.warning('File not found, {}: {}.'.format(err_fpath, ex))
+				if logger: logger.warning('File not found, {}: {}.'.format(err_fpath, ex))
 
-		show_per_char_accuracy(correct_char_class_count, total_char_class_count, label_converter.tokens, label_converter.num_tokens, show_acc_per_char)
+		show_per_char_accuracy(correct_char_class_count, total_char_class_count, label_converter.tokens, label_converter.num_tokens, show_acc_per_char, logger=logger)
 		if is_sequence_matching_ratio_used:
 			#num_examples = len(outputs)
 			num_examples = min(len(inputs), len(outputs), len(predictions))
 			ave_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
-			glogger.info('Average sequence matching ratio = {}.'.format(ave_matching_ratio))
+			if logger: logger.info('Average sequence matching ratio = {}.'.format(ave_matching_ratio))
 		if is_simple_matching_accuracy_used:
-			glogger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else -1))
-			glogger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else -1))
-			glogger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else -1))
+			if logger: logger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else -1))
+			if logger: logger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else -1))
+			if logger: logger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else -1))
 
 def build_char_model(label_converter, image_channel, loss_type):
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
@@ -2041,7 +2038,7 @@ def build_rare2_model(label_converter, image_height, image_width, image_channel,
 
 	return model, infer, train_forward, criterion
 
-def build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, eos_id):
+def build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, eos_id, logger=None):
 	if lang == 'kor':
 		hidden_size = 512  # The size of the LSTM hidden states.
 	else:
@@ -2053,7 +2050,7 @@ def build_aster_model(label_converter, image_height, image_width, image_channel,
 	sys_args.with_lstm = True
 	#sys_args.STN_ON = True
 
-	glogger.info('ASTER options: {}.'.format(vars(sys_args)))
+	if logger: logger.info('ASTER options: {}.'.format(vars(sys_args)))
 
 	# Define a loss function.
 	#if loss_type == 'xent':
@@ -2514,7 +2511,7 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 
 	model = MyCompositeModel(image_height, image_width, image_channel, output_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, num_decoder_layers, bidirectional_encoder, transformer=transformer, feature_extractor=feature_extractor, sequence_model=sequence_model, num_fiducials=num_fiducials)
 
-	return model, infer, forward, criterion
+	return model, infer, train_forward, criterion
 
 def build_rare2_and_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, loss_type=None, device='cpu'):
 	is_stn_used = False
@@ -2903,7 +2900,7 @@ def build_transformer_model(label_converter, image_height, image_width, image_ch
 	return model, infer, train_forward, criterion
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
-def train_character_recognizer(output_dir_path, model_filepath_to_load=None, font_type='kor-large', num_epochs=100, batch_size=128, device='cpu'):
+def train_character_recognizer(output_dir_path, model_filepath_to_load=None, font_type='kor-large', num_epochs=100, batch_size=128, logger=None, device='cpu'):
 	image_height, image_width, image_channel = 64, 64, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
@@ -2937,7 +2934,7 @@ def train_character_recognizer(output_dir_path, model_filepath_to_load=None, fon
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	model_filepath_base = os.path.join(output_dir_path, 'char_recognition_{}_{}_{}_{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, font_type, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
-	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
+	if logger: logger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
 	lang = font_type[:3]
 	if lang == 'kor':
@@ -2953,15 +2950,15 @@ def train_character_recognizer(output_dir_path, model_filepath_to_load=None, fon
 
 	label_converter = swl_langproc_util.TokenConverter(list(charset))
 	if is_mixed_chars_used:
-		train_dataloader, test_dataloader = create_mixed_char_data_loaders(label_converter, charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_mixed_char_data_loaders(label_converter, charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	else:
-		train_dataloader, test_dataloader = create_char_data_loaders(char_type, label_converter, charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_char_data_loaders(char_type, label_converter, charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	glogger.info('#classes = {}.'.format(num_classes))
+	if logger: logger.info('#classes = {}.'.format(num_classes))
 
 	# Show data info.
-	show_char_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
-	show_char_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+	show_char_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
+	show_char_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
 
 	#--------------------
 	# Build a model.
@@ -2972,7 +2969,7 @@ def train_character_recognizer(output_dir_path, model_filepath_to_load=None, fon
 		# Initialize model weights.
 		for name, param in model.named_parameters():
 			#if 'initialized_variable_name' in name:
-			#	glogger.info(f'Skip {name} as it has already been initialized.')
+			#	if logger: logger.info(f'Skip {name} as it has already been initialized.')
 			#	continue
 			try:
 				if 'bias' in name:
@@ -2985,7 +2982,7 @@ def train_character_recognizer(output_dir_path, model_filepath_to_load=None, fon
 				continue
 	if is_model_loaded:
 		# Load a model.
-		model = load_model(model_filepath_to_load, model, device=device)
+		model = load_model(model_filepath_to_load, model, logger, device=device)
 
 	model = model.to(device)
 	criterion = model.to(criterion)
@@ -3002,9 +2999,9 @@ def train_character_recognizer(output_dir_path, model_filepath_to_load=None, fon
 		for p in filter(lambda p: p.requires_grad, model.parameters()):
 			model_params.append(p)
 			num_model_params += np.prod(p.size())
-		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-		#glogger.info('Trainable model parameters:')
-		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+		if logger: logger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#if logger: logger.info('Trainable model parameters:')
+		#[if logger: logger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 	# Define an optimizer.
 	optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
@@ -3012,37 +3009,37 @@ def train_character_recognizer(output_dir_path, model_filepath_to_load=None, fon
 	scheduler = None
 
 	#--------------------
-	glogger.info('Start training...')
+	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-	glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	model, best_model_filepath = train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
 	if best_model_filepath:
 		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 		try:
 			shutil.copyfile(best_model_filepath, model_filepath)
-			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+			if logger: logger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
-			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+			if logger: logger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 	elif model:
 		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-		save_model(model_filepath, model)
+		save_model(model_filepath, model, logger)
 	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
 
-	glogger.info('Start evaluating...')
+	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
-	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
+	evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
-def train_character_recognizer_using_mixup(output_dir_path, model_filepath_to_load=None, font_type='kor-large', num_epochs=100, batch_size=128, device='cpu'):
+def train_character_recognizer_using_mixup(output_dir_path, model_filepath_to_load=None, font_type='kor-large', num_epochs=100, batch_size=128, logger=None, device='cpu'):
 	image_height, image_width, image_channel = 64, 64, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
@@ -3076,7 +3073,7 @@ def train_character_recognizer_using_mixup(output_dir_path, model_filepath_to_lo
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	model_filepath_base = os.path.join(output_dir_path, 'char_recognition_mixup_{}_{}_{}_{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, font_type, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
-	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
+	if logger: logger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
 	lang = font_type[:3]
 	if lang == 'kor':
@@ -3092,15 +3089,15 @@ def train_character_recognizer_using_mixup(output_dir_path, model_filepath_to_lo
 
 	label_converter = swl_langproc_util.TokenConverter(list(charset))
 	if is_mixed_chars_used:
-		train_dataloader, test_dataloader = create_mixed_char_data_loaders(label_converter, charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_mixed_char_data_loaders(label_converter, charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	else:
-		train_dataloader, test_dataloader = create_char_data_loaders(char_type, label_converter, charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_char_data_loaders(char_type, label_converter, charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	glogger.info('#classes = {}.'.format(num_classes))
+	if logger: logger.info('#classes = {}.'.format(num_classes))
 
 	# Show data info.
-	show_char_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
-	show_char_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+	show_char_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
+	show_char_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
 
 	#--------------------
 	# Build a model.
@@ -3111,7 +3108,7 @@ def train_character_recognizer_using_mixup(output_dir_path, model_filepath_to_lo
 		# Initialize model weights.
 		for name, param in model.named_parameters():
 			#if 'initialized_variable_name' in name:
-			#	glogger.info(f'Skip {name} as it has already been initialized.')
+			#	if logger: logger.info(f'Skip {name} as it has already been initialized.')
 			#	continue
 			try:
 				if 'bias' in name:
@@ -3124,7 +3121,7 @@ def train_character_recognizer_using_mixup(output_dir_path, model_filepath_to_lo
 				continue
 	if is_model_loaded:
 		# Load a model.
-		model = load_model(model_filepath_to_load, model, device=device)
+		model = load_model(model_filepath_to_load, model, logger, device=device)
 
 	model = model.to(device)
 	criterion = criterion.to(device)
@@ -3141,9 +3138,9 @@ def train_character_recognizer_using_mixup(output_dir_path, model_filepath_to_lo
 		for p in filter(lambda p: p.requires_grad, model.parameters()):
 			model_params.append(p)
 			num_model_params += np.prod(p.size())
-		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-		#glogger.info('Trainable model parameters:')
-		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+		if logger: logger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#if logger: logger.info('Trainable model parameters:')
+		#[if logger: logger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 	# Define an optimizer.
 	optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
@@ -3151,36 +3148,36 @@ def train_character_recognizer_using_mixup(output_dir_path, model_filepath_to_lo
 	scheduler = None
 
 	#--------------------
-	glogger.info('Start training...')
+	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-	glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	model, best_model_filepath = train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
 	if best_model_filepath:
 		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 		try:
 			shutil.copyfile(best_model_filepath, model_filepath)
-			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+			if logger: logger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
-			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+			if logger: logger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 	elif model:
 		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-		save_model(model_filepath, model)
+		save_model(model_filepath, model, logger)
 	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
 
-	glogger.info('Start evaluating...')
+	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
-	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
+	evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
 
-def train_word_recognizer_based_on_rare1(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_rare1(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3222,7 +3219,7 @@ def train_word_recognizer_based_on_rare1(output_dir_path, model_filepath_to_load
 	else:
 		raise ValueError('Invalid loss type, {}'.format(loss_type))
 	model_filepath_format = model_filepath_base + '{}.pth'
-	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
+	if logger: logger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
 	lang = font_type[:3]
 	if lang == 'kor':
@@ -3263,16 +3260,16 @@ def train_word_recognizer_based_on_rare1(output_dir_path, model_filepath_to_load
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if is_mixed_words_used:
-		train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	else:
-		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger: logger.info('#classes = {}.'.format(num_classes))
+	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
-	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
-	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
 
 	#--------------------
 	# Build a model.
@@ -3283,7 +3280,7 @@ def train_word_recognizer_based_on_rare1(output_dir_path, model_filepath_to_load
 		# Initialize model weights.
 		for name, param in model.named_parameters():
 			if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
-				glogger.info(f'Skip {name} as it has already been initialized.')
+				if logger: logger.info(f'Skip {name} as it has already been initialized.')
 				continue
 			try:
 				if 'bias' in name:
@@ -3296,7 +3293,7 @@ def train_word_recognizer_based_on_rare1(output_dir_path, model_filepath_to_load
 				continue
 	if is_model_loaded:
 		# Load a model.
-		model = load_model(model_filepath_to_load, model, device=device)
+		model = load_model(model_filepath_to_load, model, logger, device=device)
 
 	model = model.to(device)
 	criterion = criterion.to(device)
@@ -3313,9 +3310,9 @@ def train_word_recognizer_based_on_rare1(output_dir_path, model_filepath_to_load
 		for p in filter(lambda p: p.requires_grad, model.parameters()):
 			model_params.append(p)
 			num_model_params += np.prod(p.size())
-		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-		#glogger.info('Trainable model parameters:')
-		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+		if logger: logger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#if logger: logger.info('Trainable model parameters:')
+		#[if logger: logger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 	# Define an optimizer.
 	#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
@@ -3327,36 +3324,36 @@ def train_word_recognizer_based_on_rare1(output_dir_path, model_filepath_to_load
 	scheduler = None
 
 	#--------------------
-	glogger.info('Start training...')
+	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-	glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
 	if best_model_filepath:
 		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 		try:
 			shutil.copyfile(best_model_filepath, model_filepath)
-			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+			if logger: logger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
-			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+			if logger: logger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 	elif model:
 		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-		save_model(model_filepath, model)
+		save_model(model_filepath, model, logger)
 	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
 
-	glogger.info('Start evaluating...')
+	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
-	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
 
-def train_word_recognizer_based_on_rare2(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_rare2(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3393,7 +3390,7 @@ def train_word_recognizer_based_on_rare2(output_dir_path, model_filepath_to_load
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare2_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
-	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
+	if logger: logger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
 	lang = font_type[:3]
 	if lang == 'kor':
@@ -3425,16 +3422,16 @@ def train_word_recognizer_based_on_rare2(output_dir_path, model_filepath_to_load
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if is_mixed_words_used:
-		train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	else:
-		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger: logger.info('#classes = {}.'.format(num_classes))
+	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
-	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
-	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
 
 	#--------------------
 	# Build a model.
@@ -3445,7 +3442,7 @@ def train_word_recognizer_based_on_rare2(output_dir_path, model_filepath_to_load
 		# Initialize model weights.
 		for name, param in model.named_parameters():
 			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
-			#	glogger.info(f'Skip {name} as it has already been initialized.')
+			#	if logger: logger.info(f'Skip {name} as it has already been initialized.')
 			#	continue
 			try:
 				if 'bias' in name:
@@ -3458,7 +3455,7 @@ def train_word_recognizer_based_on_rare2(output_dir_path, model_filepath_to_load
 				continue
 	if is_model_loaded:
 		# Load a model.
-		model = load_model(model_filepath_to_load, model, device=device)
+		model = load_model(model_filepath_to_load, model, logger, device=device)
 
 	model = model.to(device)
 	criterion = criterion.to(device)
@@ -3475,9 +3472,9 @@ def train_word_recognizer_based_on_rare2(output_dir_path, model_filepath_to_load
 		for p in filter(lambda p: p.requires_grad, model.parameters()):
 			model_params.append(p)
 			num_model_params += np.prod(p.size())
-		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-		#glogger.info('Trainable model parameters:')
-		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+		if logger: logger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#if logger: logger.info('Trainable model parameters:')
+		#[if logger: logger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 	# Define an optimizer.
 	#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
@@ -3489,36 +3486,36 @@ def train_word_recognizer_based_on_rare2(output_dir_path, model_filepath_to_load
 	scheduler = None
 
 	#--------------------
-	glogger.info('Start training...')
+	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-	glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
 	if best_model_filepath:
 		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 		try:
 			shutil.copyfile(best_model_filepath, model_filepath)
-			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+			if logger: logger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
-			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+			if logger: logger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 	elif model:
 		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-		save_model(model_filepath, model)
+		save_model(model_filepath, model, logger)
 	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
 
-	glogger.info('Start evaluating...')
+	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
-	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
 
-def train_word_recognizer_based_on_aster(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_aster(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3556,7 +3553,7 @@ def train_word_recognizer_based_on_aster(output_dir_path, model_filepath_to_load
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_aster_sxent_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
-	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
+	if logger: logger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
 	lang = font_type[:3]
 	if lang == 'kor':
@@ -3587,27 +3584,27 @@ def train_word_recognizer_based_on_aster(output_dir_path, model_filepath_to_load
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if is_mixed_words_used:
-		train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	else:
-		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger: logger.info('#classes = {}.'.format(num_classes))
+	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
-	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
-	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
 
 	#--------------------
 	# Build a model.
 
-	model, infer_functor, train_forward_functor, sys_args = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_word_len, EOS_ID)
+	model, infer_functor, train_forward_functor, sys_args = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_word_len, EOS_ID, logger)
 
 	if is_model_initialized:
 		# Initialize model weights.
 		for name, param in model.named_parameters():
 			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
-			#	glogger.info(f'Skip {name} as it has already been initialized.')
+			#	if logger: logger.info(f'Skip {name} as it has already been initialized.')
 			#	continue
 			try:
 				if 'bias' in name:
@@ -3620,7 +3617,7 @@ def train_word_recognizer_based_on_aster(output_dir_path, model_filepath_to_load
 				continue
 	if is_model_loaded:
 		# Load a model.
-		model = load_model(model_filepath_to_load, model, device=device)
+		model = load_model(model_filepath_to_load, model, logger, device=device)
 
 	model = model.to(device)
 
@@ -3636,9 +3633,9 @@ def train_word_recognizer_based_on_aster(output_dir_path, model_filepath_to_load
 		for p in filter(lambda p: p.requires_grad, model.parameters()):
 			model_params.append(p)
 			num_model_params += np.prod(p.size())
-		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-		#glogger.info('Trainable model parameters:')
-		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+		if logger: logger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#if logger: logger.info('Trainable model parameters:')
+		#[if logger: logger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 	# Define an optimizer.
 	#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
@@ -3651,36 +3648,36 @@ def train_word_recognizer_based_on_aster(output_dir_path, model_filepath_to_load
 	scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
 
 	#--------------------
-	glogger.info('Start training...')
+	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, None, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-	glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	model, best_model_filepath = train_text_recognition_model(model, None, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
 	if best_model_filepath:
 		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 		try:
 			shutil.copyfile(best_model_filepath, model_filepath)
-			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+			if logger: logger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
-			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+			if logger: logger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 	elif model:
 		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-		save_model(model_filepath, model)
+		save_model(model_filepath, model, logger)
 	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
 
-	glogger.info('Start evaluating...')
+	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
-	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
 
-def train_word_recognizer_based_on_opennmt(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_opennmt(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3720,7 +3717,7 @@ def train_word_recognizer_based_on_opennmt(output_dir_path, model_filepath_to_lo
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
-	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
+	if logger: logger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
 	lang = font_type[:3]
 	if lang == 'kor':
@@ -3750,16 +3747,16 @@ def train_word_recognizer_based_on_opennmt(output_dir_path, model_filepath_to_lo
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if is_mixed_words_used:
-		train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	else:
-		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger: logger.info('#classes = {}.'.format(num_classes))
+	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
-	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
-	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
 
 	#--------------------
 	# Build a model.
@@ -3770,7 +3767,7 @@ def train_word_recognizer_based_on_opennmt(output_dir_path, model_filepath_to_lo
 		# Initialize model weights.
 		for name, param in model.named_parameters():
 			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
-			#	glogger.info(f'Skip {name} as it has already been initialized.')
+			#	if logger: logger.info(f'Skip {name} as it has already been initialized.')
 			#	continue
 			try:
 				if 'bias' in name:
@@ -3783,7 +3780,7 @@ def train_word_recognizer_based_on_opennmt(output_dir_path, model_filepath_to_lo
 				continue
 	if is_model_loaded:
 		# Load a model.
-		model = load_model(model_filepath_to_load, model, device=device)
+		model = load_model(model_filepath_to_load, model, logger, device=device)
 
 	model = model.to(device)
 	model.generator = model.generator.to(device)
@@ -3801,9 +3798,9 @@ def train_word_recognizer_based_on_opennmt(output_dir_path, model_filepath_to_lo
 		for p in filter(lambda p: p.requires_grad, model.parameters()):
 			model_params.append(p)
 			num_model_params += np.prod(p.size())
-		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-		#glogger.info('Trainable model parameters:')
-		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+		if logger: logger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#if logger: logger.info('Trainable model parameters:')
+		#[if logger: logger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 	# Define an optimizer.
 	#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
@@ -3815,36 +3812,36 @@ def train_word_recognizer_based_on_opennmt(output_dir_path, model_filepath_to_lo
 	scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
 
 	#--------------------
-	glogger.info('Start training...')
+	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-	glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
 	if best_model_filepath:
 		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 		try:
 			shutil.copyfile(best_model_filepath, model_filepath)
-			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+			if logger: logger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
-			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+			if logger: logger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 	elif model:
 		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-		save_model(model_filepath, model)
+		save_model(model_filepath, model, logger)
 	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
 
-	glogger.info('Start evaluating...')
+	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
-	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
 
-def train_word_recognizer_based_on_rare1_and_opennmt(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_rare1_and_opennmt(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -3882,7 +3879,7 @@ def train_word_recognizer_based_on_rare1_and_opennmt(output_dir_path, model_file
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare1+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
-	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
+	if logger: logger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
 	lang = font_type[:3]
 	if lang == 'kor':
@@ -3912,16 +3909,16 @@ def train_word_recognizer_based_on_rare1_and_opennmt(output_dir_path, model_file
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if is_mixed_words_used:
-		train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	else:
-		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger: logger.info('#classes = {}.'.format(num_classes))
+	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
-	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
-	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
 
 	#--------------------
 	# Build a model.
@@ -3932,7 +3929,7 @@ def train_word_recognizer_based_on_rare1_and_opennmt(output_dir_path, model_file
 		# Initialize model weights.
 		for name, param in model.named_parameters():
 			if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
-				glogger.info(f'Skip {name} as it has already been initialized.')
+				if logger: logger.info(f'Skip {name} as it has already been initialized.')
 				continue
 			try:
 				if 'bias' in name:
@@ -3945,7 +3942,7 @@ def train_word_recognizer_based_on_rare1_and_opennmt(output_dir_path, model_file
 				continue
 	if is_model_loaded:
 		# Load a model.
-		model = load_model(model_filepath_to_load, model, device=device)
+		model = load_model(model_filepath_to_load, model, logger, device=device)
 
 	model = model.to(device)
 	criterion = criterion.to(device)
@@ -3962,9 +3959,9 @@ def train_word_recognizer_based_on_rare1_and_opennmt(output_dir_path, model_file
 		for p in filter(lambda p: p.requires_grad, model.parameters()):
 			model_params.append(p)
 			num_model_params += np.prod(p.size())
-		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-		#glogger.info('Trainable model parameters:')
-		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+		if logger: logger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#if logger: logger.info('Trainable model parameters:')
+		#[if logger: logger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 	# Define an optimizer.
 	#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
@@ -3976,36 +3973,36 @@ def train_word_recognizer_based_on_rare1_and_opennmt(output_dir_path, model_file
 	scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
 
 	#--------------------
-	glogger.info('Start training...')
+	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-	glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
 	if best_model_filepath:
 		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 		try:
 			shutil.copyfile(best_model_filepath, model_filepath)
-			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+			if logger: logger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
-			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+			if logger: logger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 	elif model:
 		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-		save_model(model_filepath, model)
+		save_model(model_filepath, model, logger)
 	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
 
-	glogger.info('Start evaluating...')
+	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
-	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
 
-def train_word_recognizer_based_on_rare2_and_opennmt(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_rare2_and_opennmt(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -4043,7 +4040,7 @@ def train_word_recognizer_based_on_rare2_and_opennmt(output_dir_path, model_file
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare2+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
-	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
+	if logger: logger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
 	lang = font_type[:3]
 	if lang == 'kor':
@@ -4073,16 +4070,16 @@ def train_word_recognizer_based_on_rare2_and_opennmt(output_dir_path, model_file
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if is_mixed_words_used:
-		train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	else:
-		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger: logger.info('#classes = {}.'.format(num_classes))
+	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
-	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
-	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
 
 	#--------------------
 	# Build a model.
@@ -4093,7 +4090,7 @@ def train_word_recognizer_based_on_rare2_and_opennmt(output_dir_path, model_file
 		# Initialize model weights.
 		for name, param in model.named_parameters():
 			if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
-				glogger.info(f'Skip {name} as it has already been initialized.')
+				if logger: logger.info(f'Skip {name} as it has already been initialized.')
 				continue
 			try:
 				if 'bias' in name:
@@ -4106,7 +4103,7 @@ def train_word_recognizer_based_on_rare2_and_opennmt(output_dir_path, model_file
 				continue
 	if is_model_loaded:
 		# Load a model.
-		model = load_model(model_filepath_to_load, model, device=device)
+		model = load_model(model_filepath_to_load, model, logger, device=device)
 
 	model = model.to(device)
 	criterion = criterion.to(device)
@@ -4123,9 +4120,9 @@ def train_word_recognizer_based_on_rare2_and_opennmt(output_dir_path, model_file
 		for p in filter(lambda p: p.requires_grad, model.parameters()):
 			model_params.append(p)
 			num_model_params += np.prod(p.size())
-		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-		#glogger.info('Trainable model parameters:')
-		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+		if logger: logger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#if logger: logger.info('Trainable model parameters:')
+		#[if logger: logger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 	# Define an optimizer.
 	#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
@@ -4137,36 +4134,36 @@ def train_word_recognizer_based_on_rare2_and_opennmt(output_dir_path, model_file
 	scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
 
 	#--------------------
-	glogger.info('Start training...')
+	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-	glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
 	if best_model_filepath:
 		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 		try:
 			shutil.copyfile(best_model_filepath, model_filepath)
-			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+			if logger: logger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
-			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+			if logger: logger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 	elif model:
 		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-		save_model(model_filepath, model)
+		save_model(model_filepath, model, logger)
 	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
 
-	glogger.info('Start evaluating...')
+	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
-	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
 
-def train_word_recognizer_based_on_aster_and_opennmt(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_based_on_aster_and_opennmt(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -4204,7 +4201,7 @@ def train_word_recognizer_based_on_aster_and_opennmt(output_dir_path, model_file
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_aster+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
-	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
+	if logger: logger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
 	lang = font_type[:3]
 	if lang == 'kor':
@@ -4234,16 +4231,16 @@ def train_word_recognizer_based_on_aster_and_opennmt(output_dir_path, model_file
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if is_mixed_words_used:
-		train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	else:
-		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger: logger.info('#classes = {}.'.format(num_classes))
+	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
-	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
-	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
 
 	#--------------------
 	# Build a model.
@@ -4254,7 +4251,7 @@ def train_word_recognizer_based_on_aster_and_opennmt(output_dir_path, model_file
 		# Initialize model weights.
 		for name, param in model.named_parameters():
 			if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
-				glogger.info(f'Skip {name} as it has already been initialized.')
+				if logger: logger.info(f'Skip {name} as it has already been initialized.')
 				continue
 			try:
 				if 'bias' in name:
@@ -4267,7 +4264,7 @@ def train_word_recognizer_based_on_aster_and_opennmt(output_dir_path, model_file
 				continue
 	if is_model_loaded:
 		# Load a model.
-		model = load_model(model_filepath_to_load, model, device=device)
+		model = load_model(model_filepath_to_load, model, logger, device=device)
 
 	model = model.to(device)
 	criterion = criterion.to(device)
@@ -4284,9 +4281,9 @@ def train_word_recognizer_based_on_aster_and_opennmt(output_dir_path, model_file
 		for p in filter(lambda p: p.requires_grad, model.parameters()):
 			model_params.append(p)
 			num_model_params += np.prod(p.size())
-		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-		#glogger.info('Trainable model parameters:')
-		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+		if logger: logger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#if logger: logger.info('Trainable model parameters:')
+		#[if logger: logger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 	# Define an optimizer.
 	#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
@@ -4298,36 +4295,36 @@ def train_word_recognizer_based_on_aster_and_opennmt(output_dir_path, model_file
 	scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
 
 	#--------------------
-	glogger.info('Start training...')
+	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-	glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
 	if best_model_filepath:
 		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 		try:
 			shutil.copyfile(best_model_filepath, model_filepath)
-			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+			if logger: logger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
-			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+			if logger: logger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 	elif model:
 		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-		save_model(model_filepath, model)
+		save_model(model_filepath, model, logger)
 	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
 
-	glogger.info('Start evaluating...')
+	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
-	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
 
-def train_word_recognizer_using_mixup(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, device='cpu'):
+def train_word_recognizer_using_mixup(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
 	image_height, image_width, image_channel = 32, 100, 3
 	#image_height, image_width, image_channel = 64, 640, 3
 	#image_height, image_width, image_channel = 64, 1280, 3
@@ -4369,7 +4366,7 @@ def train_word_recognizer_using_mixup(output_dir_path, model_filepath_to_load=No
 	else:
 		raise ValueError('Invalid loss type, {}'.format(loss_type))
 	model_filepath_format = model_filepath_base + '{}.pth'
-	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
+	if logger: logger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
 	lang = font_type[:3]
 	if lang == 'kor':
@@ -4410,16 +4407,16 @@ def train_word_recognizer_using_mixup(output_dir_path, model_filepath_to_load=No
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if is_mixed_words_used:
-		train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_mixed_word_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	else:
-		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger: logger.info('#classes = {}.'.format(num_classes))
+	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
-	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
-	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
 
 	#--------------------
 	# Build a model.
@@ -4430,7 +4427,7 @@ def train_word_recognizer_using_mixup(output_dir_path, model_filepath_to_load=No
 		# Initialize model weights.
 		for name, param in model.named_parameters():
 			if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
-				glogger.info(f'Skip {name} as it has already been initialized.')
+				if logger: logger.info(f'Skip {name} as it has already been initialized.')
 				continue
 			try:
 				if 'bias' in name:
@@ -4443,7 +4440,7 @@ def train_word_recognizer_using_mixup(output_dir_path, model_filepath_to_load=No
 				continue
 	if is_model_loaded:
 		# Load a model.
-		model = load_model(model_filepath_to_load, model, device=device)
+		model = load_model(model_filepath_to_load, model, logger, device=device)
 
 	model = model.to(device)
 	criterion = criterion.to(device)
@@ -4460,9 +4457,9 @@ def train_word_recognizer_using_mixup(output_dir_path, model_filepath_to_load=No
 		for p in filter(lambda p: p.requires_grad, model.parameters()):
 			model_params.append(p)
 			num_model_params += np.prod(p.size())
-		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-		#glogger.info('Trainable model parameters:')
-		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+		if logger: logger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#if logger: logger.info('Trainable model parameters:')
+		#[if logger: logger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 	# Define an optimizer.
 	#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
@@ -4474,36 +4471,36 @@ def train_word_recognizer_using_mixup(output_dir_path, model_filepath_to_load=No
 	scheduler = None
 
 	#--------------------
-	glogger.info('Start training...')
+	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-	glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
 	if best_model_filepath:
 		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 		try:
 			shutil.copyfile(best_model_filepath, model_filepath)
-			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+			if logger: logger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
-			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+			if logger: logger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 	elif model:
 		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-		save_model(model_filepath, model)
+		save_model(model_filepath, model, logger)
 	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
 
-	glogger.info('Start evaluating...')
+	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
-	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
 
-def train_textline_recognizer_based_on_opennmt(output_dir_path, model_filepath_to_load=None, max_textline_len=30, font_type='kor-large', num_epochs=20, batch_size=64, device='cpu'):
+def train_textline_recognizer_based_on_opennmt(output_dir_path, model_filepath_to_load=None, max_textline_len=30, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	#image_height, image_width, image_channel = 64, 640, 3
 	image_height, image_width, image_channel = 64, 1280, 3
@@ -4547,7 +4544,7 @@ def train_textline_recognizer_based_on_opennmt(output_dir_path, model_filepath_t
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	model_filepath_base = os.path.join(output_dir_path, 'textline_recognition_onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_textline_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
-	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
+	if logger: logger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
 	lang = font_type[:3]
 	if lang == 'kor':
@@ -4577,16 +4574,16 @@ def train_textline_recognizer_based_on_opennmt(output_dir_path, model_filepath_t
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if is_mixed_textlines_used:
-		train_dataloader, test_dataloader = create_mixed_textline_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_mixed_textline_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	else:
-		train_dataloader, test_dataloader = create_textline_data_loaders(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_textline_data_loaders(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger: logger.info('#classes = {}.'.format(num_classes))
+	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
-	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
-	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
 
 	#--------------------
 	# Build a model.
@@ -4597,7 +4594,7 @@ def train_textline_recognizer_based_on_opennmt(output_dir_path, model_filepath_t
 		# Initialize model weights.
 		for name, param in model.named_parameters():
 			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
-			#	glogger.info(f'Skip {name} as it has already been initialized.')
+			#	if logger: logger.info(f'Skip {name} as it has already been initialized.')
 			#	continue
 			try:
 				if 'bias' in name:
@@ -4610,7 +4607,7 @@ def train_textline_recognizer_based_on_opennmt(output_dir_path, model_filepath_t
 				continue
 	if is_model_loaded:
 		# Load a model.
-		model = load_model(model_filepath_to_load, model, device=device)
+		model = load_model(model_filepath_to_load, model, logger, device=device)
 
 	model = model.to(device)
 	model.generator = model.generator.to(device)
@@ -4628,9 +4625,9 @@ def train_textline_recognizer_based_on_opennmt(output_dir_path, model_filepath_t
 		for p in filter(lambda p: p.requires_grad, model.parameters()):
 			model_params.append(p)
 			num_model_params += np.prod(p.size())
-		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-		#glogger.info('Trainable model parameters:')
-		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+		if logger: logger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#if logger: logger.info('Trainable model parameters:')
+		#[if logger: logger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 	# Define an optimizer.
 	#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
@@ -4642,36 +4639,36 @@ def train_textline_recognizer_based_on_opennmt(output_dir_path, model_filepath_t
 	scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
 
 	#--------------------
-	glogger.info('Start training...')
+	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-	glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
 	if best_model_filepath:
 		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 		try:
 			shutil.copyfile(best_model_filepath, model_filepath)
-			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+			if logger: logger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
-			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+			if logger: logger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 	elif model:
 		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-		save_model(model_filepath, model)
+		save_model(model_filepath, model, logger)
 	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
 
-	glogger.info('Start evaluating...')
+	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
-	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
 
-def train_textline_recognizer_based_on_transformer(output_dir_path, model_filepath_to_load=None, max_textline_len=50, font_type='kor-large', num_epochs=40, batch_size=64, device='cpu'):
+def train_textline_recognizer_based_on_transformer(output_dir_path, model_filepath_to_load=None, max_textline_len=50, font_type='kor-large', num_epochs=40, batch_size=64, logger=None, device='cpu'):
 	#image_height, image_width, image_channel = 32, 100, 3
 	#image_height, image_width, image_channel = 64, 640, 3
 	image_height, image_width, image_channel = 64, 1280, 3
@@ -4713,7 +4710,7 @@ def train_textline_recognizer_based_on_transformer(output_dir_path, model_filepa
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	model_filepath_base = os.path.join(output_dir_path, 'textline_recognition_transformer_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_textline_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
-	glogger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
+	if logger: logger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
 	lang = font_type[:3]
 	if lang == 'kor':
@@ -4743,16 +4740,16 @@ def train_textline_recognizer_based_on_transformer(output_dir_path, model_filepa
 
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if is_mixed_textlines_used:
-		train_dataloader, test_dataloader = create_mixed_textline_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_mixed_textline_data_loaders(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	else:
-		train_dataloader, test_dataloader = create_textline_data_loaders(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers)
+		train_dataloader, test_dataloader = create_textline_data_loaders(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger: logger.info('#classes = {}.'.format(num_classes))
+	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
-	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train')
-	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
 
 	#--------------------
 	# Build a model.
@@ -4763,7 +4760,7 @@ def train_textline_recognizer_based_on_transformer(output_dir_path, model_filepa
 		# Initialize model weights.
 		for name, param in model.named_parameters():
 			#if 'localization_fc2' in name:  # Exists in rare.modules.transformation.TPS_SpatialTransformerNetwork.
-			#	glogger.info(f'Skip {name} as it has already been initialized.')
+			#	if logger: logger.info(f'Skip {name} as it has already been initialized.')
 			#	continue
 			try:
 				if 'bias' in name:
@@ -4776,7 +4773,7 @@ def train_textline_recognizer_based_on_transformer(output_dir_path, model_filepa
 				continue
 	if is_model_loaded:
 		# Load a model.
-		model = load_model(model_filepath_to_load, model, device=device)
+		model = load_model(model_filepath_to_load, model, logger, device=device)
 
 	model = model.to(device)
 	criterion = criterion.to(device)
@@ -4793,9 +4790,9 @@ def train_textline_recognizer_based_on_transformer(output_dir_path, model_filepa
 		for p in filter(lambda p: p.requires_grad, model.parameters()):
 			model_params.append(p)
 			num_model_params += np.prod(p.size())
-		glogger.info('#trainable model parameters = {}.'.format(num_model_params))
-		#glogger.info('Trainable model parameters:')
-		#[glogger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
+		if logger: logger.info('#trainable model parameters = {}.'.format(num_model_params))
+		#if logger: logger.info('Trainable model parameters:')
+		#[if logger: logger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
 	# Define an optimizer.
 	#optimizer = torch.optim.SGD(model_params, lr=1.0, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
@@ -4810,36 +4807,36 @@ def train_textline_recognizer_based_on_transformer(output_dir_path, model_filepa
 	scheduler = None
 
 	#--------------------
-	glogger.info('Start training...')
+	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, device)
-	glogger.info('End training: {} secs.'.format(time.time() - start_time))
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
 	if best_model_filepath:
 		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 		try:
 			shutil.copyfile(best_model_filepath, model_filepath)
-			glogger.info('Copied the best trained model to {}.'.format(model_filepath))
+			if logger: logger.info('Copied the best trained model to {}.'.format(model_filepath))
 		except (FileNotFoundError, PermissionError) as ex:
-			glogger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+			if logger: logger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
 	elif model:
 		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-		save_model(model_filepath, model)
+		save_model(model_filepath, model, logger)
 	else: model_filepath = None
 
 	#--------------------
 	# Evaluate the model.
 
-	glogger.info('Start evaluating...')
+	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, device=device)
-	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
 
-def evaluate_text_recognizer_using_aihub_data(target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, font_type, batch_size, is_separate_pad_id_used=True, device='cpu'):
+def evaluate_text_recognizer_using_aihub_data(target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, font_type, batch_size, is_separate_pad_id_used=True, logger=None, device='cpu'):
 	assert model_filepath_to_load is not None
 
 	#image_height, image_width, image_channel = 32, 100, 3
@@ -4896,8 +4893,8 @@ def evaluate_text_recognizer_using_aihub_data(target_type, model_type, model_fil
 	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
 
 	test_transform = torchvision.transforms.Compose([
-		#ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True),
-		ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True),  # batch_size must be 1.
+		#ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, logger=logger),
+		ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, logger=logger),  # batch_size must be 1.
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -4905,30 +4902,30 @@ def evaluate_text_recognizer_using_aihub_data(target_type, model_type, model_fil
 	])
 	test_target_transform = ToIntTensor()
 
-	glogger.info('Start creating a dataset and a dataloader...')
+	if logger: logger.info('Start creating a dataset and a dataloader...')
 	start_time = time.time()
 	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	glogger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
-	glogger.info('#examples = {}.'.format(len(test_dataset)))
-	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger: logger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('#examples = {}.'.format(len(test_dataset)))
+	if logger: logger.info('#classes = {}.'.format(num_classes))
+	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
-	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
 
 	#--------------------
 	# Build a model.
 
-	glogger.info('Start building a model...')
+	if logger: logger.info('Start building a model...')
 	start_time = time.time()
 	if model_type == 'rara1':
 		model, infer_functor, _, _ = build_rare1_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID, blank_label=None)
 	elif model_type == 'rara2':
 		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID)
 	elif model_type == 'aster':
-		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_ID)
+		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_ID, logger)
 	elif model_type == 'onmt':
 		encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
 		model, infer_functor, _, _ = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, encoder_type, lang, loss_type=None)
@@ -4942,13 +4939,13 @@ def evaluate_text_recognizer_using_aihub_data(target_type, model_type, model_fil
 		model, infer_functor, _, _ = build_transformer_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, is_train=False)
 	else:
 		raise ValueError('Invalid model type, {}'.format(model_type))
-	glogger.info('End building a model: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('End building a model: {} secs.'.format(time.time() - start_time))
 
 	# Load a model.
-	glogger.info('Start loading a pretrained model from {}.'.format(model_filepath_to_load))
+	if logger: logger.info('Start loading a pretrained model from {}.'.format(model_filepath_to_load))
 	start_time = time.time()
-	model = load_model(model_filepath_to_load, model, device=device)
-	glogger.info('End loading a pretrained model: {} secs.'.format(time.time() - start_time))
+	model = load_model(model_filepath_to_load, model, logger, device=device)
+	if logger: logger.info('End loading a pretrained model: {} secs.'.format(time.time() - start_time))
 
 	model = model.to(device)
 
@@ -4959,13 +4956,13 @@ def evaluate_text_recognizer_using_aihub_data(target_type, model_type, model_fil
 	if error_cases_dir_path and error_cases_dir_path.strip() and not os.path.exists(error_cases_dir_path):
 		os.makedirs(error_cases_dir_path, exist_ok=True)
 
-	glogger.info('Start evaluating...')
+	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, device=device)
-	glogger.info('End evaluating: {} secs.'.format(time.time() - start_time))
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, logger=logger, device=device)
+	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def recognize_text_using_aihub_data(target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, font_type, batch_size, is_separate_pad_id_used=True, device='cpu'):
+def recognize_text_using_aihub_data(target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, font_type, batch_size, is_separate_pad_id_used=True, logger=None, device='cpu'):
 	assert model_filepath_to_load is not None
 
 	#image_height, image_width, image_channel = 32, 100, 3
@@ -5022,8 +5019,8 @@ def recognize_text_using_aihub_data(target_type, model_type, model_filepath_to_l
 	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
 
 	test_transform = torchvision.transforms.Compose([
-		#ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True),
-		ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True),  # batch_size must be 1.
+		#ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, logger=logger),
+		ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, logger=logger),  # batch_size must be 1.
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -5031,18 +5028,18 @@ def recognize_text_using_aihub_data(target_type, model_type, model_filepath_to_l
 	])
 	test_target_transform = ToIntTensor()
 
-	glogger.info('Start creating a dataset and a dataloader...')
+	if logger: logger.info('Start creating a dataset and a dataloader...')
 	start_time = time.time()
 	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	glogger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
-	glogger.info('#examples = {}.'.format(len(test_dataset)))
-	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger: logger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('#examples = {}.'.format(len(test_dataset)))
+	if logger: logger.info('#classes = {}.'.format(num_classes))
+	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
-	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
 
 	inputs, outputs = list(), list()
 	try:
@@ -5050,21 +5047,21 @@ def recognize_text_using_aihub_data(target_type, model_type, model_filepath_to_l
 			inputs.append(images)
 			outputs.append(labels)
 	except Exception as ex:
-		glogger.warning('Exception raised: {}.'.format(ex))
+		if logger: logger.warning('Exception raised: {}.'.format(ex))
 	inputs = torch.cat(inputs)
 	outputs = torch.cat(outputs)
 
 	#--------------------
 	# Build a model.
 
-	glogger.info('Start building a model...')
+	if logger: logger.info('Start building a model...')
 	start_time = time.time()
 	if model_type == 'rara1':
 		model, infer_functor, _, _ = build_rare1_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID, blank_label=None)
 	elif model_type == 'rare2':
 		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID)
 	elif model_type == 'aster':
-		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_ID)
+		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_ID, logger)
 	elif model_type == 'onmt':
 		encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
 		model, infer_functor, _, _ = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, encoder_type, lang, loss_type=None)
@@ -5078,13 +5075,13 @@ def recognize_text_using_aihub_data(target_type, model_type, model_filepath_to_l
 		model, infer_functor, _, _ = build_transformer_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, is_train=False)
 	else:
 		raise ValueError('Invalid model type, {}'.format(model_type))
-	glogger.info('End building a model: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('End building a model: {} secs.'.format(time.time() - start_time))
 
 	# Load a model.
-	glogger.info('Start loading a pretrained model from {}.'.format(model_filepath_to_load))
+	if logger: logger.info('Start loading a pretrained model from {}.'.format(model_filepath_to_load))
 	start_time = time.time()
-	model = load_model(model_filepath_to_load, model, device=device)
-	glogger.info('End loading a pretrained model: {} secs.'.format(time.time() - start_time))
+	model = load_model(model_filepath_to_load, model, logger, device=device)
+	if logger: logger.info('End loading a pretrained model: {} secs.'.format(time.time() - start_time))
 
 	model = model.to(device)
 
@@ -5096,13 +5093,13 @@ def recognize_text_using_aihub_data(target_type, model_type, model_filepath_to_l
 	if outputs is not None and error_cases_dir_path and error_cases_dir_path.strip() and not os.path.exists(error_cases_dir_path):
 		os.makedirs(error_cases_dir_path, exist_ok=True)
 
-	glogger.info('Start inferring...')
+	if logger: logger.info('Start inferring...')
 	start_time = time.time()
 	model.eval()
-	infer_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, batch_size=batch_size, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, device=device)
-	glogger.info('End inferring: {} secs.'.format(time.time() - start_time))
+	infer_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, batch_size=batch_size, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, logger=logger, device=device)
+	if logger: logger.info('End inferring: {} secs.'.format(time.time() - start_time))
 
-def recognize_text_one_by_one_using_aihub_data(target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, font_type, is_separate_pad_id_used=True, device='cpu'):
+def recognize_text_one_by_one_using_aihub_data(target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, font_type, is_separate_pad_id_used=True, logger=None, device='cpu'):
 	assert model_filepath_to_load is not None
 	batch_size = 1
 
@@ -5160,8 +5157,8 @@ def recognize_text_one_by_one_using_aihub_data(target_type, model_type, model_fi
 	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
 
 	test_transform = torchvision.transforms.Compose([
-		#ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True),
-		ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True),  # batch_size must be 1.
+		#ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, logger=logger),
+		ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, logger=logger),  # batch_size must be 1.
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -5169,18 +5166,18 @@ def recognize_text_one_by_one_using_aihub_data(target_type, model_type, model_fi
 	])
 	test_target_transform = ToIntTensor()
 
-	glogger.info('Start creating a dataset and a dataloader...')
+	if logger: logger.info('Start creating a dataset and a dataloader...')
 	start_time = time.time()
 	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	glogger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
-	glogger.info('#examples = {}.'.format(len(test_dataset)))
-	glogger.info('#classes = {}.'.format(num_classes))
-	glogger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger: logger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('#examples = {}.'.format(len(test_dataset)))
+	if logger: logger.info('#classes = {}.'.format(num_classes))
+	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
-	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test')
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
 
 	inputs, outputs = list(), list()
 	try:
@@ -5188,19 +5185,19 @@ def recognize_text_one_by_one_using_aihub_data(target_type, model_type, model_fi
 			inputs.append(images)
 			outputs.append(labels)
 	except Exception as ex:
-		glogger.warning('Exception raised: {}.'.format(ex))
+		if logger: logger.warning('Exception raised: {}.'.format(ex))
 
 	#--------------------
 	# Build a model.
 
-	glogger.info('Start building a model...')
+	if logger: logger.info('Start building a model...')
 	start_time = time.time()
 	if model_type == 'rara1':
 		model, infer_functor, _, _ = build_rare1_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID, blank_label=None)
 	elif model_type == 'rare2':
 		model, infer_functor, _, _ = build_rare2_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID)
 	elif model_type == 'aster':
-		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_ID)
+		model, infer_functor, _, _ = build_aster_model(label_converter, image_height, image_width, image_channel, lang, max_label_len, EOS_ID, logger)
 	elif model_type == 'onmt':
 		encoder_type = 'onmt'  # {'onmt', 'rare1', 'rare2', 'aster'}.
 		model, infer_functor, _, _ = build_opennmt_model(label_converter, image_height, image_width, image_channel, max_label_len, encoder_type, lang, loss_type=None)
@@ -5214,13 +5211,13 @@ def recognize_text_one_by_one_using_aihub_data(target_type, model_type, model_fi
 		model, infer_functor, _, _ = build_transformer_model(label_converter, image_height, image_width, image_channel, max_label_len, lang, is_train=False)
 	else:
 		raise ValueError('Invalid model type, {}'.format(model_type))
-	glogger.info('End building a model: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('End building a model: {} secs.'.format(time.time() - start_time))
 
 	# Load a model.
-	glogger.info('Start loading a pretrained model from {}.'.format(model_filepath_to_load))
+	if logger: logger.info('Start loading a pretrained model from {}.'.format(model_filepath_to_load))
 	start_time = time.time()
-	model = load_model(model_filepath_to_load, model, device=device)
-	glogger.info('End loading a pretrained model: {} secs.'.format(time.time() - start_time))
+	model = load_model(model_filepath_to_load, model, logger, device=device)
+	if logger: logger.info('End loading a pretrained model: {} secs.'.format(time.time() - start_time))
 
 	model = model.to(device)
 
@@ -5232,13 +5229,13 @@ def recognize_text_one_by_one_using_aihub_data(target_type, model_type, model_fi
 	if outputs is not None and error_cases_dir_path and error_cases_dir_path.strip() and not os.path.exists(error_cases_dir_path):
 		os.makedirs(error_cases_dir_path, exist_ok=True)
 
-	glogger.info('Start inferring...')
+	if logger: logger.info('Start inferring...')
 	start_time = time.time()
 	model.eval()
-	infer_one_by_one_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, device=device)
-	glogger.info('End inferring: {} secs.'.format(time.time() - start_time))
+	infer_one_by_one_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, logger=logger, device=device)
+	if logger: logger.info('End inferring: {} secs.'.format(time.time() - start_time))
 
-def recognize_character_using_craft(output_dir_path, is_cuda_used, device='cpu'):
+def recognize_character_using_craft(output_dir_path, is_cuda_used, logger=None, device='cpu'):
 	import craft.imgproc as imgproc
 	#import craft.file_utils as file_utils
 	import craft.test_utils as test_utils
@@ -5270,31 +5267,31 @@ def recognize_character_using_craft(output_dir_path, is_cuda_used, device='cpu')
 	label_converter = swl_langproc_util.TokenConverter(list(charset))
 	num_classes = label_converter.num_tokens
 
-	glogger.info('Start loading CRAFT...')
+	if logger: logger.info('Start loading CRAFT...')
 	start_time = time.time()
 	craft_net, craft_refine_net = test_utils.load_craft(craft_trained_model_filepath, craft_refiner_model_filepath, craft_refine, craft_cuda)
-	glogger.info('End loading CRAFT: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('End loading CRAFT: {} secs.'.format(time.time() - start_time))
 
-	glogger.info('Start loading char recognizer...')
+	if logger: logger.info('Start loading char recognizer...')
 	start_time = time.time()
 	import rare.model_char
 	recognizer = rare.model_char.create_model(model_name, input_channel, output_channel, num_classes)
 
-	recognizer = load_model(recognizer_model_filepath, recognizer, device=device)
+	recognizer = load_model(recognizer_model_filepath, recognizer, logger, device=device)
 	recognizer = recognizer.to(device)
-	glogger.info('End loading char recognizer: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('End loading char recognizer: {} secs.'.format(time.time() - start_time))
 
 	#--------------------
-	glogger.info('Start running CRAFT...')
+	if logger: logger.info('Start running CRAFT...')
 	start_time = time.time()
 	rgb = imgproc.loadImage(image_filepath)  # RGB order.
 	bboxes, ch_bboxes_lst, score_text = test_utils.run_char_craft(rgb, craft_net, craft_refine_net, craft_cuda)
-	glogger.info('End running CRAFT: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('End running CRAFT: {} secs.'.format(time.time() - start_time))
 
 	if len(bboxes) > 0:
 		os.makedirs(output_dir_path, exist_ok=True)
 
-		glogger.info('Start inferring...')
+		if logger: logger.info('Start inferring...')
 		start_time = time.time()
 		image = cv2.imread(image_filepath)
 
@@ -5333,8 +5330,8 @@ def recognize_character_using_craft(output_dir_path, is_cuda_used, device='cpu')
 			#RandomInvert(),
 			ConvertPILMode(mode='RGB'),
 			# TODO [decide] >> Which one is correct?
-			ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True),
-			#ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True),  # batch_size must be 1.
+			ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, logger=logger),
+			#ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, logger=logger),  # batch_size must be 1.
 			#torchvision.transforms.Resize((image_height, image_width)),
 			#torchvision.transforms.CenterCrop((image_height, image_width)),
 			torchvision.transforms.ToTensor(),
@@ -5350,12 +5347,12 @@ def recognize_character_using_craft(output_dir_path, is_cuda_used, device='cpu')
 
 				_, predictions = torch.max(predictions, 1)
 				predictions = predictions.cpu().numpy()
-				glogger.info('\t{}: {} (int), {} (str).'.format(idx, predictions, ''.join(label_converter.decode(predictions))))
-		glogger.info('End inferring: {} secs.'.format(time.time() - start_time))
+				if logger: logger.info('\t{}: {} (int), {} (str).'.format(idx, predictions, ''.join(label_converter.decode(predictions))))
+		if logger: logger.info('End inferring: {} secs.'.format(time.time() - start_time))
 	else:
-		glogger.info('No text detected.')
+		if logger: logger.info('No text detected.')
 
-def recognize_word_using_craft(output_dir_path, is_cuda_used, device='cpu'):
+def recognize_word_using_craft(output_dir_path, is_cuda_used, logger=None, device='cpu'):
 	import craft.imgproc as imgproc
 	#import craft.file_utils as file_utils
 	import craft.test_utils as test_utils
@@ -5418,31 +5415,31 @@ def recognize_word_using_craft(output_dir_path, is_cuda_used, device='cpu'):
 		num_suffixes = 1
 	num_classes = label_converter.num_tokens
 
-	glogger.info('Start loading CRAFT...')
+	if logger: logger.info('Start loading CRAFT...')
 	start_time = time.time()
 	craft_net, craft_refine_net = test_utils.load_craft(craft_trained_model_filepath, craft_refiner_model_filepath, craft_refine, craft_cuda)
-	glogger.info('End loading CRAFT: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('End loading CRAFT: {} secs.'.format(time.time() - start_time))
 
-	glogger.info('Start loading word recognizer...')
+	if logger: logger.info('Start loading word recognizer...')
 	start_time = time.time()
 	import rare.model
 	recognizer = rare.model.Model(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_word_len + num_suffixes, SOS_ID, label_converter.pad_id, transformer, feature_extractor, sequence_model, decoder)
 
-	recognizer = load_model(recognizer_model_filepath, recognizer, device=device)
+	recognizer = load_model(recognizer_model_filepath, recognizer, logger, device=device)
 	recognizer = recognizer.to(device)
-	glogger.info('End loading word recognizer: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('End loading word recognizer: {} secs.'.format(time.time() - start_time))
 
 	#--------------------
-	glogger.info('Start running CRAFT...')
+	if logger: logger.info('Start running CRAFT...')
 	start_time = time.time()
 	rgb = imgproc.loadImage(image_filepath)  # RGB order.
 	bboxes, polys, score_text = test_utils.run_word_craft(rgb, craft_net, craft_refine_net, craft_cuda)
-	glogger.info('End running CRAFT: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('End running CRAFT: {} secs.'.format(time.time() - start_time))
 
 	if len(bboxes) > 0:
 		os.makedirs(output_dir_path, exist_ok=True)
 
-		glogger.info('Start inferring...')
+		if logger: logger.info('Start inferring...')
 		start_time = time.time()
 		image = cv2.imread(image_filepath)
 
@@ -5475,8 +5472,8 @@ def recognize_word_using_craft(output_dir_path, is_cuda_used, device='cpu'):
 		transform = torchvision.transforms.Compose([
 			#RandomInvert(),
 			ConvertPILMode(mode='RGB'),
-			#ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True),
-			ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True),  # batch_size must be 1.
+			#ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, logger=logger),
+			ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, logger=logger),  # batch_size must be 1.
 			#torchvision.transforms.Resize((image_height, image_width)),
 			#torchvision.transforms.CenterCrop((image_height, image_width)),
 			torchvision.transforms.ToTensor(),
@@ -5492,10 +5489,10 @@ def recognize_word_using_craft(output_dir_path, is_cuda_used, device='cpu'):
 			_, predictions = torch.max(predictions, 1)
 			predictions = predictions.cpu().numpy()
 			for idx, pred in enumerate(predictions):
-				glogger.info('\t{}: {} (int), {} (str).'.format(idx, pred, ''.join(label_converter.decode(pred))))
-		glogger.info('End inferring: {} secs.'.format(time.time() - start_time))
+				if logger: logger.info('\t{}: {} (int), {} (str).'.format(idx, pred, ''.join(label_converter.decode(pred))))
+		if logger: logger.info('End inferring: {} secs.'.format(time.time() - start_time))
 	else:
-		glogger.info('No text detected.')
+		if logger: logger.info('No text detected.')
 
 #--------------------------------------------------------------------
 
@@ -5667,16 +5664,6 @@ def main():
 		logger.error('At least one of command line options "--train", "--eval", and "--infer" has to be specified.')
 		return
 
-	global glogger
-	glogger = logger
-	if glogger is not None:
-		# REF [function] >> main() in ${SWDT_PYTHON_HOME}/ext/test/logging/logging_main.py.
-		global print
-		#print = glogger.info
-		print = lambda *objects, sep=' ', end='\n', file=sys.stdout, flush=False: glogger.error(*objects) if file == sys.stderr else glogger.info(*objects)
-	else:
-		raise ValueError('Invalid global logger: {}'.format(glogger))
-
 	#if args.gpu:
 	#	os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 	device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and int(args.gpu) >= 0 else 'cpu')
@@ -5696,47 +5683,49 @@ def main():
 	if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 		os.makedirs(output_dir_path, exist_ok=True)
 
+	logger.info('Output path: {}.'.format(output_dir_path))
+
 	#--------------------
 	if args.train:
 		#is_resumed = args.model_file is not None
 
 		if args.target_type == 'char':
 			if args.model_type == 'char':
-				model_filepath = train_character_recognizer(output_dir_path, model_filepath, args.font_type, args.epoch, args.batch, device)
+				model_filepath = train_character_recognizer(output_dir_path, model_filepath, args.font_type, args.epoch, args.batch, logger, device)
 			elif args.model_type == 'char-mixup':
-				model_filepath = train_character_recognizer_using_mixup(output_dir_path, model_filepath, args.font_type, args.epoch, args.batch, device)
+				model_filepath = train_character_recognizer_using_mixup(output_dir_path, model_filepath, args.font_type, args.epoch, args.batch, logger, device)
 			else:
 				raise ValueError('Invalid character model type, {}'.format(args.model_type))
 
 		#--------------------
 		elif args.target_type == 'word':
 			if args.model_type == 'rare1':
-				model_filepath = train_word_recognizer_based_on_rare1(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, device)  # Use RARE #1.
+				model_filepath = train_word_recognizer_based_on_rare1(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #1.
 			elif args.model_type == 'rare2':
-				model_filepath = train_word_recognizer_based_on_rare2(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, device)  # Use RARE #2.
+				model_filepath = train_word_recognizer_based_on_rare2(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #2.
 			elif args.model_type == 'aster':
-				model_filepath = train_word_recognizer_based_on_aster(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, device)  # Use ASTER.
+				model_filepath = train_word_recognizer_based_on_aster(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use ASTER.
 			elif args.model_type == 'rare1-mixup':
-				model_filepath = train_word_recognizer_using_mixup(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, device)  # Use RARE #1. Not working.
+				model_filepath = train_word_recognizer_using_mixup(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #1. Not working.
 
 			elif args.model_type == 'onmt':
-				model_filepath = train_word_recognizer_based_on_opennmt(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, device)  # Use OpenNMT.
+				model_filepath = train_word_recognizer_based_on_opennmt(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use OpenNMT.
 
 			elif args.model_type == 'rare1+onmt':
-				model_filepath = train_word_recognizer_based_on_rare1_and_opennmt(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, device)  # Use RARE #1 (encoder) + OpenNMT (decoder).
+				model_filepath = train_word_recognizer_based_on_rare1_and_opennmt(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #1 (encoder) + OpenNMT (decoder).
 			elif args.model_type == 'rare2+onmt':
-				model_filepath = train_word_recognizer_based_on_rare2_and_opennmt(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, device)  # Use RARE #2 (encoder) + OpenNMT (decoder).
+				model_filepath = train_word_recognizer_based_on_rare2_and_opennmt(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #2 (encoder) + OpenNMT (decoder).
 			elif args.model_type == 'aster+onmt':
-				model_filepath = train_word_recognizer_based_on_aster_and_opennmt(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, device)  # Use ASTER (encoder) + OpenNMT (decoder).
+				model_filepath = train_word_recognizer_based_on_aster_and_opennmt(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use ASTER (encoder) + OpenNMT (decoder).
 			else:
 				raise ValueError('Invalid word model type, {}'.format(args.model_type))
 
 		#--------------------
 		elif args.target_type == 'textline':
 			if args.model_type == 'onmt':
-				model_filepath = train_textline_recognizer_based_on_opennmt(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, device)  # Use OpenNMT.
+				model_filepath = train_textline_recognizer_based_on_opennmt(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use OpenNMT.
 			elif args.model_type == 'transformer':
-				model_filepath = train_textline_recognizer_based_on_transformer(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, device)  # Use Transformer.
+				model_filepath = train_textline_recognizer_based_on_transformer(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use Transformer.
 			else:
 				raise ValueError('Invalid text line model type, {}'.format(args.model_type))
 
@@ -5745,19 +5734,19 @@ def main():
 
 	#--------------------
 	if args.eval and model_filepath:
-		evaluate_text_recognizer_using_aihub_data(args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, args.font_type, args.batch, is_separate_pad_id_used=True, device=device)
+		evaluate_text_recognizer_using_aihub_data(args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, args.font_type, args.batch, is_separate_pad_id_used=True, logger=logger, device=device)
 
 	#--------------------
 	if args.infer and model_filepath:
-		recognize_text_using_aihub_data(args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, args.font_type, args.batch, is_separate_pad_id_used=True, device=device)
-		#recognize_text_one_by_one_using_aihub_data(args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, args.font_type, is_separate_pad_id_used=True, device=device)  # batch_size = 1.
+		recognize_text_using_aihub_data(args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, args.font_type, args.batch, is_separate_pad_id_used=True, logger=logger, device=device)
+		#recognize_text_one_by_one_using_aihub_data(args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, args.font_type, is_separate_pad_id_used=True, logger=logger, device=device)  # batch_size = 1.
 
 	#--------------------
 	# Recognize text using CRAFT (scene text detector) + character recognizer.
-	#recognize_character_using_craft(output_dir_path, int(args.gpu) >= 0, device)
+	#recognize_character_using_craft(output_dir_path, int(args.gpu) >= 0, logger, device)
 
 	# Recognize word using CRAFT (scene text detector) + word recognizer.
-	#recognize_word_using_craft(output_dir_path, int(args.gpu) >= 0, device)  # Use RARE #1.
+	#recognize_word_using_craft(output_dir_path, int(args.gpu) >= 0, logger, device)  # Use RARE #1.
 
 #--------------------------------------------------------------------
 

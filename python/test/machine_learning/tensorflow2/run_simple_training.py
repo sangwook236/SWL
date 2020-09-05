@@ -107,6 +107,31 @@ class MyDataset(object):
 
 #--------------------------------------------------------------------
 
+def load_model(checkpoint_dir_path, optimizer, num_classes, logger, is_train=False, is_loaded=False):
+	# Build a model.
+	model = MyModel(num_classes)
+
+	# Create checkpoint objects.
+	#ckpt = tf.train.Checkpoint(net=model)  # Not good.
+	ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=optimizer, net=model)
+	if is_train:
+		ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir_path, max_to_keep=5, keep_checkpoint_every_n_hours=2)
+	else:
+		ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir_path, max_to_keep=None)
+
+	if is_loaded:
+		# Load a model.
+		if logger: logger.info('Start loading a model...')
+		start_time = time.time()
+		ckpt.restore(ckpt_manager.latest_checkpoint)
+		if ckpt_manager.latest_checkpoint:
+			if logger: logger.info('End loading a model from {}: {} secs.'.format(ckpt_manager.latest_checkpoint, time.time() - start_time))
+		else:
+			if logger: logger.error('Failed to load a model from {}.'.format(checkpoint_dir_path))
+			return None, None, None
+
+	return model, ckpt, ckpt_manager
+
 class MyModel(tf.keras.Model):
 	def __init__(self, num_classes):
 		super(MyModel, self).__init__()
@@ -124,9 +149,7 @@ class MyModel(tf.keras.Model):
 #--------------------------------------------------------------------
 
 class MyRunner(object):
-	def __init__(self, logger):
-		self._logger = logger
-
+	def __init__(self):
 		# Create losses and accuracies.
 		self._train_loss = tf.keras.metrics.Mean(name='train_loss')
 		self._train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
@@ -134,7 +157,7 @@ class MyRunner(object):
 		self._test_loss = tf.keras.metrics.Mean(name='test_loss')
 		self._test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
 
-	def train(self, model, criterion, optimizer, train_dataset, test_dataset, output_dir_path, ckpt, ckpt_manager, batch_size, final_epoch, initial_epoch=0):
+	def train(self, model, criterion, optimizer, train_dataset, test_dataset, output_dir_path, ckpt, ckpt_manager, batch_size, final_epoch, initial_epoch=0, logger=None):
 		if batch_size is None or batch_size <= 0:
 			raise ValueError('Invalid batch size: {}'.format(batch_size))
 
@@ -178,11 +201,11 @@ class MyRunner(object):
 		val_summary_writer = tf.summary.create_file_writer(val_summary_dir_path)
 
 		#--------------------
-		self._logger.info('Start training...')
+		if logger: logger.info('Start training...')
 		best_performance_measure = 0
 		start_total_time = time.time()
 		for epoch in range(initial_epoch, final_epoch):
-			self._logger.info('Epoch {}/{}:'.format(epoch, final_epoch - 1))
+			if logger: logger.info('Epoch {}/{}:'.format(epoch, final_epoch - 1))
 
 			#--------------------
 			start_time = time.time()
@@ -192,7 +215,7 @@ class MyRunner(object):
 				tf.summary.scalar('loss', self._train_loss.result(), step=epoch)
 				tf.summary.scalar('accuracy', self._train_accuracy.result(), step=epoch)
 			train_loss, train_acc = self._train_loss.result().numpy(), self._train_accuracy.result().numpy()
-			self._logger.info('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
+			if logger: logger.info('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
 
 			history['loss'].append(train_loss)
 			history['acc'].append(train_acc)
@@ -205,24 +228,24 @@ class MyRunner(object):
 				tf.summary.scalar('loss', self._test_loss.result(), step=epoch)
 				tf.summary.scalar('accuracy', self._test_accuracy.result(), step=epoch)
 			val_loss, val_acc = self._test_loss.result().numpy(), self._test_accuracy.result().numpy()
-			self._logger.info('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
+			if logger: logger.info('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
 
 			history['val_loss'].append(val_loss)
 			history['val_acc'].append(val_acc)
 
 			ckpt.step.assign_add(1)
 			if val_acc > best_performance_measure:
-				self._logger.info('Start saving a model...')
+				if logger: logger.info('Start saving a model...')
 				start_time = time.time()
 				saved_model_path = ckpt_manager.save()
-				self._logger.info('End saving a model to {} for step {}: {} secs.'.format(saved_model_path, int(ckpt.step), time.time() - start_time))
+				if logger: logger.info('End saving a model to {} for step {}: {} secs.'.format(saved_model_path, int(ckpt.step), time.time() - start_time))
 				best_performance_measure = val_acc
 			"""
 			if val_acc > best_performance_measure or int(ckpt.step) % 100 == 0:
-				self._logger.info('Start saving a model...')
+				if logger: logger.info('Start saving a model...')
 				start_time = time.time()
 				saved_model_path = ckpt_manager.save()
-				self._logger.info('End saving a model to {} for step {}: {} secs.'.format(saved_model_path, int(ckpt.step), time.time() - start_time))
+				if logger: logger.info('End saving a model to {} for step {}: {} secs.'.format(saved_model_path, int(ckpt.step), time.time() - start_time))
 				if val_acc > best_performance_measure:
 					best_performance_measure = val_acc
 			"""
@@ -235,65 +258,40 @@ class MyRunner(object):
 
 			sys.stdout.flush()
 			time.sleep(0)
-		self._logger.info('End training: {} secs.'.format(time.time() - start_total_time))
+		if logger: logger.info('End training: {} secs.'.format(time.time() - start_total_time))
 
 		return history
 
-	def test(self, model, dataset, batch_size, shuffle=False):
+	def test(self, model, dataset, batch_size, shuffle=False, logger=None):
 		if batch_size is None or batch_size <= 0:
 			raise ValueError('Invalid batch size: {}'.format(batch_size))
 
-		self._logger.info('Start testing...')
+		if logger: logger.info('Start testing...')
 		inferences, ground_truths = list(), list()
 		start_time = time.time()
 		for inputs, outputs in dataset:
 			inferences.append(model(inputs).numpy())
 			ground_truths.append(outputs.numpy())
-		self._logger.info('End testing: {} secs.'.format(time.time() - start_time))
+		if logger: logger.info('End testing: {} secs.'.format(time.time() - start_time))
 
 		inferences, ground_truths = np.vstack(inferences), np.concatenate(ground_truths)
 		if inferences is not None and ground_truths is not None:
-			self._logger.info('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+			if logger: logger.info('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 			inferences = np.argmax(inferences, -1)
 			#ground_truths = np.argmax(ground_truths, -1)
 
 			correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
-			self._logger.info('Test: accuracy = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+			if logger: logger.info('Test: accuracy = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
 		else:
-			self._logger.warning('Invalid test results.')
+			if logger: logger.warning('Invalid test results.')
 
-	def infer(self, model, inputs):
-		self._logger.info('Start inferring...')
+	def infer(self, model, inputs, logger=None):
+		if logger: logger.info('Start inferring...')
 		start_time = time.time()
 		inferences = model(inputs)
-		self._logger.info('End inferring: {} secs.'.format(time.time() - start_time))
+		if logger: logger.info('End inferring: {} secs.'.format(time.time() - start_time))
 		return inferences.numpy()
-
-	def load_model(self, checkpoint_dir_path, optimizer, num_classes, is_train=False, is_loaded=False):
-		# Build a model.
-		model = MyModel(num_classes)
-
-		# Create checkpoint objects.
-		#ckpt = tf.train.Checkpoint(net=model)  # Not good.
-		ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=optimizer, net=model)
-		if is_train:
-			ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir_path, max_to_keep=5, keep_checkpoint_every_n_hours=2)
-		else:
-			ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir_path, max_to_keep=None)
-
-		if is_loaded:
-			# Load a model.
-			self._logger.info('Start loading a model...')
-			start_time = time.time()
-			ckpt.restore(ckpt_manager.latest_checkpoint)
-			if ckpt_manager.latest_checkpoint:
-				self._logger.info('End loading a model from {}: {} secs.'.format(ckpt_manager.latest_checkpoint, time.time() - start_time))
-			else:
-				self._logger.error('Failed to load a model from {}.'.format(checkpoint_dir_path))
-				return None, None, None
-
-		return model, ckpt, ckpt_manager
 
 #--------------------------------------------------------------------
 
@@ -467,7 +465,7 @@ def main():
 	dataset.show_data_info(logger, visualize=False)
 
 	#--------------------
-	runner = MyRunner(logger)
+	runner = MyRunner()
 
 	# Create a trainer.
 	optimizer = tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=False)
@@ -479,14 +477,14 @@ def main():
 			os.makedirs(output_dir_path, exist_ok=True)
 
 		# Load a model.
-		model, ckpt, ckpt_manager = runner.load_model(checkpoint_dir_path, optimizer, dataset.num_classes, is_train=True, is_loaded=is_resumed)
+		model, ckpt, ckpt_manager = load_model(checkpoint_dir_path, optimizer, dataset.num_classes, logger, is_train=True, is_loaded=is_resumed)
 		#if model: print('Model summary:\n{}.'.format(model))
 
 		if model:
 			# Create a criterion.
 			criterion = tf.keras.losses.SparseCategoricalCrossentropy()
 
-			history = runner.train(model, criterion, optimizer, train_dataset, test_dataset, output_dir_path, ckpt, ckpt_manager, batch_size, final_epoch, initial_epoch)
+			history = runner.train(model, criterion, optimizer, train_dataset, test_dataset, output_dir_path, ckpt, ckpt_manager, batch_size, final_epoch, initial_epoch, logger)
 
 			if history:
 				#logger.info('Train history = {}.'.format(history))
@@ -496,19 +494,19 @@ def main():
 
 	if args.test or args.infer:
 		if checkpoint_dir_path and os.path.exists(checkpoint_dir_path):
-			model, _, _ = runner.load_model(checkpoint_dir_path, optimizer, dataset.num_classes, is_train=False, is_loaded=True)
+			model, _, _ = load_model(checkpoint_dir_path, optimizer, dataset.num_classes, logger, is_train=False, is_loaded=True)
 
 			#if model:
 			#	# A new probability model which does not need to be trained because it has no trainable parameter.
 			#	#model = tf.keras.Sequential([model, tf.keras.layers.Softmax()])
 
 			if args.test and model:
-				runner.test(model, test_dataset, batch_size)
+				runner.test(model, test_dataset, batch_size, logger=logger)
 
 			if args.infer and model:
 				inferences = list()
 				for inputs, _ in test_dataset:
-					inferences.append(runner.infer(model, inputs))
+					inferences.append(runner.infer(model, inputs, logger=logger))
 
 				inferences = np.vstack(inferences)
 				if inferences is not None:

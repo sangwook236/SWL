@@ -13,6 +13,43 @@ import utils
 
 #--------------------------------------------------------------------
 
+def load_model(model_filepath, model, optimizer=None, logger=None, device='cpu'):
+	try:
+		if logger: logger.info('Start loading a model from {}...'.format(model_filepath))
+		start_time = time.time()
+		loaded_data = torch.load(model_filepath, map_location=device)
+		epoch = loaded_data['epoch']
+		#architecture = loaded_data['arch']
+		model.load_state_dict(loaded_data['state_dict'])
+		if optimizer: optimizer.load_state_dict(loaded_data['optimizer'])
+		recorder = loaded_data['recorder']
+		best_acc = recorder.max_accuracy(False)
+		if logger: logger.info('End loading a model, accuracy = {} (epoch {}): {} secs.'.format(best_acc, epoch, time.time() - start_time))
+		return model, optimizer, recorder, epoch
+	except Exception as ex:
+		if logger: logger.error('Failed to load a model from {}: {}.'.format(model_filepath, ex))
+		#return None, None, None, None
+		return model, None, None, None
+
+def save_model(model_filepath, model, optimizer, recorder, epoch, logger=None):
+	try:
+		if logger: logger.info('Start saving a model from {}...'.format(model_filepath))
+		start_time = time.time()
+		# Saves a model using either a .pt or .pth file extension.
+		torch.save(
+			{
+				'epoch': epoch + 1,
+				#'arch': architecture,
+				'state_dict': model.state_dict(),
+				'optimizer': optimizer.state_dict(),
+				'recorder': recorder,
+			},
+			model_filepath
+		)
+		if logger: logger.info('End saving a model: {} secs.'.format(time.time() - start_time))
+	except Exception as ex:
+		if logger: logger.error('Failed to save a model from {}: {}.'.format(model_filepath, ex))
+
 class MyModel(torch.nn.Module):
 	def __init__(self):
 		super().__init__()
@@ -80,12 +117,9 @@ def show_data_info(dataloader, logger, visualize=True, mode='Train'):
 #--------------------------------------------------------------------
 
 class MyRunner(object):
-	def __init__(self, logger):
-		self._logger = logger
-
-	def train(self, model, criterion, optimizer, scheduler, train_dataloader, test_dataloader, model_checkpoint_filepath, output_dir_path, initial_epoch=0, final_epoch=10, recorder=None, device='cpu'):
-		self._logger.info('Output path: {}.'.format(output_dir_path))
-		self._logger.info('Model:\n{}.'.format(model))
+	def train(self, model, criterion, optimizer, scheduler, train_dataloader, test_dataloader, model_checkpoint_filepath, output_dir_path, initial_epoch=0, final_epoch=10, recorder=None, logger=None, device='cpu'):
+		if logger: logger.info('Output path: {}.'.format(output_dir_path))
+		if logger: logger.info('Model:\n{}.'.format(model))
 
 		history = {
 			'acc': list(),
@@ -108,36 +142,36 @@ class MyRunner(object):
 		log_print_freq = 500
 
 		#--------------------
-		self._logger.info('Start training...')
+		if logger: logger.info('Start training...')
 		start_train_time = start_epoch_time = time.time()
 		epoch_time = utils.AverageMeter()
 		best_performance_measure = 0
 		best_model_filepath = None
 		for epoch in range(initial_epoch, final_epoch):
-			self._logger.info('Epoch {}/{}'.format(epoch + 1, final_epoch))
+			if logger: logger.info('Epoch {}/{}'.format(epoch + 1, final_epoch))
 
 			current_learning_rate = scheduler.get_lr() if scheduler else 0.0
 			need_hour, need_mins, need_secs = utils.convert_secs2time(epoch_time.avg * (final_epoch - epoch))
 			need_time = '[Need: {:02d}:{:02d}:{:02d}]'.format(need_hour, need_mins, need_secs)
-			self._logger.info('==>>{:s} [Epoch={:03d}/{:03d}] {:s} [learning_rate={}]'.format(utils.time_string(), epoch + 1, final_epoch, need_time, current_learning_rate) \
+			if logger: logger.info('==>>{:s} [Epoch={:03d}/{:03d}] {:s} [learning_rate={}]'.format(utils.time_string(), epoch + 1, final_epoch, need_time, current_learning_rate) \
 				+ ' [Best : Accuracy={:.2f}, Error={:.2f}].'.format(recorder.max_accuracy(False), 100 - recorder.max_accuracy(False)))
 
 			#--------------------
 			#start_time = time.time()
-			losses, top1, top5 = self._train(model, criterion, optimizer, train_dataloader, epoch, log_print_freq, device)
+			losses, top1, top5 = self._train(model, criterion, optimizer, train_dataloader, epoch, log_print_freq, logger, device)
 			train_loss, train_acc = losses.avg, top1.avg
-			self._logger.info('\tTrain:      Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f} Error@1 {error1:.3f}.'.format(top1=top1, top5=top5, error1=100 - top1.avg))
-			#self._logger.info('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
+			if logger: logger.info('\tTrain:      Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f} Error@1 {error1:.3f}.'.format(top1=top1, top5=top5, error1=100 - top1.avg))
+			#if logger: logger.info('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
 
 			history['loss'].append(train_loss)
 			history['acc'].append(train_acc)
 
 			#--------------------
 			#start_time = time.time()
-			losses, top1, top5 = self._evaluate(model, criterion, test_dataloader, device)
+			losses, top1, top5 = self._evaluate(model, criterion, test_dataloader, logger, device)
 			val_loss, val_acc = losses.avg, top1.avg
-			self._logger.info('\tValidation: Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f} Error@1 {error1:.3f} Loss: {losses.avg:.3f}.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses))
-			#self._logger.info('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
+			if logger: logger.info('\tValidation: Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f} Error@1 {error1:.3f} Loss: {losses.avg:.3f}.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses))
+			#if logger: logger.info('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
 
 			history['val_loss'].append(val_loss)
 			history['val_acc'].append(val_acc)
@@ -149,7 +183,7 @@ class MyRunner(object):
 
 			if val_acc > best_performance_measure:
 				best_model_filepath = model_checkpoint_filepath.format(epoch=epoch, val_acc=val_acc)
-				self.save_model(best_model_filepath, model, optimizer, recorder, epoch)
+				save_model(best_model_filepath, model, optimizer, recorder, epoch, logger)
 				best_performance_measure = val_acc
 
 			# Measure elapsed time.
@@ -169,15 +203,14 @@ class MyRunner(object):
 
 			sys.stdout.flush()
 			time.sleep(0)
-		self._logger.info('End training: {} secs.'.format(time.time() - start_train_time))
+		if logger: logger.info('End training: {} secs.'.format(time.time() - start_train_time))
 
 		return best_model_filepath, history
 
-	def test(self, model, dataloader, device='cpu'):
-		# Switch to evaluation mode.
-		model.eval()
+	def test(self, model, dataloader, logger=None, device='cpu'):
+		model.eval()  # Switch to evaluation mode.
 
-		self._logger.info('Start testing a model...')
+		if logger: logger.info('Start testing a model...')
 		start_time = time.time()
 		inferences, ground_truths = list(), list()
 		with torch.no_grad():
@@ -190,69 +223,30 @@ class MyRunner(object):
 				model_outputs = torch.argmax(model_outputs, -1)
 				inferences.extend(model_outputs.cpu().numpy())
 				ground_truths.extend(batch_outputs.numpy())
-		self._logger.info('End testing a model: {} secs.'.format(time.time() - start_time))
+		if logger: logger.info('End testing a model: {} secs.'.format(time.time() - start_time))
 
 		inferences, ground_truths = np.array(inferences), np.array(ground_truths)
 		if inferences is not None and ground_truths is not None:
-			self._logger.info('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+			if logger: logger.info('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 			correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
-			self._logger.info('Test: accuracy = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+			if logger: logger.info('Test: accuracy = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
 		else:
-			self._logger.warning('Invalid test results.')
+			if logger: logger.warning('Invalid test results.')
 
-	def infer(self, model, inputs, device='cpu'):
-		# Switch to evaluation mode.
-		model.eval()
+	def infer(self, model, inputs, logger=None, device='cpu'):
+		model.eval()  # Switch to evaluation mode.
 
-		self._logger.info('Start inferring...')
+		if logger: logger.info('Start inferring...')
 		start_time = time.time()
 		with torch.no_grad():
 			inputs = inputs.to(device)
 			model_outputs = model(inputs)
-		self._logger.info('End inferring: {} secs.'.format(time.time() - start_time))
+		if logger: logger.info('End inferring: {} secs.'.format(time.time() - start_time))
 		return torch.argmax(model_outputs, -1)
 
-	def load_model(self, model_filepath, model, optimizer=None, device='cpu'):
-		try:
-			self._logger.info('Start loading a model from {}...'.format(model_filepath))
-			start_time = time.time()
-			loaded_data = torch.load(model_filepath, map_location=device)
-			epoch = loaded_data['epoch']
-			#architecture = loaded_data['arch']
-			model.load_state_dict(loaded_data['state_dict'])
-			if optimizer: optimizer.load_state_dict(loaded_data['optimizer'])
-			recorder = loaded_data['recorder']
-			best_acc = recorder.max_accuracy(False)
-			self._logger.info('End loading a model, accuracy={} (epoch {}): {} secs.'.format(best_acc, epoch, time.time() - start_time))
-			return model, optimizer, recorder, epoch
-		except Exception as ex:
-			self._logger.error('Failed to load a model from {}: {}.'.format(model_filepath, ex))
-			#return None, None, None, None
-			return model, None, None, None
-
-	def save_model(self, model_filepath, model, optimizer, recorder, epoch):
-		try:
-			self._logger.info('Start saving a model from {}...'.format(model_filepath))
-			start_time = time.time()
-			# Saves a model using either a .pt or .pth file extension.
-			torch.save(
-				{
-					'epoch': epoch + 1,
-					#'arch': architecture,
-					'state_dict': model.state_dict(),
-					'optimizer': optimizer.state_dict(),
-					'recorder': recorder,
-				},
-				model_filepath
-			)
-			self._logger.info('End saving a model: {} secs.'.format(time.time() - start_time))
-		except Exception as ex:
-			self._logger.error('Failed to save a model from {}: {}.'.format(model_filepath, ex))
-
-	def _train(self, model, criterion, optimizer, dataloader, epoch, log_print_freq, device):
-		# Switch to train mode.
-		model.train()
+	def _train(self, model, criterion, optimizer, dataloader, epoch, log_print_freq, logger, device):
+		model.train()  # Switch to train mode.
 
 		batch_time, data_time = utils.AverageMeter(), utils.AverageMeter()
 		losses, top1, top5 = utils.AverageMeter(), utils.AverageMeter(), utils.AverageMeter()
@@ -303,7 +297,7 @@ class MyRunner(object):
 			# Print statistics.
 			running_loss += loss.item()
 			if (batch_step + 1) % 100 == 0:
-				self._logger.info('\tStep {}: loss = {:.6f}: {} secs.'.format(batch_step + 1, running_loss / 100, time.time() - start_time))
+				if logger: logger.info('\tStep {}: loss = {:.6f}: {} secs.'.format(batch_step + 1, running_loss / 100, time.time() - start_time))
 				running_loss = 0.0
 			"""
 
@@ -312,7 +306,7 @@ class MyRunner(object):
 			start_batch_time = time.time()
 
 			if (batch_step + 1) % log_print_freq == 0:
-				self._logger.info('\tEpoch: [{:03d}][{:03d}/{:03d}]   '
+				if logger: logger.info('\tEpoch: [{:03d}][{:03d}/{:03d}]   '
 					'Time {batch_time.val:.3f} ({batch_time.avg:.3f})   '
 					'Data {data_time.val:.3f} ({data_time.avg:.3f})   '
 					'Loss {loss.val:.4f} ({loss.avg:.4f})   '
@@ -322,9 +316,8 @@ class MyRunner(object):
 					data_time=data_time, loss=losses, top1=top1, top5=top5) + utils.time_string())
 		return losses, top1, top5
 
-	def _evaluate(self, model, criterion, dataloader, device):
-		# Switch to evaluation mode.
-		model.eval()
+	def _evaluate(self, model, criterion, dataloader, logger, device):
+		model.eval()  # Switch to evaluation mode.
 
 		losses, top1, top5 = utils.AverageMeter(), utils.AverageMeter(), utils.AverageMeter()
 		with torch.no_grad():
@@ -352,8 +345,8 @@ class MyRunner(object):
 
 				# Show results.
 				if show:
-					self._logger.info('\tG/T:        {}.'.format(batch_outputs.cpu().numpy()))
-					self._logger.info('\tPrediction: {}.'.format(np.argmax(model_outputs.cpu().numpy(), axis=-1)))
+					if logger: logger.info('\tG/T:        {}.'.format(batch_outputs.cpu().numpy()))
+					if logger: logger.info('\tPrediction: {}.'.format(np.argmax(model_outputs.cpu().numpy(), axis=-1)))
 					show = False
 		return losses, top1, top5
 
@@ -569,7 +562,7 @@ def main():
 	show_data_info(test_dataloader, logger, visualize=False, mode='Test')
 
 	#--------------------
-	runner = MyRunner(logger)
+	runner = MyRunner()
 
 	if args.train:
 		model_checkpoint_filepath = os.path.join(output_dir_path, 'model_ckpt.{epoch:04d}-{val_acc:.5f}.pth')
@@ -598,7 +591,7 @@ def main():
 
 		if is_resumed:
 			# Load a model.
-			model, optimizer, recorder, loaded_initial_epoch = runner.load_model(model_filepath, model, optimizer, device=device)
+			model, optimizer, recorder, loaded_initial_epoch = load_model(model_filepath, model, optimizer, logger, device=device)
 			if loaded_initial_epoch:
 				initial_epoch += loaded_initial_epoch
 				final_epoch += loaded_initial_epoch
@@ -634,7 +627,7 @@ def main():
 			scheduler = MyLRScheduler(optimizer, initial_learning_rate)
 
 			# Train a model.
-			best_model_filepath, history = runner.train(model, criterion, optimizer, scheduler, train_dataloader, test_dataloader, model_checkpoint_filepath, output_dir_path, initial_epoch, final_epoch, recorder, device=device)
+			best_model_filepath, history = runner.train(model, criterion, optimizer, scheduler, train_dataloader, test_dataloader, model_checkpoint_filepath, output_dir_path, initial_epoch, final_epoch, recorder, logger, device=device)
 
 			# Save a model.
 			if best_model_filepath:
@@ -647,7 +640,7 @@ def main():
 					model_filepath = None
 			else:
 				model_filepath = os.path.join(output_dir_path, 'final_model_{}.pth'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-				runner.save_model(model_filepath, model, optimizer, recorder, final_epoch)
+				save_model(model_filepath, model, optimizer, recorder, final_epoch, logger)
 
 			#logger.info('Train history = {}.'.format(history))
 			#swl_ml_util.display_train_history(history)
@@ -659,7 +652,7 @@ def main():
 			# Build a model.
 			model = MyModel()
 			# Load a model.
-			model, _, _, _ = runner.load_model(model_filepath, model, None, device=device)
+			model, _, _, _ = load_model(model_filepath, model, None, logger, device=device)
 
 			if model:
 				# A new probability model which does not need to be trained because it has no trainable parameter.
@@ -671,14 +664,14 @@ def main():
 				model = model.to(device)
 
 			if args.test and model:
-				runner.test(model, test_dataloader, device=device)
+				runner.test(model, test_dataloader, logger, device=device)
 
 			if args.infer and model:
 				#inputs = torch.cat([batch_data[0] for batch_data in test_dataloader], dim=0)
 				data_iter = iter(test_dataloader)
 				inputs, _ = data_iter.next()
 
-				inferences = runner.infer(model, inputs, device=device)
+				inferences = runner.infer(model, inputs, logger, device=device)
 
 				inferences = inferences.cpu().numpy()
 				if inferences is not None:

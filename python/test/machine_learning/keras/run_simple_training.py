@@ -218,6 +218,26 @@ class MyDataSequence(tf.keras.utils.Sequence):
 
 #--------------------------------------------------------------------
 
+def load_model(model_filepath, logger):
+	try:
+		if logger: logger.info('Start loading a model...')
+		start_time = time.time()
+		"""
+		# Load only the architecture of a model.
+		model = tf.keras.models.model_from_json(json_string)
+		#model = tf.keras.models.model_from_yaml(yaml_string)
+		# Load only the weights of a model.
+		model.load_weights(model_weight_filepath)
+		"""
+		# Load a model.
+		model = tf.keras.models.load_model(model_filepath)
+		if logger: logger.info('End loading a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
+
+		return model
+	except (ImportError, IOError):
+		if logger: logger.error('Failed to load a model from {}.'.format(model_filepath))
+		return None
+
 class MyModel(object):
 	@classmethod
 	def create_model(cls, input_shape, num_classes):
@@ -240,9 +260,8 @@ class MyModel(object):
 #--------------------------------------------------------------------
 
 class MyRunner(object):
-	def __init__(self, logger):
+	def __init__(self):
 		# Set parameters.
-		self._logger = logger
 		self._use_keras_data_sequence, self._use_generator = True, False
 
 		self._max_queue_size, self._num_workers = 10, 8
@@ -253,7 +272,7 @@ class MyRunner(object):
 		#tf.keras.backend.set_learning_phase(0)  # Sets the learning phase to 'test'.
 		#tf.keras.backend.set_learning_phase(1)  # Sets the learning phase to 'train'.
 
-	def train(self, model, criterion, optimizer, dataset, model_checkpoint_filepath, output_dir_path, batch_size, final_epoch, initial_epoch=0):
+	def train(self, model, criterion, optimizer, dataset, model_checkpoint_filepath, output_dir_path, batch_size, final_epoch, initial_epoch=0, logger=None):
 		model.compile(loss=criterion, optimizer=optimizer, metrics=['accuracy'])
 
 		def schedule_learning_rate(epoch, learning_rate):
@@ -289,7 +308,7 @@ class MyRunner(object):
 		num_epochs = final_epoch - initial_epoch
 
 		#--------------------
-		self._logger.info('Start training...')
+		if logger: logger.info('Start training...')
 		start_time = time.time()
 		if self._use_keras_data_sequence:
 			# Use Keras sequences.
@@ -306,10 +325,10 @@ class MyRunner(object):
 		else:
 			train_images, train_labels = dataset.train_data
 			history = model.fit(train_images, train_labels, batch_size=batch_size, epochs=num_epochs, validation_split=0.2, shuffle=True, initial_epoch=initial_epoch, class_weight=None, sample_weight=None, callbacks=callbacks)
-		self._logger.info('End training: {} secs.'.format(time.time() - start_time))
+		if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 		#--------------------
-		self._logger.info('Start evaluating...')
+		if logger: logger.info('Start evaluating...')
 		start_time = time.time()
 		if self._use_keras_data_sequence:
 			# Use a Keras sequence.
@@ -323,13 +342,13 @@ class MyRunner(object):
 		else:
 			val_images, val_labels = dataset.test_data
 			score = model.evaluate(val_images, val_labels, batch_size=batch_size, sample_weight=None)
-		self._logger.info('\tValidation: loss = {:.6f}, accuracy = {:.6f}.'.format(*score))
-		self._logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
+		if logger: logger.info('\tValidation: loss = {:.6f}, accuracy = {:.6f}.'.format(*score))
+		if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 		return history.history
 
-	def test(self, model, dataset, batch_size=None, shuffle=False):
-		self._logger.info('Start testing...')
+	def test(self, model, dataset, batch_size=None, shuffle=False, logger=None):
+		if logger: logger.info('Start testing...')
 		start_time = time.time()
 		if self._use_keras_data_sequence:
 			# Use a Keras sequence.
@@ -345,10 +364,10 @@ class MyRunner(object):
 		else:
 			test_images, test_labels = dataset.test_data
 			inferences = model.predict(test_images, batch_size=batch_size)
-		self._logger.info('End testing: {} secs.'.format(time.time() - start_time))
+		if logger: logger.info('End testing: {} secs.'.format(time.time() - start_time))
 
 		if inferences is not None and test_labels is not None:
-			self._logger.info('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+			if logger: logger.info('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 			if dataset.num_classes > 2:
 				inferences = np.argmax(inferences, -1)
@@ -360,12 +379,12 @@ class MyRunner(object):
 				raise ValueError('Invalid number of classes')
 
 			correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
-			self._logger.info('Test: accuracy = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+			if logger: logger.info('Test: accuracy = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
 		else:
-			self._logger.warning('Invalid test results.')
+			if logger: logger.warning('Invalid test results.')
 
-	def infer(self, model, inputs, batch_size=None, shuffle=False):
-		self._logger.info('Start inferring...')
+	def infer(self, model, inputs, batch_size=None, shuffle=False, logger=None):
+		if logger: logger.info('Start inferring...')
 		start_time = time.time()
 		if self._use_keras_data_sequence:
 			# Use a Keras sequence.
@@ -379,28 +398,8 @@ class MyRunner(object):
 			if shuffle:
 				np.random.shuffle(inputs)
 			inferences = model.predict(inputs, batch_size=batch_size)
-		self._logger.info('End inferring: {} secs.'.format(time.time() - start_time))
+		if logger: logger.info('End inferring: {} secs.'.format(time.time() - start_time))
 		return inferences
-
-	def load_model(self, model_filepath):
-		try:
-			self._logger.info('Start loading a model...')
-			start_time = time.time()
-			"""
-			# Load only the architecture of a model.
-			model = tf.keras.models.model_from_json(json_string)
-			#model = tf.keras.models.model_from_yaml(yaml_string)
-			# Load only the weights of a model.
-			model.load_weights(model_weight_filepath)
-			"""
-			# Load a model.
-			model = tf.keras.models.load_model(model_filepath)
-			self._logger.info('End loading a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
-
-			return model
-		except (ImportError, IOError):
-			self._logger.error('Failed to load a model from {}.'.format(model_filepath))
-			return None
 
 #--------------------------------------------------------------------
 
@@ -575,7 +574,7 @@ def main():
 	dataset.show_data_info(logger, visualize=False)
 
 	#--------------------
-	runner = MyRunner(logger)
+	runner = MyRunner()
 
 	if args.train:
 		model_checkpoint_filepath = os.path.join(output_dir_path, 'model_ckpt.{epoch:04d}-{val_loss:.5f}.hdf5')
@@ -584,7 +583,7 @@ def main():
 
 		if is_resumed:
 			# Load a model.
-			model = runner.load_model(model_filepath)
+			model = load_model(model_filepath, logger)
 		else:
 			# Build a model.
 			model = MyModel.create_model(dataset.shape, dataset.num_classes)
@@ -597,7 +596,7 @@ def main():
 			#optimizer = tf.keras.optimizers.RMSprop(learning_rate=0.001, rho=0.9, momentum=0.9, epsilon=1.0e-7, centered=False)
 			#optimizer = tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999, epsilon=None, amsgrad=False)  # Not good.
 
-			history = runner.train(model, criterion, optimizer, dataset, model_checkpoint_filepath, output_dir_path, batch_size, final_epoch, initial_epoch)
+			history = runner.train(model, criterion, optimizer, dataset, model_checkpoint_filepath, output_dir_path, batch_size, final_epoch, initial_epoch, logger)
 
 			model_filepath = os.path.join(output_dir_path, 'best_model_{}.hdf5'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
 			logger.info('Start saving a model...')
@@ -620,15 +619,15 @@ def main():
 
 	if args.test or args.infer:
 		if model_filepath and os.path.exists(model_filepath):
-			model = runner.load_model(model_filepath)
+			model = load_model(model_filepath, logger)
 
 			if args.test and model:
-				runner.test(model, dataset)
+				runner.test(model, dataset, logger=logger)
 
 			if args.infer and model:
 				inf_images, _ = dataset.test_data
 
-				inferences = runner.infer(model, inf_images)
+				inferences = runner.infer(model, inf_images, logger=logger)
 
 				if inferences is not None:
 					logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
