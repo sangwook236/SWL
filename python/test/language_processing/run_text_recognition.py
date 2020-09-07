@@ -1277,10 +1277,13 @@ def show_per_char_accuracy(correct_char_class_count, total_char_class_count, cla
 		if logger: logger.info('Per-character accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
 		if logger: logger.info('Per-character accuracy (< {}) = {}.'.format(acc_thresh, {classes[idx]: round(acc, 2) for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]) if acc < acc_thresh}))
 
-def train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler=None, max_gradient_norm=None, model_params=None, logger=None, device='cpu'):
-	best_measure = 0.0
+def train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler=None, max_gradient_norm=None, model_params=None, logger=None, device='cpu'):
+	if logger: logger.info('Model:\n{}.'.format(model))
+
+	best_performance_measure = 0.0
 	best_model_filepath = None
-	for epoch in range(num_epochs):  # Loop over the dataset multiple times.
+	for epoch in range(initial_epoch, final_epoch):  # Loop over the dataset multiple times.
+		if logger: logger.info('Epoch {}/{}'.format(epoch + 1, final_epoch))
 		start_time = time.time()
 		model.train()
 		running_loss = 0.0
@@ -1304,27 +1307,30 @@ def train_char_recognition_model(model, train_forward_functor, criterion, label_
 			time.sleep(0)
 		if logger: logger.info('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
-		if logger: logger.info('Start evaluating...')
+		if logger: logger.info('Start batch evaluation...')
 		start_time = time.time()
 		model.eval()
 		acc = evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, logger=logger, device=device)
-		if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
+		if logger: logger.info('End batch evaluation: {} secs.'.format(time.time() - start_time))
 
 		if scheduler: scheduler.step()
 
-		if acc >= best_measure:
+		if acc >= best_performance_measure:
 			ckpt_fpath = model_filepath_format.format('_acc{:.4f}_epoch{}'.format(acc, epoch + 1))
 			# Save a checkpoint.
 			save_model(ckpt_fpath, model, logger)
-			best_measure = acc
+			best_performance_measure = acc
 			best_model_filepath = ckpt_fpath
 
 	return model, best_model_filepath
 
-def train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler=None, max_gradient_norm=None, model_params=None, logger=None, device='cpu'):
-	best_measure = 0.0
+def train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler=None, max_gradient_norm=None, model_params=None, logger=None, device='cpu'):
+	if logger: logger.info('Model:\n{}.'.format(model))
+
+	best_performance_measure = 0.0
 	best_model_filepath = None
-	for epoch in range(num_epochs):  # Loop over the dataset multiple times.
+	for epoch in range(initial_epoch, final_epoch):  # Loop over the dataset multiple times.
+		if logger: logger.info('Epoch {}/{}'.format(epoch + 1, final_epoch))
 		start_time = time.time()
 		model.train()
 		running_loss = 0.0
@@ -1348,19 +1354,19 @@ def train_text_recognition_model(model, criterion, train_forward_functor, infer_
 			time.sleep(0)
 		if logger: logger.info('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
 
-		if logger: logger.info('Start evaluating...')
+		if logger: logger.info('Start batch evaluation...')
 		start_time = time.time()
 		model.eval()
 		acc = evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, logger=logger, device=device)
-		if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
+		if logger: logger.info('End batch evaluation: {} secs.'.format(time.time() - start_time))
 
 		if scheduler: scheduler.step()
 
-		if acc >= best_measure:
+		if acc >= best_performance_measure:
 			ckpt_fpath = model_filepath_format.format('_acc{:.4f}_epoch{}'.format(acc, epoch + 1))
 			# Save a checkpoint.
 			save_model(ckpt_fpath, model, logger)
-			best_measure = acc
+			best_performance_measure = acc
 			best_model_filepath = ckpt_fpath
 
 	return model, best_model_filepath
@@ -2922,6 +2928,7 @@ def train_character_recognizer(output_dir_path, model_filepath_to_load=None, fon
 	train_test_ratio = 0.8
 	shuffle = True
 	num_workers = 8
+	initial_epoch, final_epoch = 0, num_epochs
 	log_print_freq = 1000
 
 	is_model_loaded = model_filepath_to_load is not None
@@ -3011,7 +3018,7 @@ def train_character_recognizer(output_dir_path, model_filepath_to_load=None, fon
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -3061,6 +3068,7 @@ def train_character_recognizer_using_mixup(output_dir_path, model_filepath_to_lo
 	train_test_ratio = 0.8
 	shuffle = True
 	num_workers = 8
+	initial_epoch, final_epoch = 0, num_epochs
 	log_print_freq = 1000
 
 	is_model_loaded = model_filepath_to_load is not None
@@ -3150,7 +3158,7 @@ def train_character_recognizer_using_mixup(output_dir_path, model_filepath_to_lo
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -3200,6 +3208,7 @@ def train_word_recognizer_based_on_rare1(output_dir_path, model_filepath_to_load
 	train_test_ratio = 0.8
 	shuffle = True
 	num_workers = 8
+	initial_epoch, final_epoch = 0, num_epochs
 	log_print_freq = 1000
 
 	is_model_loaded = model_filepath_to_load is not None
@@ -3326,7 +3335,7 @@ def train_word_recognizer_based_on_rare1(output_dir_path, model_filepath_to_load
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -3376,6 +3385,7 @@ def train_word_recognizer_based_on_rare2(output_dir_path, model_filepath_to_load
 	train_test_ratio = 0.8
 	shuffle = True
 	num_workers = 8
+	initial_epoch, final_epoch = 0, num_epochs
 	log_print_freq = 1000
 
 	is_model_loaded = model_filepath_to_load is not None
@@ -3488,7 +3498,7 @@ def train_word_recognizer_based_on_rare2(output_dir_path, model_filepath_to_load
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -3539,6 +3549,7 @@ def train_word_recognizer_based_on_aster(output_dir_path, model_filepath_to_load
 	train_test_ratio = 0.8
 	shuffle = True
 	num_workers = 8
+	initial_epoch, final_epoch = 0, num_epochs
 	log_print_freq = 1000
 
 	is_model_loaded = model_filepath_to_load is not None
@@ -3650,7 +3661,7 @@ def train_word_recognizer_based_on_aster(output_dir_path, model_filepath_to_load
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, None, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_text_recognition_model(model, None, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -3703,6 +3714,7 @@ def train_word_recognizer_based_on_opennmt(output_dir_path, model_filepath_to_lo
 	train_test_ratio = 0.8
 	shuffle = True
 	num_workers = 8
+	initial_epoch, final_epoch = 0, num_epochs
 	log_print_freq = 1000
 
 	is_model_loaded = model_filepath_to_load is not None
@@ -3814,7 +3826,7 @@ def train_word_recognizer_based_on_opennmt(output_dir_path, model_filepath_to_lo
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -3865,6 +3877,7 @@ def train_word_recognizer_based_on_rare1_and_opennmt(output_dir_path, model_file
 	train_test_ratio = 0.8
 	shuffle = True
 	num_workers = 8
+	initial_epoch, final_epoch = 0, num_epochs
 	log_print_freq = 1000
 
 	is_model_loaded = model_filepath_to_load is not None
@@ -3975,7 +3988,7 @@ def train_word_recognizer_based_on_rare1_and_opennmt(output_dir_path, model_file
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -4026,6 +4039,7 @@ def train_word_recognizer_based_on_rare2_and_opennmt(output_dir_path, model_file
 	train_test_ratio = 0.8
 	shuffle = True
 	num_workers = 8
+	initial_epoch, final_epoch = 0, num_epochs
 	log_print_freq = 1000
 
 	is_model_loaded = model_filepath_to_load is not None
@@ -4136,7 +4150,7 @@ def train_word_recognizer_based_on_rare2_and_opennmt(output_dir_path, model_file
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -4187,6 +4201,7 @@ def train_word_recognizer_based_on_aster_and_opennmt(output_dir_path, model_file
 	train_test_ratio = 0.8
 	shuffle = True
 	num_workers = 8
+	initial_epoch, final_epoch = 0, num_epochs
 	log_print_freq = 1000
 
 	is_model_loaded = model_filepath_to_load is not None
@@ -4297,7 +4312,7 @@ def train_word_recognizer_based_on_aster_and_opennmt(output_dir_path, model_file
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -4347,6 +4362,7 @@ def train_word_recognizer_using_mixup(output_dir_path, model_filepath_to_load=No
 	train_test_ratio = 0.8
 	shuffle = True
 	num_workers = 8
+	initial_epoch, final_epoch = 0, num_epochs
 	log_print_freq = 1000
 
 	is_model_loaded = model_filepath_to_load is not None
@@ -4473,7 +4489,7 @@ def train_word_recognizer_using_mixup(output_dir_path, model_filepath_to_load=No
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -4530,6 +4546,7 @@ def train_textline_recognizer_based_on_opennmt(output_dir_path, model_filepath_t
 	train_test_ratio = 0.8
 	shuffle = True
 	num_workers = 8
+	initial_epoch, final_epoch = 0, num_epochs
 	log_print_freq = 1000
 
 	is_model_loaded = model_filepath_to_load is not None
@@ -4641,7 +4658,7 @@ def train_textline_recognizer_based_on_opennmt(output_dir_path, model_filepath_t
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -4696,6 +4713,7 @@ def train_textline_recognizer_based_on_transformer(output_dir_path, model_filepa
 	train_test_ratio = 0.8
 	shuffle = True
 	num_workers = 8
+	initial_epoch, final_epoch = 0, num_epochs
 	log_print_freq = 1000
 
 	is_model_loaded = model_filepath_to_load is not None
@@ -4809,7 +4827,7 @@ def train_textline_recognizer_based_on_transformer(output_dir_path, model_filepa
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, num_epochs, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -5583,7 +5601,7 @@ def parse_command_line_options():
 		'--epoch',
 		type=int,
 		help='Number of epochs to train',
-		default=40
+		default=20
 	)
 	parser.add_argument(
 		'-b',
@@ -5751,7 +5769,7 @@ def main():
 #--------------------------------------------------------------------
 
 # Usage:
-#	python run_text_recognition.py --train --eval --infer --target_type textline --model_type transformer --max_len 50 --font_type kor-large --epoch 40 --batch 64 --gpu 0 --log text_recognition --log_dir ./log
+#	python run_text_recognition.py --train --eval --infer --target_type textline --model_type transformer --max_len 50 --font_type kor-large --epoch 40 --batch 64 --out_dir text_recognition_outputs --log text_recognition --log_dir ./log --gpu 0
 
 if '__main__' == __name__:
 	main()
