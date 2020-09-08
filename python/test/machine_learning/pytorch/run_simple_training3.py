@@ -148,7 +148,7 @@ class MyRunner(object):
 		best_performance_measure = 0
 		best_model_filepath = None
 		for epoch in range(initial_epoch, final_epoch):
-			if logger: logger.info('Epoch {}/{}'.format(epoch + 1, final_epoch))
+			if logger: logger.info('Epoch {}/{}:'.format(epoch + 1, final_epoch))
 
 			current_learning_rate = scheduler.get_lr() if scheduler else 0.0
 			need_hour, need_mins, need_secs = utils.convert_secs2time(epoch_time.avg * (final_epoch - epoch))

@@ -1283,7 +1283,7 @@ def train_char_recognition_model(model, train_forward_functor, criterion, label_
 	best_performance_measure = 0.0
 	best_model_filepath = None
 	for epoch in range(initial_epoch, final_epoch):  # Loop over the dataset multiple times.
-		if logger: logger.info('Epoch {}/{}'.format(epoch + 1, final_epoch))
+		if logger: logger.info('Epoch {}/{}.'.format(epoch + 1, final_epoch))
 		start_time = time.time()
 		model.train()
 		running_loss = 0.0
@@ -1305,13 +1305,13 @@ def train_char_recognition_model(model, train_forward_functor, criterion, label_
 
 			sys.stdout.flush()
 			time.sleep(0)
-		if logger: logger.info('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
+		if logger: logger.info('Epoch {}/{} completed: {} secs.'.format(epoch + 1, final_epoch, time.time() - start_time))
 
-		if logger: logger.info('Start batch evaluation...')
+		if logger: logger.info('Start validation...')
 		start_time = time.time()
 		model.eval()
 		acc = evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, logger=logger, device=device)
-		if logger: logger.info('End batch evaluation: {} secs.'.format(time.time() - start_time))
+		if logger: logger.info('End validation: {} secs.'.format(time.time() - start_time))
 
 		if scheduler: scheduler.step()
 
@@ -1330,7 +1330,7 @@ def train_text_recognition_model(model, criterion, train_forward_functor, infer_
 	best_performance_measure = 0.0
 	best_model_filepath = None
 	for epoch in range(initial_epoch, final_epoch):  # Loop over the dataset multiple times.
-		if logger: logger.info('Epoch {}/{}'.format(epoch + 1, final_epoch))
+		if logger: logger.info('Epoch {}/{}.'.format(epoch + 1, final_epoch))
 		start_time = time.time()
 		model.train()
 		running_loss = 0.0
@@ -1352,13 +1352,13 @@ def train_text_recognition_model(model, criterion, train_forward_functor, infer_
 
 			sys.stdout.flush()
 			time.sleep(0)
-		if logger: logger.info('Epoch {} completed: {} secs.'.format(epoch + 1, time.time() - start_time))
+		if logger: logger.info('Epoch {}/{} completed: {} secs.'.format(epoch + 1, final_epoch, time.time() - start_time))
 
-		if logger: logger.info('Start batch evaluation...')
+		if logger: logger.info('Start validation...')
 		start_time = time.time()
 		model.eval()
 		acc = evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, logger=logger, device=device)
-		if logger: logger.info('End batch evaluation: {} secs.'.format(time.time() - start_time))
+		if logger: logger.info('End validation: {} secs.'.format(time.time() - start_time))
 
 		if scheduler: scheduler.step()
 
@@ -2906,8 +2906,8 @@ def build_transformer_model(label_converter, image_height, image_width, image_ch
 	return model, infer, train_forward, criterion
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
-def train_character_recognizer(output_dir_path, model_filepath_to_load=None, font_type='kor-large', num_epochs=100, batch_size=128, logger=None, device='cpu'):
-	image_height, image_width, image_channel = 64, 64, 3
+def train_character_recognizer(image_shape, output_dir_path, model_filepath_to_load=None, font_type='kor-large', num_epochs=100, batch_size=128, logger=None, device='cpu'):
+	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
@@ -3046,8 +3046,8 @@ def train_character_recognizer(output_dir_path, model_filepath_to_load=None, fon
 	return model_filepath
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
-def train_character_recognizer_using_mixup(output_dir_path, model_filepath_to_load=None, font_type='kor-large', num_epochs=100, batch_size=128, logger=None, device='cpu'):
-	image_height, image_width, image_channel = 64, 64, 3
+def train_character_recognizer_using_mixup(image_shape, output_dir_path, model_filepath_to_load=None, font_type='kor-large', num_epochs=100, batch_size=128, logger=None, device='cpu'):
+	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
@@ -3185,10 +3185,8 @@ def train_character_recognizer_using_mixup(output_dir_path, model_filepath_to_lo
 
 	return model_filepath
 
-def train_word_recognizer_based_on_rare1(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
-	#image_height, image_width, image_channel = 32, 100, 3
-	image_height, image_width, image_channel = 64, 640, 3
-	#image_height, image_width, image_channel = 64, 1280, 3
+def train_word_recognizer_based_on_rare1(image_shape, output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
+	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
@@ -3362,10 +3360,8 @@ def train_word_recognizer_based_on_rare1(output_dir_path, model_filepath_to_load
 
 	return model_filepath
 
-def train_word_recognizer_based_on_rare2(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
-	#image_height, image_width, image_channel = 32, 100, 3
-	image_height, image_width, image_channel = 64, 640, 3
-	#image_height, image_width, image_channel = 64, 1280, 3
+def train_word_recognizer_based_on_rare2(image_shape, output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
+	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
@@ -3525,10 +3521,8 @@ def train_word_recognizer_based_on_rare2(output_dir_path, model_filepath_to_load
 
 	return model_filepath
 
-def train_word_recognizer_based_on_aster(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
-	#image_height, image_width, image_channel = 32, 100, 3
-	image_height, image_width, image_channel = 64, 640, 3
-	#image_height, image_width, image_channel = 64, 1280, 3
+def train_word_recognizer_based_on_aster(image_shape, output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
+	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
@@ -3688,10 +3682,8 @@ def train_word_recognizer_based_on_aster(output_dir_path, model_filepath_to_load
 
 	return model_filepath
 
-def train_word_recognizer_based_on_opennmt(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
-	#image_height, image_width, image_channel = 32, 100, 3
-	image_height, image_width, image_channel = 64, 640, 3
-	#image_height, image_width, image_channel = 64, 1280, 3
+def train_word_recognizer_based_on_opennmt(image_shape, output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
+	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
@@ -3853,10 +3845,8 @@ def train_word_recognizer_based_on_opennmt(output_dir_path, model_filepath_to_lo
 
 	return model_filepath
 
-def train_word_recognizer_based_on_rare1_and_opennmt(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
-	#image_height, image_width, image_channel = 32, 100, 3
-	image_height, image_width, image_channel = 64, 640, 3
-	#image_height, image_width, image_channel = 64, 1280, 3
+def train_word_recognizer_based_on_rare1_and_opennmt(image_shape, output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
+	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
@@ -4015,10 +4005,8 @@ def train_word_recognizer_based_on_rare1_and_opennmt(output_dir_path, model_file
 
 	return model_filepath
 
-def train_word_recognizer_based_on_rare2_and_opennmt(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
-	#image_height, image_width, image_channel = 32, 100, 3
-	image_height, image_width, image_channel = 64, 640, 3
-	#image_height, image_width, image_channel = 64, 1280, 3
+def train_word_recognizer_based_on_rare2_and_opennmt(image_shape, output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
+	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
@@ -4177,10 +4165,8 @@ def train_word_recognizer_based_on_rare2_and_opennmt(output_dir_path, model_file
 
 	return model_filepath
 
-def train_word_recognizer_based_on_aster_and_opennmt(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
-	#image_height, image_width, image_channel = 32, 100, 3
-	image_height, image_width, image_channel = 64, 640, 3
-	#image_height, image_width, image_channel = 64, 1280, 3
+def train_word_recognizer_based_on_aster_and_opennmt(image_shape, output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
+	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
@@ -4339,10 +4325,8 @@ def train_word_recognizer_based_on_aster_and_opennmt(output_dir_path, model_file
 
 	return model_filepath
 
-def train_word_recognizer_using_mixup(output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
-	image_height, image_width, image_channel = 32, 100, 3
-	#image_height, image_width, image_channel = 64, 640, 3
-	#image_height, image_width, image_channel = 64, 1280, 3
+def train_word_recognizer_using_mixup(image_shape, output_dir_path, model_filepath_to_load=None, max_word_len=20, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
+	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
@@ -4516,11 +4500,8 @@ def train_word_recognizer_using_mixup(output_dir_path, model_filepath_to_load=No
 
 	return model_filepath
 
-def train_textline_recognizer_based_on_opennmt(output_dir_path, model_filepath_to_load=None, max_textline_len=30, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
-	#image_height, image_width, image_channel = 32, 100, 3
-	#image_height, image_width, image_channel = 64, 640, 3
-	image_height, image_width, image_channel = 64, 1280, 3
-	#image_height, image_width, image_channel = 64, 1920, 3
+def train_textline_recognizer_based_on_opennmt(image_shape, output_dir_path, model_filepath_to_load=None, max_textline_len=30, font_type='kor-large', num_epochs=20, batch_size=64, logger=None, device='cpu'):
+	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
@@ -4685,11 +4666,8 @@ def train_textline_recognizer_based_on_opennmt(output_dir_path, model_filepath_t
 
 	return model_filepath
 
-def train_textline_recognizer_based_on_transformer(output_dir_path, model_filepath_to_load=None, max_textline_len=50, font_type='kor-large', num_epochs=40, batch_size=64, logger=None, device='cpu'):
-	#image_height, image_width, image_channel = 32, 100, 3
-	#image_height, image_width, image_channel = 64, 640, 3
-	image_height, image_width, image_channel = 64, 1280, 3
-	#image_height, image_width, image_channel = 64, 1920, 3
+def train_textline_recognizer_based_on_transformer(image_shape, output_dir_path, model_filepath_to_load=None, max_textline_len=50, font_type='kor-large', num_epochs=40, batch_size=64, logger=None, device='cpu'):
+	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
@@ -4854,13 +4832,10 @@ def train_textline_recognizer_based_on_transformer(output_dir_path, model_filepa
 
 	return model_filepath
 
-def evaluate_text_recognizer_using_aihub_data(target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, font_type, batch_size, is_separate_pad_id_used=True, logger=None, device='cpu'):
+def evaluate_text_recognizer_using_aihub_data(image_shape, target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, font_type, batch_size, is_separate_pad_id_used=True, logger=None, device='cpu'):
 	assert model_filepath_to_load is not None
 
-	#image_height, image_width, image_channel = 32, 100, 3
-	image_height, image_width, image_channel = 64, 640, 3
-	#image_height, image_width, image_channel = 64, 1280, 3
-	#image_height, image_width, image_channel = 64, 1920, 3
+	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
@@ -4980,13 +4955,10 @@ def evaluate_text_recognizer_using_aihub_data(target_type, model_type, model_fil
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, logger=logger, device=device)
 	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def recognize_text_using_aihub_data(target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, font_type, batch_size, is_separate_pad_id_used=True, logger=None, device='cpu'):
+def recognize_text_using_aihub_data(image_shape, target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, font_type, batch_size, is_separate_pad_id_used=True, logger=None, device='cpu'):
 	assert model_filepath_to_load is not None
 
-	#image_height, image_width, image_channel = 32, 100, 3
-	image_height, image_width, image_channel = 64, 640, 3
-	#image_height, image_width, image_channel = 64, 1280, 3
-	#image_height, image_width, image_channel = 64, 1920, 3
+	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
@@ -5117,14 +5089,11 @@ def recognize_text_using_aihub_data(target_type, model_type, model_filepath_to_l
 	infer_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, batch_size=batch_size, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, logger=logger, device=device)
 	if logger: logger.info('End inferring: {} secs.'.format(time.time() - start_time))
 
-def recognize_text_one_by_one_using_aihub_data(target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, font_type, is_separate_pad_id_used=True, logger=None, device='cpu'):
+def recognize_text_one_by_one_using_aihub_data(image_shape, target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, font_type, is_separate_pad_id_used=True, logger=None, device='cpu'):
 	assert model_filepath_to_load is not None
 	batch_size = 1
 
-	#image_height, image_width, image_channel = 32, 100, 3
-	image_height, image_width, image_channel = 64, 640, 3
-	#image_height, image_width, image_channel = 64, 1280, 3
-	#image_height, image_width, image_channel = 64, 1920, 3
+	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
@@ -5253,12 +5222,12 @@ def recognize_text_one_by_one_using_aihub_data(target_type, model_type, model_fi
 	infer_one_by_one_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, logger=logger, device=device)
 	if logger: logger.info('End inferring: {} secs.'.format(time.time() - start_time))
 
-def recognize_character_using_craft(output_dir_path, is_cuda_used, logger=None, device='cpu'):
+def recognize_character_using_craft(image_shape, output_dir_path, is_cuda_used, logger=None, device='cpu'):
 	import craft.imgproc as imgproc
 	#import craft.file_utils as file_utils
 	import craft.test_utils as test_utils
 
-	image_height, image_width, image_channel = 64, 64, 3
+	image_height, image_width, image_channel = image_shape
 
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
@@ -5370,12 +5339,12 @@ def recognize_character_using_craft(output_dir_path, is_cuda_used, logger=None, 
 	else:
 		if logger: logger.info('No text detected.')
 
-def recognize_word_using_craft(output_dir_path, is_cuda_used, logger=None, device='cpu'):
+def recognize_word_using_craft(image_shape, output_dir_path, is_cuda_used, logger=None, device='cpu'):
 	import craft.imgproc as imgproc
 	#import craft.file_utils as file_utils
 	import craft.test_utils as test_utils
 
-	image_height, image_width, image_channel = 64, 64, 3
+	image_height, image_width, image_channel = image_shape
 
 	num_fiducials = 20  # The number of fiducial points of TPS-STN.
 	input_channel = image_channel  # The number of input channel of feature extractor.
@@ -5533,6 +5502,14 @@ def parse_command_line_options():
 		help='Specify whether to infer by a trained model'
 	)
 	parser.add_argument(
+		'-is',
+		'--image_shape',
+		type=str,
+		#help='Image shape, HxWxC where H: height, W: width, C: channel = {1, 3}',
+		help='Image shape, HxWxC where H: height, W: width, C: channel = 3',
+		default='64x1280x3'
+	)
+	parser.add_argument(
 		'-tt',
 		'--target_type',
 		choices={'char', 'word', 'textline'},
@@ -5681,6 +5658,15 @@ def main():
 	if not args.train and not args.eval and not args.infer:
 		logger.error('At least one of command line options "--train", "--eval", and "--infer" has to be specified.')
 		return
+	image_shape = list(int(sz) for sz in args.image_shape.split('x'))
+	if len(image_shape) != 3:
+		logger.error('Invalid image shape, {}: The image shape has the form of HxWxC.'.format(args.image_shape))
+		return
+	#if image_shape[2] not in [1, 3]:
+	#	logger.error('Invalid image channel, {}: The image channel has to be 1 or 3.'.format(image_shape[2]))
+	if image_shape[2] != 3:
+		logger.error('Invalid image channel, {}: The image channel has to be 3.'.format(image_shape[2]))
+		return
 
 	#if args.gpu:
 	#	os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
@@ -5709,41 +5695,41 @@ def main():
 
 		if args.target_type == 'char':
 			if args.model_type == 'char':
-				model_filepath = train_character_recognizer(output_dir_path, model_filepath, args.font_type, args.epoch, args.batch, logger, device)
+				model_filepath = train_character_recognizer(image_shape, output_dir_path, model_filepath, args.font_type, args.epoch, args.batch, logger, device)
 			elif args.model_type == 'char-mixup':
-				model_filepath = train_character_recognizer_using_mixup(output_dir_path, model_filepath, args.font_type, args.epoch, args.batch, logger, device)
+				model_filepath = train_character_recognizer_using_mixup(image_shape, output_dir_path, model_filepath, args.font_type, args.epoch, args.batch, logger, device)
 			else:
 				raise ValueError('Invalid character model type, {}'.format(args.model_type))
 
 		#--------------------
 		elif args.target_type == 'word':
 			if args.model_type == 'rare1':
-				model_filepath = train_word_recognizer_based_on_rare1(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #1.
+				model_filepath = train_word_recognizer_based_on_rare1(image_shape, output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #1.
 			elif args.model_type == 'rare2':
-				model_filepath = train_word_recognizer_based_on_rare2(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #2.
+				model_filepath = train_word_recognizer_based_on_rare2(image_shape, output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #2.
 			elif args.model_type == 'aster':
-				model_filepath = train_word_recognizer_based_on_aster(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use ASTER.
+				model_filepath = train_word_recognizer_based_on_aster(image_shape, output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use ASTER.
 			elif args.model_type == 'rare1-mixup':
-				model_filepath = train_word_recognizer_using_mixup(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #1. Not working.
+				model_filepath = train_word_recognizer_using_mixup(image_shape, output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #1. Not working.
 
 			elif args.model_type == 'onmt':
-				model_filepath = train_word_recognizer_based_on_opennmt(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use OpenNMT.
+				model_filepath = train_word_recognizer_based_on_opennmt(image_shape, output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use OpenNMT.
 
 			elif args.model_type == 'rare1+onmt':
-				model_filepath = train_word_recognizer_based_on_rare1_and_opennmt(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #1 (encoder) + OpenNMT (decoder).
+				model_filepath = train_word_recognizer_based_on_rare1_and_opennmt(image_shape, output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #1 (encoder) + OpenNMT (decoder).
 			elif args.model_type == 'rare2+onmt':
-				model_filepath = train_word_recognizer_based_on_rare2_and_opennmt(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #2 (encoder) + OpenNMT (decoder).
+				model_filepath = train_word_recognizer_based_on_rare2_and_opennmt(image_shape, output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #2 (encoder) + OpenNMT (decoder).
 			elif args.model_type == 'aster+onmt':
-				model_filepath = train_word_recognizer_based_on_aster_and_opennmt(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use ASTER (encoder) + OpenNMT (decoder).
+				model_filepath = train_word_recognizer_based_on_aster_and_opennmt(image_shape, output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use ASTER (encoder) + OpenNMT (decoder).
 			else:
 				raise ValueError('Invalid word model type, {}'.format(args.model_type))
 
 		#--------------------
 		elif args.target_type == 'textline':
 			if args.model_type == 'onmt':
-				model_filepath = train_textline_recognizer_based_on_opennmt(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use OpenNMT.
+				model_filepath = train_textline_recognizer_based_on_opennmt(image_shape, output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use OpenNMT.
 			elif args.model_type == 'transformer':
-				model_filepath = train_textline_recognizer_based_on_transformer(output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use Transformer.
+				model_filepath = train_textline_recognizer_based_on_transformer(image_shape, output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use Transformer.
 			else:
 				raise ValueError('Invalid text line model type, {}'.format(args.model_type))
 
@@ -5752,24 +5738,24 @@ def main():
 
 	#--------------------
 	if args.eval and model_filepath:
-		evaluate_text_recognizer_using_aihub_data(args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, args.font_type, args.batch, is_separate_pad_id_used=True, logger=logger, device=device)
+		evaluate_text_recognizer_using_aihub_data(image_shape, args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, args.font_type, args.batch, is_separate_pad_id_used=True, logger=logger, device=device)
 
 	#--------------------
 	if args.infer and model_filepath:
-		recognize_text_using_aihub_data(args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, args.font_type, args.batch, is_separate_pad_id_used=True, logger=logger, device=device)
-		#recognize_text_one_by_one_using_aihub_data(args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, args.font_type, is_separate_pad_id_used=True, logger=logger, device=device)  # batch_size = 1.
+		recognize_text_using_aihub_data(image_shape, args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, args.font_type, args.batch, is_separate_pad_id_used=True, logger=logger, device=device)
+		#recognize_text_one_by_one_using_aihub_data(image_shape, args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, args.font_type, is_separate_pad_id_used=True, logger=logger, device=device)  # batch_size = 1.
 
 	#--------------------
 	# Recognize text using CRAFT (scene text detector) + character recognizer.
-	#recognize_character_using_craft(output_dir_path, int(args.gpu) >= 0, logger, device)
+	#recognize_character_using_craft(image_shape, output_dir_path, int(args.gpu) >= 0, logger, device)
 
 	# Recognize word using CRAFT (scene text detector) + word recognizer.
-	#recognize_word_using_craft(output_dir_path, int(args.gpu) >= 0, logger, device)  # Use RARE #1.
+	#recognize_word_using_craft(image_shape, output_dir_path, int(args.gpu) >= 0, logger, device)  # Use RARE #1.
 
 #--------------------------------------------------------------------
 
 # Usage:
-#	python run_text_recognition.py --train --eval --infer --target_type textline --model_type transformer --max_len 50 --font_type kor-large --epoch 40 --batch 64 --out_dir text_recognition_outputs --log text_recognition --log_dir ./log --gpu 0
+#	python run_text_recognition.py --train --eval --infer --image_shape 64x1280x3 --target_type textline --model_type transformer --max_len 50 --font_type kor-large --epoch 40 --batch 64 --out_dir text_recognition_outputs --log text_recognition --log_dir ./log --gpu 0
 
 if '__main__' == __name__:
 	main()

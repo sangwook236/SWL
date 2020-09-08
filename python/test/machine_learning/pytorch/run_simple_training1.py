@@ -120,7 +120,7 @@ class MyRunner(object):
 		best_performance_measure = 0
 		best_model_filepath = None
 		for epoch in range(initial_epoch, final_epoch):
-			if logger: logger.info('Epoch {}/{}'.format(epoch, final_epoch - 1))
+			if logger: logger.info('Epoch {}/{}:'.format(epoch, final_epoch - 1))
 
 			#--------------------
 			start_time = time.time()
