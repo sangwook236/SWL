@@ -8,8 +8,7 @@ import os, shutil, collections, pickle, argparse, logging, logging.handlers, tim
 import numpy as np
 import torch
 import torchvision
-#import swl.machine_learning.util as swl_ml_util
-import utils
+import swl.machine_learning.util as swl_ml_util
 
 #--------------------------------------------------------------------
 
@@ -114,7 +113,7 @@ class MyRunner(object):
 		train_history_filepath = os.path.join(output_dir_path, 'train_history.pkl')
 		train_result_image_filepath = os.path.join(output_dir_path, 'results.png')
 
-		recorder = utils.RecorderMeter(final_epoch)
+		recorder = swl_ml_util.RecorderMeter(final_epoch)
 		history = {
 			'acc': list(),
 			'loss': list(),
@@ -125,52 +124,50 @@ class MyRunner(object):
 
 		#--------------------
 		if logger: logger.info('Start training...')
-		start_train_time = start_epoch_time = time.time()
-		epoch_time = utils.AverageMeter()
+		start_train_time = time.time()
+		epoch_time = swl_ml_util.AverageMeter()
 		best_performance_measure = 0
 		best_model_filepath = None
 		for epoch in range(initial_epoch, final_epoch):
 			if logger: logger.info('Epoch {}/{}:'.format(epoch + 1, final_epoch))
+			start_epoch_time = time.time()
 
 			current_learning_rate = scheduler.get_lr() if scheduler else 0.0
-			need_hour, need_mins, need_secs = utils.convert_secs2time(epoch_time.avg * (final_epoch - epoch))
+			need_hour, need_mins, need_secs = swl_ml_util.convert_secs2time(epoch_time.avg * (final_epoch - epoch))
 			need_time = '[Need: {:02d}:{:02d}:{:02d}]'.format(need_hour, need_mins, need_secs)
-			if logger: logger.info('==>>{:s} [Epoch={:03d}/{:03d}] {:s} [learning_rate={:6.4f}]'.format(utils.time_string(), epoch + 1, final_epoch, need_time, current_learning_rate) \
+			if logger: logger.info('==>>{:s} [Epoch={:03d}/{:03d}] {:s} [learning_rate={:6.4f}]'.format(swl_ml_util.time_string(), epoch + 1, final_epoch, need_time, current_learning_rate) \
 				+ ' [Best : Accuracy={:.2f}, Error={:.2f}].'.format(recorder.max_accuracy(False), 100 - recorder.max_accuracy(False)))
 
 			#--------------------
-			#start_time = time.time()
+			start_time = time.time()
 			losses, top1, top5 = self._train(model, criterion, optimizer, train_dataloader, epoch, log_print_freq, logger, device)
-			train_loss, train_acc = losses.avg, top1.avg
-			if logger: logger.info('\tTrain:      Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f} Error@1 {error1:.3f}.'.format(top1=top1, top5=top5, error1=100 - top1.avg))
-			#if logger: logger.info('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
+			if logger: logger.info('\tTrain:      Prec@1 = {top1.avg:.3f}, Prec@5 = {top5.avg:.3f}, Error@1 = {error1:.3f}, Loss = {losses.avg:.3f}: {elapsed_time:.6f} secs.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
 
+			train_loss, train_acc = losses.avg, top1.avg
 			history['loss'].append(train_loss)
 			history['acc'].append(train_acc)
 
 			#--------------------
-			#start_time = time.time()
+			start_time = time.time()
 			losses, top1, top5 = self._evaluate(model, criterion, test_dataloader, logger, device)
-			val_loss, val_acc = losses.avg, top1.avg
-			if logger: logger.info('\tValidation: Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f} Error@1 {error1:.3f} Loss: {losses.avg:.3f}.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses))
-			#if logger: logger.info('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
+			if logger: logger.info('\tValidation: Prec@1 = {top1.avg:.3f}, Prec@5 = {top5.avg:.3f}, Error@1 = {error1:.3f}, Loss = {losses.avg:.3f}: {elapsed_time:.6f} secs.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
 
+			val_loss, val_acc = losses.avg, top1.avg
 			history['val_loss'].append(val_loss)
 			history['val_acc'].append(val_acc)
 
 			if scheduler: scheduler.step()
 
-			#--------------------
-			dummy = recorder.update(epoch, train_loss, train_acc, val_loss, val_acc)
+			# Measure elapsed time.
+			epoch_time.update(time.time() - start_epoch_time)
 
+			#--------------------
 			if val_acc > best_performance_measure:
 				best_model_filepath = model_checkpoint_filepath.format(epoch=epoch, val_acc=val_acc)
 				save_model(best_model_filepath, model, logger)
 				best_performance_measure = val_acc
 
-			# Measure elapsed time.
-			epoch_time.update(time.time() - start_epoch_time)
-			start_epoch_time = time.time()
+			dummy = recorder.update(epoch, train_loss, train_acc, val_loss, val_acc)
 			recorder.plot_curve(train_result_image_filepath)
 		
 			#import pdb; pdb.set_trace()
@@ -181,7 +178,7 @@ class MyRunner(object):
 			train_log['val_acc'] = history['val_acc']
 
 			pickle.dump(train_log, open(train_history_filepath, 'wb'))
-			utils.plotting(output_dir_path, train_history_filepath)
+			swl_ml_util.plotting(output_dir_path, train_history_filepath)
 
 			sys.stdout.flush()
 			time.sleep(0)
@@ -230,12 +227,13 @@ class MyRunner(object):
 	def _train(self, model, criterion, optimizer, dataloader, epoch, log_print_freq, logger, device):
 		model.train()  # Switch to train mode.
 
-		batch_time, data_time = utils.AverageMeter(), utils.AverageMeter()
-		losses, top1, top5 = utils.AverageMeter(), utils.AverageMeter(), utils.AverageMeter()
+		#start_epoch_time = time.time()
+		batch_time, data_time = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
+		losses, top1, top5 = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
 		#running_loss = 0.0
-		#start_time = start_batch_time = time.time()
-		start_batch_time = time.time()
 		for batch_step, (batch_inputs, batch_outputs) in enumerate(dataloader):
+			start_batch_time = time.time()
+
 			"""
 			# One-hot encoding.
 			batch_outputs_onehot = torch.LongTensor(batch_outputs.shape[0], self._dataset.num_classes)
@@ -268,9 +266,12 @@ class MyRunner(object):
 			#for p in model.parameters():
 			#	p.data.add_(-lr, p.grad.data)  # p.data = p.data + (-lr * p.grad.data).
 
+			# Measure elapsed time.
+			batch_time.update(time.time() - start_batch_time)
+
 			# Measure accuracy and record loss.
 			#model_outputs = torch.argmax(model_outputs, -1)
-			prec1, prec5 = utils.accuracy(model_outputs, batch_outputs, topk=(1, 5))
+			prec1, prec5 = swl_ml_util.accuracy(model_outputs, batch_outputs, topk=(1, 5))
 			losses.update(loss.item(), batch_inputs.size(0))
 			top1.update(prec1.item(), batch_inputs.size(0))
 			top5.update(prec5.item(), batch_inputs.size(0))
@@ -279,13 +280,9 @@ class MyRunner(object):
 			# Print statistics.
 			running_loss += loss.item()
 			if (batch_step + 1) % 100 == 0:
-				if logger: logger.info('\tStep {}: loss = {:.6f}: {} secs.'.format(batch_step + 1, running_loss / 100, time.time() - start_time))
+				if logger: logger.info('\tStep {}: loss = {:.6f}: {} secs.'.format(batch_step + 1, running_loss / 100, time.time() - start_epoch_time))
 				running_loss = 0.0
 			"""
-
-			# Measure elapsed time.
-			batch_time.update(time.time() - start_batch_time)
-			start_batch_time = time.time()
 
 			if (batch_step + 1) % log_print_freq == 0:
 				if logger: logger.info('\tEpoch: [{:03d}][{:03d}/{:03d}]   '
@@ -295,16 +292,16 @@ class MyRunner(object):
 					'Prec@1 {top1.val:.3f} ({top1.avg:.3f})   '
 					'Prec@5 {top5.val:.3f} ({top5.avg:.3f})   '.format(
 					epoch, batch_step + 1, len(dataloader), batch_time=batch_time,
-					data_time=data_time, loss=losses, top1=top1, top5=top5) + utils.time_string())
+					data_time=data_time, loss=losses, top1=top1, top5=top5) + swl_ml_util.time_string())
 		return losses, top1, top5
 
 	def _evaluate(self, model, criterion, dataloader, logger, device):
 		model.eval()  # Switch to evaluation mode.
 
-		losses, top1, top5 = utils.AverageMeter(), utils.AverageMeter(), utils.AverageMeter()
+		losses, top1, top5 = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
 		with torch.no_grad():
 			show = True
-			for batch_step, (batch_inputs, batch_outputs) in enumerate(dataloader):
+			for batch_inputs, batch_outputs in dataloader:
 				"""
 				# One-hot encoding.
 				batch_outputs_onehot = torch.LongTensor(batch_outputs.shape[0], self._dataset.num_classes)
@@ -320,7 +317,7 @@ class MyRunner(object):
 
 				# Measure accuracy and record loss.
 				#model_outputs = torch.argmax(model_outputs, -1)
-				prec1, prec5 = utils.accuracy(model_outputs.data, batch_outputs, topk=(1, 5))
+				prec1, prec5 = swl_ml_util.accuracy(model_outputs.data, batch_outputs, topk=(1, 5))
 				losses.update(loss.item(), batch_inputs.size(0))
 				top1.update(prec1.item(), batch_inputs.size(0))
 				top5.update(prec5.item(), batch_inputs.size(0))
@@ -368,7 +365,7 @@ class MyLRScheduler(object):
 		else:
 			self.last_epoch = epoch
 		if self.gammas and self.schedule:
-			self.learning_rate = utils.adjust_learning_rate(self.optimizer, self.last_epoch, self.initial_learning_rate, self.gammas, self.schedule)
+			self.learning_rate = swl_ml_util.adjust_learning_rate(self.optimizer, self.last_epoch, self.initial_learning_rate, self.gammas, self.schedule)
 
 #--------------------------------------------------------------------
 

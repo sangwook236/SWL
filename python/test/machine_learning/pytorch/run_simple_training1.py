@@ -193,9 +193,9 @@ class MyRunner(object):
 	def _train(self, model, criterion, optimizer, dataloader, log_print_freq, logger, device):
 		model.train()  # Switch to train mode.
 
+		start_time = time.time()
 		train_loss, train_acc, num_examples = 0.0, 0.0, 0
 		running_loss = 0.0
-		start_time = time.time()
 		for batch_step, (batch_inputs, batch_outputs) in enumerate(dataloader):
 			"""
 			# One-hot encoding.

@@ -5,7 +5,7 @@ import sys
 sys.path.append('../../src')
 sys.path.append('./src')
 
-import os, random, functools, itertools, operator, shutil, glob, datetime, time
+import os, collections, random, functools, itertools, operator, pickle, shutil, glob, datetime, time
 import argparse, logging, logging.handlers
 import numpy as np
 import torch
@@ -13,6 +13,7 @@ import torchvision
 from PIL import Image, ImageOps
 import cv2
 import matplotlib.pyplot as plt
+import swl.machine_learing.util as swl_ml_util
 import swl.language_processing.util as swl_langproc_util
 import text_generation_util as tg_util
 import text_data, aihub_data
@@ -1277,118 +1278,43 @@ def show_per_char_accuracy(correct_char_class_count, total_char_class_count, cla
 		if logger: logger.info('Per-character accuracy: min = {}, max = {}.'.format(np.min(valid_accuracies), np.max(valid_accuracies)))
 		if logger: logger.info('Per-character accuracy (< {}) = {}.'.format(acc_thresh, {classes[idx]: round(acc, 2) for idx, acc in sorted(enumerate(valid_accuracies), key=lambda x: x[1]) if acc < acc_thresh}))
 
-def train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler=None, max_gradient_norm=None, model_params=None, logger=None, device='cpu'):
-	if logger: logger.info('Model:\n{}.'.format(model))
+def compute_per_char_accuracy(inputs, outputs, predictions, num_classes):
+	import difflib
 
-	best_performance_measure = 0.0
-	best_model_filepath = None
-	for epoch in range(initial_epoch, final_epoch):  # Loop over the dataset multiple times.
-		if logger: logger.info('Epoch {}/{}.'.format(epoch + 1, final_epoch))
-		start_time = time.time()
-		model.train()
-		running_loss = 0.0
-		for idx, batch in enumerate(train_dataloader):
-			# Zero the parameter gradients.
-			optimizer.zero_grad()
+	isjunk = None
+	#isjunk = lambda x: x == '\n\r'
+	#isjunk = lambda x: x == ' \t\n\r'
 
-			# Forward + backward + optimize.
-			loss = train_forward_functor(model, batch, device)
-			loss.backward()
-			if max_gradient_norm: torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
-			optimizer.step()
-
-			# Print statistics.
-			running_loss += loss.item()
-			if idx % log_print_freq == (log_print_freq - 1):
-				if logger: logger.info('[{}, {:5d}] loss = {:.6g}: {:.3f} secs.'.format(epoch + 1, idx + 1, running_loss / log_print_freq, time.time() - start_time))
-				running_loss = 0.0
-
-			sys.stdout.flush()
-			time.sleep(0)
-		if logger: logger.info('Epoch {}/{} completed: {} secs.'.format(epoch + 1, final_epoch, time.time() - start_time))
-
-		if logger: logger.info('Start validation...')
-		start_time = time.time()
-		model.eval()
-		acc = evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, logger=logger, device=device)
-		if logger: logger.info('End validation: {} secs.'.format(time.time() - start_time))
-
-		if scheduler: scheduler.step()
-
-		if acc >= best_performance_measure:
-			ckpt_fpath = model_filepath_format.format('_acc{:.4f}_epoch{}'.format(acc, epoch + 1))
-			# Save a checkpoint.
-			save_model(ckpt_fpath, model, logger)
-			best_performance_measure = acc
-			best_model_filepath = ckpt_fpath
-
-	return model, best_model_filepath
-
-def train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler=None, max_gradient_norm=None, model_params=None, logger=None, device='cpu'):
-	if logger: logger.info('Model:\n{}.'.format(model))
-
-	best_performance_measure = 0.0
-	best_model_filepath = None
-	for epoch in range(initial_epoch, final_epoch):  # Loop over the dataset multiple times.
-		if logger: logger.info('Epoch {}/{}.'.format(epoch + 1, final_epoch))
-		start_time = time.time()
-		model.train()
-		running_loss = 0.0
-		for idx, batch in enumerate(train_dataloader):
-			# Zero the parameter gradients.
-			optimizer.zero_grad()
-
-			# Forward + backward + optimize.
-			loss = train_forward_functor(model, criterion, batch, device)
-			loss.backward()
-			if max_gradient_norm: torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
-			optimizer.step()
-
-			# Print statistics.
-			running_loss += loss.item()
-			if idx % log_print_freq == (log_print_freq - 1):
-				if logger: logger.info('[{}, {:5d}] loss = {:.6g}: {:.3f} secs.'.format(epoch + 1, idx + 1, running_loss / log_print_freq, time.time() - start_time))
-				running_loss = 0.0
-
-			sys.stdout.flush()
-			time.sleep(0)
-		if logger: logger.info('Epoch {}/{} completed: {} secs.'.format(epoch + 1, final_epoch, time.time() - start_time))
-
-		if logger: logger.info('Start validation...')
-		start_time = time.time()
-		model.eval()
-		acc = evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, logger=logger, device=device)
-		if logger: logger.info('End validation: {} secs.'.format(time.time() - start_time))
-
-		if scheduler: scheduler.step()
-
-		if acc >= best_performance_measure:
-			ckpt_fpath = model_filepath_format.format('_acc{:.4f}_epoch{}'.format(acc, epoch + 1))
-			# Save a checkpoint.
-			save_model(ckpt_fpath, model, logger)
-			best_performance_measure = acc
-			best_model_filepath = ckpt_fpath
-
-	return model, best_model_filepath
-
-def compute_simple_matching_accuracy(inputs, outputs, predictions, label_converter, is_case_sensitive, show_acc_per_char, error_cases_dir_path=None, error_idx=0):
-	is_error_cases_saved = error_cases_dir_path is not None
-
-	total_text_count = len(outputs)
-	correct_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0, 0
-	correct_char_class_count, total_char_class_count = [0] * label_converter.num_tokens, [0] * label_converter.num_tokens
-	error_cases = list()
+	correct_char_class_count, total_char_class_count = [0] * num_classes, [0] * num_classes
+	for img, gt, pred in zip(inputs, outputs, predictions):
+		matcher = difflib.SequenceMatcher(isjunk, gt, pred)
+		for mth in matcher.get_matching_blocks():
+			if mth.size != 0:
+				for idx in range(mth.a, mth.a + mth.size):
+					correct_char_class_count[gt[idx]] += 1
+		for gl in gt:
+			total_char_class_count[gl] += 1
+	return correct_char_class_count, total_char_class_count
+	"""
+	correct_char_class_count, total_char_class_count = [0] * num_classes, [0] * num_classes
 	for img, gt, pred in zip(inputs, outputs, predictions):
 		for gl, pl in zip(gt, pred):
 			if gl == pl: correct_char_class_count[gl] += 1
 			total_char_class_count[gl] += 1
+	return correct_char_class_count, total_char_class_count
+	"""
 
+def compute_simple_matching_accuracy(inputs, outputs, predictions, label_converter, is_case_sensitive, error_cases_dir_path=None, error_idx=0):
+	total_text_count = len(outputs)
+	correct_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0, 0
+	error_cases = list()
+	for img, gt, pred in zip(inputs, outputs, predictions):
 		gt, pred = label_converter.decode(gt), label_converter.decode(pred)
 		gt_case, pred_case = (gt, pred) if is_case_sensitive else (gt.lower(), pred.lower())
 
 		if gt_case == pred_case:
 			correct_text_count += 1
-		elif is_error_cases_saved:
+		elif error_cases_dir_path is not None:
 			cv2.imwrite(os.path.join(error_cases_dir_path, 'image_{}.png'.format(error_idx)), img)
 			error_cases.append((gt, pred))
 			error_idx += 1
@@ -1400,44 +1326,372 @@ def compute_simple_matching_accuracy(inputs, outputs, predictions, label_convert
 		total_char_count += max(len(gt), len(pred))
 		correct_char_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gt_case, pred_case))))
 
-	return correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count, correct_char_class_count, total_char_class_count, error_cases
+	return correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count, error_cases
 
-def compute_sequence_matching_ratio(inputs, outputs, predictions, label_converter, is_case_sensitive, show_acc_per_char, error_cases_dir_path=None, error_idx=0):
+def compute_sequence_matching_ratio(inputs, outputs, predictions, label_converter, is_case_sensitive, error_cases_dir_path=None, error_idx=0):
 	import difflib
 
 	isjunk = None
 	#isjunk = lambda x: x == '\n\r'
 	#isjunk = lambda x: x == ' \t\n\r'
 
-	is_error_cases_saved = error_cases_dir_path is not None
-
 	total_matching_ratio = 0
-	correct_char_class_count, total_char_class_count = [0] * label_converter.num_tokens, [0] * label_converter.num_tokens
 	error_cases = list()
 	for img, gt, pred in zip(inputs, outputs, predictions):
-		matcher = difflib.SequenceMatcher(isjunk, gt, pred)
-		#matcher = difflib.SequenceMatcher(isjunk, gt_case, pred_case)
-		for mth in matcher.get_matching_blocks():
-			if mth.size != 0:
-				for idx in range(mth.a, mth.a + mth.size):
-					correct_char_class_count[gt[idx]] += 1
-		for gl in gt:
-			total_char_class_count[gl] += 1
-
 		gt, pred = label_converter.decode(gt), label_converter.decode(pred)
 		gt_case, pred_case = (gt, pred) if is_case_sensitive else (gt.lower(), pred.lower())
 
 		matching_ratio = difflib.SequenceMatcher(isjunk, gt_case, pred_case).ratio()
 		total_matching_ratio += matching_ratio
-		if matching_ratio < 1 and is_error_cases_saved:
+		if matching_ratio < 1 and error_cases_dir_path is not None:
 			cv2.imwrite(os.path.join(error_cases_dir_path, 'image_{}.png'.format(error_idx)), img)
 			error_cases.append((gt, pred))
 			error_idx += 1
 
-	return total_matching_ratio, correct_char_class_count, total_char_class_count, error_cases
+	return total_matching_ratio, error_cases
+
+def train_char_model_in_a_epoch(model, train_forward_functor, optimizer, dataloader, model_params, max_gradient_norm, epoch, log_print_freq, logger, device='cpu'):
+	model.train()
+
+	#start_epoch_time = time.time()
+	batch_time, data_time = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
+	losses, top1, top5 = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
+	#running_loss = 0.0
+	for batch_step, batch in enumerate(dataloader):
+		start_batch_time = time.time()
+
+		batch_inputs, batch_outputs = batch
+
+		data_time.update(time.time() - start_batch_time)
+
+		# Zero the parameter gradients.
+		optimizer.zero_grad()
+
+		# Forward + backward + optimize.
+		loss, model_outputs = train_forward_functor(model, batch_inputs, batch_outputs, device)
+		loss.backward()
+		if max_gradient_norm: torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
+		optimizer.step()
+
+		# Measure accuracy and record loss.
+		#model_outputs = torch.argmax(model_outputs, -1)
+		prec1, prec5 = swl_ml_util.accuracy(model_outputs, batch_outputs, topk=(1, 5))
+		losses.update(loss.item(), batch_inputs.size(0))
+		top1.update(prec1.item(), batch_inputs.size(0))
+		top5.update(prec5.item(), batch_inputs.size(0))
+
+		# Measure elapsed time.
+		batch_time.update(time.time() - start_batch_time)
+
+		"""
+		# Print statistics.
+		running_loss += loss.item()
+		if batch_step % log_print_freq == (log_print_freq - 1):
+			if logger: logger.info('[{}, {:5d}] loss = {:.6g}: {:.3f} secs.'.format(epoch + 1, batch_step + 1, running_loss / log_print_freq, time.time() - start_epoch_time))
+			running_loss = 0.0
+		"""
+
+		if (batch_step + 1) % log_print_freq == 0:
+			if logger: logger.info('\tEpoch: [{:03d}][{:03d}/{:03d}]   '
+				'Time {batch_time.val:.3f} ({batch_time.avg:.3f})   '
+				'Data {data_time.val:.3f} ({data_time.avg:.3f})   '
+				'Loss {loss.val:.4f} ({loss.avg:.4f})   '
+				'Prec@1 {top1.val:.3f} ({top1.avg:.3f})   '
+				'Prec@5 {top5.val:.3f} ({top5.avg:.3f})   '.format(
+				epoch, batch_step + 1, len(dataloader), batch_time=batch_time,
+				data_time=data_time, loss=losses, top1=top1, top5=top5) + swl_ml_util.time_string())
+
+		sys.stdout.flush()
+		time.sleep(0)
+	return losses, top1, top5
+
+def validate_char_model_in_a_epoch(model, train_forward_functor, dataloader, label_converter, is_case_sensitive, logger, device='cpu'):
+	model.eval()
+
+	losses, top1, top5 = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
+	total_matching_ratio, num_examples = 0, 0
+	with torch.no_grad():
+		show = True
+		for batch in dataloader:
+			batch_inputs, batch_outputs = batch
+
+			"""
+			# One-hot encoding.
+			batch_outputs_onehot = torch.LongTensor(batch_outputs.shape[0], self._dataset.num_classes)
+			batch_outputs_onehot.zero_()
+			batch_outputs_onehot.scatter_(1, batch_outputs.view(batch_outputs.shape[0], -1), 1)
+			"""
+
+			# Forward + backward + optimize.
+			loss, model_outputs = train_forward_functor(model, batch_inputs, batch_outputs, device)
+
+			# Measure accuracy and record loss.
+			#model_outputs = torch.argmax(model_outputs, -1)
+			prec1, prec5 = swl_ml_util.accuracy(model_outputs, batch_outputs, topk=(1, 5))
+			losses.update(loss.item(), batch_inputs.size(0))
+			top1.update(prec1.item(), batch_inputs.size(0))
+			top5.update(prec5.item(), batch_inputs.size(0))
+
+			batch_total_matching_ratio, _ = compute_sequence_matching_ratio(batch_inputs, batch_outputs, model_outputs, label_converter, is_case_sensitive, error_cases_dir_path=None, error_idx=0)
+			total_matching_ratio += batch_total_matching_ratio
+			num_examples += len(batch_inputs)
+
+			# Show results.
+			if show:
+				if logger: logger.info('\tG/T:        {}.'.format(batch_outputs.cpu().numpy()))
+				if logger: logger.info('\tPrediction: {}.'.format(np.argmax(model_outputs.cpu().numpy(), axis=-1)))
+				show = False
+	avg_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
+	return losses, top1, top5, avg_matching_ratio
+
+def train_text_model_in_a_epoch(model, criterion, train_forward_functor, optimizer, dataloader, model_params, max_gradient_norm, epoch, log_print_freq, logger, device='cpu'):
+	model.train()
+
+	#start_epoch_time = time.time()
+	batch_time, data_time = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
+	losses, top1, top5 = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
+	#running_loss = 0.0
+	for batch_step, batch in enumerate(dataloader):
+		start_batch_time = time.time()
+
+		batch_inputs, batch_outputs, batch_output_lens = batch
+
+		data_time.update(time.time() - start_batch_time)
+
+		# Zero the parameter gradients.
+		optimizer.zero_grad()
+
+		# Forward + backward + optimize.
+		loss, model_outputs = train_forward_functor(model, criterion, batch_inputs, batch_outputs, batch_output_lens, device)
+		loss.backward()
+		if max_gradient_norm: torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
+		optimizer.step()
+
+		# Measure accuracy and record loss.
+		#model_outputs = torch.argmax(model_outputs, -1)
+		prec1, prec5 = swl_ml_util.accuracy(model_outputs, batch_outputs, topk=(1, 5))
+		losses.update(loss.item(), batch_inputs.size(0))
+		top1.update(prec1.item(), batch_inputs.size(0))
+		top5.update(prec5.item(), batch_inputs.size(0))
+
+		# Measure elapsed time.
+		batch_time.update(time.time() - start_batch_time)
+
+		"""
+		# Print statistics.
+		running_loss += loss.item()
+		if batch_step % log_print_freq == (log_print_freq - 1):
+			if logger: logger.info('[{}, {:5d}] loss = {:.6g}: {:.3f} secs.'.format(epoch + 1, batch_step + 1, running_loss / log_print_freq, time.time() - start_epoch_time))
+			running_loss = 0.0
+		"""
+
+		if (batch_step + 1) % log_print_freq == 0:
+			if logger: logger.info('\tEpoch: [{:03d}][{:03d}/{:03d}]   '
+				'Time {batch_time.val:.3f} ({batch_time.avg:.3f})   '
+				'Data {data_time.val:.3f} ({data_time.avg:.3f})   '
+				'Loss {loss.val:.4f} ({loss.avg:.4f})   '
+				'Prec@1 {top1.val:.3f} ({top1.avg:.3f})   '
+				'Prec@5 {top5.val:.3f} ({top5.avg:.3f})   '.format(
+				epoch, batch_step + 1, len(dataloader), batch_time=batch_time,
+				data_time=data_time, loss=losses, top1=top1, top5=top5) + swl_ml_util.time_string())
+
+		sys.stdout.flush()
+		time.sleep(0)
+	return losses, top1, top5
+
+def validate_text_model_in_a_epoch(model, criterion, train_forward_functor, dataloader, label_converter, is_case_sensitive, logger, device='cpu'):
+	model.eval()
+
+	losses, top1, top5 = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
+	total_matching_ratio, num_examples = 0, 0
+	with torch.no_grad():
+		show = True
+		for batch in dataloader:
+			batch_inputs, batch_outputs, batch_output_lens = batch
+
+			"""
+			# One-hot encoding.
+			batch_outputs_onehot = torch.LongTensor(batch_outputs.shape[0], self._dataset.num_classes)
+			batch_outputs_onehot.zero_()
+			batch_outputs_onehot.scatter_(1, batch_outputs.view(batch_outputs.shape[0], -1), 1)
+			"""
+
+			# Forward + backward + optimize.
+			loss, model_outputs = train_forward_functor(model, criterion, batch_inputs, batch_outputs, batch_output_lens, device)
+
+			# Measure accuracy and record loss.
+			#model_outputs = torch.argmax(model_outputs, -1)
+			prec1, prec5 = swl_ml_util.accuracy(model_outputs, batch_outputs, topk=(1, 5))
+			losses.update(loss.item(), batch_inputs.size(0))
+			top1.update(prec1.item(), batch_inputs.size(0))
+			top5.update(prec5.item(), batch_inputs.size(0))
+
+			batch_total_matching_ratio, _ = compute_sequence_matching_ratio(batch_inputs, batch_outputs, model_outputs, label_converter, is_case_sensitive, error_cases_dir_path=None, error_idx=0)
+			total_matching_ratio += batch_total_matching_ratio
+			num_examples += len(batch_inputs)
+
+			# Show results.
+			if show:
+				if logger: logger.info('\tG/T:        {}.'.format(batch_outputs.cpu().numpy()))
+				if logger: logger.info('\tPrediction: {}.'.format(np.argmax(model_outputs.cpu().numpy(), axis=-1)))
+				show = False
+	avg_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
+	return losses, top1, top5, avg_matching_ratio
+
+def train_char_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler=None, max_gradient_norm=None, model_params=None, is_case_sensitive=False, logger=None, device='cpu'):
+	if logger: logger.info('Model:\n{}.'.format(model))
+
+	train_log_filepath = os.path.join(output_dir_path, 'train_log.txt')
+	train_history_filepath = os.path.join(output_dir_path, 'train_history.pkl')
+	train_result_image_filepath = os.path.join(output_dir_path, 'results.png')
+
+	recorder = swl_ml_util.RecorderMeter(final_epoch)
+	history = {
+		'acc': list(),
+		'loss': list(),
+		'val_acc': list(),
+		'val_loss': list()
+	}
+
+	epoch_time = swl_ml_util.AverageMeter()
+	best_performance_measure = 0.0
+	best_model_filepath = None
+	for epoch in range(initial_epoch, final_epoch):  # Loop over the dataset multiple times.
+		if logger: logger.info('Epoch {}/{}.'.format(epoch + 1, final_epoch))
+		start_epoch_time = time.time()
+
+		current_learning_rate = scheduler.get_lr() if scheduler else 0.0
+		need_hour, need_mins, need_secs = swl_ml_util.convert_secs2time(epoch_time.avg * (final_epoch - epoch))
+		need_time = '[Need: {:02d}:{:02d}:{:02d}]'.format(need_hour, need_mins, need_secs)
+		if logger: logger.info('==>>{:s} [Epoch={:03d}/{:03d}] {:s} [learning_rate={:6.4f}]'.format(swl_ml_util.time_string(), epoch + 1, final_epoch, need_time, current_learning_rate) \
+			+ ' [Best : Accuracy={:.2f}, Error={:.2f}].'.format(recorder.max_accuracy(False), 100 - recorder.max_accuracy(False)))
+
+		#--------------------
+		start_time = time.time()
+		losses, top1, top5 = train_char_model_in_a_epoch(model, train_forward_functor, optimizer, train_dataloader, model_params, max_gradient_norm, epoch, log_print_freq, logger, device)
+		if logger: logger.info('\tTrain:      Prec@1 = {top1.avg:.3f}, Prec@5 = {top5.avg:.3f}, Error@1 = {error1:.3f}, Loss = {losses.avg:.3f}: {elapsed_time:.6f} secs.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
+
+		train_loss, train_acc = losses.avg, top1.avg
+		history['loss'].append(train_loss)
+		history['acc'].append(train_acc)
+
+		#--------------------
+		start_time = time.time()
+		losses, top1, top5, avg_matching_ratio = validate_char_model_in_a_epoch(model, train_forward_functor, test_dataloader, label_converter, is_case_sensitive, logger, device)
+		if logger: logger.info('\tValidation: Prec@1 = {top1.avg:.3f}, Prec@5 = {top5.avg:.3f}, Error@1 = {error1:.3f}, Loss = {losses.avg:.3f}: {elapsed_time:.6f} secs.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
+
+		val_loss, val_acc = losses.avg, top1.avg
+		history['val_loss'].append(val_loss)
+		history['val_acc'].append(val_acc)
+
+		if scheduler: scheduler.step()
+
+		# Measure elapsed time.
+		epoch_time.update(time.time() - start_epoch_time)
+
+		#--------------------
+		performance_measure = avg_matching_ratio
+		#performance_measure = val_acc
+		if performance_measure >= best_performance_measure:
+			# Save a checkpoint.
+			best_model_filepath = model_filepath_format.format('_acc{:.4f}_epoch{}'.format(performance_measure, epoch + 1))
+			save_model(best_model_filepath, model, logger)
+			best_performance_measure = performance_measure
+
+		dummy = recorder.update(epoch, train_loss, train_acc, val_loss, val_acc)
+		recorder.plot_curve(train_result_image_filepath)
+	
+		#import pdb; pdb.set_trace()
+		train_log = collections.OrderedDict()
+		train_log['train_loss'] = history['loss']
+		train_log['train_acc'] = history['acc']
+		train_log['val_loss'] = history['val_loss']
+		train_log['val_acc'] = history['val_acc']
+
+		pickle.dump(train_log, open(train_history_filepath, 'wb'))
+		swl_ml_util.plotting(output_dir_path, train_history_filepath)
+		if logger: logger.info('Epoch {}/{} completed: {} secs.'.format(epoch + 1, final_epoch, time.time() - start_epoch_time))
+
+	return model, best_model_filepath
+
+def train_text_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler=None, max_gradient_norm=None, model_params=None, is_case_sensitive=False, logger=None, device='cpu'):
+	if logger: logger.info('Model:\n{}.'.format(model))
+
+	train_log_filepath = os.path.join(output_dir_path, 'train_log.txt')
+	train_history_filepath = os.path.join(output_dir_path, 'train_history.pkl')
+	train_result_image_filepath = os.path.join(output_dir_path, 'results.png')
+
+	recorder = swl_ml_util.RecorderMeter(final_epoch)
+	history = {
+		'acc': list(),
+		'loss': list(),
+		'val_acc': list(),
+		'val_loss': list()
+	}
+
+	epoch_time = swl_ml_util.AverageMeter()
+	best_performance_measure = 0.0
+	best_model_filepath = None
+	is_case_sensitive = False
+	for epoch in range(initial_epoch, final_epoch):  # Loop over the dataset multiple times.
+		if logger: logger.info('Epoch {}/{}.'.format(epoch + 1, final_epoch))
+		start_epoch_time = time.time()
+
+		current_learning_rate = scheduler.get_lr() if scheduler else 0.0
+		need_hour, need_mins, need_secs = swl_ml_util.convert_secs2time(epoch_time.avg * (final_epoch - epoch))
+		need_time = '[Need: {:02d}:{:02d}:{:02d}]'.format(need_hour, need_mins, need_secs)
+		if logger: logger.info('==>>{:s} [Epoch={:03d}/{:03d}] {:s} [learning_rate={:6.4f}]'.format(swl_ml_util.time_string(), epoch + 1, final_epoch, need_time, current_learning_rate) \
+			+ ' [Best : Accuracy={:.2f}, Error={:.2f}].'.format(recorder.max_accuracy(False), 100 - recorder.max_accuracy(False)))
+
+		#--------------------
+		start_time = time.time()
+		losses, top1, top5 = train_text_model_in_a_epoch(model, criterion, train_forward_functor, optimizer, train_dataloader, model_params, max_gradient_norm, epoch, log_print_freq, logger, device)
+		if logger: logger.info('\tTrain:      Prec@1 = {top1.avg:.3f}, Prec@5 = {top5.avg:.3f}, Error@1 = {error1:.3f}, Loss = {losses.avg:.3f}: {elapsed_time:.6f} secs.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
+
+		train_loss, train_acc = losses.avg, top1.avg
+		history['loss'].append(train_loss)
+		history['acc'].append(train_acc)
+
+		#--------------------
+		start_time = time.time()
+		losses, top1, top5, avg_matching_ratio = validate_text_model_in_a_epoch(model, criterion, train_forward_functor, test_dataloader, label_converter, is_case_sensitive, logger, device)
+		if logger: logger.info('\tValidation: Prec@1 = {top1.avg:.3f}, Prec@5 = {top5.avg:.3f}, Error@1 = {error1:.3f}, Loss = {losses.avg:.3f}: {elapsed_time:.6f} secs.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
+
+		val_loss, val_acc = losses.avg, top1.avg
+		history['val_loss'].append(val_loss)
+		history['val_acc'].append(val_acc)
+
+		if scheduler: scheduler.step()
+
+		# Measure elapsed time.
+		epoch_time.update(time.time() - start_epoch_time)
+
+		#--------------------
+		performance_measure = avg_matching_ratio
+		#performance_measure = val_acc
+		if performance_measure >= best_performance_measure:
+			# Save a checkpoint.
+			best_model_filepath = model_filepath_format.format('_acc{:.4f}_epoch{}'.format(performance_measure, epoch + 1))
+			save_model(best_model_filepath, model, logger)
+			best_performance_measure = performance_measure
+
+		dummy = recorder.update(epoch, train_loss, train_acc, val_loss, val_acc)
+		recorder.plot_curve(train_result_image_filepath)
+	
+		#import pdb; pdb.set_trace()
+		train_log = collections.OrderedDict()
+		train_log['train_loss'] = history['loss']
+		train_log['train_acc'] = history['acc']
+		train_log['val_loss'] = history['val_loss']
+		train_log['val_acc'] = history['val_acc']
+
+		pickle.dump(train_log, open(train_history_filepath, 'wb'))
+		swl_ml_util.plotting(output_dir_path, train_history_filepath)
+		if logger: logger.info('Epoch {}/{} completed: {} secs.'.format(epoch + 1, final_epoch, time.time() - start_epoch_time))
+
+	return model, best_model_filepath
 
 def evaluate_char_recognition_model(model, label_converter, dataloader, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, logger=None, device='cpu'):
-	is_error_cases_saved = error_cases_dir_path is not None
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 
 	correct_char_count, total_char_count = 0, 0
@@ -1464,7 +1718,7 @@ def evaluate_char_recognition_model(model, label_converter, dataloader, is_case_
 			#correct_char_count += (gts_case == predictions_case).sum()
 			correct_char_count += len(list(filter(lambda gp: gp[0] == gp[1], zip(gts_case, predictions_case))))
 
-			if is_error_cases_saved:
+			if error_cases_dir_path is not None:
 				images_np = images.numpy()
 				if images_np.ndim == 4: images_np = images_np.transpose(0, 2, 3, 1)
 				#minval, maxval = np.min(images_np), np.max(images_np)
@@ -1489,7 +1743,7 @@ def evaluate_char_recognition_model(model, label_converter, dataloader, is_case_
 
 				is_first = False
 
-	if is_error_cases_saved:
+	if error_cases_dir_path is not None:
 		err_fpath = os.path.join(error_cases_dir_path, 'error_cases.txt')
 		try:
 			with open(err_fpath, 'w', encoding='UTF8') as fd:
@@ -1506,7 +1760,6 @@ def evaluate_char_recognition_model(model, label_converter, dataloader, is_case_
 	return correct_char_count / total_char_count if total_char_count > 0 else -1
 
 def evaluate_text_recognition_model(model, infer_functor, label_converter, dataloader, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, logger=None, device='cpu'):
-	is_error_cases_saved = error_cases_dir_path is not None
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 
 	is_sequence_matching_ratio_used, is_simple_matching_accuracy_used = True, True
@@ -1527,21 +1780,22 @@ def evaluate_text_recognition_model(model, infer_functor, label_converter, datal
 			images_np = np.round((images_np - minval) * 255 / (maxval - minval)).astype(np.uint8)
 
 			if is_sequence_matching_ratio_used:
-				batch_total_matching_ratio, batch_correct_char_class_count, batch_total_char_class_count, batch_error_cases = compute_sequence_matching_ratio(images_np, gts, predictions, label_converter, is_case_sensitive, show_acc_per_char, error_cases_dir_path, error_idx=error_idx)
+				batch_total_matching_ratio, batch_error_cases = compute_sequence_matching_ratio(images_np, gts, predictions, label_converter, is_case_sensitive, error_cases_dir_path, error_idx=error_idx)
 				total_matching_ratio += batch_total_matching_ratio
 				num_examples += len(images_np)
 			if is_simple_matching_accuracy_used:
-				batch_correct_text_count, batch_total_text_count, batch_correct_word_count, batch_total_word_count, batch_correct_char_count, batch_total_char_count, batch_correct_char_class_count, batch_total_char_class_count, batch_error_cases = compute_simple_matching_accuracy(images_np, gts, predictions, label_converter, is_case_sensitive, show_acc_per_char, error_cases_dir_path, error_idx=error_idx)
+				batch_correct_text_count, batch_total_text_count, batch_correct_word_count, batch_total_word_count, batch_correct_char_count, batch_total_char_count, batch_error_cases = compute_simple_matching_accuracy(images_np, gts, predictions, label_converter, is_case_sensitive, error_cases_dir_path, error_idx=error_idx)
 				correct_text_count += batch_correct_text_count
 				total_text_count += batch_total_text_count
 				correct_word_count += batch_correct_word_count
 				total_word_count += batch_total_word_count
 				correct_char_count += batch_correct_char_count
 				total_char_count += batch_total_char_count
-			correct_char_class_count = list(map(operator.add, correct_char_class_count, batch_correct_char_class_count))
-			total_char_class_count = list(map(operator.add, total_char_class_count, batch_total_char_class_count))
 			error_idx += len(batch_error_cases)
 			error_cases += batch_error_cases
+			batch_correct_char_class_count, batch_total_char_class_count = compute_per_char_accuracy(images_np, gts, predictions, num_classes)
+			correct_char_class_count = list(map(operator.add, correct_char_class_count, batch_correct_char_class_count))
+			total_char_class_count = list(map(operator.add, total_char_class_count, batch_total_char_class_count))
 
 			if is_first:
 				# Show images.
@@ -1555,7 +1809,7 @@ def evaluate_text_recognition_model(model, infer_functor, label_converter, datal
 
 				is_first = False
 
-	if is_error_cases_saved:
+	if error_cases_dir_path is not None:
 		err_fpath = os.path.join(error_cases_dir_path, 'error_cases.txt')
 		try:
 			with open(err_fpath, 'w', encoding='UTF8') as fd:
@@ -1569,15 +1823,15 @@ def evaluate_text_recognition_model(model, infer_functor, label_converter, datal
 	show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char, logger=logger)
 	if is_sequence_matching_ratio_used:
 		#num_examples = len(dataloader)
-		ave_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
-		if logger: logger.info('Average sequence matching ratio = {}.'.format(ave_matching_ratio))
+		avg_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
+		if logger: logger.info('Average sequence matching ratio = {}.'.format(avg_matching_ratio))
 	if is_simple_matching_accuracy_used:
 		if logger: logger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else -1))
 		if logger: logger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else -1))
 		if logger: logger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else -1))
 
 	if is_sequence_matching_ratio_used:
-		return ave_matching_ratio
+		return avg_matching_ratio
 	elif is_simple_matching_accuracy_used:
 		return correct_char_count / total_char_count if total_char_count > 0 else -1
 	else: return -1
@@ -1623,15 +1877,17 @@ def infer_using_text_recognition_model(model, infer_functor, label_converter, in
 
 		#--------------------
 		if inputs.ndim == 4: inputs = inputs.transpose(0, 2, 3, 1)
+		# TODO [decide] >>
 		#minval, maxval = np.min(inputs), np.max(inputs)
-		minval, maxval = -1, 1
-		inputs = np.round((inputs - minval) * 255 / (maxval - minval)).astype(np.uint8)
+		#minval, maxval = -1, 1
+		minval, maxval = 0, 1
+		inputs = np.round((inputs - minval) * 255 / (maxval - minval)).astype(np.uint8)  # [0, 255].
 
 		is_sequence_matching_ratio_used, is_simple_matching_accuracy_used = True, True
 		if is_sequence_matching_ratio_used:
-			total_matching_ratio, correct_char_class_count, total_char_class_count, error_cases = compute_sequence_matching_ratio(inputs, outputs, predictions, label_converter, is_case_sensitive, show_acc_per_char, error_cases_dir_path, error_idx=0)
+			total_matching_ratio, error_cases = compute_sequence_matching_ratio(inputs, outputs, predictions, label_converter, is_case_sensitive, error_cases_dir_path, error_idx=0)
 		if is_simple_matching_accuracy_used:
-			correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count, correct_char_class_count, total_char_class_count, error_cases = compute_simple_matching_accuracy(inputs, outputs, predictions, label_converter, is_case_sensitive, show_acc_per_char, error_cases_dir_path, error_idx=0)
+			correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count, error_cases = compute_simple_matching_accuracy(inputs, outputs, predictions, label_converter, is_case_sensitive, error_cases_dir_path, error_idx=0)
 
 		if error_cases_dir_path:
 			err_fpath = os.path.join(error_cases_dir_path, 'error_cases.txt')
@@ -1644,12 +1900,13 @@ def infer_using_text_recognition_model(model, infer_functor, label_converter, in
 			except FileNotFoundError as ex:
 				if logger: logger.warning('File not found, {}: {}.'.format(err_fpath, ex))
 
+		correct_char_class_count, total_char_class_count = compute_per_char_accuracy(inputs, outputs, predictions, label_converter.num_tokens)
 		show_per_char_accuracy(correct_char_class_count, total_char_class_count, label_converter.tokens, label_converter.num_tokens, show_acc_per_char, logger=logger)
 		if is_sequence_matching_ratio_used:
 			#num_examples = len(outputs)
 			num_examples = min(len(inputs), len(outputs), len(predictions))
-			ave_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
-			if logger: logger.info('Average sequence matching ratio = {}.'.format(ave_matching_ratio))
+			avg_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
+			if logger: logger.info('Average sequence matching ratio = {}.'.format(avg_matching_ratio))
 		if is_simple_matching_accuracy_used:
 			if logger: logger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else -1))
 			if logger: logger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else -1))
@@ -1665,12 +1922,14 @@ def infer_one_by_one_using_text_recognition_model(model, infer_functor, label_co
 	if outputs is None:
 		if logger: logger.info('Prediction:\n{}.'.format('\n'.join([label_converter.decode(pred) for pred in predictions[:num_examples_to_show]])))
 	else:
-		minval, maxval = -1, 1
-		def transform(img):
-			#minval, maxval = np.min(img), np.max(img)
-			return np.round((img.transpose(1, 2, 0) - minval) * 255 / (maxval - minval)).astype(np.uint8)
+		def unnormalize(img, minval, maxval):
+			return np.round((img.transpose(1, 2, 0) - minval) * 255 / (maxval - minval)).astype(np.uint8)  # [0, 255].
 
-		inputs = list(transform(inp[0].numpy()) for inp in inputs)
+		# TODO [decide] >>
+		#minval, maxval = np.min(img), np.max(img)
+		#minval, maxval = -1, 1
+		minval, maxval = 0, 1
+		inputs = list(unnormalize(inp[0].numpy(), minval, maxval) for inp in inputs)
 		outputs = list(outp[0].numpy() for outp in outputs)
 
 		#if logger: logger.info('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in outputs[:num_examples_to_show]])))
@@ -1682,9 +1941,9 @@ def infer_one_by_one_using_text_recognition_model(model, infer_functor, label_co
 		#--------------------
 		is_sequence_matching_ratio_used, is_simple_matching_accuracy_used = True
 		if is_sequence_matching_ratio_used:
-			total_matching_ratio, correct_char_class_count, total_char_class_count, error_cases = compute_sequence_matching_ratio(inputs, outputs, predictions, label_converter, is_case_sensitive, show_acc_per_char, error_cases_dir_path, error_idx=0)
+			total_matching_ratio, error_cases = compute_sequence_matching_ratio(inputs, outputs, predictions, label_converter, is_case_sensitive, error_cases_dir_path, error_idx=0)
 		if is_simple_matching_accuracy_used:
-			correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count, correct_char_class_count, total_char_class_count, error_cases = compute_simple_matching_accuracy(inputs, outputs, predictions, label_converter, is_case_sensitive, show_acc_per_char, error_cases_dir_path, error_idx=0)
+			correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count, error_cases = compute_simple_matching_accuracy(inputs, outputs, predictions, label_converter, is_case_sensitive, error_cases_dir_path, error_idx=0)
 
 		if error_cases_dir_path:
 			err_fpath = os.path.join(error_cases_dir_path, 'error_cases.txt')
@@ -1697,12 +1956,13 @@ def infer_one_by_one_using_text_recognition_model(model, infer_functor, label_co
 			except FileNotFoundError as ex:
 				if logger: logger.warning('File not found, {}: {}.'.format(err_fpath, ex))
 
+		correct_char_class_count, total_char_class_count = compute_per_char_accuracy(inputs, outputs, predictions, label_converter.num_tokens)
 		show_per_char_accuracy(correct_char_class_count, total_char_class_count, label_converter.tokens, label_converter.num_tokens, show_acc_per_char, logger=logger)
 		if is_sequence_matching_ratio_used:
 			#num_examples = len(outputs)
 			num_examples = min(len(inputs), len(outputs), len(predictions))
-			ave_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
-			if logger: logger.info('Average sequence matching ratio = {}.'.format(ave_matching_ratio))
+			avg_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
+			if logger: logger.info('Average sequence matching ratio = {}.'.format(avg_matching_ratio))
 		if is_simple_matching_accuracy_used:
 			if logger: logger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else -1))
 			if logger: logger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else -1))
@@ -1720,12 +1980,11 @@ def build_char_model(label_converter, image_channel, loss_type):
 	else:
 		raise ValueError('Invalid loss type, {}'.format(loss_type))
 
-	def train_forward(model, criterion, batch, device):
-		inputs, outputs = batch
+	def train_forward(model, criterion, inputs, outputs, device):
 		inputs, outputs = inputs.to(device), outputs.to(device)
 
 		model_outputs = model(inputs)
-		return criterion(model_outputs, outputs)
+		return criterion(model_outputs, outputs), model_outputs
 
 	import rare.model_char
 	model = rare.model_char.create_model(model_name, input_channel, output_channel, label_converter.num_tokens)
@@ -1747,12 +2006,11 @@ def build_char_mixup_model(label_converter, image_channel, loss_type):
 	else:
 		raise ValueError('Invalid loss type, {}'.format(loss_type))
 
-	def train_forward(model, criterion, batch, device):
-		inputs, outputs = batch
+	def train_forward(model, criterion, inputs, outputs, device):
 		inputs, outputs = inputs.to(device), outputs.to(device)
 
 		model_outputs, outputs = model(inputs, outputs, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, device)
-		return criterion(model_outputs, torch.argmax(outputs, dim=1))
+		return criterion(model_outputs, torch.argmax(outputs, dim=1)), model_outputs
 
 	# REF [function] >> mnist_predefined_mixup_test() in ${SWL_PYTHON_HOME}/test/machine_learning/pytorch/run_mnist_cnn.py.
 	import rare.model_char
@@ -1782,9 +2040,7 @@ def build_rare1_model(label_converter, image_height, image_width, image_channel,
 			# Define a loss function.
 			criterion = torch.nn.CTCLoss(blank=blank_label, zero_infinity=True)  # The BLANK label.
 
-			def train_forward(model, criterion, batch, device):
-				inputs, outputs, output_lens = batch
-
+			def train_forward(model, criterion, inputs, outputs, output_lens, device):
 				model_outputs = model(inputs.to(device), None, is_train=True, device=device).log_softmax(2)
 
 				N, T = model_outputs.shape[:2]
@@ -1796,7 +2052,7 @@ def build_rare1_model(label_converter, image_height, image_width, image_channel,
 				torch.backends.cudnn.enabled = False
 				cost = criterion(model_outputs, outputs.to(device), model_output_lens, output_lens.to(device))
 				torch.backends.cudnn.enabled = True
-				return cost
+				return cost, model_outputs
 
 			def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 				raise NotImplementedError
@@ -1808,8 +2064,7 @@ def build_rare1_model(label_converter, image_height, image_width, image_channel,
 			elif loss_type == 'nll':
 				criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum')  # Ignore the PAD ID.
 
-			def train_forward(model, criterion, batch, device):
-				inputs, outputs, output_lens = batch
+			def train_forward(model, criterion, inputs, outputs, output_lens, device):
 				outputs = outputs.long()
 
 				# Construct inputs for one-step look-ahead.
@@ -1835,7 +2090,7 @@ def build_rare1_model(label_converter, image_height, image_width, image_channel,
 				for mo, do, dl in zip(model_outputs, decoder_outputs, decoder_output_lens):
 					concat_model_outputs.append(mo[:dl])
 					concat_decoder_outputs.append(do[:dl])
-				return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
+				return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device)), model_outputs
 
 			def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 				model_outputs = model(inputs.to(device), None, is_train=False, device=device)
@@ -1879,9 +2134,7 @@ def build_rare1_mixup_model(label_converter, image_height, image_width, image_ch
 			# Define a loss function.
 			criterion = torch.nn.CTCLoss(blank=blank_label, zero_infinity=True)  # The BLANK label.
 
-			def train_forward(model, criterion, batch, device):
-				inputs, outputs, output_lens = batch
-
+			def train_forward(model, criterion, inputs, outputs, output_lens, device):
 				model_outputs = model(inputs.to(device), None, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, is_train=True, device=device).log_softmax(2)
 
 				N, T = model_outputs.shape[:2]
@@ -1893,7 +2146,7 @@ def build_rare1_mixup_model(label_converter, image_height, image_width, image_ch
 				torch.backends.cudnn.enabled = False
 				cost = criterion(model_outputs, outputs.to(device), model_output_lens, output_lens.to(device))
 				torch.backends.cudnn.enabled = True
-				return cost
+				return cost, model_outputs
 
 			def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 				raise NotImplementedError
@@ -1905,8 +2158,7 @@ def build_rare1_mixup_model(label_converter, image_height, image_width, image_ch
 			elif loss_type == 'nll':
 				criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum')  # Ignore the PAD ID.
 
-			def train_forward(model, criterion, batch, device):
-				inputs, outputs, output_lens = batch
+			def train_forward(model, criterion, inputs, outputs, output_lens, device):
 				outputs = outputs.long()
 
 				# Construct inputs for one-step look-ahead.
@@ -1932,7 +2184,7 @@ def build_rare1_mixup_model(label_converter, image_height, image_width, image_ch
 				for mo, do, dl in zip(model_outputs, decoder_outputs, decoder_output_lens):
 					concat_model_outputs.append(mo[:dl])
 					concat_decoder_outputs.append(do[:dl])
-				return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
+				return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device)), model_outputs
 
 			def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 				model_outputs = model(inputs.to(device), None, is_train=False, device=device)
@@ -1970,8 +2222,7 @@ def build_rare2_model(label_converter, image_height, image_width, image_channel,
 		else:
 			raise ValueError('Invalid loss type, {}'.format(loss_type))
 
-		def train_forward(model, criterion, batch, device):
-			inputs, outputs, output_lens = batch
+		def train_forward(model, criterion, inputs, outputs, output_lens, device):
 			outputs = outputs.long()
 
 			# Construct inputs for one-step look-ahead.
@@ -2004,7 +2255,7 @@ def build_rare2_model(label_converter, image_height, image_width, image_channel,
 			for mo, do, dl in zip(model_outputs, decoder_outputs, decoder_output_lens):
 				concat_model_outputs.append(mo[:dl])
 				concat_decoder_outputs.append(do[:dl])
-			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
+			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device)), model_outputs
 	else:
 		criterion = None
 		train_forward = None
@@ -2066,9 +2317,7 @@ def build_aster_model(label_converter, image_height, image_width, image_channel,
 	#else:
 	#	raise ValueError('Invalid loss type, {}'.format(loss_type))
 
-	def train_forward(model, criterion, batch, device):
-		inputs, outputs, output_lens = batch
-
+	def train_forward(model, criterion, inputs, outputs, output_lens, device):
 		"""
 		# Construct inputs for one-step look-ahead.
 		if eos_id != pad_id:
@@ -2088,7 +2337,8 @@ def build_aster_model(label_converter, image_height, image_width, image_channel,
 		model_output_dict = model(input_dict, device=device)
 
 		loss = model_output_dict['losses']['loss_rec']  # aster.sequence_cross_entropy_loss.SequenceCrossEntropyLoss.
-		return loss
+		model_outputs = model_output_dict['output']['pred_rec']  # [batch size, max label len].
+		return loss, model_outputs
 
 	def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 		if outputs is None or output_lens is None:
@@ -2192,8 +2442,7 @@ def build_opennmt_model(label_converter, image_height, image_width, image_channe
 		else:
 			raise ValueError('Invalid loss type, {}'.format(loss_type))
 
-		def train_forward(model, criterion, batch, device):
-			inputs, outputs, output_lens = batch
+		def train_forward(model, criterion, inputs, outputs, output_lens, device):
 			outputs = outputs.long()
 
 			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
@@ -2214,7 +2463,7 @@ def build_opennmt_model(label_converter, image_height, image_width, image_channe
 			for mo, do, dl in zip(model_outputs, decoder_outputs, decoder_output_lens):
 				concat_model_outputs.append(mo[:dl])
 				concat_decoder_outputs.append(do[:dl])
-			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
+			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device)), model_outputs
 	else:
 		criterion = None
 		train_forward = None
@@ -2385,8 +2634,7 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 		else:
 			raise ValueError('Invalid loss type, {}'.format(loss_type))
 
-		def train_forward(model, criterion, batch, device):
-			inputs, outputs, output_lens = batch
+		def train_forward(model, criterion, inputs, outputs, output_lens, device):
 			outputs = outputs.long()
 
 			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
@@ -2407,7 +2655,7 @@ def build_rare1_and_opennmt_model(label_converter, image_height, image_width, im
 			for mo, do, dl in zip(model_outputs, decoder_outputs, decoder_output_lens):
 				concat_model_outputs.append(mo[:dl])
 				concat_decoder_outputs.append(do[:dl])
-			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
+			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device)), model_outputs
 	else:
 		criterion = None
 		train_forward = None
@@ -2545,8 +2793,7 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 		else:
 			raise ValueError('Invalid loss type, {}'.format(loss_type))
 
-		def train_forward(model, criterion, batch, device):
-			inputs, outputs, output_lens = batch
+		def train_forward(model, criterion, inputs, outputs, output_lens, device):
 			outputs = outputs.long()
 
 			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
@@ -2567,7 +2814,7 @@ def build_rare2_and_opennmt_model(label_converter, image_height, image_width, im
 			for mo, do, dl in zip(model_outputs, decoder_outputs, decoder_output_lens):
 				concat_model_outputs.append(mo[:dl])
 				concat_decoder_outputs.append(do[:dl])
-			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
+			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device)), model_outputs
 	else:
 		criterion = None
 		train_forward = None
@@ -2705,8 +2952,7 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 		else:
 			raise ValueError('Invalid loss type, {}'.format(loss_type))
 
-		def train_forward(model, criterion, batch, device):
-			inputs, outputs, output_lens = batch
+		def train_forward(model, criterion, inputs, outputs, output_lens, device):
 			outputs = outputs.long()
 
 			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
@@ -2727,7 +2973,7 @@ def build_aster_and_opennmt_model(label_converter, image_height, image_width, im
 			for mo, do, dl in zip(model_outputs, decoder_outputs, decoder_output_lens):
 				concat_model_outputs.append(mo[:dl])
 				concat_decoder_outputs.append(do[:dl])
-			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device))
+			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device)), model_outputs
 	else:
 		criterion = None
 		train_forward = None
@@ -2865,8 +3111,7 @@ def build_transformer_model(label_converter, image_height, image_width, image_ch
 		# Define a loss function.
 		criterion = transformer_ocr.train.LabelSmoothing(size=label_converter.num_tokens, padding_idx=pad_id, smoothing=smoothing)
 
-		def train_forward(model, criterion, batch, device):
-			inputs, outputs, _ = batch
+		def train_forward(model, criterion, inputs, outputs, output_lens, device):
 			outputs = outputs.long()
 
 			# Construct inputs for one-step look-ahead.
@@ -2882,7 +3127,7 @@ def build_transformer_model(label_converter, image_height, image_width, image_ch
 
 			# REF [function] >> transformer_ocr.train.SimpleLossCompute.__call__().
 			model_outputs = model.generator(model_outputs)
-			return criterion(model_outputs.contiguous().view(-1, model_outputs.size(-1)), batch.tgt_output.contiguous().view(-1)) / batch.num_tokens
+			return criterion(model_outputs.contiguous().view(-1, model_outputs.size(-1)), batch.tgt_output.contiguous().view(-1)) / batch.num_tokens, model_outputs
 	else:
 		criterion = None
 		train_forward = None
@@ -2921,6 +3166,7 @@ def train_character_recognizer(image_shape, output_dir_path, model_filepath_to_l
 	char_clipping_ratio_interval = (0.8, 1.25)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
+	is_case_sensitive = False
 
 	loss_type = 'xent'  # {'xent', 'nll'}.
 	#max_gradient_norm = 5  # Gradient clipping value.
@@ -3018,7 +3264,7 @@ def train_character_recognizer(image_shape, output_dir_path, model_filepath_to_l
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_char_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -3040,7 +3286,7 @@ def train_character_recognizer(image_shape, output_dir_path, model_filepath_to_l
 	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
 	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
@@ -3061,6 +3307,7 @@ def train_character_recognizer_using_mixup(image_shape, output_dir_path, model_f
 	char_clipping_ratio_interval = (0.8, 1.25)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
+	is_case_sensitive = False
 
 	loss_type = 'xent'  # {'xent', 'nll'}.
 	#max_gradient_norm = 5  # Gradient clipping value.
@@ -3158,7 +3405,7 @@ def train_character_recognizer_using_mixup(image_shape, output_dir_path, model_f
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_char_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -3180,7 +3427,7 @@ def train_character_recognizer_using_mixup(image_shape, output_dir_path, model_f
 	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	evaluate_char_recognition_model(model, label_converter, test_dataloader, is_case_sensitive, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
 	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
@@ -3200,6 +3447,7 @@ def train_word_recognizer_based_on_rare1(image_shape, output_dir_path, model_fil
 	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
+	is_case_sensitive = False
 
 	loss_type = 'xent'  # {'ctc', 'xent', 'nll'}.
 	max_gradient_norm = 5  # Gradient clipping value.
@@ -3333,7 +3581,7 @@ def train_word_recognizer_based_on_rare1(image_shape, output_dir_path, model_fil
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_text_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -3355,7 +3603,7 @@ def train_word_recognizer_based_on_rare1(image_shape, output_dir_path, model_fil
 	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
 	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
@@ -3375,6 +3623,7 @@ def train_word_recognizer_based_on_rare2(image_shape, output_dir_path, model_fil
 	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
+	is_case_sensitive = False
 
 	loss_type = 'xent'  # {'xent', 'nll'}.
 	max_gradient_norm = 5  # Gradient clipping value.
@@ -3494,7 +3743,7 @@ def train_word_recognizer_based_on_rare2(image_shape, output_dir_path, model_fil
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_text_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -3516,7 +3765,7 @@ def train_word_recognizer_based_on_rare2(image_shape, output_dir_path, model_fil
 	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
 	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
@@ -3536,6 +3785,7 @@ def train_word_recognizer_based_on_aster(image_shape, output_dir_path, model_fil
 	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
+	is_case_sensitive = False
 
 	#loss_type = 'sxent'  # Sequence cross entropy.
 	#max_gradient_norm = 5  # Gradient clipping value.
@@ -3655,7 +3905,7 @@ def train_word_recognizer_based_on_aster(image_shape, output_dir_path, model_fil
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, None, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_text_model(model, None, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -3677,7 +3927,7 @@ def train_word_recognizer_based_on_aster(image_shape, output_dir_path, model_fil
 	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
 	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
@@ -3699,6 +3949,7 @@ def train_word_recognizer_based_on_opennmt(image_shape, output_dir_path, model_f
 	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
+	is_case_sensitive = False
 
 	loss_type = 'xent'  # {'xent', 'nll'}.
 	#max_gradient_norm = 20  # Gradient clipping value.
@@ -3818,7 +4069,7 @@ def train_word_recognizer_based_on_opennmt(image_shape, output_dir_path, model_f
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_text_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -3840,7 +4091,7 @@ def train_word_recognizer_based_on_opennmt(image_shape, output_dir_path, model_f
 	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
 	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
@@ -3860,6 +4111,7 @@ def train_word_recognizer_based_on_rare1_and_opennmt(image_shape, output_dir_pat
 	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
+	is_case_sensitive = False
 
 	loss_type = 'xent'  # {'xent', 'nll'}.
 	#max_gradient_norm = 20  # Gradient clipping value.
@@ -3978,7 +4230,7 @@ def train_word_recognizer_based_on_rare1_and_opennmt(image_shape, output_dir_pat
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_text_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -4000,7 +4252,7 @@ def train_word_recognizer_based_on_rare1_and_opennmt(image_shape, output_dir_pat
 	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
 	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
@@ -4020,6 +4272,7 @@ def train_word_recognizer_based_on_rare2_and_opennmt(image_shape, output_dir_pat
 	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
+	is_case_sensitive = False
 
 	loss_type = 'xent'  # {'xent', 'nll'}.
 	#max_gradient_norm = 20  # Gradient clipping value.
@@ -4138,7 +4391,7 @@ def train_word_recognizer_based_on_rare2_and_opennmt(image_shape, output_dir_pat
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_text_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -4160,7 +4413,7 @@ def train_word_recognizer_based_on_rare2_and_opennmt(image_shape, output_dir_pat
 	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
 	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
@@ -4180,6 +4433,7 @@ def train_word_recognizer_based_on_aster_and_opennmt(image_shape, output_dir_pat
 	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
+	is_case_sensitive = False
 
 	loss_type = 'xent'  # {'xent', 'nll'}.
 	#max_gradient_norm = 20  # Gradient clipping value.
@@ -4298,7 +4552,7 @@ def train_word_recognizer_based_on_aster_and_opennmt(image_shape, output_dir_pat
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_text_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -4320,7 +4574,7 @@ def train_word_recognizer_based_on_aster_and_opennmt(image_shape, output_dir_pat
 	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
 	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
@@ -4340,6 +4594,7 @@ def train_word_recognizer_using_mixup(image_shape, output_dir_path, model_filepa
 	word_len_interval = (1, max_word_len)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
+	is_case_sensitive = False
 
 	loss_type = 'xent'  # {'ctc', 'xent', 'nll'}.
 	max_gradient_norm = 5  # Gradient clipping value.
@@ -4473,7 +4728,7 @@ def train_word_recognizer_using_mixup(image_shape, output_dir_path, model_filepa
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_text_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -4495,7 +4750,7 @@ def train_word_recognizer_using_mixup(image_shape, output_dir_path, model_filepa
 	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
 	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
@@ -4520,6 +4775,7 @@ def train_textline_recognizer_based_on_opennmt(image_shape, output_dir_path, mod
 	char_space_ratio_interval = (0.8, 1.25)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
+	is_case_sensitive = False
 
 	loss_type = 'xent'  # {'xent', 'nll'}.
 	#max_gradient_norm = 20  # Gradient clipping value.
@@ -4639,7 +4895,7 @@ def train_textline_recognizer_based_on_opennmt(image_shape, output_dir_path, mod
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_text_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -4661,7 +4917,7 @@ def train_textline_recognizer_based_on_opennmt(image_shape, output_dir_path, mod
 	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
 	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
@@ -4684,6 +4940,7 @@ def train_textline_recognizer_based_on_transformer(image_shape, output_dir_path,
 	char_space_ratio_interval = (0.8, 1.25)
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
+	is_case_sensitive = False
 
 	loss_type = 'kldiv'  # {'kldiv'}.
 	#max_gradient_norm = 20  # Gradient clipping value.
@@ -4805,7 +5062,7 @@ def train_textline_recognizer_based_on_transformer(image_shape, output_dir_path,
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, scheduler, max_gradient_norm, model_params, logger, device)
+	model, best_model_filepath = train_text_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -4827,7 +5084,7 @@ def train_textline_recognizer_based_on_transformer(image_shape, output_dir_path,
 	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
 	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
