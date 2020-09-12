@@ -217,7 +217,7 @@ class MyRunner(object):
 
 				model_outputs = model(batch_inputs)
 
-				model_outputs = torch.argmax(model_outputs, -1)
+				model_outputs = torch.argmax(model_outputs, dim=-1)
 				inferences.extend(model_outputs.cpu().numpy())
 				ground_truths.extend(batch_outputs.numpy())
 		if logger: logger.info('End testing a model: {} secs.'.format(time.time() - start_time))
@@ -240,7 +240,7 @@ class MyRunner(object):
 			inputs = inputs.to(device)
 			model_outputs = model(inputs)
 		if logger: logger.info('End inferring: {} secs.'.format(time.time() - start_time))
-		return torch.argmax(model_outputs, -1)
+		return torch.argmax(model_outputs, dim=-1)
 
 	def _train(self, model, criterion, optimizer, dataloader, epoch, log_print_freq, logger, device):
 		model.train()  # Switch to train mode.
@@ -288,7 +288,7 @@ class MyRunner(object):
 			batch_time.update(time.time() - start_batch_time)
 
 			# Measure accuracy and record loss.
-			#model_outputs = torch.argmax(model_outputs, -1)
+			#model_outputs = torch.argmax(model_outputs, dim=-1)
 			prec1, prec5 = swl_ml_util.accuracy(model_outputs, batch_outputs, topk=(1, 5))
 			losses.update(loss.item(), batch_inputs.size(0))
 			top1.update(prec1.item(), batch_inputs.size(0))
@@ -334,7 +334,7 @@ class MyRunner(object):
 				loss = criterion(model_outputs, batch_outputs)
 
 				# Measure accuracy and record loss.
-				#model_outputs = torch.argmax(model_outputs, -1)
+				#model_outputs = torch.argmax(model_outputs, dim=-1)
 				prec1, prec5 = swl_ml_util.accuracy(model_outputs.data, batch_outputs, topk=(1, 5))
 				losses.update(loss.item(), batch_inputs.size(0))
 				top1.update(prec1.item(), batch_inputs.size(0))

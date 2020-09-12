@@ -179,8 +179,12 @@ class SimpleCharacterDataset(TextDatasetBase):
 			font_size = random.randint(*self.font_size_interval)
 			font_color, bg_color = self.color_functor()
 
-			#image, mask = swl_langproc_util.generate_text_image(ch, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode=self.mode, mask=False, mask_mode='1')
-			image = swl_langproc_util.generate_simple_text_image(ch, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode=self.mode)
+			try:
+				#image, mask = swl_langproc_util.generate_text_image(ch, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode=self.mode, mask=False, mask_mode='1')
+				image = swl_langproc_util.generate_simple_text_image(ch, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode=self.mode)
+			except OSError as ex:
+				print('[SWL] Error: font_type = {}, font_index = {}, font_size = {}, char = {}: {}.'.format(font_type, font_index, font_size, ch, ex))
+				continue
 
 			#if image and image.mode != self.mode:
 			#	image = image.convert(self.mode)
@@ -237,8 +241,12 @@ class NoisyCharacterDataset(TextDatasetBase):
 			font_size = random.randint(*self.font_size_interval)
 			font_color, bg_color = self.color_functor()
 
-			#image, mask = swl_langproc_util.generate_text_image(ch3, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode=self.mode, mask=False, mask_mode='1')
-			image = swl_langproc_util.generate_simple_text_image(ch3, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode=self.mode)
+			try:
+				#image, mask = swl_langproc_util.generate_text_image(ch3, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode=self.mode, mask=False, mask_mode='1')
+				image = swl_langproc_util.generate_simple_text_image(ch3, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode=self.mode)
+			except OSError as ex:
+				print('[SWL] Error: font_type = {}, font_index = {}, font_size = {}, char = {}: {}.'.format(font_type, font_index, font_size, ch3, ex))
+				continue
 
 			# FIXME [modify] >> It's an experimental implementation.
 			alpha, beta = 0.75, 0.5  # Min. character width ratio and min. font width ratio.
@@ -389,8 +397,12 @@ class SimpleWordDataset(TextDatasetBase):
 			font_size = random.randint(*self.font_size_interval)
 			font_color, bg_color = self.color_functor()
 
-			#image, mask = swl_langproc_util.generate_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode=self.mode, mask=False, mask_mode='1')
-			image = swl_langproc_util.generate_simple_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode=self.mode)
+			try:
+				#image, mask = swl_langproc_util.generate_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode=self.mode, mask=False, mask_mode='1')
+				image = swl_langproc_util.generate_simple_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode=self.mode)
+			except OSError as ex:
+				print('[SWL] Error: font_type = {}, font_index = {}, font_size = {}, word = {}: {}.'.format(font_type, font_index, font_size, word, ex))
+				continue
 
 			#if image and image.mode != self.mode:
 			#	image = image.convert(self.mode)
@@ -459,8 +471,12 @@ class RandomWordDataset(TextDatasetBase):
 			font_size = random.randint(*self.font_size_interval)
 			font_color, bg_color = self.color_functor()
 
-			#image, mask = swl_langproc_util.generate_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode=self.mode, mask=False, mask_mode='1')
-			image = swl_langproc_util.generate_simple_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode=self.mode)
+			try:
+				#image, mask = swl_langproc_util.generate_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size, image_size=None, text_offset=None, crop_text_area=True, char_space_ratio=None, mode=self.mode, mask=False, mask_mode='1')
+				image = swl_langproc_util.generate_simple_text_image(word, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode=self.mode)
+			except OSError as ex:
+				print('[SWL] Error: font_type = {}, font_index = {}, font_size = {}, word = {}: {}.'.format(font_type, font_index, font_size, word, ex))
+				continue
 
 			#if image and image.mode != self.mode:
 			#	image = image.convert(self.mode)
@@ -608,8 +624,12 @@ class SimpleTextLineDataset(TextDatasetBase):
 			char_space_ratio = None if self.char_space_ratio_interval is None else random.uniform(*self.char_space_ratio_interval)
 			font_color, bg_color = self.color_functor()
 
-			#image, mask = swl_langproc_util.generate_text_image(textline, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio, mode=self.mode, mask=True, mask_mode='1')
-			image = swl_langproc_util.generate_text_image(textline, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio, mode=self.mode)
+			try:
+				#image, mask = swl_langproc_util.generate_text_image(textline, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio, mode=self.mode, mask=True, mask_mode='1')
+				image = swl_langproc_util.generate_text_image(textline, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio, mode=self.mode)
+			except OSError as ex:
+				print('[SWL] Error: font_type = {}, font_index = {}, font_size = {}, textline = {}: {}.'.format(font_type, font_index, font_size, textline, ex))
+				continue
 
 			#if image and image.mode != self.mode:
 			#	image = image.convert(self.mode)
@@ -681,8 +701,12 @@ class RandomTextLineDataset(TextDatasetBase):
 			char_space_ratio = None if self.char_space_ratio_interval is None else random.uniform(*self.char_space_ratio_interval)
 			font_color, bg_color = self.color_functor()
 
-			#image, mask = swl_langproc_util.generate_text_image(textline, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio, mode=self.mode, mask=True, mask_mode='1')
-			image = swl_langproc_util.generate_text_image(textline, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio, mode=self.mode)
+			try:
+				#image, mask = swl_langproc_util.generate_text_image(textline, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio, mode=self.mode, mask=True, mask_mode='1')
+				image = swl_langproc_util.generate_text_image(textline, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio, mode=self.mode)
+			except OSError as ex:
+				print('[SWL] Error: font_type = {}, font_index = {}, font_size = {}, textline = {}: {}.'.format(font_type, font_index, font_size, textline, ex))
+				continue
 
 			#if image and image.mode != self.mode:
 			#	image = image.convert(self.mode)

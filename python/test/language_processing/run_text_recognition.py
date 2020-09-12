@@ -13,7 +13,7 @@ import torchvision
 from PIL import Image, ImageOps
 import cv2
 import matplotlib.pyplot as plt
-import swl.machine_learing.util as swl_ml_util
+import swl.machine_learning.util as swl_ml_util
 import swl.language_processing.util as swl_langproc_util
 import text_generation_util as tg_util
 import text_data, aihub_data
@@ -1374,8 +1374,7 @@ def train_char_model_in_a_epoch(model, train_forward_functor, optimizer, dataloa
 		optimizer.step()
 
 		# Measure accuracy and record loss.
-		#model_outputs = torch.argmax(model_outputs, -1)
-		prec1, prec5 = swl_ml_util.accuracy(model_outputs, batch_outputs, topk=(1, 5))
+		prec1, prec5 = swl_ml_util.accuracy(torch.argmax(model_outputs, dim=-1), batch_outputs[:,1:], topk=(1, 5))
 		losses.update(loss.item(), batch_inputs.size(0))
 		top1.update(prec1.item(), batch_inputs.size(0))
 		top5.update(prec5.item(), batch_inputs.size(0))
@@ -1392,14 +1391,14 @@ def train_char_model_in_a_epoch(model, train_forward_functor, optimizer, dataloa
 		"""
 
 		if (batch_step + 1) % log_print_freq == 0:
-			if logger: logger.info('\tEpoch: [{:03d}][{:03d}/{:03d}]   '
-				'Time {batch_time.val:.3f} ({batch_time.avg:.3f})   '
-				'Data {data_time.val:.3f} ({data_time.avg:.3f})   '
-				'Loss {loss.val:.4f} ({loss.avg:.4f})   '
-				'Prec@1 {top1.val:.3f} ({top1.avg:.3f})   '
-				'Prec@5 {top5.val:.3f} ({top5.avg:.3f})   '.format(
-				epoch, batch_step + 1, len(dataloader), batch_time=batch_time,
-				data_time=data_time, loss=losses, top1=top1, top5=top5) + swl_ml_util.time_string())
+			if logger: logger.info('\tBatch {}/{}: '
+				'Batch time = {batch_time.val:.3f} ({batch_time.avg:.3f}), '
+				'Data time = {data_time.val:.3f} ({data_time.avg:.3f}), '
+				'Loss = {loss.val:.4f} ({loss.avg:.4f}), '
+				'Prec@1 = {top1.val:.3f} ({top1.avg:.3f}), '
+				'Prec@5 = {top5.val:.3f} ({top5.avg:.3f}).'.format(
+				batch_step + 1, len(dataloader), batch_time=batch_time,
+				data_time=data_time, loss=losses, top1=top1, top5=top5))
 
 		sys.stdout.flush()
 		time.sleep(0)
@@ -1426,30 +1425,29 @@ def validate_char_model_in_a_epoch(model, train_forward_functor, dataloader, lab
 			loss, model_outputs = train_forward_functor(model, batch_inputs, batch_outputs, device)
 
 			# Measure accuracy and record loss.
-			#model_outputs = torch.argmax(model_outputs, -1)
-			prec1, prec5 = swl_ml_util.accuracy(model_outputs, batch_outputs, topk=(1, 5))
+			prec1, prec5 = swl_ml_util.accuracy(torch.argmax(model_outputs, dim=-1), batch_outputs[:,1:], topk=(1, 5))
 			losses.update(loss.item(), batch_inputs.size(0))
 			top1.update(prec1.item(), batch_inputs.size(0))
 			top5.update(prec5.item(), batch_inputs.size(0))
 
-			batch_total_matching_ratio, _ = compute_sequence_matching_ratio(batch_inputs, batch_outputs, model_outputs, label_converter, is_case_sensitive, error_cases_dir_path=None, error_idx=0)
+			model_outputs_np = np.argmax(model_outputs.cpu().numpy(), axis=-1)
+			batch_total_matching_ratio, _ = compute_sequence_matching_ratio(batch_inputs, batch_outputs, model_outputs_np, label_converter, is_case_sensitive, error_cases_dir_path=None, error_idx=0)
 			total_matching_ratio += batch_total_matching_ratio
 			num_examples += len(batch_inputs)
 
 			# Show results.
 			if show:
-				if logger: logger.info('\tG/T:        {}.'.format(batch_outputs.cpu().numpy()))
-				if logger: logger.info('\tPrediction: {}.'.format(np.argmax(model_outputs.cpu().numpy(), axis=-1)))
+				if logger: logger.info('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(batch_outputs.numpy(), model_outputs_np)]))
 				show = False
 	avg_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
 	return losses, top1, top5, avg_matching_ratio
 
-def train_text_model_in_a_epoch(model, criterion, train_forward_functor, optimizer, dataloader, model_params, max_gradient_norm, epoch, log_print_freq, logger, device='cpu'):
+def train_text_model_in_a_epoch(model, criterion, train_forward_functor, optimizer, dataloader, model_params, max_gradient_norm, label_converter, is_case_sensitive, epoch, log_print_freq, logger, device='cpu'):
 	model.train()
 
 	#start_epoch_time = time.time()
 	batch_time, data_time = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
-	losses, top1, top5 = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
+	losses, top1 = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
 	#running_loss = 0.0
 	for batch_step, batch in enumerate(dataloader):
 		start_batch_time = time.time()
@@ -1468,11 +1466,11 @@ def train_text_model_in_a_epoch(model, criterion, train_forward_functor, optimiz
 		optimizer.step()
 
 		# Measure accuracy and record loss.
-		#model_outputs = torch.argmax(model_outputs, -1)
-		prec1, prec5 = swl_ml_util.accuracy(model_outputs, batch_outputs, topk=(1, 5))
+		_, model_outputs = torch.max(model_outputs, dim=-1)
+		total_matching_ratio, _ = compute_sequence_matching_ratio(batch_inputs, batch_outputs, model_outputs, label_converter, is_case_sensitive, error_cases_dir_path=None, error_idx=0)
+		avg_matching_ratio = total_matching_ratio / batch_inputs.size(0) if batch_inputs.size(0) > 0 else -1
 		losses.update(loss.item(), batch_inputs.size(0))
-		top1.update(prec1.item(), batch_inputs.size(0))
-		top5.update(prec5.item(), batch_inputs.size(0))
+		top1.update(avg_matching_ratio, batch_inputs.size(0))
 
 		# Measure elapsed time.
 		batch_time.update(time.time() - start_batch_time)
@@ -1486,24 +1484,22 @@ def train_text_model_in_a_epoch(model, criterion, train_forward_functor, optimiz
 		"""
 
 		if (batch_step + 1) % log_print_freq == 0:
-			if logger: logger.info('\tEpoch: [{:03d}][{:03d}/{:03d}]   '
-				'Time {batch_time.val:.3f} ({batch_time.avg:.3f})   '
-				'Data {data_time.val:.3f} ({data_time.avg:.3f})   '
-				'Loss {loss.val:.4f} ({loss.avg:.4f})   '
-				'Prec@1 {top1.val:.3f} ({top1.avg:.3f})   '
-				'Prec@5 {top5.val:.3f} ({top5.avg:.3f})   '.format(
-				epoch, batch_step + 1, len(dataloader), batch_time=batch_time,
-				data_time=data_time, loss=losses, top1=top1, top5=top5) + swl_ml_util.time_string())
+			if logger: logger.info('\tBatch {}/{}: '
+				'Batch time = {batch_time.val:.3f} ({batch_time.avg:.3f}), '
+				'Data time = {data_time.val:.3f} ({data_time.avg:.3f}), '
+				'Loss = {loss.val:.4f} ({loss.avg:.4f}), '
+				'Prec@1 = {top1.val:.3f} ({top1.avg:.3f}).'.format(
+				batch_step + 1, len(dataloader), batch_time=batch_time,
+				data_time=data_time, loss=losses, top1=top1))
 
 		sys.stdout.flush()
 		time.sleep(0)
-	return losses, top1, top5
+	return losses, top1
 
 def validate_text_model_in_a_epoch(model, criterion, train_forward_functor, dataloader, label_converter, is_case_sensitive, logger, device='cpu'):
 	model.eval()
 
-	losses, top1, top5 = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
-	total_matching_ratio, num_examples = 0, 0
+	losses, top1 = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
 	with torch.no_grad():
 		show = True
 		for batch in dataloader:
@@ -1520,26 +1516,20 @@ def validate_text_model_in_a_epoch(model, criterion, train_forward_functor, data
 			loss, model_outputs = train_forward_functor(model, criterion, batch_inputs, batch_outputs, batch_output_lens, device)
 
 			# Measure accuracy and record loss.
-			#model_outputs = torch.argmax(model_outputs, -1)
-			prec1, prec5 = swl_ml_util.accuracy(model_outputs, batch_outputs, topk=(1, 5))
+			model_outputs_np = np.argmax(model_outputs.cpu().numpy(), axis=-1)
+			total_matching_ratio, _ = compute_sequence_matching_ratio(batch_inputs, batch_outputs, model_outputs_np, label_converter, is_case_sensitive, error_cases_dir_path=None, error_idx=0)
+			avg_matching_ratio = total_matching_ratio / batch_inputs.size(0) if batch_inputs.size(0) > 0 else -1
 			losses.update(loss.item(), batch_inputs.size(0))
-			top1.update(prec1.item(), batch_inputs.size(0))
-			top5.update(prec5.item(), batch_inputs.size(0))
-
-			batch_total_matching_ratio, _ = compute_sequence_matching_ratio(batch_inputs, batch_outputs, model_outputs, label_converter, is_case_sensitive, error_cases_dir_path=None, error_idx=0)
-			total_matching_ratio += batch_total_matching_ratio
-			num_examples += len(batch_inputs)
+			top1.update(avg_matching_ratio, batch_inputs.size(0))
 
 			# Show results.
 			if show:
-				if logger: logger.info('\tG/T:        {}.'.format(batch_outputs.cpu().numpy()))
-				if logger: logger.info('\tPrediction: {}.'.format(np.argmax(model_outputs.cpu().numpy(), axis=-1)))
+				if logger: logger.info('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(batch_outputs.numpy(), model_outputs_np)]))
 				show = False
-	avg_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
-	return losses, top1, top5, avg_matching_ratio
+	return losses, top1
 
-def train_char_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler=None, max_gradient_norm=None, model_params=None, is_case_sensitive=False, logger=None, device='cpu'):
-	if logger: logger.info('Model:\n{}.'.format(model))
+def train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler=None, max_gradient_norm=None, model_params=None, is_case_sensitive=False, logger=None, device='cpu'):
+	#if logger: logger.info('Model:\n{}.'.format(model))
 
 	train_log_filepath = os.path.join(output_dir_path, 'train_log.txt')
 	train_history_filepath = os.path.join(output_dir_path, 'train_history.pkl')
@@ -1557,19 +1547,16 @@ def train_char_model(model, train_forward_functor, criterion, label_converter, t
 	best_performance_measure = 0.0
 	best_model_filepath = None
 	for epoch in range(initial_epoch, final_epoch):  # Loop over the dataset multiple times.
-		if logger: logger.info('Epoch {}/{}.'.format(epoch + 1, final_epoch))
-		start_epoch_time = time.time()
-
 		current_learning_rate = scheduler.get_lr() if scheduler else 0.0
 		need_hour, need_mins, need_secs = swl_ml_util.convert_secs2time(epoch_time.avg * (final_epoch - epoch))
-		need_time = '[Need: {:02d}:{:02d}:{:02d}]'.format(need_hour, need_mins, need_secs)
-		if logger: logger.info('==>>{:s} [Epoch={:03d}/{:03d}] {:s} [learning_rate={:6.4f}]'.format(swl_ml_util.time_string(), epoch + 1, final_epoch, need_time, current_learning_rate) \
-			+ ' [Best : Accuracy={:.2f}, Error={:.2f}].'.format(recorder.max_accuracy(False), 100 - recorder.max_accuracy(False)))
+		if logger: logger.info('Epoch {}/{}: Need time = {:02d}:{:02d}:{:02d}, Learning rate = {:6.4f}.'.format(epoch + 1, final_epoch, need_hour, need_mins, need_secs, current_learning_rate))
+		if logger: logger.info('\tBest: Accuracy = {:.2f}, Error = {:.2f}.'.format(recorder.max_accuracy(False), 100 - recorder.max_accuracy(False)))
+		start_epoch_time = time.time()
 
 		#--------------------
 		start_time = time.time()
 		losses, top1, top5 = train_char_model_in_a_epoch(model, train_forward_functor, optimizer, train_dataloader, model_params, max_gradient_norm, epoch, log_print_freq, logger, device)
-		if logger: logger.info('\tTrain:      Prec@1 = {top1.avg:.3f}, Prec@5 = {top5.avg:.3f}, Error@1 = {error1:.3f}, Loss = {losses.avg:.3f}: {elapsed_time:.6f} secs.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
+		if logger: logger.info('Train:      Prec@1 = {top1.avg:.3f}, Prec@5 = {top5.avg:.3f}, Error@1 = {error1:.3f}, Loss = {losses.avg:.3f}: {elapsed_time:.6f} secs.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
 
 		train_loss, train_acc = losses.avg, top1.avg
 		history['loss'].append(train_loss)
@@ -1578,7 +1565,7 @@ def train_char_model(model, train_forward_functor, criterion, label_converter, t
 		#--------------------
 		start_time = time.time()
 		losses, top1, top5, avg_matching_ratio = validate_char_model_in_a_epoch(model, train_forward_functor, test_dataloader, label_converter, is_case_sensitive, logger, device)
-		if logger: logger.info('\tValidation: Prec@1 = {top1.avg:.3f}, Prec@5 = {top5.avg:.3f}, Error@1 = {error1:.3f}, Loss = {losses.avg:.3f}: {elapsed_time:.6f} secs.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
+		if logger: logger.info('Validation: Prec@1 = {top1.avg:.3f}, Prec@5 = {top5.avg:.3f}, Error@1 = {error1:.3f}, Loss = {losses.avg:.3f}: {elapsed_time:.6f} secs.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
 
 		val_loss, val_acc = losses.avg, top1.avg
 		history['val_loss'].append(val_loss)
@@ -1614,8 +1601,8 @@ def train_char_model(model, train_forward_functor, criterion, label_converter, t
 
 	return model, best_model_filepath
 
-def train_text_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler=None, max_gradient_norm=None, model_params=None, is_case_sensitive=False, logger=None, device='cpu'):
-	if logger: logger.info('Model:\n{}.'.format(model))
+def train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler=None, max_gradient_norm=None, model_params=None, is_case_sensitive=False, logger=None, device='cpu'):
+	#if logger: logger.info('Model:\n{}.'.format(model))
 
 	train_log_filepath = os.path.join(output_dir_path, 'train_log.txt')
 	train_history_filepath = os.path.join(output_dir_path, 'train_history.pkl')
@@ -1634,19 +1621,16 @@ def train_text_model(model, criterion, train_forward_functor, infer_functor, lab
 	best_model_filepath = None
 	is_case_sensitive = False
 	for epoch in range(initial_epoch, final_epoch):  # Loop over the dataset multiple times.
-		if logger: logger.info('Epoch {}/{}.'.format(epoch + 1, final_epoch))
-		start_epoch_time = time.time()
-
 		current_learning_rate = scheduler.get_lr() if scheduler else 0.0
 		need_hour, need_mins, need_secs = swl_ml_util.convert_secs2time(epoch_time.avg * (final_epoch - epoch))
-		need_time = '[Need: {:02d}:{:02d}:{:02d}]'.format(need_hour, need_mins, need_secs)
-		if logger: logger.info('==>>{:s} [Epoch={:03d}/{:03d}] {:s} [learning_rate={:6.4f}]'.format(swl_ml_util.time_string(), epoch + 1, final_epoch, need_time, current_learning_rate) \
-			+ ' [Best : Accuracy={:.2f}, Error={:.2f}].'.format(recorder.max_accuracy(False), 100 - recorder.max_accuracy(False)))
+		if logger: logger.info('Epoch {}/{}: Need time = {:02d}:{:02d}:{:02d}, Learning rate = {:6.4f}.'.format(epoch + 1, final_epoch, need_hour, need_mins, need_secs, current_learning_rate))
+		if logger: logger.info('\tBest: Accuracy = {:.2f}, Error = {:.2f}.'.format(recorder.max_accuracy(False), 100 - recorder.max_accuracy(False)))
+		start_epoch_time = time.time()
 
 		#--------------------
 		start_time = time.time()
-		losses, top1, top5 = train_text_model_in_a_epoch(model, criterion, train_forward_functor, optimizer, train_dataloader, model_params, max_gradient_norm, epoch, log_print_freq, logger, device)
-		if logger: logger.info('\tTrain:      Prec@1 = {top1.avg:.3f}, Prec@5 = {top5.avg:.3f}, Error@1 = {error1:.3f}, Loss = {losses.avg:.3f}: {elapsed_time:.6f} secs.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
+		losses, top1 = train_text_model_in_a_epoch(model, criterion, train_forward_functor, optimizer, train_dataloader, model_params, max_gradient_norm, label_converter, is_case_sensitive, epoch, log_print_freq, logger, device)
+		if logger: logger.info('Train:      Prec@1 = {top1.avg:.3f}, Error@1 = {error1:.3f}, Loss = {losses.avg:.3f}: {elapsed_time:.6f} secs.'.format(top1=top1, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
 
 		train_loss, train_acc = losses.avg, top1.avg
 		history['loss'].append(train_loss)
@@ -1654,8 +1638,8 @@ def train_text_model(model, criterion, train_forward_functor, infer_functor, lab
 
 		#--------------------
 		start_time = time.time()
-		losses, top1, top5, avg_matching_ratio = validate_text_model_in_a_epoch(model, criterion, train_forward_functor, test_dataloader, label_converter, is_case_sensitive, logger, device)
-		if logger: logger.info('\tValidation: Prec@1 = {top1.avg:.3f}, Prec@5 = {top5.avg:.3f}, Error@1 = {error1:.3f}, Loss = {losses.avg:.3f}: {elapsed_time:.6f} secs.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
+		losses, top1 = validate_text_model_in_a_epoch(model, criterion, train_forward_functor, test_dataloader, label_converter, is_case_sensitive, logger, device)
+		if logger: logger.info('Validation: Prec@1 = {top1.avg:.3f}, Error@1 = {error1:.3f}, Loss = {losses.avg:.3f}: {elapsed_time:.6f} secs.'.format(top1=top1, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
 
 		val_loss, val_acc = losses.avg, top1.avg
 		history['val_loss'].append(val_loss)
@@ -1667,13 +1651,11 @@ def train_text_model(model, criterion, train_forward_functor, infer_functor, lab
 		epoch_time.update(time.time() - start_epoch_time)
 
 		#--------------------
-		performance_measure = avg_matching_ratio
-		#performance_measure = val_acc
-		if performance_measure >= best_performance_measure:
+		if val_acc >= best_performance_measure:
 			# Save a checkpoint.
-			best_model_filepath = model_filepath_format.format('_acc{:.4f}_epoch{}'.format(performance_measure, epoch + 1))
+			best_model_filepath = model_filepath_format.format('_acc{:.4f}_epoch{}'.format(val_acc, epoch + 1))
 			save_model(best_model_filepath, model, logger)
-			best_performance_measure = performance_measure
+			best_performance_measure = val_acc
 
 		dummy = recorder.update(epoch, train_loss, train_acc, val_loss, val_acc)
 		recorder.plot_curve(train_result_image_filepath)
@@ -1703,7 +1685,7 @@ def evaluate_char_recognition_model(model, label_converter, dataloader, is_case_
 		for images, labels in dataloader:
 			predictions = model(images.to(device))
 
-			_, predictions = torch.max(predictions, 1)
+			_, predictions = torch.max(predictions, dim=1)
 			predictions = predictions.cpu().numpy()
 			gts = labels.numpy()
 
@@ -3264,7 +3246,7 @@ def train_character_recognizer(image_shape, output_dir_path, model_filepath_to_l
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_char_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
+	model, best_model_filepath = train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -3405,7 +3387,7 @@ def train_character_recognizer_using_mixup(image_shape, output_dir_path, model_f
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_char_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
+	model, best_model_filepath = train_char_recognition_model(model, train_forward_functor, criterion, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -3581,7 +3563,7 @@ def train_word_recognizer_based_on_rare1(image_shape, output_dir_path, model_fil
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -3743,7 +3725,7 @@ def train_word_recognizer_based_on_rare2(image_shape, output_dir_path, model_fil
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -3905,7 +3887,7 @@ def train_word_recognizer_based_on_aster(image_shape, output_dir_path, model_fil
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_model(model, None, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
+	model, best_model_filepath = train_text_recognition_model(model, None, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -4069,7 +4051,7 @@ def train_word_recognizer_based_on_opennmt(image_shape, output_dir_path, model_f
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -4230,7 +4212,7 @@ def train_word_recognizer_based_on_rare1_and_opennmt(image_shape, output_dir_pat
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -4391,7 +4373,7 @@ def train_word_recognizer_based_on_rare2_and_opennmt(image_shape, output_dir_pat
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -4552,7 +4534,7 @@ def train_word_recognizer_based_on_aster_and_opennmt(image_shape, output_dir_pat
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -4728,7 +4710,7 @@ def train_word_recognizer_using_mixup(image_shape, output_dir_path, model_filepa
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -4895,7 +4877,7 @@ def train_textline_recognizer_based_on_opennmt(image_shape, output_dir_path, mod
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -5062,7 +5044,7 @@ def train_textline_recognizer_based_on_transformer(image_shape, output_dir_path,
 	#--------------------
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, label_converter, train_dataloader, test_dataloader, optimizer, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -5589,7 +5571,7 @@ def recognize_character_using_craft(image_shape, output_dir_path, is_cuda_used, 
 
 				predictions = recognizer(imgs)
 
-				_, predictions = torch.max(predictions, 1)
+				_, predictions = torch.max(predictions, dim=1)
 				predictions = predictions.cpu().numpy()
 				if logger: logger.info('\t{}: {} (int), {} (str).'.format(idx, predictions, ''.join(label_converter.decode(predictions))))
 		if logger: logger.info('End inferring: {} secs.'.format(time.time() - start_time))
@@ -5730,7 +5712,7 @@ def recognize_word_using_craft(image_shape, output_dir_path, is_cuda_used, logge
 
 			predictions = recognizer(imgs)
 
-			_, predictions = torch.max(predictions, 1)
+			_, predictions = torch.max(predictions, dim=1)
 			predictions = predictions.cpu().numpy()
 			for idx, pred in enumerate(predictions):
 				if logger: logger.info('\t{}: {} (int), {} (str).'.format(idx, pred, ''.join(label_converter.decode(pred))))
@@ -5937,14 +5919,15 @@ def main():
 			output_dir_path = os.path.dirname(model_filepath)
 	else:
 		if not output_dir_path:
-			output_dir_prefix = 'text_recognition'
+			#output_dir_prefix = 'text_recognition'
+			output_dir_prefix = '{}_{}_ch{}_{}'.format(args.target_type, args.model_type, args.max_len, args.image_shape)
 			output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 		#model_filepath = os.path.join(output_dir_path, 'model.pth')
 	if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 		os.makedirs(output_dir_path, exist_ok=True)
 
-	logger.info('Output path: {}.'.format(output_dir_path))
+	logger.info('Output directory path: {}.'.format(output_dir_path))
 
 	#--------------------
 	if args.train:
