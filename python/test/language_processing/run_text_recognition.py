@@ -1470,7 +1470,7 @@ def train_text_model_in_a_epoch(model, criterion, train_forward_functor, optimiz
 		total_matching_ratio, _ = compute_sequence_matching_ratio(batch_inputs, batch_outputs, model_outputs, label_converter, is_case_sensitive, error_cases_dir_path=None, error_idx=0)
 		avg_matching_ratio = total_matching_ratio / batch_inputs.size(0) if batch_inputs.size(0) > 0 else -1
 		losses.update(loss.item(), batch_inputs.size(0))
-		top1.update(avg_matching_ratio, batch_inputs.size(0))
+		top1.update(avg_matching_ratio * 100, batch_inputs.size(0))
 
 		# Measure elapsed time.
 		batch_time.update(time.time() - start_batch_time)
@@ -1520,7 +1520,7 @@ def validate_text_model_in_a_epoch(model, criterion, train_forward_functor, data
 			total_matching_ratio, _ = compute_sequence_matching_ratio(batch_inputs, batch_outputs, model_outputs_np, label_converter, is_case_sensitive, error_cases_dir_path=None, error_idx=0)
 			avg_matching_ratio = total_matching_ratio / batch_inputs.size(0) if batch_inputs.size(0) > 0 else -1
 			losses.update(loss.item(), batch_inputs.size(0))
-			top1.update(avg_matching_ratio, batch_inputs.size(0))
+			top1.update(avg_matching_ratio * 100, batch_inputs.size(0))
 
 			# Show results.
 			if show:
@@ -1549,7 +1549,7 @@ def train_char_recognition_model(model, train_forward_functor, criterion, label_
 	for epoch in range(initial_epoch, final_epoch):  # Loop over the dataset multiple times.
 		current_learning_rate = scheduler.get_lr() if scheduler else 0.0
 		need_hour, need_mins, need_secs = swl_ml_util.convert_secs2time(epoch_time.avg * (final_epoch - epoch))
-		if logger: logger.info('Epoch {}/{}: Need time = {:02d}:{:02d}:{:02d}, Learning rate = {:6.4f}.'.format(epoch + 1, final_epoch, need_hour, need_mins, need_secs, current_learning_rate))
+		if logger: logger.info('Epoch {}/{}: Need time = {:02d}:{:02d}:{:02d}, Learning rate = {}.'.format(epoch + 1, final_epoch, need_hour, need_mins, need_secs, current_learning_rate))
 		if logger: logger.info('\tBest: Accuracy = {:.2f}, Error = {:.2f}.'.format(recorder.max_accuracy(False), 100 - recorder.max_accuracy(False)))
 		start_epoch_time = time.time()
 
@@ -1623,7 +1623,7 @@ def train_text_recognition_model(model, criterion, train_forward_functor, infer_
 	for epoch in range(initial_epoch, final_epoch):  # Loop over the dataset multiple times.
 		current_learning_rate = scheduler.get_lr() if scheduler else 0.0
 		need_hour, need_mins, need_secs = swl_ml_util.convert_secs2time(epoch_time.avg * (final_epoch - epoch))
-		if logger: logger.info('Epoch {}/{}: Need time = {:02d}:{:02d}:{:02d}, Learning rate = {:6.4f}.'.format(epoch + 1, final_epoch, need_hour, need_mins, need_secs, current_learning_rate))
+		if logger: logger.info('Epoch {}/{}: Need time = {:02d}:{:02d}:{:02d}, Learning rate = {}.'.format(epoch + 1, final_epoch, need_hour, need_mins, need_secs, current_learning_rate))
 		if logger: logger.info('\tBest: Accuracy = {:.2f}, Error = {:.2f}.'.format(recorder.max_accuracy(False), 100 - recorder.max_accuracy(False)))
 		start_epoch_time = time.time()
 
