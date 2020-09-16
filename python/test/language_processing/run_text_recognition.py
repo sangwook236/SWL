@@ -1395,8 +1395,8 @@ def train_char_model_in_a_epoch(model, train_forward_functor, optimizer, dataloa
 				'Batch time = {batch_time.val:.3f} ({batch_time.avg:.3f}), '
 				'Data time = {data_time.val:.3f} ({data_time.avg:.3f}), '
 				'Loss = {loss.val:.4f} ({loss.avg:.4f}), '
-				'Prec@1 = {top1.val:.3f} ({top1.avg:.3f}), '
-				'Prec@5 = {top5.val:.3f} ({top5.avg:.3f}).'.format(
+				'Prec@1 = {top1.val:.4f} ({top1.avg:.4f}), '
+				'Prec@5 = {top5.val:.4f} ({top5.avg:.4f}).'.format(
 				batch_step + 1, len(dataloader), batch_time=batch_time,
 				data_time=data_time, loss=losses, top1=top1, top5=top5))
 
@@ -1488,7 +1488,7 @@ def train_text_model_in_a_epoch(model, criterion, train_forward_functor, optimiz
 				'Batch time = {batch_time.val:.3f} ({batch_time.avg:.3f}), '
 				'Data time = {data_time.val:.3f} ({data_time.avg:.3f}), '
 				'Loss = {loss.val:.4f} ({loss.avg:.4f}), '
-				'Prec@1 = {top1.val:.3f} ({top1.avg:.3f}).'.format(
+				'Prec@1 = {top1.val:.4f} ({top1.avg:.4f}).'.format(
 				batch_step + 1, len(dataloader), batch_time=batch_time,
 				data_time=data_time, loss=losses, top1=top1))
 
@@ -1549,14 +1549,13 @@ def train_char_recognition_model(model, train_forward_functor, criterion, label_
 	for epoch in range(initial_epoch, final_epoch):  # Loop over the dataset multiple times.
 		current_learning_rate = scheduler.get_lr() if scheduler else 0.0
 		need_hour, need_mins, need_secs = swl_ml_util.convert_secs2time(epoch_time.avg * (final_epoch - epoch))
-		if logger: logger.info('Epoch {}/{}: Need time = {:02d}:{:02d}:{:02d}, Learning rate = {}.'.format(epoch + 1, final_epoch, need_hour, need_mins, need_secs, current_learning_rate))
-		if logger: logger.info('\tBest: Accuracy = {:.2f}, Error = {:.2f}.'.format(recorder.max_accuracy(False), 100 - recorder.max_accuracy(False)))
+		if logger: logger.info('Epoch {}/{}: Need time = {:02d}:{:02d}:{:02d}, Accuracy (best) = {:.4f}, Error (best) = {:.4f}, Learning rate = {}.'.format(epoch + 1, final_epoch, need_hour, need_mins, need_secs, recorder.max_accuracy(False), 100 - recorder.max_accuracy(False), current_learning_rate))
 		start_epoch_time = time.time()
 
 		#--------------------
 		start_time = time.time()
 		losses, top1, top5 = train_char_model_in_a_epoch(model, train_forward_functor, optimizer, train_dataloader, model_params, max_gradient_norm, epoch, log_print_freq, logger, device)
-		if logger: logger.info('Train:      Prec@1 = {top1.avg:.3f}, Prec@5 = {top5.avg:.3f}, Error@1 = {error1:.3f}, Loss = {losses.avg:.3f}: {elapsed_time:.6f} secs.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
+		if logger: logger.info('Train:      Prec@1 = {top1.avg:.4f}, Prec@5 = {top5.avg:.4f}, Error@1 = {error1:.4f}, Loss = {losses.avg:.4f}: {elapsed_time:.6f} secs.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
 
 		train_loss, train_acc = losses.avg, top1.avg
 		history['loss'].append(train_loss)
@@ -1565,7 +1564,7 @@ def train_char_recognition_model(model, train_forward_functor, criterion, label_
 		#--------------------
 		start_time = time.time()
 		losses, top1, top5, avg_matching_ratio = validate_char_model_in_a_epoch(model, train_forward_functor, test_dataloader, label_converter, is_case_sensitive, logger, device)
-		if logger: logger.info('Validation: Prec@1 = {top1.avg:.3f}, Prec@5 = {top5.avg:.3f}, Error@1 = {error1:.3f}, Loss = {losses.avg:.3f}: {elapsed_time:.6f} secs.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
+		if logger: logger.info('Validation: Prec@1 = {top1.avg:.4f}, Prec@5 = {top5.avg:.4f}, Error@1 = {error1:.4f}, Loss = {losses.avg:.4f}: {elapsed_time:.6f} secs.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
 
 		val_loss, val_acc = losses.avg, top1.avg
 		history['val_loss'].append(val_loss)
@@ -1623,14 +1622,13 @@ def train_text_recognition_model(model, criterion, train_forward_functor, infer_
 	for epoch in range(initial_epoch, final_epoch):  # Loop over the dataset multiple times.
 		current_learning_rate = scheduler.get_lr() if scheduler else 0.0
 		need_hour, need_mins, need_secs = swl_ml_util.convert_secs2time(epoch_time.avg * (final_epoch - epoch))
-		if logger: logger.info('Epoch {}/{}: Need time = {:02d}:{:02d}:{:02d}, Learning rate = {}.'.format(epoch + 1, final_epoch, need_hour, need_mins, need_secs, current_learning_rate))
-		if logger: logger.info('\tBest: Accuracy = {:.2f}, Error = {:.2f}.'.format(recorder.max_accuracy(False), 100 - recorder.max_accuracy(False)))
+		if logger: logger.info('Epoch {}/{}: Need time = {:02d}:{:02d}:{:02d}, Accuracy (best) = {:.4f}, Error (best) = {:.4f}, Learning rate = {}.'.format(epoch + 1, final_epoch, need_hour, need_mins, need_secs, recorder.max_accuracy(False), 100 - recorder.max_accuracy(False), current_learning_rate))
 		start_epoch_time = time.time()
 
 		#--------------------
 		start_time = time.time()
 		losses, top1 = train_text_model_in_a_epoch(model, criterion, train_forward_functor, optimizer, train_dataloader, model_params, max_gradient_norm, label_converter, is_case_sensitive, epoch, log_print_freq, logger, device)
-		if logger: logger.info('Train:      Prec@1 = {top1.avg:.3f}, Error@1 = {error1:.3f}, Loss = {losses.avg:.3f}: {elapsed_time:.6f} secs.'.format(top1=top1, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
+		if logger: logger.info('Train:      Prec@1 = {top1.avg:.4f}, Error@1 = {error1:.4f}, Loss = {losses.avg:.4f}: {elapsed_time:.6f} secs.'.format(top1=top1, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
 
 		train_loss, train_acc = losses.avg, top1.avg
 		history['loss'].append(train_loss)
@@ -1639,7 +1637,7 @@ def train_text_recognition_model(model, criterion, train_forward_functor, infer_
 		#--------------------
 		start_time = time.time()
 		losses, top1 = validate_text_model_in_a_epoch(model, criterion, train_forward_functor, test_dataloader, label_converter, is_case_sensitive, logger, device)
-		if logger: logger.info('Validation: Prec@1 = {top1.avg:.3f}, Error@1 = {error1:.3f}, Loss = {losses.avg:.3f}: {elapsed_time:.6f} secs.'.format(top1=top1, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
+		if logger: logger.info('Validation: Prec@1 = {top1.avg:.4f}, Error@1 = {error1:.4f}, Loss = {losses.avg:.4f}: {elapsed_time:.6f} secs.'.format(top1=top1, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
 
 		val_loss, val_acc = losses.avg, top1.avg
 		history['val_loss'].append(val_loss)
@@ -3104,7 +3102,7 @@ def build_transformer_model(label_converter, image_height, image_width, image_ch
 			# Construct outputs for one-step look-ahead.
 			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
 
-			batch = transformer_ocr.dataset.Batch(inputs, decoder_inputs, decoder_outputs, pad=pad_id, device=device)
+			batch = transformer_ocr.dataset.Batch(inputs, decoder_inputs, decoder_outputs, divisor=4, pad=pad_id, device=device)
 			model_outputs = model(batch.src, batch.tgt_input, batch.src_mask, batch.tgt_input_mask)
 
 			# REF [function] >> transformer_ocr.train.SimpleLossCompute.__call__().
@@ -5125,8 +5123,8 @@ def evaluate_text_recognizer_using_aihub_data(image_shape, target_type, model_ty
 	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
 
 	test_transform = torchvision.transforms.Compose([
-		#ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, logger=logger),
-		ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, logger=logger),  # batch_size must be 1.
+		ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, logger=logger),
+		#ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, logger=logger),  # batch_size must be 1.
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -5248,8 +5246,8 @@ def recognize_text_using_aihub_data(image_shape, target_type, model_type, model_
 	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
 
 	test_transform = torchvision.transforms.Compose([
-		#ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, logger=logger),
-		ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, logger=logger),  # batch_size must be 1.
+		ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, logger=logger),
+		#ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, logger=logger),  # batch_size must be 1.
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -5913,21 +5911,23 @@ def main():
 	logger.info('Device: {}.'.format(device))
 
 	#--------------------
-	model_filepath, output_dir_path = os.path.normpath(args.model_file) if args.model_file else None, os.path.normpath(args.out_dir) if args.out_dir else None
-	if model_filepath:
-		if not output_dir_path:
-			output_dir_path = os.path.dirname(model_filepath)
-	else:
-		if not output_dir_path:
-			#output_dir_prefix = 'text_recognition'
-			output_dir_prefix = '{}_{}_ch{}_{}'.format(args.target_type, args.model_type, args.max_len, args.image_shape)
-			output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-		#model_filepath = os.path.join(output_dir_path, 'model.pth')
+	model_filepath_to_load, output_dir_path = os.path.normpath(args.model_file) if args.model_file else None, os.path.normpath(args.out_dir) if args.out_dir else None
+	#if model_filepath_to_load and not output_dir_path:
+	#	output_dir_path = os.path.dirname(model_filepath_to_load)
+	if not output_dir_path:
+		#output_dir_prefix = 'text_recognition'
+		output_dir_prefix = '{}_{}_{}_ch{}_{}'.format(args.target_type, args.model_type, args.font_type, args.max_len, args.image_shape)
+		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 	if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 		os.makedirs(output_dir_path, exist_ok=True)
 
+	#model_filepath = os.path.join(output_dir_path, 'model.pth')
+	model_filepath = None
+
 	logger.info('Output directory path: {}.'.format(output_dir_path))
+	if model_filepath_to_load: logger.info('Model filepath to load: {}.'.format(model_filepath_to_load))
+	#if model_filepath: logger.info('Model filepath to save: {}.'.format(model_filepath))
 
 	#--------------------
 	if args.train:
@@ -5935,46 +5935,49 @@ def main():
 
 		if args.target_type == 'char':
 			if args.model_type == 'char':
-				model_filepath = train_character_recognizer(image_shape, output_dir_path, model_filepath, args.font_type, args.epoch, args.batch, logger, device)
+				model_filepath = train_character_recognizer(image_shape, output_dir_path, model_filepath_to_load, args.font_type, args.epoch, args.batch, logger, device)
 			elif args.model_type == 'char-mixup':
-				model_filepath = train_character_recognizer_using_mixup(image_shape, output_dir_path, model_filepath, args.font_type, args.epoch, args.batch, logger, device)
+				model_filepath = train_character_recognizer_using_mixup(image_shape, output_dir_path, model_filepath_to_load, args.font_type, args.epoch, args.batch, logger, device)
 			else:
 				raise ValueError('Invalid character model type, {}'.format(args.model_type))
 
 		#--------------------
 		elif args.target_type == 'word':
 			if args.model_type == 'rare1':
-				model_filepath = train_word_recognizer_based_on_rare1(image_shape, output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #1.
+				model_filepath = train_word_recognizer_based_on_rare1(image_shape, output_dir_path, model_filepath_to_load, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #1.
 			elif args.model_type == 'rare2':
-				model_filepath = train_word_recognizer_based_on_rare2(image_shape, output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #2.
+				model_filepath = train_word_recognizer_based_on_rare2(image_shape, output_dir_path, model_filepath_to_load, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #2.
 			elif args.model_type == 'aster':
-				model_filepath = train_word_recognizer_based_on_aster(image_shape, output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use ASTER.
+				model_filepath = train_word_recognizer_based_on_aster(image_shape, output_dir_path, model_filepath_to_load, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use ASTER.
 			elif args.model_type == 'rare1-mixup':
-				model_filepath = train_word_recognizer_using_mixup(image_shape, output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #1. Not working.
+				model_filepath = train_word_recognizer_using_mixup(image_shape, output_dir_path, model_filepath_to_load, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #1. Not working.
 
 			elif args.model_type == 'onmt':
-				model_filepath = train_word_recognizer_based_on_opennmt(image_shape, output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use OpenNMT.
+				model_filepath = train_word_recognizer_based_on_opennmt(image_shape, output_dir_path, model_filepath_to_load, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use OpenNMT.
 
 			elif args.model_type == 'rare1+onmt':
-				model_filepath = train_word_recognizer_based_on_rare1_and_opennmt(image_shape, output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #1 (encoder) + OpenNMT (decoder).
+				model_filepath = train_word_recognizer_based_on_rare1_and_opennmt(image_shape, output_dir_path, model_filepath_to_load, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #1 (encoder) + OpenNMT (decoder).
 			elif args.model_type == 'rare2+onmt':
-				model_filepath = train_word_recognizer_based_on_rare2_and_opennmt(image_shape, output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #2 (encoder) + OpenNMT (decoder).
+				model_filepath = train_word_recognizer_based_on_rare2_and_opennmt(image_shape, output_dir_path, model_filepath_to_load, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use RARE #2 (encoder) + OpenNMT (decoder).
 			elif args.model_type == 'aster+onmt':
-				model_filepath = train_word_recognizer_based_on_aster_and_opennmt(image_shape, output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use ASTER (encoder) + OpenNMT (decoder).
+				model_filepath = train_word_recognizer_based_on_aster_and_opennmt(image_shape, output_dir_path, model_filepath_to_load, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use ASTER (encoder) + OpenNMT (decoder).
 			else:
 				raise ValueError('Invalid word model type, {}'.format(args.model_type))
 
 		#--------------------
 		elif args.target_type == 'textline':
 			if args.model_type == 'onmt':
-				model_filepath = train_textline_recognizer_based_on_opennmt(image_shape, output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use OpenNMT.
+				model_filepath = train_textline_recognizer_based_on_opennmt(image_shape, output_dir_path, model_filepath_to_load, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use OpenNMT.
 			elif args.model_type == 'transformer':
-				model_filepath = train_textline_recognizer_based_on_transformer(image_shape, output_dir_path, model_filepath, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use Transformer.
+				model_filepath = train_textline_recognizer_based_on_transformer(image_shape, output_dir_path, model_filepath_to_load, args.max_len, args.font_type, args.epoch, args.batch, logger, device)  # Use Transformer.
 			else:
 				raise ValueError('Invalid text line model type, {}'.format(args.model_type))
 
 		else:
 			raise ValueError('Invalid target type, {}'.format(args.target_type))
+
+		assert model_filepath
+	elif not model_filepath: model_filepath = model_filepath_to_load
 
 	#--------------------
 	if args.eval and model_filepath:

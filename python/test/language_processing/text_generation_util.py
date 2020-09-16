@@ -130,10 +130,10 @@ def generate_hangeul_font_list(font_filepaths):
 	#	생성된 (한글) 문자의 하단부가 일부 짤리는 경우 발생.
 	#	Image resizing에 의해 얇은 획이 사라지는 경우 발생.
 
+	num_fonts = 1
 	font_list = list()
 	for fpath in font_filepaths:
-		num_fonts = 4 if os.path.basename(fpath).lower() in ['gulim.ttf', 'batang.ttf'] else 1
-
+		#num_fonts = 4 if os.path.basename(fpath).lower() in ['gulim.ttf', 'batang.ttf'] else 1
 		for font_idx in range(num_fonts):
 			font_list.append((fpath, font_idx))
 
