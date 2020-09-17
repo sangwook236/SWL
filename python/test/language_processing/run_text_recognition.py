@@ -357,9 +357,9 @@ class ResizeImageToFixedSizeWithPadding(object):
 
 	def _warn_about_small_image(self, height, width):
 		if height < self.min_height_threshold:
-			if self.logger: self.logger.info('Too small image: The image height {} should be larger than or equal to {}.'.format(height, self.min_height_threshold))
+			if self.logger: self.logger.warning('Too small image: The image height {} should be larger than or equal to {}.'.format(height, self.min_height_threshold))
 		#if width < self.min_width_threshold:
-		#	if self.logger: self.logger.info('Too small image: The image width {} should be larger than or equal to {}.'.format(width, self.min_width_threshold))
+		#	if self.logger: self.logger.warning('Too small image: The image width {} should be larger than or equal to {}.'.format(width, self.min_width_threshold))
 
 class ResizeImageWithMaxWidth(object):
 	def __init__(self, height, max_width, warn_about_small_image, is_pil=True, logger=None):
@@ -395,9 +395,9 @@ class ResizeImageWithMaxWidth(object):
 
 	def _warn_about_small_image(self, height, width):
 		if height < self.min_height_threshold:
-			if self.logger: self.logger.info('Too small image: The image height {} should be larger than or equal to {}.'.format(height, self.min_height_threshold))
+			if self.logger: self.logger.warning('Too small image: The image height {} should be larger than or equal to {}.'.format(height, self.min_height_threshold))
 		#if width < self.min_width_threshold:
-		#	if self.logger: self.logger.info('Too small image: The image width {} should be larger than or equal to {}.'.format(width, self.min_width_threshold))
+		#	if self.logger: self.logger.warning('Too small image: The image width {} should be larger than or equal to {}.'.format(width, self.min_width_threshold))
 
 class ToIntTensor(object):
 	def __call__(self, lst):
@@ -1014,12 +1014,12 @@ def create_textline_data_loaders(textline_type, label_converter, wordset, chars,
 			# ICDAR 2019 SROIE dataset.
 			is_preloaded_image_used = False
 			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.jpg', recursive=False))
-			labels_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
-			train_datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, labels_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used, transform=train_transform, target_transform=train_target_transform))
+			label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
+			train_datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used, transform=train_transform, target_transform=train_target_transform))
 			image_label_info_filepath = data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_test_text_line/labels.txt'
 			test_datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform))
 		if True:
-			# SiliconMinds data.
+			# SiliconMinds receipt data.
 			image_label_info_filepath = data_base_dir_path + '/text/receipt/sminds/receipt_text_line/labels.txt'
 			is_preloaded_image_used = True
 			dataset = text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used)
@@ -1030,7 +1030,7 @@ def create_textline_data_loaders(textline_type, label_converter, wordset, chars,
 			train_datasets.append(MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform))
 			test_datasets.append(MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform))
 		if True:
-			# ePapyrus data.
+			# ePapyrus receipt data.
 			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.png', recursive=False))
 			label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.txt', recursive=False))
 			is_preloaded_image_used = True
@@ -1172,12 +1172,12 @@ def create_mixed_textline_data_loaders(label_converter, wordset, chars, num_simp
 		# ICDAR 2019 SROIE dataset.
 		is_preloaded_image_used = False
 		image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.jpg', recursive=False))
-		labels_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
-		train_datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, labels_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used, transform=train_transform, target_transform=train_target_transform))
+		label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
+		train_datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used, transform=train_transform, target_transform=train_target_transform))
 		image_label_info_filepath = data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_test_text_line/labels.txt'
 		test_datasets.append(text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform))
 	if True:
-		# SiliconMinds data.
+		# SiliconMinds receipt data.
 		image_label_info_filepath = data_base_dir_path + '/text/receipt/sminds/receipt_text_line/labels.txt'
 		is_preloaded_image_used = True
 		dataset = text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_textline_len, is_preloaded_image_used=is_preloaded_image_used)
@@ -1188,7 +1188,7 @@ def create_mixed_textline_data_loaders(label_converter, wordset, chars, num_simp
 		train_datasets.append(MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform))
 		test_datasets.append(MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform))
 	if True:
-		# ePapyrus data.
+		# ePapyrus receipt data.
 		image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.png', recursive=False))
 		label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/epapyrus/epapyrus_20190618/receipt_text_line/*.txt', recursive=False))
 		is_preloaded_image_used = True
@@ -1374,7 +1374,7 @@ def train_char_model_in_a_epoch(model, train_forward_functor, optimizer, dataloa
 		optimizer.step()
 
 		# Measure accuracy and record loss.
-		prec1, prec5 = swl_ml_util.accuracy(torch.argmax(model_outputs, dim=-1), batch_outputs[:,1:], topk=(1, 5))
+		prec1, prec5 = swl_ml_util.accuracy(torch.argmax(model_outputs.cpu(), dim=-1), batch_outputs[:,1:], topk=(1, 5))
 		losses.update(loss.item(), batch_inputs.size(0))
 		top1.update(prec1.item(), batch_inputs.size(0))
 		top5.update(prec5.item(), batch_inputs.size(0))
@@ -1425,19 +1425,19 @@ def validate_char_model_in_a_epoch(model, train_forward_functor, dataloader, lab
 			loss, model_outputs = train_forward_functor(model, batch_inputs, batch_outputs, device)
 
 			# Measure accuracy and record loss.
-			prec1, prec5 = swl_ml_util.accuracy(torch.argmax(model_outputs, dim=-1), batch_outputs[:,1:], topk=(1, 5))
+			model_outputs = torch.argmax(model_outputs.cpu(), dim=-1)
+			prec1, prec5 = swl_ml_util.accuracy(model_outputs, batch_outputs[:,1:], topk=(1, 5))
 			losses.update(loss.item(), batch_inputs.size(0))
 			top1.update(prec1.item(), batch_inputs.size(0))
 			top5.update(prec5.item(), batch_inputs.size(0))
 
-			model_outputs_np = np.argmax(model_outputs.cpu().numpy(), axis=-1)
-			batch_total_matching_ratio, _ = compute_sequence_matching_ratio(batch_inputs, batch_outputs, model_outputs_np, label_converter, is_case_sensitive, error_cases_dir_path=None, error_idx=0)
+			batch_total_matching_ratio, _ = compute_sequence_matching_ratio(batch_inputs, batch_outputs, model_outputs, label_converter, is_case_sensitive, error_cases_dir_path=None, error_idx=0)
 			total_matching_ratio += batch_total_matching_ratio
 			num_examples += len(batch_inputs)
 
 			# Show results.
 			if show:
-				if logger: logger.info('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(batch_outputs.numpy(), model_outputs_np)]))
+				if logger: logger.info('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(batch_outputs, model_outputs)]))
 				show = False
 	avg_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
 	return losses, top1, top5, avg_matching_ratio
@@ -1466,7 +1466,7 @@ def train_text_model_in_a_epoch(model, criterion, train_forward_functor, optimiz
 		optimizer.step()
 
 		# Measure accuracy and record loss.
-		_, model_outputs = torch.max(model_outputs, dim=-1)
+		model_outputs = torch.argmax(model_outputs.cpu(), dim=-1)
 		total_matching_ratio, _ = compute_sequence_matching_ratio(batch_inputs, batch_outputs, model_outputs, label_converter, is_case_sensitive, error_cases_dir_path=None, error_idx=0)
 		avg_matching_ratio = total_matching_ratio / batch_inputs.size(0) if batch_inputs.size(0) > 0 else -1
 		losses.update(loss.item(), batch_inputs.size(0))
@@ -1516,15 +1516,17 @@ def validate_text_model_in_a_epoch(model, criterion, train_forward_functor, data
 			loss, model_outputs = train_forward_functor(model, criterion, batch_inputs, batch_outputs, batch_output_lens, device)
 
 			# Measure accuracy and record loss.
-			model_outputs_np = np.argmax(model_outputs.cpu().numpy(), axis=-1)
-			total_matching_ratio, _ = compute_sequence_matching_ratio(batch_inputs, batch_outputs, model_outputs_np, label_converter, is_case_sensitive, error_cases_dir_path=None, error_idx=0)
+			model_outputs = torch.argmax(model_outputs.cpu(), dim=-1)
+			if model_outputs.ndim == 1:
+				model_outputs = torch.unsqueeze(model_outputs, dim=-1)
+			total_matching_ratio, _ = compute_sequence_matching_ratio(batch_inputs, batch_outputs, model_outputs, label_converter, is_case_sensitive, error_cases_dir_path=None, error_idx=0)
 			avg_matching_ratio = total_matching_ratio / batch_inputs.size(0) if batch_inputs.size(0) > 0 else -1
 			losses.update(loss.item(), batch_inputs.size(0))
 			top1.update(avg_matching_ratio * 100, batch_inputs.size(0))
 
 			# Show results.
 			if show:
-				if logger: logger.info('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(batch_outputs.numpy(), model_outputs_np)]))
+				if logger: logger.info('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(batch_outputs, model_outputs)]))
 				show = False
 	return losses, top1
 
@@ -3448,9 +3450,9 @@ def train_word_recognizer_based_on_rare1(image_shape, output_dir_path, model_fil
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	if loss_type == 'ctc':
-		model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare1_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
+		model_filepath_base = os.path.join(output_dir_path, 'word_rare1_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	elif loss_type in ['xent', 'nll']:
-		model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare1_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
+		model_filepath_base = os.path.join(output_dir_path, 'word_rare1_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	else:
 		raise ValueError('Invalid loss type, {}'.format(loss_type))
 	model_filepath_format = model_filepath_base + '{}.pth'
@@ -3499,8 +3501,9 @@ def train_word_recognizer_based_on_rare1(image_shape, output_dir_path, model_fil
 	else:
 		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	if logger: logger.info('#classes = {}.'.format(num_classes))
-	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger:
+		logger.info('#classes = {}.'.format(num_classes))
+		logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
@@ -3623,7 +3626,7 @@ def train_word_recognizer_based_on_rare2(image_shape, output_dir_path, model_fil
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare2_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
+	model_filepath_base = os.path.join(output_dir_path, 'word_rare2_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	if logger: logger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
@@ -3661,8 +3664,9 @@ def train_word_recognizer_based_on_rare2(image_shape, output_dir_path, model_fil
 	else:
 		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	if logger: logger.info('#classes = {}.'.format(num_classes))
-	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger:
+		logger.info('#classes = {}.'.format(num_classes))
+		logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
@@ -3786,7 +3790,7 @@ def train_word_recognizer_based_on_aster(image_shape, output_dir_path, model_fil
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_aster_sxent_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
+	model_filepath_base = os.path.join(output_dir_path, 'word_aster_sxent_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	if logger: logger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
@@ -3823,8 +3827,9 @@ def train_word_recognizer_based_on_aster(image_shape, output_dir_path, model_fil
 	else:
 		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	if logger: logger.info('#classes = {}.'.format(num_classes))
-	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger:
+		logger.info('#classes = {}.'.format(num_classes))
+		logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
@@ -3950,7 +3955,7 @@ def train_word_recognizer_based_on_opennmt(image_shape, output_dir_path, model_f
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
+	model_filepath_base = os.path.join(output_dir_path, 'word_onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	if logger: logger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
@@ -3986,8 +3991,9 @@ def train_word_recognizer_based_on_opennmt(image_shape, output_dir_path, model_f
 	else:
 		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	if logger: logger.info('#classes = {}.'.format(num_classes))
-	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger:
+		logger.info('#classes = {}.'.format(num_classes))
+		logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
@@ -4112,7 +4118,7 @@ def train_word_recognizer_based_on_rare1_and_opennmt(image_shape, output_dir_pat
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare1+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
+	model_filepath_base = os.path.join(output_dir_path, 'word_rare1+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	if logger: logger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
@@ -4148,8 +4154,9 @@ def train_word_recognizer_based_on_rare1_and_opennmt(image_shape, output_dir_pat
 	else:
 		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	if logger: logger.info('#classes = {}.'.format(num_classes))
-	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger:
+		logger.info('#classes = {}.'.format(num_classes))
+		logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
@@ -4273,7 +4280,7 @@ def train_word_recognizer_based_on_rare2_and_opennmt(image_shape, output_dir_pat
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_rare2+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
+	model_filepath_base = os.path.join(output_dir_path, 'word_rare2+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	if logger: logger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
@@ -4309,8 +4316,9 @@ def train_word_recognizer_based_on_rare2_and_opennmt(image_shape, output_dir_pat
 	else:
 		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	if logger: logger.info('#classes = {}.'.format(num_classes))
-	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger:
+		logger.info('#classes = {}.'.format(num_classes))
+		logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
@@ -4434,7 +4442,7 @@ def train_word_recognizer_based_on_aster_and_opennmt(image_shape, output_dir_pat
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = os.path.join(output_dir_path, 'word_recognition_aster+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
+	model_filepath_base = os.path.join(output_dir_path, 'word_aster+onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	if logger: logger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
@@ -4470,8 +4478,9 @@ def train_word_recognizer_based_on_aster_and_opennmt(image_shape, output_dir_pat
 	else:
 		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	if logger: logger.info('#classes = {}.'.format(num_classes))
-	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger:
+		logger.info('#classes = {}.'.format(num_classes))
+		logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
@@ -4595,9 +4604,9 @@ def train_word_recognizer_using_mixup(image_shape, output_dir_path, model_filepa
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
 	if loss_type == 'ctc':
-		model_filepath_base = os.path.join(output_dir_path, 'word_recognition_mixup_rare1_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
+		model_filepath_base = os.path.join(output_dir_path, 'word_mixup_rare1_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	elif loss_type in ['xent', 'nll']:
-		model_filepath_base = os.path.join(output_dir_path, 'word_recognition_mixup_rare1_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
+		model_filepath_base = os.path.join(output_dir_path, 'word_mixup_rare1_attn_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_word_len, image_height, image_width, image_channel))
 	else:
 		raise ValueError('Invalid loss type, {}'.format(loss_type))
 	model_filepath_format = model_filepath_base + '{}.pth'
@@ -4646,8 +4655,9 @@ def train_word_recognizer_using_mixup(image_shape, output_dir_path, model_filepa
 	else:
 		train_dataloader, test_dataloader = create_word_data_loaders(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	if logger: logger.info('#classes = {}.'.format(num_classes))
-	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger:
+		logger.info('#classes = {}.'.format(num_classes))
+		logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
@@ -4776,7 +4786,7 @@ def train_textline_recognizer_based_on_opennmt(image_shape, output_dir_path, mod
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = os.path.join(output_dir_path, 'textline_recognition_onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_textline_len, image_height, image_width, image_channel))
+	model_filepath_base = os.path.join(output_dir_path, 'textline_onmt_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_textline_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	if logger: logger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
@@ -4812,8 +4822,9 @@ def train_textline_recognizer_based_on_opennmt(image_shape, output_dir_path, mod
 	else:
 		train_dataloader, test_dataloader = create_textline_data_loaders(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	if logger: logger.info('#classes = {}.'.format(num_classes))
-	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger:
+		logger.info('#classes = {}.'.format(num_classes))
+		logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
@@ -4941,7 +4952,7 @@ def train_textline_recognizer_based_on_transformer(image_shape, output_dir_path,
 	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
 	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
 	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = os.path.join(output_dir_path, 'textline_recognition_transformer_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_textline_len, image_height, image_width, image_channel))
+	model_filepath_base = os.path.join(output_dir_path, 'textline_transformer_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_textline_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	if logger: logger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
@@ -4977,8 +4988,9 @@ def train_textline_recognizer_based_on_transformer(image_shape, output_dir_path,
 	else:
 		train_dataloader, test_dataloader = create_textline_data_loaders(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, batch_size, shuffle, num_workers, logger)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	if logger: logger.info('#classes = {}.'.format(num_classes))
-	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger:
+		logger.info('#classes = {}.'.format(num_classes))
+		logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0], label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
@@ -5069,19 +5081,14 @@ def train_textline_recognizer_based_on_transformer(image_shape, output_dir_path,
 
 	return model_filepath
 
-def evaluate_text_recognizer_using_aihub_data(image_shape, target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, font_type, batch_size, is_separate_pad_id_used=True, logger=None, device='cpu'):
+def evaluate_text_recognizer(image_shape, target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, font_type, batch_size, is_separate_pad_id_used=True, logger=None, device='cpu'):
 	assert model_filepath_to_load is not None
 
 	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	if target_type == 'word':
-		image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
-	elif target_type == 'textline':
-		image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
-	else:
-		raise ValueError('Invalid target type, {}'.format(target_type))
+	is_aihub_data_used = False
 	is_preloaded_image_used = False
 	shuffle = False
 	num_workers = 8
@@ -5114,14 +5121,6 @@ def evaluate_text_recognizer_using_aihub_data(image_shape, target_type, model_ty
 	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
-	if 'posix' == os.name:
-		data_base_dir_path = '/home/sangwook/work/dataset'
-	else:
-		data_base_dir_path = 'D:/work/dataset'
-
-	aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
-	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
-
 	test_transform = torchvision.transforms.Compose([
 		ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, logger=logger),
 		#ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, logger=logger),  # batch_size must be 1.
@@ -5132,15 +5131,61 @@ def evaluate_text_recognizer_using_aihub_data(image_shape, target_type, model_ty
 	])
 	test_target_transform = ToIntTensor()
 
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+
+	if is_aihub_data_used:
+		if target_type == 'word':
+			image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
+		elif target_type == 'textline':
+			image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
+		else:
+			raise ValueError('Invalid target type, {}'.format(target_type))
+
+		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
+		aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
+	else:
+		if target_type == 'word':
+			raise NotImplementedError('Input data should be assigned')
+			image_filepaths = None
+			label_filepaths = None
+		elif target_type == 'textline':
+			"""
+			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
+			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
+			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.jpg', recursive=False))
+			label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
+			"""
+			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/general/sminds/20200812/image/*.jpg', recursive=False))
+			label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/general/sminds/20200812/label/*.txt', recursive=False))
+			if image_filepaths and label_filepaths and len(image_filepaths) == len(label_filepaths):
+				if logger: logger.info('#loaded image files = {}, #loaded label files = {}.'.format(len(image_filepaths), len(label_filepaths)))
+			else:
+				if logger: logger.error('#loaded image files = {}, #loaded label files = {}.'.format(len(image_filepaths), len(label_filepaths)))
+				raise RuntimeError('Invalid input images and labels, {} != {}'.format(len(image_filepaths), len(label_filepaths)))
+		else:
+			raise ValueError('Invalid target type, {}'.format(target_type))
+
 	if logger: logger.info('Start creating a dataset and a dataloader...')
 	start_time = time.time()
-	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
+	if is_aihub_data_used:
+		test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
+	else:
+		if target_type == 'word':
+			#test_dataset = text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
+			test_dataset = text_data.ImageLabelFileBasedWordDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
+		elif target_type == 'textline':
+			#test_dataset = text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
+			test_dataset = text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	if logger: logger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
-	if logger: logger.info('#examples = {}.'.format(len(test_dataset)))
-	if logger: logger.info('#classes = {}.'.format(num_classes))
-	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger:
+		logger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
+		logger.info('#examples = {}.'.format(len(test_dataset)))
+		logger.info('#classes = {}.'.format(num_classes))
+		logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
@@ -5192,19 +5237,14 @@ def evaluate_text_recognizer_using_aihub_data(image_shape, target_type, model_ty
 	evaluate_text_recognition_model(model, infer_functor, label_converter, test_dataloader, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, logger=logger, device=device)
 	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def recognize_text_using_aihub_data(image_shape, target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, font_type, batch_size, is_separate_pad_id_used=True, logger=None, device='cpu'):
+def recognize_text(image_shape, target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, font_type, batch_size, is_separate_pad_id_used=True, logger=None, device='cpu'):
 	assert model_filepath_to_load is not None
 
 	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	if target_type == 'word':
-		image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
-	elif target_type == 'textline':
-		image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
-	else:
-		raise ValueError('Invalid target type, {}'.format(target_type))
+	is_aihub_data_used = False
 	is_preloaded_image_used = False
 	shuffle = False
 	num_workers = 8
@@ -5237,14 +5277,6 @@ def recognize_text_using_aihub_data(image_shape, target_type, model_type, model_
 	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
-	if 'posix' == os.name:
-		data_base_dir_path = '/home/sangwook/work/dataset'
-	else:
-		data_base_dir_path = 'D:/work/dataset'
-
-	aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
-	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
-
 	test_transform = torchvision.transforms.Compose([
 		ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, logger=logger),
 		#ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, logger=logger),  # batch_size must be 1.
@@ -5255,15 +5287,61 @@ def recognize_text_using_aihub_data(image_shape, target_type, model_type, model_
 	])
 	test_target_transform = ToIntTensor()
 
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+
+	if is_aihub_data_used:
+		if target_type == 'word':
+			image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
+		elif target_type == 'textline':
+			image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
+		else:
+			raise ValueError('Invalid target type, {}'.format(target_type))
+
+		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
+		aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
+	else:
+		if target_type == 'word':
+			raise NotImplementedError('Input data should be assigned')
+			image_filepaths = None
+			label_filepaths = None
+		elif target_type == 'textline':
+			"""
+			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
+			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
+			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.jpg', recursive=False))
+			label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
+			"""
+			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/general/sminds/20200812/image/*.jpg', recursive=False))
+			label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/general/sminds/20200812/label/*.txt', recursive=False))
+			if image_filepaths and label_filepaths and len(image_filepaths) == len(label_filepaths):
+				if logger: logger.info('#loaded image files = {}, #loaded label files = {}.'.format(len(image_filepaths), len(label_filepaths)))
+			else:
+				if logger: logger.error('#loaded image files = {}, #loaded label files = {}.'.format(len(image_filepaths), len(label_filepaths)))
+				raise RuntimeError('Invalid input images and labels, {} != {}'.format(len(image_filepaths), len(label_filepaths)))
+		else:
+			raise ValueError('Invalid target type, {}'.format(target_type))
+
 	if logger: logger.info('Start creating a dataset and a dataloader...')
 	start_time = time.time()
-	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
+	if is_aihub_data_used:
+		test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
+	else:
+		if target_type == 'word':
+			#test_dataset = text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
+			test_dataset = text_data.ImageLabelFileBasedWordDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
+		elif target_type == 'textline':
+			#test_dataset = text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
+			test_dataset = text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	if logger: logger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
-	if logger: logger.info('#examples = {}.'.format(len(test_dataset)))
-	if logger: logger.info('#classes = {}.'.format(num_classes))
-	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger:
+		logger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
+		logger.info('#examples = {}.'.format(len(test_dataset)))
+		logger.info('#classes = {}.'.format(num_classes))
+		logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
@@ -5326,7 +5404,7 @@ def recognize_text_using_aihub_data(image_shape, target_type, model_type, model_
 	infer_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, batch_size=batch_size, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, logger=logger, device=device)
 	if logger: logger.info('End inferring: {} secs.'.format(time.time() - start_time))
 
-def recognize_text_one_by_one_using_aihub_data(image_shape, target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, font_type, is_separate_pad_id_used=True, logger=None, device='cpu'):
+def recognize_text_one_by_one(image_shape, target_type, model_type, model_filepath_to_load, output_dir_path, max_label_len, font_type, is_separate_pad_id_used=True, logger=None, device='cpu'):
 	assert model_filepath_to_load is not None
 	batch_size = 1
 
@@ -5334,12 +5412,7 @@ def recognize_text_one_by_one_using_aihub_data(image_shape, target_type, model_t
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	if target_type == 'word':
-		image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
-	elif target_type == 'textline':
-		image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
-	else:
-		raise ValueError('Invalid target type, {}'.format(target_type))
+	is_aihub_data_used = False
 	is_preloaded_image_used = False
 	shuffle = False
 	num_workers = 8
@@ -5372,14 +5445,6 @@ def recognize_text_one_by_one_using_aihub_data(image_shape, target_type, model_t
 	SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 	num_suffixes = 1
 
-	if 'posix' == os.name:
-		data_base_dir_path = '/home/sangwook/work/dataset'
-	else:
-		data_base_dir_path = 'D:/work/dataset'
-
-	aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
-	aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
-
 	test_transform = torchvision.transforms.Compose([
 		#ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, logger=logger),
 		ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, logger=logger),  # batch_size must be 1.
@@ -5390,15 +5455,61 @@ def recognize_text_one_by_one_using_aihub_data(image_shape, target_type, model_t
 	])
 	test_target_transform = ToIntTensor()
 
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+
+	if is_aihub_data_used:
+		if target_type == 'word':
+			image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
+		elif target_type == 'textline':
+			image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
+		else:
+			raise ValueError('Invalid target type, {}'.format(target_type))
+
+		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
+		aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
+	else:
+		if target_type == 'word':
+			raise NotImplementedError('Input data should be assigned')
+			image_filepaths = None
+			label_filepaths = None
+		elif target_type == 'textline':
+			"""
+			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
+			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
+			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.jpg', recursive=False))
+			label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
+			"""
+			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/general/sminds/20200812/image/*.jpg', recursive=False))
+			label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/general/sminds/20200812/label/*.txt', recursive=False))
+			if image_filepaths and label_filepaths and len(image_filepaths) == len(label_filepaths):
+				if logger: logger.info('#loaded image files = {}, #loaded label files = {}.'.format(len(image_filepaths), len(label_filepaths)))
+			else:
+				if logger: logger.error('#loaded image files = {}, #loaded label files = {}.'.format(len(image_filepaths), len(label_filepaths)))
+				raise RuntimeError('Invalid input images and labels, {} != {}'.format(len(image_filepaths), len(label_filepaths)))
+		else:
+			raise ValueError('Invalid target type, {}'.format(target_type))
+
 	if logger: logger.info('Start creating a dataset and a dataloader...')
 	start_time = time.time()
-	test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
+	if is_aihub_data_used:
+		test_dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
+	else:
+		if target_type == 'word':
+			#test_dataset = text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
+			test_dataset = text_data.ImageLabelFileBasedWordDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
+		elif target_type == 'textline':
+			#test_dataset = text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
+			test_dataset = text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_label_len, is_preloaded_image_used, transform=test_transform, target_transform=test_target_transform)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
-	if logger: logger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
-	if logger: logger.info('#examples = {}.'.format(len(test_dataset)))
-	if logger: logger.info('#classes = {}.'.format(num_classes))
-	if logger: logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+	if logger:
+		logger.info('End creating a dataset and a dataloader: {} secs.'.format(time.time() - start_time))
+		logger.info('#examples = {}.'.format(len(test_dataset)))
+		logger.info('#classes = {}.'.format(num_classes))
+		logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	# Show data info.
 	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
@@ -5981,12 +6092,12 @@ def main():
 
 	#--------------------
 	if args.eval and model_filepath:
-		evaluate_text_recognizer_using_aihub_data(image_shape, args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, args.font_type, args.batch, is_separate_pad_id_used=True, logger=logger, device=device)
+		evaluate_text_recognizer(image_shape, args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, args.font_type, args.batch, is_separate_pad_id_used=True, logger=logger, device=device)
 
 	#--------------------
 	if args.infer and model_filepath:
-		recognize_text_using_aihub_data(image_shape, args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, args.font_type, args.batch, is_separate_pad_id_used=True, logger=logger, device=device)
-		#recognize_text_one_by_one_using_aihub_data(image_shape, args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, args.font_type, is_separate_pad_id_used=True, logger=logger, device=device)  # batch_size = 1.
+		recognize_text(image_shape, args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, args.font_type, args.batch, is_separate_pad_id_used=True, logger=logger, device=device)
+		#recognize_text_one_by_one(image_shape, args.target_type, args.model_type, model_filepath, output_dir_path, args.max_len, args.font_type, is_separate_pad_id_used=True, logger=logger, device=device)  # batch_size = 1.
 
 	#--------------------
 	# Recognize text using CRAFT (scene text detector) + character recognizer.
@@ -5999,6 +6110,11 @@ def main():
 
 # Usage:
 #	python run_text_recognition.py --train --eval --infer --image_shape 64x1280x3 --target_type textline --model_type transformer --max_len 50 --font_type kor-large --epoch 40 --batch 64 --out_dir text_recognition_outputs --log text_recognition --log_dir ./log --gpu 0
+#
+#	python run_text_recognition.py --train --image_shape 64x1280x3 --target_type textline --model_type transformer --max_len 50 --font_type kor-large --epoch 40 --batch 64 --out_dir ./textline_transformer_train_kor-large_ch50_64x1280x3_20201009 --gpu 0
+#	python run_text_recognition.py --train --image_shape 64x1280x3 --target_type word --model_type aster+onmt --model_file ./train_outputs_word/word_aster+onmt_xent_kor-small_ch10_64x640x3.pth --max_len 20 --font_type kor-small --epoch 30 --batch 64 --out_dir ./word_aster_onmt_train_kor-small_ch20_64x1280x3_20201009 --gpu 1
+#	python run_text_recognition.py --eval --image_shape 64x1280x3 --target_type textline --model_type transformer --model_file ./train_outputs_textline/textline_transformer_kldiv_kor-large_ch40_64x1280x3.pth --max_len 40 --out_dir ./textline_transformer_eval_ch40_64x1280x3_20201009 --gpu 1
+#	python run_text_recognition.py --infer --image_shape 64x640x3 --target_type word --model_type onmt --model_file ./train_outputs_word/word_onmt_xent_kor-large_ch10_64x640x3.pth --max_len 10 --out_dir ./word_onmt_infer_ch10_64x640x3_20201009 --gpu 0
 
 if '__main__' == __name__:
 	main()

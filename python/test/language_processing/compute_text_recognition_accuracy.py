@@ -455,7 +455,7 @@ def compute_accuracy_from_inference_result():
 		#delimiter = '\t'
 
 		# index,filepath,G/T,inference.
-		result_filepath = './simple_hangeul_crnn_densenet_large_rt_ch99_64x1280x1_aihub_printed_inference_results_20200806.txt'
+		result_filepath = './simple_hangeul_crnn_densenet_infer_aihub_printed_kor-large_rt_ch99_64x1280x1_20200806.txt'
 
 		try:
 			with open(result_filepath, 'r', encoding='UTF8') as fd:
