@@ -403,6 +403,16 @@ class ToIntTensor(object):
 	def __call__(self, lst):
 		return torch.IntTensor(lst)
 
+class ToIntTensorWithPadding(object):
+	def __init__(self, pad, max_len):
+		self.pad, self.max_len = pad, max_len
+
+	def __call__(self, lst):
+		padded = [self.pad] * self.max_len
+		min_len = min(len(lst), self.max_len)
+		padded[:min_len] = lst[:min_len]
+		return torch.IntTensor(padded)
+
 class MySubsetDataset(torch.utils.data.Dataset):
 	def __init__(self, subset, transform=None, target_transform=None):
 		self.subset = subset
@@ -1752,138 +1762,6 @@ def evaluate_text_recognition_model(model, infer_functor, dataloader, label_conv
 		return correct_char_count / total_char_count if total_char_count > 0 else -1
 	else: return -1
 
-def infer_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=None, batch_size=None, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, logger=None, device='cpu'):
-	if batch_size is None: batch_size = len(inputs)
-
-	with torch.no_grad():
-		predictions = list()
-		for idx in range(0, len(inputs), batch_size):
-			predictions.append(infer_functor(model, inputs[idx:idx+batch_size], device=device)[0])
-	inputs, predictions = inputs.numpy(), np.vstack(predictions)
-	if logger: logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(predictions.shape, predictions.dtype, np.min(predictions), np.max(predictions)))
-
-	if outputs is None:
-		num_iters = 0
-		for idx in range(0, len(predictions), batch_size):
-			# Show images.
-			#show_image(torchvision.utils.make_grid(inputs[idx:idx+batch_size]))
-
-			if logger: logger.info('Prediction:\n{}.'.format('\n'.join([label_converter.decode(pred) for pred in predictions[idx:idx+batch_size]])))
-
-			num_iters += 1
-			if num_iters >= 5: break
-	else:
-		outputs = outputs.numpy()
-
-		num_iters = 0
-		for idx in range(0, len(predictions), batch_size):
-			inps, outps, preds = inputs[idx:idx+batch_size], outputs[idx:idx+batch_size], predictions[idx:idx+batch_size]
-
-			# Show images.
-			#show_image(torchvision.utils.make_grid(inps))
-
-			#if logger: logger.info('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in outps])))
-			#if logger: logger.info('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in preds])))
-			#for gt, pred in zip(outps, preds):
-			#	if logger: logger.info('G/T - prediction: {}, {}.'.format(label_converter.decode(gt), label_converter.decode(pred)))
-			if logger: logger.info('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(outps, preds)]))
-
-			num_iters += 1
-			if num_iters >= 5: break
-
-		#--------------------
-		if inputs.ndim == 4: inputs = inputs.transpose(0, 2, 3, 1)
-		# TODO [decide] >>
-		#minval, maxval = np.min(inputs), np.max(inputs)
-		#minval, maxval = -1, 1
-		minval, maxval = 0, 1
-		inputs = np.round((inputs - minval) * 255 / (maxval - minval)).astype(np.uint8)  # [0, 255].
-
-		is_sequence_matching_ratio_used, is_simple_matching_accuracy_used = True, True
-		if is_sequence_matching_ratio_used:
-			total_matching_ratio, error_cases = compute_sequence_matching_ratio(inputs, outputs, predictions, label_converter, is_case_sensitive, error_cases_dir_path, error_idx=0)
-		if is_simple_matching_accuracy_used:
-			correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count, error_cases = compute_simple_matching_accuracy(inputs, outputs, predictions, label_converter, is_case_sensitive, error_cases_dir_path, error_idx=0)
-
-		if error_cases_dir_path:
-			err_fpath = os.path.join(error_cases_dir_path, 'error_cases.txt')
-			try:
-				with open(err_fpath, 'w', encoding='UTF8') as fd:
-					for idx, (gt, pred) in enumerate(error_cases):
-						fd.write('{}\t{}\t{}\n'.format(idx, gt, pred))
-			except UnicodeDecodeError as ex:
-				if logger: logger.warning('Unicode decode error in {}: {}.'.format(err_fpath, ex))
-			except FileNotFoundError as ex:
-				if logger: logger.warning('File not found, {}: {}.'.format(err_fpath, ex))
-
-		correct_char_class_count, total_char_class_count = compute_per_char_accuracy(inputs, outputs, predictions, label_converter.num_tokens)
-		show_per_char_accuracy(correct_char_class_count, total_char_class_count, label_converter.tokens, label_converter.num_tokens, show_acc_per_char, logger=logger)
-		if is_sequence_matching_ratio_used:
-			#num_examples = len(outputs)
-			num_examples = min(len(inputs), len(outputs), len(predictions))
-			avg_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
-			if logger: logger.info('Average sequence matching ratio = {}.'.format(avg_matching_ratio))
-		if is_simple_matching_accuracy_used:
-			if logger: logger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else -1))
-			if logger: logger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else -1))
-			if logger: logger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else -1))
-
-def infer_one_by_one_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=None, is_case_sensitive=False, show_acc_per_char=False, error_cases_dir_path=None, logger=None, device='cpu'):
-	num_examples_to_show = 50
-
-	with torch.no_grad():
-		predictions = list(infer_functor(model, inp, device=device)[0][0] for inp in inputs)
-	#if logger: logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(predictions.shape, predictions.dtype, np.min(predictions), np.max(predictions)))
-
-	if outputs is None:
-		if logger: logger.info('Prediction:\n{}.'.format('\n'.join([label_converter.decode(pred) for pred in predictions[:num_examples_to_show]])))
-	else:
-		def unnormalize(img, minval, maxval):
-			return np.round((img.transpose(1, 2, 0) - minval) * 255 / (maxval - minval)).astype(np.uint8)  # [0, 255].
-
-		# TODO [decide] >>
-		#minval, maxval = np.min(img), np.max(img)
-		#minval, maxval = -1, 1
-		minval, maxval = 0, 1
-		inputs = list(unnormalize(inp[0].numpy(), minval, maxval) for inp in inputs)
-		outputs = list(outp[0].numpy() for outp in outputs)
-
-		#if logger: logger.info('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in outputs[:num_examples_to_show]])))
-		#if logger: logger.info('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in predictions[:num_examples_to_show]])))
-		#for gt, pred in zip(outputs[:num_examples_to_show], predictions[:num_examples_to_show]):
-		#	if logger: logger.info('G/T - prediction: {}, {}.'.format(label_converter.decode(gt), label_converter.decode(pred)))
-		if logger: logger.info('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(outputs[:num_examples_to_show], predictions[:num_examples_to_show])]))
-
-		#--------------------
-		is_sequence_matching_ratio_used, is_simple_matching_accuracy_used = True
-		if is_sequence_matching_ratio_used:
-			total_matching_ratio, error_cases = compute_sequence_matching_ratio(inputs, outputs, predictions, label_converter, is_case_sensitive, error_cases_dir_path, error_idx=0)
-		if is_simple_matching_accuracy_used:
-			correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count, error_cases = compute_simple_matching_accuracy(inputs, outputs, predictions, label_converter, is_case_sensitive, error_cases_dir_path, error_idx=0)
-
-		if error_cases_dir_path:
-			err_fpath = os.path.join(error_cases_dir_path, 'error_cases.txt')
-			try:
-				with open(err_fpath, 'w', encoding='UTF8') as fd:
-					for idx, (gt, pred) in enumerate(error_cases):
-						fd.write('{}\t{}\t{}\n'.format(idx, gt, pred))
-			except UnicodeDecodeError as ex:
-				if logger: logger.warning('Unicode decode error in {}: {}.'.format(err_fpath, ex))
-			except FileNotFoundError as ex:
-				if logger: logger.warning('File not found, {}: {}.'.format(err_fpath, ex))
-
-		correct_char_class_count, total_char_class_count = compute_per_char_accuracy(inputs, outputs, predictions, label_converter.num_tokens)
-		show_per_char_accuracy(correct_char_class_count, total_char_class_count, label_converter.tokens, label_converter.num_tokens, show_acc_per_char, logger=logger)
-		if is_sequence_matching_ratio_used:
-			#num_examples = len(outputs)
-			num_examples = min(len(inputs), len(outputs), len(predictions))
-			avg_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
-			if logger: logger.info('Average sequence matching ratio = {}.'.format(avg_matching_ratio))
-		if is_simple_matching_accuracy_used:
-			if logger: logger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else -1))
-			if logger: logger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else -1))
-			if logger: logger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else -1))
-
 def build_char_model(label_converter, image_channel, loss_type):
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
@@ -3097,9 +2975,7 @@ def construct_character_model_and_data_for_training(model_filepath_to_load, mode
 
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
-	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
-	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	model_filepath_base = os.path.join(output_dir_path, '{}_{}_{}_{}_{}_{}_{}x{}x{}'.format(target_type, model_name, loss_type, gradclip_nogradclip, allparams_gradparams, font_type, image_height, image_width, image_channel))
+	model_filepath_base = os.path.join(output_dir_path, '{}_{}_{}_{}x{}x{}'.format(target_type, model_name, font_type, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	if logger: logger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
@@ -3181,55 +3057,6 @@ def construct_character_model_and_data_for_training(model_filepath_to_load, mode
 	scheduler = None
 
 	return model, train_forward_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, label_converter, model_params, max_gradient_norm, model_filepath_format
-
-def train_character_recognizer(model, train_forward_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, num_epochs, batch_size, model_filepath_format, logger=None, device='cpu'):
-	is_case_sensitive = False
-	shuffle = True
-	num_workers = 8
-	initial_epoch, final_epoch = 0, num_epochs
-	log_print_freq = 1000
-
-	if logger: logger.info('Start creating data loaders...')
-	start_time = time.time()
-	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	if logger: logger.info('End creating data loaders: {} secs.'.format(time.time() - start_time))
-
-	# Show data info.
-	show_char_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
-	show_char_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
-
-	#--------------------
-	# Train a model.
-
-	if logger: logger.info('Start training...')
-	start_time = time.time()
-	model, best_model_filepath = train_char_recognition_model(model, train_forward_functor, criterion, train_dataloader, test_dataloader, optimizer, label_converter, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
-	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
-
-	# Save a model.
-	if best_model_filepath:
-		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-		try:
-			shutil.copyfile(best_model_filepath, model_filepath)
-			if logger: logger.info('Copied the best trained model to {}.'.format(model_filepath))
-		except (FileNotFoundError, PermissionError) as ex:
-			if logger: logger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
-	elif model:
-		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
-		save_model(model_filepath, model, logger)
-	else: model_filepath = None
-
-	#--------------------
-	# Evaluate the model.
-
-	if logger: logger.info('Start evaluating...')
-	start_time = time.time()
-	model.eval()
-	evaluate_char_recognition_model(model, test_dataloader, label_converter, is_case_sensitive, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
-	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
-
-	return model_filepath
 
 def construct_text_model_and_data_for_training(model_filepath_to_load, model_type, image_shape, target_type, font_type, max_label_len, output_dir_path, logger, device='cpu'):
 	image_height, image_width, image_channel = image_shape
@@ -3319,10 +3146,7 @@ def construct_text_model_and_data_for_training(model_filepath_to_load, model_typ
 
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
-	gradclip_nogradclip = 'gradclip' if max_gradient_norm else 'nogradclip'
-	allparams_gradparams = 'allparams' if is_all_model_params_optimized else 'gradparams'
-	pad_nopad = 'pad' if is_separate_pad_id_used else 'nopad'
-	model_filepath_base = os.path.join(output_dir_path, '{}_{}_{}_{}_{}_{}_{}_ch{}_{}x{}x{}'.format(target_type, model_name, loss_type, gradclip_nogradclip, allparams_gradparams, pad_nopad, font_type, max_label_len, image_height, image_width, image_channel))
+	model_filepath_base = os.path.join(output_dir_path, '{}_{}_{}_ch{}_{}x{}x{}'.format(target_type, model_name, font_type, max_label_len, image_height, image_width, image_channel))
 	model_filepath_format = model_filepath_base + '{}.pth'
 	if logger: logger.info('Model filepath: {}.'.format(model_filepath_format.format('')))
 
@@ -3494,10 +3318,8 @@ def construct_text_model_and_data_for_training(model_filepath_to_load, model_typ
 
 	return model, infer_functor, train_forward_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, label_converter, model_params, max_gradient_norm, model_filepath_format
 
-def construct_text_model_and_data_for_inference(model_filepath_to_load, model_type, image_shape, target_type, font_type, max_label_len, logger, device='cpu'):
+def construct_text_model_for_inference(model_filepath_to_load, model_type, image_shape, font_type, max_label_len, logger, device='cpu'):
 	is_separate_pad_id_used = True
-	is_preloaded_image_used = False
-	is_aihub_data_used = False
 
 	lang = font_type[:3]
 	if lang == 'kor':
@@ -3539,78 +3361,11 @@ def construct_text_model_and_data_for_inference(model_filepath_to_load, model_ty
 		logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	#--------------------
-	# Prepare data.
-
-	image_height, image_width, image_channel = image_shape
-	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
-	#image_height_before_crop, image_width_before_crop = image_height, image_width
-
-	transform = torchvision.transforms.Compose([
-		ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, logger=logger),
-		#ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, logger=logger),  # batch_size must be 1.
-		#torchvision.transforms.Resize((image_height, image_width)),
-		#torchvision.transforms.CenterCrop((image_height, image_width)),
-		torchvision.transforms.ToTensor(),
-		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
-	])
-	target_transform = ToIntTensor()
-
-	if 'posix' == os.name:
-		data_base_dir_path = '/home/sangwook/work/dataset'
-	else:
-		data_base_dir_path = 'D:/work/dataset'
-
-	if is_aihub_data_used:
-		if target_type == 'word':
-			image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
-		elif target_type == 'textline':
-			image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
-		else:
-			raise ValueError('Invalid target type, {}'.format(target_type))
-
-		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
-		aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
-	else:
-		if target_type == 'word':
-			raise NotImplementedError('Input data should be assigned')
-			image_filepaths = None
-			label_filepaths = None
-		elif target_type == 'textline':
-			"""
-			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
-			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
-			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.jpg', recursive=False))
-			label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
-			"""
-			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/general/sminds/20200812/image/*.jpg', recursive=False))
-			label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/general/sminds/20200812/label/*.txt', recursive=False))
-			if image_filepaths and label_filepaths and len(image_filepaths) == len(label_filepaths):
-				if logger: logger.info('#loaded image files = {}, #loaded label files = {}.'.format(len(image_filepaths), len(label_filepaths)))
-			else:
-				if logger: logger.error('#loaded image files = {}, #loaded label files = {}.'.format(len(image_filepaths), len(label_filepaths)))
-				raise RuntimeError('Invalid input images and labels, {} != {}'.format(len(image_filepaths), len(label_filepaths)))
-		else:
-			raise ValueError('Invalid target type, {}'.format(target_type))
-
-	if logger: logger.info('Start creating a dataset...')
-	start_time = time.time()
-	if is_aihub_data_used:
-		dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=transform, target_transform=target_transform)
-	else:
-		if target_type == 'word':
-			#dataset = text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_label_len, is_preloaded_image_used, transform=transform, target_transform=target_transform)
-			dataset = text_data.ImageLabelFileBasedWordDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_label_len, is_preloaded_image_used, transform=transform, target_transform=target_transform)
-		elif target_type == 'textline':
-			#dataset = text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_label_len, is_preloaded_image_used, transform=transform, target_transform=target_transform)
-			dataset = text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_label_len, is_preloaded_image_used, transform=transform, target_transform=target_transform)
-	if logger: logger.info('End creating a dataset: {} secs.'.format(time.time() - start_time))
-	if logger: logger.info('#examples = {}.'.format(len(dataset)))
-
-	#--------------------
 	# Build a model.
 
 	if logger: logger.info('Start building a model...')
 	start_time = time.time()
+	image_height, image_width, image_channel = image_shape
 	if model_type == 'rare1':
 		model, infer_functor, _, _ = build_rare1_model(label_converter, image_height, image_width, image_channel, lang, loss_type=None, max_time_steps=max_label_len + num_suffixes, sos_id=SOS_ID, blank_label=None)
 	elif model_type == 'rare2':
@@ -3640,12 +3395,9 @@ def construct_text_model_and_data_for_inference(model_filepath_to_load, model_ty
 
 	model = model.to(device)
 
-	return model, infer_functor, dataset, label_converter
+	return model, infer_functor, label_converter
 
-def train_text_recognizer(model, train_forward_functor, infer_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, num_epochs, batch_size, model_filepath_format, logger=None, device='cpu'):
-	is_case_sensitive = False
-	shuffle = True
-	num_workers = 8
+def train_character_recognizer(model, train_forward_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, num_epochs, batch_size, shuffle, num_workers, is_case_sensitive, model_filepath_format, logger=None, device='cpu'):
 	initial_epoch, final_epoch = 0, num_epochs
 	log_print_freq = 1000
 
@@ -3656,15 +3408,15 @@ def train_text_recognizer(model, train_forward_functor, infer_functor, criterion
 	if logger: logger.info('End creating data loaders: {} secs.'.format(time.time() - start_time))
 
 	# Show data info.
-	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
-	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
+	show_char_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
+	show_char_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
 
 	#--------------------
-	# Train the model.
+	# Train a model.
 
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, train_dataloader, test_dataloader, optimizer, label_converter, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
+	model, best_model_filepath = train_char_recognition_model(model, train_forward_functor, criterion, train_dataloader, test_dataloader, optimizer, label_converter, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -3686,18 +3438,56 @@ def train_text_recognizer(model, train_forward_functor, infer_functor, criterion
 	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
+	evaluate_char_recognition_model(model, test_dataloader, label_converter, is_case_sensitive, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
+	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
+
+	return model_filepath
+
+def train_text_recognizer(model, train_forward_functor, infer_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, num_epochs, batch_size, shuffle, num_workers, is_case_sensitive, model_filepath_format, logger=None, device='cpu'):
+	initial_epoch, final_epoch = 0, num_epochs
+	log_print_freq = 1000
+
+	if logger: logger.info('Start creating data loaders...')
+	start_time = time.time()
+	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	if logger: logger.info('End creating data loaders: {} secs.'.format(time.time() - start_time))
+
+	# Show data info.
+	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
+	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
+
+	#--------------------
+	# Train a model.
+	if logger: logger.info('Start training...')
+	start_time = time.time()
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, train_dataloader, test_dataloader, optimizer, label_converter, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
+	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
+
+	# Save a model.
+	if best_model_filepath:
+		model_filepath = model_filepath_format.format('_best_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		try:
+			shutil.copyfile(best_model_filepath, model_filepath)
+			if logger: logger.info('Copied the best trained model to {}.'.format(model_filepath))
+		except (FileNotFoundError, PermissionError) as ex:
+			if logger: logger.warning('Failed to copy the best trained model to {}: {}.'.format(model_filepath, ex))
+	elif model:
+		model_filepath = model_filepath_format.format('_final_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		save_model(model_filepath, model, logger)
+	else: model_filepath = None
+
+	#--------------------
+	# Evaluate a model.
+	if logger: logger.info('Start evaluating...')
+	start_time = time.time()
+	model.eval()
 	evaluate_text_recognition_model(model, infer_functor, test_dataloader, label_converter, is_case_sensitive, show_acc_per_char=True, error_cases_dir_path=None, logger=logger, device=device)
 	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
 	return model_filepath
 
-def evaluate_text_recognizer(model, infer_functor, dataset, output_dir_path, label_converter, batch_size, logger=None, device='cpu'):
-	shuffle = False
-	num_workers = 8
-
-	#--------------------
-	# Prepare data.
-
+def evaluate_text_recognizer(model, infer_functor, dataset, output_dir_path, label_converter, batch_size, shuffle, num_workers, is_case_sensitive=False, logger=None, device='cpu'):
 	if logger: logger.info('Start creating a dataloader...')
 	start_time = time.time()
 	dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
@@ -3707,95 +3497,33 @@ def evaluate_text_recognizer(model, infer_functor, dataset, output_dir_path, lab
 	show_text_data_info(dataloader, label_converter, visualize=False, mode='Test', logger=logger)
 
 	#--------------------
-	# Evaluate the model.
-
 	error_cases_dir_path = os.path.join(output_dir_path, 'eval_text_error_cases')
 	if error_cases_dir_path and error_cases_dir_path.strip() and not os.path.exists(error_cases_dir_path):
 		os.makedirs(error_cases_dir_path, exist_ok=True)
 
+	# Evaluate a model.
 	if logger: logger.info('Start evaluating...')
 	start_time = time.time()
 	model.eval()
-	evaluate_text_recognition_model(model, infer_functor, dataloader, label_converter, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, logger=logger, device=device)
+	evaluate_text_recognition_model(model, infer_functor, dataloader, label_converter, is_case_sensitive, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, logger=logger, device=device)
 	if logger: logger.info('End evaluating: {} secs.'.format(time.time() - start_time))
 
-def recognize_text(model, infer_functor, dataset, output_dir_path, label_converter, batch_size, logger=None, device='cpu'):
-	shuffle = False
-	num_workers = 8
+def recognize_text(model, infer_functor, inputs, batch_size=None, logger=None, device='cpu'):
+	if batch_size is not None and batch_size == 1:
+		# Infer one-by-one.
+		with torch.no_grad():
+			predictions = np.array(list(infer_functor(model, inputs[idx:idx+1], device=device)[0][0] for idx in range(len(inputs))))
+	else:
+		# Infer batch-by-batch.
+		if batch_size is None: batch_size = len(inputs)
 
-	#--------------------
-	# Prepare data.
+		with torch.no_grad():
+			predictions = list()
+			for idx in range(0, len(inputs), batch_size):
+				predictions.append(infer_functor(model, inputs[idx:idx+batch_size], device=device)[0])
+		predictions = np.vstack(predictions)
 
-	if logger: logger.info('Start creating a dataloader...')
-	start_time = time.time()
-	dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	if logger: logger.info('End creating a dataloader: {} secs.'.format(time.time() - start_time))
-
-	# Show data info.
-	show_text_data_info(dataloader, label_converter, visualize=False, mode='Test', logger=logger)
-
-	inputs, outputs = list(), list()
-	try:
-		for images, labels, _ in dataloader:
-			inputs.append(images)
-			outputs.append(labels)
-	except Exception as ex:
-		if logger: logger.warning('Exception raised: {}.'.format(ex))
-	inputs = torch.cat(inputs)
-	outputs = torch.cat(outputs)
-
-	#--------------------
-	# Infer by the model.
-
-	#outputs = None
-	error_cases_dir_path = os.path.join(output_dir_path, 'inf_text_error_cases')
-	if outputs is not None and error_cases_dir_path and error_cases_dir_path.strip() and not os.path.exists(error_cases_dir_path):
-		os.makedirs(error_cases_dir_path, exist_ok=True)
-
-	if logger: logger.info('Start inferring...')
-	start_time = time.time()
-	model.eval()
-	infer_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, batch_size=batch_size, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, logger=logger, device=device)
-	if logger: logger.info('End inferring: {} secs.'.format(time.time() - start_time))
-
-def recognize_text_one_by_one(model, infer_functor, dataset, output_dir_path, label_converter, logger=None, device='cpu'):
-	batch_size = 1
-
-	shuffle = False
-	num_workers = 8
-
-	#--------------------
-	# Prepare data.
-
-	if logger: logger.info('Start creating a dataloader...')
-	start_time = time.time()
-	dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	if logger: logger.info('End creating a dataloader: {} secs.'.format(time.time() - start_time))
-
-	# Show data info.
-	show_text_data_info(dataloader, label_converter, visualize=False, mode='Test', logger=logger)
-
-	inputs, outputs = list(), list()
-	try:
-		for images, labels, _ in dataloader:
-			inputs.append(images)
-			outputs.append(labels)
-	except Exception as ex:
-		if logger: logger.warning('Exception raised: {}.'.format(ex))
-
-	#--------------------
-	# Infer by the model.
-
-	#outputs = None
-	error_cases_dir_path = os.path.join(output_dir_path, 'inf_text_error_cases')
-	if outputs is not None and error_cases_dir_path and error_cases_dir_path.strip() and not os.path.exists(error_cases_dir_path):
-		os.makedirs(error_cases_dir_path, exist_ok=True)
-
-	if logger: logger.info('Start inferring...')
-	start_time = time.time()
-	model.eval()
-	infer_one_by_one_using_text_recognition_model(model, infer_functor, label_converter, inputs, outputs=outputs, is_case_sensitive=False, show_acc_per_char=True, error_cases_dir_path=error_cases_dir_path, logger=logger, device=device)
-	if logger: logger.info('End inferring: {} secs.'.format(time.time() - start_time))
+	return predictions
 
 def recognize_character_using_craft(output_dir_path, image_shape, is_cuda_used, logger=None, device='cpu'):
 	import craft.imgproc as imgproc
@@ -4056,6 +3784,208 @@ def recognize_word_using_craft(output_dir_path, image_shape, is_cuda_used, logge
 	else:
 		if logger: logger.info('No text detected.')
 
+def dataset_to_tensor(dataset, batch_size, shuffle, num_workers, logger):
+	dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+
+	# Show data info.
+	#show_text_data_info(dataloader, label_converter, visualize=False, mode='Test', logger=logger)
+
+	inputs, outputs = list(), list()
+	try:
+		for images, labels, _ in dataloader:
+			inputs.append(images)
+			outputs.append(labels)
+	except Exception as ex:
+		if logger: logger.warning('Exception raised: {}.'.format(ex))
+	inputs = torch.cat(inputs)
+	outputs = torch.cat(outputs)
+
+	return inputs, outputs
+
+def data_to_tensor(images, labels, label_converter, image_shape, max_label_len, is_pil, logger):
+	if images:
+		image_height, image_width, image_channel = image_shape
+		#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
+		#image_height_before_crop, image_width_before_crop = image_height, image_width
+
+		transform = torchvision.transforms.Compose([
+			ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, is_pil=is_pil, logger=logger),
+			#ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, is_pil=is_pil, logger=logger),  # batch_size must be 1.
+			#torchvision.transforms.Resize((image_height, image_width)),
+			#torchvision.transforms.CenterCrop((image_height, image_width)),
+			torchvision.transforms.ToTensor(),
+			#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
+		])
+
+		inputs = list(transform(img) for img in images)
+		inputs = torch.stack(inputs)
+	else: inputs = None
+
+	if labels:
+		#target_transform = ToIntTensor()
+		target_transform = ToIntTensorWithPadding(label_converter.pad_id, max_label_len)
+
+		outputs = list(target_transform(label_converter.encode(lbl)) for lbl in labels)
+		outputs = torch.stack(outputs)
+	else: outputs = None
+
+	return inputs, outputs
+
+def load_data_from_file(label_converter, image_channel, target_type, max_label_len, is_pil, logger):
+	import text_data_util
+
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+
+	if False:
+		# When using an image-label info file.
+		if target_type == 'word':
+			raise NotImplementedError('Input data should be assigned')
+			image_label_info_filepath = None
+		elif target_type == 'textline':
+			image_label_info_filepath = data_base_dir_path + '/text/receipt/sminds/receipt_text_line/labels.txt'
+		else:
+			raise ValueError('Invalid target type, {}'.format(target_type))
+
+		images, labels_str, labels_int = text_data_util.load_data_from_image_label_info(label_converter, image_label_info_filepath, image_channel, max_label_len, image_label_separator=' ', is_pil=is_pil)
+	else:
+		# When using image-label files.
+		if target_type == 'word':
+			raise NotImplementedError('Input data should be assigned')
+			image_filepaths = None
+			label_filepaths = None
+		elif target_type == 'textline':
+			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/general/sminds/20200812/image/*.jpg', recursive=False))
+			label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/general/sminds/20200812/label/*.txt', recursive=False))
+		else:
+			raise ValueError('Invalid target type, {}'.format(target_type))
+		assert len(image_filepaths) == len(label_filepaths)
+
+		images, labels_str, labels_int = text_data_util.load_data_from_image_and_label_files(label_converter, image_filepaths, label_filepaths, image_channel, max_label_len, is_pil=is_pil)
+
+	return images, labels_int
+
+def create_dataset(label_converter, image_shape, target_type, max_label_len, is_preloaded_image_used, logger):
+	image_height, image_width, image_channel = image_shape
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
+	#image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	transform = torchvision.transforms.Compose([
+		ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, logger=logger),
+		#ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, logger=logger),  # batch_size must be 1.
+		#torchvision.transforms.Resize((image_height, image_width)),
+		#torchvision.transforms.CenterCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
+	])
+	target_transform = ToIntTensor()
+
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+
+	if False:
+		# When using AI-Hub data.
+		if target_type == 'word':
+			image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
+		elif target_type == 'textline':
+			image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
+		else:
+			raise ValueError('Invalid target type, {}'.format(target_type))
+
+		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
+		aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
+
+		dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=transform, target_transform=target_transform)
+	else:
+		# When using a dataset for an image-label info file or image-label files.
+		if target_type == 'word':
+			raise NotImplementedError('Input data should be assigned')
+			image_filepaths = None
+			label_filepaths = None
+
+			#dataset = text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_label_len, is_preloaded_image_used, transform=transform, target_transform=target_transform)
+			dataset = text_data.ImageLabelFileBasedWordDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_label_len, is_preloaded_image_used, transform=transform, target_transform=target_transform)
+		elif target_type == 'textline':
+			"""
+			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
+			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
+			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.jpg', recursive=False))
+			label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
+			"""
+			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/general/sminds/20200812/image/*.jpg', recursive=False))
+			label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/general/sminds/20200812/label/*.txt', recursive=False))
+			if image_filepaths and label_filepaths and len(image_filepaths) == len(label_filepaths):
+				if logger: logger.info('#loaded image files = {}, #loaded label files = {}.'.format(len(image_filepaths), len(label_filepaths)))
+			else:
+				if logger: logger.error('#loaded image files = {}, #loaded label files = {}.'.format(len(image_filepaths), len(label_filepaths)))
+				raise RuntimeError('Invalid input images and labels, {} != {}'.format(len(image_filepaths), len(label_filepaths)))
+
+			#dataset = text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_label_len, is_preloaded_image_used, transform=transform, target_transform=target_transform)
+			dataset = text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_label_len, is_preloaded_image_used, transform=transform, target_transform=target_transform)
+		else:
+			raise ValueError('Invalid target type, {}'.format(target_type))
+
+	return dataset
+
+def visualize_inference_results(predictions, label_converter, inputs, outputs, output_dir_path, is_case_sensitive, logger):
+	num_examples_to_visualize = 50
+	if outputs is None:
+		# Show images.
+		#show_image(torchvision.utils.make_grid(inputs[:num_examples_to_visualize]))
+
+		if logger: logger.info('Prediction:\n{}.'.format('\n'.join([label_converter.decode(pred) for pred in predictions[:num_examples_to_visualize]])))
+	else:
+		error_cases_dir_path = os.path.join(output_dir_path, 'inf_text_error_cases')
+		if error_cases_dir_path and error_cases_dir_path.strip() and not os.path.exists(error_cases_dir_path):
+			os.makedirs(error_cases_dir_path, exist_ok=True)
+
+		#if logger: logger.info('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in outputs[:num_examples_to_visualize]])))
+		#if logger: logger.info('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in predictions[:num_examples_to_visualize]])))
+		#for gt, pred in zip(outputs[:num_examples_to_visualize], predictions[:num_examples_to_visualize]):
+		#	if logger: logger.info('G/T - prediction: {}, {}.'.format(label_converter.decode(gt), label_converter.decode(pred)))
+		if logger: logger.info('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(outputs[:num_examples_to_visualize], predictions[:num_examples_to_visualize])]))
+
+		#--------------------
+		if inputs.ndim == 4: inputs = inputs.transpose(0, 2, 3, 1)
+		# TODO [decide] >>
+		#minval, maxval = np.min(inputs), np.max(inputs)
+		#minval, maxval = -1, 1
+		minval, maxval = 0, 1
+		inputs = np.round((inputs - minval) * 255 / (maxval - minval)).astype(np.uint8)  # [0, 255].
+
+		is_sequence_matching_ratio_used, is_simple_matching_accuracy_used = True, True
+		if is_sequence_matching_ratio_used:
+			total_matching_ratio, error_cases = compute_sequence_matching_ratio(inputs, outputs, predictions, label_converter, is_case_sensitive, error_cases_dir_path, error_idx=0)
+		if is_simple_matching_accuracy_used:
+			correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count, error_cases = compute_simple_matching_accuracy(inputs, outputs, predictions, label_converter, is_case_sensitive, error_cases_dir_path, error_idx=0)
+
+		if error_cases_dir_path:
+			err_fpath = os.path.join(error_cases_dir_path, 'error_cases.txt')
+			try:
+				with open(err_fpath, 'w', encoding='UTF8') as fd:
+					for idx, (gt, pred) in enumerate(error_cases):
+						fd.write('{}\t{}\t{}\n'.format(idx, gt, pred))
+			except UnicodeDecodeError as ex:
+				if logger: logger.warning('Unicode decode error in {}: {}.'.format(err_fpath, ex))
+			except FileNotFoundError as ex:
+				if logger: logger.warning('File not found, {}: {}.'.format(err_fpath, ex))
+
+		correct_char_class_count, total_char_class_count = compute_per_char_accuracy(inputs, outputs, predictions, label_converter.num_tokens)
+		show_per_char_accuracy(correct_char_class_count, total_char_class_count, label_converter.tokens, label_converter.num_tokens, show_acc_per_char=True, logger=logger)
+		if is_sequence_matching_ratio_used:
+			#num_examples = len(outputs)
+			num_examples = min(len(inputs), len(outputs), len(predictions))
+			avg_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
+			if logger: logger.info('Average sequence matching ratio = {}.'.format(avg_matching_ratio))
+		if is_simple_matching_accuracy_used:
+			if logger: logger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else -1))
+			if logger: logger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else -1))
+			if logger: logger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else -1))
+
 #--------------------------------------------------------------------
 
 def parse_command_line_options():
@@ -4268,15 +4198,19 @@ def main():
 	#if model_filepath: logger.info('Model filepath to save: {}.'.format(model_filepath))
 
 	#--------------------
+	shuffle = False
+	num_workers = 8
+	is_case_sensitive=False
+
 	if args.train:
 		#is_resumed = args.model_file is not None
 
 		if args.target_type == 'char':
 			model, train_forward_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, label_converter, model_params, max_gradient_norm, model_filepath_format = construct_character_model_and_data_for_training(model_filepath_to_load, args.model_type, image_shape, args.target_type, args.font_type, output_dir_path, logger, device)
-			model_filepath = train_character_recognizer(model, train_forward_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, args.epoch, args.batch, model_filepath_format, logger, device)
+			model_filepath = train_character_recognizer(model, train_forward_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, args.epoch, args.batch, shuffle, num_workers, is_case_sensitive, model_filepath_format, logger, device)
 		elif args.target_type in ['word', 'textline']:
 			model, infer_functor, train_forward_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, label_converter, model_params, max_gradient_norm, model_filepath_format = construct_text_model_and_data_for_training(model_filepath_to_load, args.model_type, image_shape, args.target_type, args.font_type, args.max_len, output_dir_path, logger, device)
-			model_filepath = train_text_recognizer(model, train_forward_functor, infer_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, args.epoch, args.batch, model_filepath_format, logger, device)
+			model_filepath = train_text_recognizer(model, train_forward_functor, infer_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, args.epoch, args.batch, shuffle, num_workers, is_case_sensitive, model_filepath_format, logger, device)
 		else:
 			raise ValueError('Invalid target type, {}'.format(args.target_type))
 	elif not model_filepath: model_filepath = model_filepath_to_load
@@ -4285,19 +4219,63 @@ def main():
 	if args.eval or args.infer:
 		assert model_filepath
 
+		is_preloaded_image_used = False
+
 		if args.target_type == 'char':
 			raise NotImplementedError
 		elif args.target_type in ['word', 'textline']:
-			model, infer_functor, dataset, label_converter = construct_text_model_and_data_for_inference(model_filepath, args.model_type, image_shape, args.target_type, args.font_type, args.max_len, logger=logger, device=device)
+			model, infer_functor, label_converter = construct_text_model_for_inference(model_filepath, args.model_type, image_shape, args.font_type, args.max_len, logger=logger, device=device)
 
 			#--------------------
-			if args.eval and model and infer_functor and dataset:
-				evaluate_text_recognizer(model, infer_functor, dataset, output_dir_path, label_converter, args.batch, logger=logger, device=device)
+			if args.eval and model and infer_functor:
+				# Create a dataset.
+				if logger: logger.info('Start creating a dataset...')
+				start_time = time.time()
+				dataset = create_dataset(label_converter, image_shape, args.target_type, args.max_len, is_preloaded_image_used, logger)
+				if logger: logger.info('End creating a dataset: {} secs.'.format(time.time() - start_time))
+				if logger: logger.info('#examples = {}.'.format(len(dataset)))
+
+				# Evaluate.
+				evaluate_text_recognizer(model, infer_functor, dataset, output_dir_path, label_converter, args.batch, shuffle, num_workers, is_case_sensitive, logger=logger, device=device)
 
 			#--------------------
-			if args.infer and model and infer_functor and dataset:
-				recognize_text(model, infer_functor, dataset, output_dir_path, label_converter, args.batch, logger=logger, device=device)
-				#recognize_text_one_by_one(model, infer_functor, dataset, output_dir_path, label_converter, logger=logger, device=device)  # batch_size = 1.
+			if args.infer and model and infer_functor:
+				# Create data.
+				if True:
+					is_pil = True
+
+					if logger: logger.info('Start loading data...')
+					start_time = time.time()
+					images, labels = load_data_from_file(label_converter, image_shape[2], args.target_type, args.max_len, is_pil, logger)
+					if logger: logger.info('End loading data: {} secs.'.format(time.time() - start_time))
+					assert len(images) == len(labels)
+					if logger: logger.info('#examples = {}.'.format(len(images)))
+
+					inputs, _ = data_to_tensor(images, None, label_converter, image_shape, args.max_len, is_pil, logger)
+					outputs = labels
+				else:
+					if logger: logger.info('Start creating a dataset...')
+					start_time = time.time()
+					dataset = create_dataset(label_converter, image_shape, args.target_type, args.max_len, is_preloaded_image_used, logger)
+					if logger: logger.info('End creating a dataset: {} secs.'.format(time.time() - start_time))
+					if logger: logger.info('#examples = {}.'.format(len(dataset)))
+
+					inputs, outputs = dataset_to_tensor(dataset, args.batch, shuffle, num_workers, logger)
+					outputs = outputs.numpy()
+
+				# Infer.
+				if logger: logger.info('Start inferring...')
+				start_time = time.time()
+				model.eval()
+				batch_size = args.batch  # Infer batch-by-batch.
+				#batch_size = 1  # Infer one-by-one.
+				predictions = recognize_text(model, infer_functor, inputs, batch_size, logger=logger, device=device)
+				if logger: logger.info('End inferring: {} secs.'.format(time.time() - start_time))
+				if logger: logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(predictions.shape, predictions.dtype, np.min(predictions), np.max(predictions)))
+
+				# Visualize inference results.
+				#outputs = None
+				visualize_inference_results(predictions, label_converter, inputs.numpy(), outputs, output_dir_path, is_case_sensitive, logger)
 		else:
 			raise ValueError('Invalid target type, {}'.format(args.target_type))
 
