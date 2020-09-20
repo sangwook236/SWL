@@ -2944,27 +2944,138 @@ def build_transformer_model(label_converter, image_height, image_width, image_ch
 
 	return model, infer, train_forward, criterion
 
+def create_label_converter(converter_type, charset):
+	BLANK_LABEL, SOS_ID, EOS_ID = None, None, None
+	num_suffixes = 0
+
+	if converter_type == 'basic':
+		label_converter = swl_langproc_util.TokenConverter(list(charset))
+		assert label_converter.PAD is None
+	elif converter_type == 'sos':
+		# <SOS> only.
+		SOS_TOKEN = '<SOS>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN)
+		assert label_converter.PAD is None
+		SOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0]
+		del SOS_TOKEN
+	elif converter_type == 'eos':
+		# <EOS> only.
+		EOS_TOKEN = '<EOS>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset), eos=EOS_TOKEN)
+		assert label_converter.PAD is None
+		EOS_ID = label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
+		num_suffixes = 1
+		del EOS_TOKEN
+	elif converter_type == 'sos+eos':
+		# <SOS> + <EOS> and <PAD> = a separate valid token ID.
+		SOS_TOKEN, EOS_TOKEN, PAD_TOKEN = '<SOS>', '<EOS>', '<PAD>'
+		PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
+		label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
+		assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
+		assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
+		assert label_converter.PAD is not None
+		SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
+		num_suffixes = 1
+		del SOS_TOKEN, EOS_TOKEN, PAD_TOKEN
+	elif converter_type == 'sos/pad+eos':
+		# <SOS> + <EOS> and <PAD> = <SOS>.
+		SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)
+		assert label_converter.PAD is not None
+		SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
+		num_suffixes = 1
+		del SOS_TOKEN, EOS_TOKEN
+	elif converter_type == 'sos+eos/pad':
+		# <SOS> + <EOS> and <PAD> = <EOS>.
+		SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
+		label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)
+		assert label_converter.PAD is not None
+		SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
+		num_suffixes = 1
+		del SOS_TOKEN, EOS_TOKEN
+	elif converter_type == 'blank':
+		# The BLANK label for CTC.
+		BLANK_LABEL = '<BLANK>'
+		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), pad=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
+		assert label_converter.encode([BLANK_LABEL], is_bare_output=True)[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL], is_bare_output=True)[0])
+		assert label_converter.PAD is None
+		BLANK_LABEL_ID = 0 #label_converter.encode([BLANK_LABEL], is_bare_output=True)[0]
+	else:
+		raise ValueError('Invalid label converter type, {}'.format(converter_type))
+
+	return label_converter, SOS_ID, EOS_ID, BLANK_LABEL, num_suffixes
+
+def create_datasets_for_training(charset, wordset, font_list, target_type, image_shape, label_converter, max_label_len, logger):
+	image_height, image_width, image_channel = image_shape
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
+	image_height_before_crop, image_width_before_crop = image_height, image_width
+
+	is_mixed_texts_used = True
+	if target_type == 'char':
+		# File-based chars: 78,838.
+		if is_mixed_texts_used:
+			num_simple_char_examples_per_class, num_noisy_examples_per_class = 300, 300  # For mixed chars.
+		else:
+			char_type = 'simple_char'  # {'simple_char', 'noisy_char', 'file_based_char'}.
+			num_train_examples_per_class, num_test_examples_per_class = 500, 50  # For simple and noisy chars.
+		char_clipping_ratio_interval = (0.8, 1.25)
+	elif target_type == 'word':
+		# File-based words: 504,279.
+		if is_mixed_texts_used:
+			num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed words.
+		else:
+			word_type = 'simple_word'  # {'simple_word', 'random_word', 'aihub_word', 'file_based_word'}.
+			num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
+		word_len_interval = (1, max_label_len)
+		word_count_interval, space_count_interval, char_space_ratio_interval = None, None, None
+	elif target_type == 'textline':
+		# File-based text lines: 55,835.
+		if is_mixed_texts_used:
+			num_simple_examples, num_random_examples, num_trdg_examples = int(5e4), int(5e4), int(5e4)  # For mixed text lines.
+		else:
+			textline_type = 'simple_textline'  # {'simple_textline', 'random_textline', 'trdg_textline', 'aihub_textline', 'file_based_textline'}.
+			num_train_examples, num_test_examples = int(2e5), int(2e3)  # For simple, random, and TRDG text lines.
+		word_len_interval = (1, 20)
+		word_count_interval = (1, 5)
+		space_count_interval = (1, 3)
+		char_space_ratio_interval = (0.8, 1.25)
+	else:
+		raise ValueError('Invalid target type, {}'.format(target_type))
+	font_size_interval = (10, 100)
+	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
+	train_test_ratio = 0.8
+
+	#--------------------
+	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
+	if target_type == 'char':
+		if is_mixed_texts_used:
+			train_dataset, test_dataset = create_mixed_char_datasets(label_converter, charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, logger)
+		else:
+			train_dataset, test_dataset = create_char_datasets(char_type, label_converter, charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, logger)
+	elif target_type == 'word':
+		if is_mixed_texts_used:
+			train_dataset, test_dataset = create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, font_list, font_size_interval, color_functor, logger)
+		else:
+			train_dataset, test_dataset = create_word_datasets(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, font_list, font_size_interval, color_functor, logger)
+	elif target_type == 'textline':
+		if is_mixed_texts_used:
+			train_dataset, test_dataset = create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, logger)
+		else:
+			train_dataset, test_dataset = create_textline_datasets(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, logger)
+
+	return train_dataset, test_dataset
+
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 def construct_character_model_and_data_for_training(model_filepath_to_load, model_type, image_shape, target_type, font_type, output_dir_path, logger=None, device='cpu'):
 	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	# File-based chars: 78,838.
-	is_mixed_chars_used = True
-	if is_mixed_chars_used:
-		num_simple_char_examples_per_class, num_noisy_examples_per_class = 300, 300  # For mixed chars.
-	else:
-		char_type = 'simple_char'  # {'simple_char', 'noisy_char', 'file_based_char'}.
-		num_train_examples_per_class, num_test_examples_per_class = 500, 50  # For simple and noisy chars.
-	char_clipping_ratio_interval = (0.8, 1.25)
-	font_size_interval = (10, 100)
-	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
-
+	label_converter_type = 'basic'  # {'basic', 'sos', 'eos', 'sos+eos', 'sos/pad+eos', 'sos+eos/pad', 'blank'}. Fixed.
 	loss_type = 'xent'  # {'xent', 'nll'}.
 	if model_type == 'char': model_name = 'basic'
 	elif model_type == 'char-mixup': model_name = 'mixup'
-	else: raise ValueError('Invalid character model type, {}'.format(model_type))
+	else: raise ValueError('Invalid model type, {}'.format(model_type))
 	#max_gradient_norm = 5  # Gradient clipping value.
 	max_gradient_norm = None
 	train_test_ratio = 0.8
@@ -2991,16 +3102,24 @@ def construct_character_model_and_data_for_training(model_filepath_to_load, mode
 	#--------------------
 	# Prepare data.
 
+	label_converter, SOS_ID, EOS_ID, BLANK_LABEL, num_suffixes = create_label_converter(label_converter_type, charset)
+	classes, num_classes = label_converter.tokens, label_converter.num_tokens
+	if logger:
+		logger.info('#classes = {}.'.format(num_classes))
+		logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+
+	if logger: logger.info('Start creating datasets...')
+	start_time = time.time()
+	train_dataset, test_dataset = create_datasets_for_training(charset, None, font_list, target_type, image_shape, label_converter, max_label_len=1, logger=logger)
+	if logger: logger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
+
 	label_converter = swl_langproc_util.TokenConverter(list(charset))
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	if logger: logger.info('#classes = {}.'.format(num_classes))
 
 	if logger: logger.info('Start creating datasets...')
 	start_time = time.time()
-	if is_mixed_chars_used:
-		train_dataset, test_dataset = create_mixed_char_datasets(label_converter, charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, logger)
-	else:
-		train_dataset, test_dataset = create_char_datasets(char_type, label_converter, charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, logger)
 	if logger: logger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
 	if logger: logger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
@@ -3063,6 +3182,7 @@ def construct_text_model_and_data_for_training(model_filepath_to_load, model_typ
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
+	label_converter_type = 'sos+eos'  # {'basic', 'sos', 'eos', 'sos+eos', 'sos/pad+eos', 'sos+eos/pad', 'blank'}.
 	if model_type == 'rare1':
 		loss_type = 'xent'  # {'ctc', 'xent', 'nll'}.
 		if loss_type == 'ctc': model_name = 'rare1'
@@ -3112,37 +3232,9 @@ def construct_text_model_and_data_for_training(model_filepath_to_load, model_typ
 	else:
 		raise ValueError('Invalid model type, {}'.format(model_type))
 
-	is_mixed_texts_used = True
-	if target_type == 'word':
-		# File-based words: 504,279.
-		if is_mixed_texts_used:
-			num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed words.
-		else:
-			word_type = 'simple_word'  # {'simple_word', 'random_word', 'aihub_word', 'file_based_word'}.
-			num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
-		word_len_interval = (1, max_label_len)
-		word_count_interval, space_count_interval, char_space_ratio_interval = None, None, None
-	elif target_type == 'textline':
-		# File-based text lines: 55,835.
-		if is_mixed_texts_used:
-			num_simple_examples, num_random_examples, num_trdg_examples = int(5e4), int(5e4), int(5e4)  # For mixed text lines.
-		else:
-			textline_type = 'simple_textline'  # {'simple_textline', 'random_textline', 'trdg_textline', 'aihub_textline', 'file_based_textline'}.
-			num_train_examples, num_test_examples = int(2e5), int(2e3)  # For simple, random, and TRDG text lines.
-		word_len_interval = (1, 20)
-		word_count_interval = (1, 5)
-		space_count_interval = (1, 3)
-		char_space_ratio_interval = (0.8, 1.25)
-	else:
-		raise ValueError('Invalid target type, {}'.format(target_type))
-	font_size_interval = (10, 100)
-	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
-	train_test_ratio = 0.8
-
 	is_model_loaded = model_filepath_to_load is not None
 	is_model_initialized = True
 	is_all_model_params_optimized = True
-	is_separate_pad_id_used = True
 
 	assert not is_model_loaded or (is_model_loaded and model_filepath_to_load is not None)
 
@@ -3162,31 +3254,7 @@ def construct_text_model_and_data_for_training(model_filepath_to_load, model_typ
 	#--------------------
 	# Prepare data.
 
-	if loss_type == 'ctc':
-		BLANK_LABEL = '<BLANK>'  # The BLANK label for CTC.
-		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), pad=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
-		assert label_converter.encode([BLANK_LABEL], is_bare_output=True)[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL], is_bare_output=True)[0])
-		BLANK_LABEL_ID = 0 #label_converter.encode([BLANK_LABEL], is_bare_output=True)[0]
-		SOS_ID, EOS_ID = None, None
-		num_suffixes = 0
-	#elif loss_type in ['xent', 'nll', 'sxent', 'kldiv']:
-	else:
-		BLANK_LABEL = None
-		SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
-		if is_separate_pad_id_used:
-			# When <PAD> token has a separate valid token ID.
-			PAD_TOKEN = '<PAD>'
-			PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
-			label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
-			assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
-			assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
-		else:
-			label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
-			#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
-		del SOS_TOKEN, EOS_TOKEN
-		assert label_converter.PAD is not None
-		SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
-		num_suffixes = 1
+	label_converter, SOS_ID, EOS_ID, BLANK_LABEL, num_suffixes = create_label_converter(label_converter_type, charset)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	if logger:
 		logger.info('#classes = {}.'.format(num_classes))
@@ -3194,17 +3262,7 @@ def construct_text_model_and_data_for_training(model_filepath_to_load, model_typ
 
 	if logger: logger.info('Start creating datasets...')
 	start_time = time.time()
-	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
-	if target_type == 'word':
-		if is_mixed_texts_used:
-			train_dataset, test_dataset = create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, font_list, font_size_interval, color_functor, logger)
-		else:
-			train_dataset, test_dataset = create_word_datasets(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, font_list, font_size_interval, color_functor, logger)
-	elif target_type == 'textline':
-		if is_mixed_texts_used:
-			train_dataset, test_dataset = create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, logger)
-		else:
-			train_dataset, test_dataset = create_textline_datasets(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, logger)
+	train_dataset, test_dataset = create_datasets_for_training(charset, wordset, font_list, target_type, image_shape, label_converter, max_label_len, logger)
 	if logger: logger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
 	if logger: logger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
@@ -3319,7 +3377,7 @@ def construct_text_model_and_data_for_training(model_filepath_to_load, model_typ
 	return model, infer_functor, train_forward_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, label_converter, model_params, max_gradient_norm, model_filepath_format
 
 def construct_text_model_for_inference(model_filepath_to_load, model_type, image_shape, font_type, max_label_len, logger, device='cpu'):
-	is_separate_pad_id_used = True
+	label_converter_type = 'sos+eos'  # {'basic', 'sos', 'eos', 'sos+eos', 'sos/pad+eos', 'sos+eos/pad', 'blank'}.
 
 	lang = font_type[:3]
 	if lang == 'kor':
@@ -3329,32 +3387,7 @@ def construct_text_model_for_inference(model_filepath_to_load, model_type, image
 	else:
 		raise ValueError('Invalid language, {}'.format(lang))
 
-	#if loss_type == 'ctc':
-	if False:
-		BLANK_LABEL = '<BLANK>'  # The BLANK label for CTC.
-		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), pad=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
-		assert label_converter.encode([BLANK_LABEL], is_bare_output=True)[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL], is_bare_output=True)[0])
-		BLANK_LABEL_ID = 0 #label_converter.encode([BLANK_LABEL], is_bare_output=True)[0]
-		SOS_ID, EOS_ID = None, None
-		num_suffixes = 0
-	#elif loss_type in ['xent', 'nll', 'sxent', 'kldiv']:
-	else:
-		BLANK_LABEL = None
-		SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
-		if is_separate_pad_id_used:
-			# When <PAD> token has a separate valid token ID.
-			PAD_TOKEN = '<PAD>'
-			PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
-			label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
-			assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
-			assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
-		else:
-			label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
-			#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
-		del SOS_TOKEN, EOS_TOKEN
-		assert label_converter.PAD is not None
-		SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
-		num_suffixes = 1
+	label_converter, SOS_ID, EOS_ID, BLANK_LABEL, num_suffixes = create_label_converter(label_converter_type, charset)
 	classes, num_classes = label_converter.tokens, label_converter.num_tokens
 	if logger:
 		logger.info('#classes = {}.'.format(num_classes))
@@ -3678,32 +3711,12 @@ def recognize_word_using_craft(output_dir_path, image_shape, is_cuda_used, logge
 	output_dir_path = os.path.join(output_dir_path, 'word_recog_results')
 
 	#--------------------
-	if decoder == 'CTC':
-		BLANK_LABEL = '<BLANK>'  # The BLANK label for CTC.
-		label_converter = swl_langproc_util.TokenConverter([BLANK_LABEL] + list(charset), pad=None)  # NOTE [info] >> It's a trick. The ID of the BLANK label is set to 0.
-		assert label_converter.encode([BLANK_LABEL], is_bare_output=True)[0] == 0, '{} != 0'.format(label_converter.encode([BLANK_LABEL], is_bare_output=True)[0])
-		BLANK_LABEL_ID = 0 #label_converter.encode([BLANK_LABEL], is_bare_output=True)[0]
-		SOS_ID, EOS_ID = None, None
-		num_suffixes = 0
-	else:
-		is_separate_pad_id_used = True
-		BLANK_LABEL = None
-		SOS_TOKEN, EOS_TOKEN = '<SOS>', '<EOS>'
-		if is_separate_pad_id_used:
-			# When <PAD> token has a separate valid token ID.
-			PAD_TOKEN = '<PAD>'
-			PAD_ID = len(charset)  # NOTE [info] >> It's a trick which makes <PAD> token have a separate valid token.
-			label_converter = swl_langproc_util.TokenConverter(list(charset) + [PAD_TOKEN], sos=SOS_TOKEN, eos=EOS_TOKEN, pad=PAD_ID)
-			assert label_converter.pad_id == PAD_ID, '{} != {}'.format(label_converter.pad_id, PAD_ID)
-			assert label_converter.encode([PAD_TOKEN], is_bare_output=True)[0] == PAD_ID, '{} != {}'.format(label_converter.encode([PAD_TOKEN], is_bare_output=True)[0], PAD_ID)
-		else:
-			label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=SOS_TOKEN)  # <PAD> = <SOS>.
-			#label_converter = swl_langproc_util.TokenConverter(list(charset), sos=SOS_TOKEN, eos=EOS_TOKEN, pad=EOS_TOKEN)  # <PAD> = <EOS>.
-		del SOS_TOKEN, EOS_TOKEN
-		assert label_converter.PAD is not None
-		SOS_ID, EOS_ID = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
-		num_suffixes = 1
+	label_converter_type = 'sos+eos'  # {'basic', 'sos', 'eos', 'sos+eos', 'sos/pad+eos', 'sos+eos/pad', 'blank'}.
+	label_converter, SOS_ID, EOS_ID, BLANK_LABEL, num_suffixes = create_label_converter(label_converter_type, charset)
 	num_classes = label_converter.num_tokens
+	if logger:
+		logger.info('#classes = {}.'.format(num_classes))
+		logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	if logger: logger.info('Start loading CRAFT...')
 	start_time = time.time()
