@@ -1752,9 +1752,10 @@ def evaluate_text_recognition_model(model, infer_functor, dataloader, label_conv
 		avg_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
 		if logger: logger.info('Average sequence matching ratio = {}.'.format(avg_matching_ratio))
 	if is_simple_matching_accuracy_used:
-		if logger: logger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else -1))
-		if logger: logger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else -1))
-		if logger: logger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else -1))
+		if logger:
+			logger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else -1))
+			logger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else -1))
+			logger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else -1))
 
 	if is_sequence_matching_ratio_used:
 		return avg_matching_ratio
@@ -2940,7 +2941,7 @@ def build_transformer_model(image_height, image_width, image_channel, max_time_s
 	return model, infer, train_forward, criterion
 
 # REF [site] >> https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
-def build_character_model_for_training(model_filepath_to_load, model_type, image_shape, target_type, font_type, output_dir_path, label_converter, logger=None, device='cpu'):
+def build_char_model_for_training(model_filepath_to_load, model_type, image_shape, target_type, font_type, output_dir_path, label_converter, logger=None, device='cpu'):
 	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
@@ -3016,6 +3017,25 @@ def build_character_model_for_training(model_filepath_to_load, model_type, image
 	scheduler = None
 
 	return model, train_forward_functor, criterion, optimizer, scheduler, model_params, max_gradient_norm, model_filepath_format
+
+def build_char_model_for_inference(model_filepath_to_load, image_shape, num_classes, logger, device='cpu'):
+	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
+	input_channel, output_channel = image_shape[2], 1024
+
+	# For char recognizer.
+	#model_filepath = './craft/char_recognition.pth'
+	model_filepath = './craft/char_recognition_mixup.pth'
+
+	if logger: logger.info('Start loading character recognizer...')
+	start_time = time.time()
+	import rare.model_char
+	model = rare.model_char.create_model(model_name, input_channel, output_channel, num_classes)
+
+	model = load_model(model_filepath_to_load, model, logger, device=device)
+	model = model.to(device)
+	if logger: logger.info('End loading character recognizer: {} secs.'.format(time.time() - start_time))
+
+	return model
 
 def build_text_model_for_training(model_filepath_to_load, model_type, image_shape, target_type, font_type, max_label_len, output_dir_path, label_converter, sos_id, eos_id, blank_label, num_suffixes, lang, logger, device='cpu'):
 	image_height, image_width, image_channel = image_shape
@@ -3227,7 +3247,7 @@ def build_text_model_for_inference(model_filepath_to_load, model_type, image_sha
 
 	return model, infer_functor
 
-def train_character_recognizer(model, train_forward_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, num_epochs, batch_size, shuffle, num_workers, is_case_sensitive, model_filepath_format, logger=None, device='cpu'):
+def train_char_recognizer(model, train_forward_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, num_epochs, batch_size, shuffle, num_workers, is_case_sensitive, model_filepath_format, logger=None, device='cpu'):
 	initial_epoch, final_epoch = 0, num_epochs
 	log_print_freq = 1000
 
@@ -3355,236 +3375,15 @@ def recognize_text(model, infer_functor, inputs, batch_size=None, logger=None, d
 
 	return predictions
 
-def recognize_character_using_craft(image_shape, output_dir_path, is_cuda_used, logger=None, device='cpu'):
-	import craft.imgproc as imgproc
-	#import craft.file_utils as file_utils
+def build_craft_model(craft_refine, craft_cuda, logger=None):
 	import craft.test_utils as test_utils
 
-	image_height, image_width, image_channel = image_shape
-
-	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
-	input_channel, output_channel = image_channel, 1024
-
-	charset = tg_util.construct_charset()
-
-	# For CRAFT.
 	craft_trained_model_filepath = './craft/craft_mlt_25k.pth'
 	craft_refiner_model_filepath = './craft/craft_refiner_CTW1500.pth'  # Pretrained refiner model.
-	craft_refine = False  # Enable link refiner.
-	craft_cuda = is_cuda_used  # Use cuda for inference.
 
-	# For char recognizer.
-	#recognizer_model_filepath = './craft/char_recognition.pth'
-	recognizer_model_filepath = './craft/char_recognition_mixup.pth'
-
-	#image_filepath = './craft/images/I3.jpg'
-	image_filepath = './craft/images/book_1.png'
-	#image_filepath = './craft/images/book_2.png'
-
-	output_dir_path = os.path.join(output_dir_path, 'char_recog_results')
-
-	#--------------------
-	label_converter = swl_langproc_util.TokenConverter(list(charset))
-	num_classes = label_converter.num_tokens
-
-	if logger: logger.info('Start loading CRAFT...')
-	start_time = time.time()
 	craft_net, craft_refine_net = test_utils.load_craft(craft_trained_model_filepath, craft_refiner_model_filepath, craft_refine, craft_cuda)
-	if logger: logger.info('End loading CRAFT: {} secs.'.format(time.time() - start_time))
 
-	if logger: logger.info('Start loading char recognizer...')
-	start_time = time.time()
-	import rare.model_char
-	recognizer = rare.model_char.create_model(model_name, input_channel, output_channel, num_classes)
-
-	recognizer = load_model(recognizer_model_filepath, recognizer, logger, device=device)
-	recognizer = recognizer.to(device)
-	if logger: logger.info('End loading char recognizer: {} secs.'.format(time.time() - start_time))
-
-	#--------------------
-	if logger: logger.info('Start running CRAFT...')
-	start_time = time.time()
-	rgb = imgproc.loadImage(image_filepath)  # RGB order.
-	bboxes, ch_bboxes_lst, score_text = test_utils.run_char_craft(rgb, craft_net, craft_refine_net, craft_cuda)
-	if logger: logger.info('End running CRAFT: {} secs.'.format(time.time() - start_time))
-
-	if len(bboxes) > 0:
-		os.makedirs(output_dir_path, exist_ok=True)
-
-		if logger: logger.info('Start inferring...')
-		start_time = time.time()
-		image = cv2.imread(image_filepath)
-
-		"""
-		cv2.imshow('Input', image)
-		rgb1, rgb2 = image.copy(), image.copy()
-		for bbox, ch_bboxes in zip(bboxes, ch_bboxes_lst):
-			color = (random.randint(128, 255), random.randint(128, 255), random.randint(128, 255))
-			cv2.drawContours(rgb1, [np.round(np.expand_dims(bbox, axis=1)).astype(np.int32)], 0, color, 1, cv2.LINE_AA)
-			for bbox in ch_bboxes:
-				cv2.drawContours(rgb2, [np.round(np.expand_dims(bbox, axis=1)).astype(np.int32)], 0, color, 1, cv2.LINE_AA)
-		cv2.imshow('Word BBox', rgb1)
-		cv2.imshow('Char BBox', rgb2)
-		cv2.waitKey(0)
-		"""
-
-		ch_images = list()
-		rgb = image.copy()
-		for i, ch_bboxes in enumerate(ch_bboxes_lst):
-			imgs = list()
-			color = (random.randint(128, 255), random.randint(128, 255), random.randint(128, 255))
-			for j, bbox in enumerate(ch_bboxes):
-				(x1, y1), (x2, y2) = np.min(bbox, axis=0), np.max(bbox, axis=0)
-				x1, y1, x2, y2 = round(float(x1)), round(float(y1)), round(float(x2)), round(float(y2))
-				img = image[y1:y2+1,x1:x2+1]
-				imgs.append(img)
-
-				cv2.imwrite(os.path.join(output_dir_path, 'ch_{}_{}.png'.format(i, j)), img)
-
-				cv2.rectangle(rgb, (x1, y1), (x2, y2), color, 1, cv2.LINE_4)
-			ch_images.append(imgs)
-		cv2.imwrite(os.path.join(output_dir_path, 'char_bbox.png'), rgb)
-
-		#--------------------
-		transform = torchvision.transforms.Compose([
-			#RandomInvert(),
-			ConvertPILMode(mode='RGB'),
-			# TODO [decide] >> Which one is correct?
-			ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, logger=logger),
-			#ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, logger=logger),  # batch_size must be 1.
-			#torchvision.transforms.Resize((image_height, image_width)),
-			#torchvision.transforms.CenterCrop((image_height, image_width)),
-			torchvision.transforms.ToTensor(),
-			torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
-		])
-
-		recognizer.eval()
-		with torch.no_grad():
-			for idx, imgs in enumerate(ch_images):
-				imgs = torch.stack([transform(Image.fromarray(img)) for img in imgs]).to(device)
-
-				predictions = recognizer(imgs)
-
-				_, predictions = torch.max(predictions, dim=1)
-				predictions = predictions.cpu().numpy()
-				if logger: logger.info('\t{}: {} (int), {} (str).'.format(idx, predictions, ''.join(label_converter.decode(predictions))))
-		if logger: logger.info('End inferring: {} secs.'.format(time.time() - start_time))
-	else:
-		if logger: logger.info('No text detected.')
-
-def recognize_word_using_craft(image_shape, output_dir_path, max_time_steps, is_cuda_used, label_converter, sos_id, logger=None, device='cpu'):
-	import craft.imgproc as imgproc
-	#import craft.file_utils as file_utils
-	import craft.test_utils as test_utils
-
-	image_height, image_width, image_channel = image_shape
-
-	num_fiducials = 20  # The number of fiducial points of TPS-STN.
-	input_channel = image_channel  # The number of input channel of feature extractor.
-	output_channel = 512  # The number of output channel of feature extractor.
-	hidden_size = 256  # The size of the LSTM hidden states.
-	transformer = 'TPS'  # The type of transformer. {None, 'TPS'}.
-	feature_extractor = 'VGG'  # The type of feature extractor. {'VGG', 'RCNN', 'ResNet'}.
-	sequence_model = 'BiLSTM'  # The type of sequence model. {None, 'BiLSTM'}.
-	decoder = 'Attn'  # The type of decoder. {'CTC', 'Attn'}.
-
-	charset = tg_util.construct_charset()
-
-	# For CRAFT.
-	craft_trained_model_filepath = './craft/craft_mlt_25k.pth'
-	craft_refiner_model_filepath = './craft/craft_refiner_CTW1500.pth'  # Pretrained refiner model.
-	craft_refine = False  # Enable link refiner.
-	craft_cuda = is_cuda_used  # Use cuda for inference.
-
-	# For word recognizer.
-	recognizer_model_filepath = './craft/word_recognition.pth'
-	#recognizer_model_filepath = './craft/word_recognition_mixup.pth'
-
-	#image_filepath = './craft/images/I3.jpg'
-	image_filepath = './craft/images/book_1.png'
-	#image_filepath = './craft/images/book_2.png'
-
-	output_dir_path = os.path.join(output_dir_path, 'word_recog_results')
-
-	#--------------------
-	if logger: logger.info('Start loading CRAFT...')
-	start_time = time.time()
-	craft_net, craft_refine_net = test_utils.load_craft(craft_trained_model_filepath, craft_refiner_model_filepath, craft_refine, craft_cuda)
-	if logger: logger.info('End loading CRAFT: {} secs.'.format(time.time() - start_time))
-
-	if logger: logger.info('Start loading word recognizer...')
-	start_time = time.time()
-	import rare.model
-	recognizer = rare.model.Model(image_height, image_width, label_converter.num_tokens, num_fiducials, input_channel, output_channel, hidden_size, max_time_steps, sos_id, label_converter.pad_id, transformer, feature_extractor, sequence_model, decoder)
-
-	recognizer = load_model(recognizer_model_filepath, recognizer, logger, device=device)
-	recognizer = recognizer.to(device)
-	if logger: logger.info('End loading word recognizer: {} secs.'.format(time.time() - start_time))
-
-	#--------------------
-	if logger: logger.info('Start running CRAFT...')
-	start_time = time.time()
-	rgb = imgproc.loadImage(image_filepath)  # RGB order.
-	bboxes, polys, score_text = test_utils.run_word_craft(rgb, craft_net, craft_refine_net, craft_cuda)
-	if logger: logger.info('End running CRAFT: {} secs.'.format(time.time() - start_time))
-
-	if len(bboxes) > 0:
-		os.makedirs(output_dir_path, exist_ok=True)
-
-		if logger: logger.info('Start inferring...')
-		start_time = time.time()
-		image = cv2.imread(image_filepath)
-
-		"""
-		cv2.imshow('Input', image)
-		rgb1, rgb2 = image.copy(), image.copy()
-		for bbox, poly in zip(bboxes, polys):
-			color = (random.randint(128, 255), random.randint(128, 255), random.randint(128, 255))
-			cv2.drawContours(rgb1, [np.round(np.expand_dims(bbox, axis=1)).astype(np.int32)], 0, color, 1, cv2.LINE_AA)
-			cv2.drawContours(rgb2, [np.round(np.expand_dims(poly, axis=1)).astype(np.int32)], 0, color, 1, cv2.LINE_AA)
-		cv2.imshow('BBox', rgb1)
-		cv2.imshow('Poly', rgb2)
-		cv2.waitKey(0)
-		"""
-
-		word_images = list()
-		rgb = image.copy()
-		for idx, bbox in enumerate(bboxes):
-			(x1, y1), (x2, y2) = np.min(bbox, axis=0), np.max(bbox, axis=0)
-			x1, y1, x2, y2 = round(float(x1)), round(float(y1)), round(float(x2)), round(float(y2))
-			img = image[y1:y2+1,x1:x2+1]
-			word_images.append(img)
-
-			cv2.imwrite(os.path.join(output_dir_path, 'word_{}.png'.format(idx)), img)
-
-			cv2.rectangle(rgb, (x1, y1), (x2, y2), (random.randint(128, 255), random.randint(128, 255), random.randint(128, 255)), 1, cv2.LINE_4)
-		cv2.imwrite(os.path.join(output_dir_path, 'word_bbox.png'), rgb)
-
-		#--------------------
-		transform = torchvision.transforms.Compose([
-			#RandomInvert(),
-			ConvertPILMode(mode='RGB'),
-			#ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, logger=logger),
-			ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, logger=logger),  # batch_size must be 1.
-			#torchvision.transforms.Resize((image_height, image_width)),
-			#torchvision.transforms.CenterCrop((image_height, image_width)),
-			torchvision.transforms.ToTensor(),
-			torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
-		])
-
-		recognizer.eval()
-		with torch.no_grad():
-			imgs = torch.stack([transform(Image.fromarray(img)) for img in word_images]).to(device)
-
-			predictions = recognizer(imgs)
-
-			_, predictions = torch.max(predictions, dim=1)
-			predictions = predictions.cpu().numpy()
-			for idx, pred in enumerate(predictions):
-				if logger: logger.info('\t{}: {} (int), {} (str).'.format(idx, pred, ''.join(label_converter.decode(pred))))
-		if logger: logger.info('End inferring: {} secs.'.format(time.time() - start_time))
-	else:
-		if logger: logger.info('No text detected.')
+	return craft_net, craft_refine_net
 
 def create_label_converter(converter_type, charset):
 	BLANK_LABEL, SOS_ID, EOS_ID = None, None, None
@@ -3665,36 +3464,31 @@ def dataset_to_tensor(dataset, batch_size, shuffle, num_workers, logger):
 
 	return inputs, outputs
 
-def data_to_tensor(images, labels, label_converter, image_shape, max_label_len, is_pil, logger):
-	if images:
-		image_height, image_width, image_channel = image_shape
-		#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
-		#image_height_before_crop, image_width_before_crop = image_height, image_width
+def images_to_tensor(images, image_shape, is_pil, logger):
+	image_height, image_width, image_channel = image_shape
+	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
+	#image_height_before_crop, image_width_before_crop = image_height, image_width
 
-		transform = torchvision.transforms.Compose([
-			ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, is_pil=is_pil, logger=logger),
-			#ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, is_pil=is_pil, logger=logger),  # batch_size must be 1.
-			#torchvision.transforms.Resize((image_height, image_width)),
-			#torchvision.transforms.CenterCrop((image_height, image_width)),
-			torchvision.transforms.ToTensor(),
-			#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
-		])
+	transform = torchvision.transforms.Compose([
+		ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, is_pil=is_pil, logger=logger),
+		#ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, is_pil=is_pil, logger=logger),  # batch_size must be 1.
+		#torchvision.transforms.Resize((image_height, image_width)),
+		#torchvision.transforms.CenterCrop((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
+	])
 
-		inputs = list(transform(img) for img in images)
-		inputs = torch.stack(inputs)
-	else: inputs = None
+	inputs = list(transform(img) for img in images)
+	return torch.stack(inputs)
 
-	if labels:
-		#target_transform = ToIntTensor()
-		target_transform = ToIntTensorWithPadding(label_converter.pad_id, max_label_len)
+def labels_to_tensor(labels, max_label_len, label_converter):
+	#target_transform = ToIntTensor()
+	target_transform = ToIntTensorWithPadding(label_converter.pad_id, max_label_len)
 
-		outputs = list(target_transform(label_converter.encode(lbl)) for lbl in labels)
-		outputs = torch.stack(outputs)
-	else: outputs = None
+	outputs = list(target_transform(label_converter.encode(lbl)) for lbl in labels)
+	return torch.stack(outputs)
 
-	return inputs, outputs
-
-def load_data_from_file(label_converter, image_channel, target_type, max_label_len, is_pil, logger):
+def load_text_data_from_file(label_converter, image_channel, target_type, max_label_len, is_pil, logger):
 	import text_data_util
 
 	if 'posix' == os.name:
@@ -3790,7 +3584,7 @@ def create_datasets_for_training(charset, wordset, font_list, target_type, image
 
 	return train_dataset, test_dataset
 
-def create_dataset(label_converter, image_shape, target_type, max_label_len, is_preloaded_image_used, logger):
+def create_text_dataset(label_converter, image_shape, target_type, max_label_len, is_preloaded_image_used, logger):
 	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	#image_height_before_crop, image_width_before_crop = image_height, image_width
@@ -3854,8 +3648,119 @@ def create_dataset(label_converter, image_shape, target_type, max_label_len, is_
 
 	return dataset
 
-def visualize_inference_results(predictions, label_converter, inputs, outputs, output_dir_path, is_case_sensitive, logger):
-	num_examples_to_visualize = 50
+def detect_chars_by_craft(image_filepath, craft_refine, craft_cuda, output_dir_path, logger):
+	import craft.imgproc as imgproc
+	#import craft.file_utils as file_utils
+	import craft.test_utils as test_utils
+
+	#--------------------
+	if logger: logger.info('Start loading CRAFT...')
+	start_time = time.time()
+	craft_net, craft_refine_net = build_craft_model(craft_refine, craft_cuda, logger=logger)
+	if logger: logger.info('End loading CRAFT: {} secs.'.format(time.time() - start_time))
+
+	#--------------------
+	if logger: logger.info('Start running CRAFT...')
+	start_time = time.time()
+	rgb = imgproc.loadImage(image_filepath)  # RGB order.
+	bboxes, ch_bboxes_lst, score_text = test_utils.run_char_craft(rgb, craft_net, craft_refine_net, craft_cuda)
+	if logger: logger.info('End running CRAFT: {} secs.'.format(time.time() - start_time))
+
+	if len(bboxes) > 0:
+		output_dir_path = os.path.join(output_dir_path, 'char_craft_results')
+		os.makedirs(output_dir_path, exist_ok=True)
+
+		if logger: logger.info('Start inferring...')
+		start_time = time.time()
+		image = cv2.imread(image_filepath)
+
+		"""
+		cv2.imshow('Input', image)
+		rgb1, rgb2 = image.copy(), image.copy()
+		for bbox, ch_bboxes in zip(bboxes, ch_bboxes_lst):
+			color = (random.randint(128, 255), random.randint(128, 255), random.randint(128, 255))
+			cv2.drawContours(rgb1, [np.round(np.expand_dims(bbox, axis=1)).astype(np.int32)], 0, color, 1, cv2.LINE_AA)
+			for bbox in ch_bboxes:
+				cv2.drawContours(rgb2, [np.round(np.expand_dims(bbox, axis=1)).astype(np.int32)], 0, color, 1, cv2.LINE_AA)
+		cv2.imshow('Word BBox', rgb1)
+		cv2.imshow('Char BBox', rgb2)
+		cv2.waitKey(0)
+		"""
+
+		char_patches = list()
+		rgb = image.copy()
+		for i, ch_bboxes in enumerate(ch_bboxes_lst):
+			imgs = list()
+			color = (random.randint(128, 255), random.randint(128, 255), random.randint(128, 255))
+			for j, bbox in enumerate(ch_bboxes):
+				(x1, y1), (x2, y2) = np.min(bbox, axis=0), np.max(bbox, axis=0)
+				x1, y1, x2, y2 = round(float(x1)), round(float(y1)), round(float(x2)), round(float(y2))
+				img = image[y1:y2+1,x1:x2+1]
+				imgs.append(img)
+
+				cv2.imwrite(os.path.join(output_dir_path, 'ch_{}_{}.png'.format(i, j)), img)
+
+				cv2.rectangle(rgb, (x1, y1), (x2, y2), color, 1, cv2.LINE_4)
+			char_patches.append(imgs)
+		cv2.imwrite(os.path.join(output_dir_path, 'char_bbox.png'), rgb)
+		return char_patches
+	else: return None
+
+def detect_texts_by_craft(image_filepath, craft_refine, craft_cuda, output_dir_path, logger):
+	import craft.imgproc as imgproc
+	#import craft.file_utils as file_utils
+	import craft.test_utils as test_utils
+
+	#--------------------
+	if logger: logger.info('Start loading CRAFT...')
+	start_time = time.time()
+	craft_net, craft_refine_net = build_craft_model(craft_refine, craft_cuda, logger=logger)
+	if logger: logger.info('End loading CRAFT: {} secs.'.format(time.time() - start_time))
+
+	#--------------------
+	if logger: logger.info('Start running CRAFT...')
+	start_time = time.time()
+	rgb = imgproc.loadImage(image_filepath)  # RGB order.
+	bboxes, polys, score_text = test_utils.run_word_craft(rgb, craft_net, craft_refine_net, craft_cuda)
+	if logger: logger.info('End running CRAFT: {} secs.'.format(time.time() - start_time))
+
+	if len(bboxes) > 0:
+		output_dir_path = os.path.join(output_dir_path, 'text_craft_results')
+		os.makedirs(output_dir_path, exist_ok=True)
+
+		image = cv2.imread(image_filepath)
+
+		"""
+		cv2.imshow('Input', image)
+		rgb1, rgb2 = image.copy(), image.copy()
+		for bbox, poly in zip(bboxes, polys):
+			color = (random.randint(128, 255), random.randint(128, 255), random.randint(128, 255))
+			cv2.drawContours(rgb1, [np.round(np.expand_dims(bbox, axis=1)).astype(np.int32)], 0, color, 1, cv2.LINE_AA)
+			cv2.drawContours(rgb2, [np.round(np.expand_dims(poly, axis=1)).astype(np.int32)], 0, color, 1, cv2.LINE_AA)
+		cv2.imshow('BBox', rgb1)
+		cv2.imshow('Poly', rgb2)
+		cv2.waitKey(0)
+		"""
+
+		text_patches = list()
+		rgb = image.copy()
+		for idx, bbox in enumerate(bboxes):
+			(x1, y1), (x2, y2) = np.min(bbox, axis=0), np.max(bbox, axis=0)
+			x1, y1, x2, y2 = round(float(x1)), round(float(y1)), round(float(x2)), round(float(y2))
+			img = image[y1:y2+1,x1:x2+1]
+			text_patches.append(img)
+
+			cv2.imwrite(os.path.join(output_dir_path, 'text_{}.png'.format(idx)), img)
+
+			cv2.rectangle(rgb, (x1, y1), (x2, y2), (random.randint(128, 255), random.randint(128, 255), random.randint(128, 255)), 1, cv2.LINE_4)
+		cv2.imwrite(os.path.join(output_dir_path, 'text_bbox.png'), rgb)
+		return text_patches
+	else: return None
+
+def visualize_inference_results(predictions, label_converter, inputs, outputs, output_dir_path, is_case_sensitive, num_examples_to_visualize, logger):
+	if not num_examples_to_visualize or num_examples_to_visualize <= 0:
+		num_examples_to_visualize = len(predictions)
+
 	if outputs is None:
 		# Show images.
 		#show_image(torchvision.utils.make_grid(inputs[:num_examples_to_visualize]))
@@ -3866,11 +3771,12 @@ def visualize_inference_results(predictions, label_converter, inputs, outputs, o
 		if error_cases_dir_path and error_cases_dir_path.strip() and not os.path.exists(error_cases_dir_path):
 			os.makedirs(error_cases_dir_path, exist_ok=True)
 
-		#if logger: logger.info('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in outputs[:num_examples_to_visualize]])))
-		#if logger: logger.info('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in predictions[:num_examples_to_visualize]])))
-		#for gt, pred in zip(outputs[:num_examples_to_visualize], predictions[:num_examples_to_visualize]):
-		#	if logger: logger.info('G/T - prediction: {}, {}.'.format(label_converter.decode(gt), label_converter.decode(pred)))
-		if logger: logger.info('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(outputs[:num_examples_to_visualize], predictions[:num_examples_to_visualize])]))
+		if logger:
+			#logger.info('G/T:        {}.'.format(' '.join([label_converter.decode(lbl) for lbl in outputs[:num_examples_to_visualize]])))
+			#logger.info('Prediction: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in predictions[:num_examples_to_visualize]])))
+			#for gt, pred in zip(outputs[:num_examples_to_visualize], predictions[:num_examples_to_visualize]):
+			#	logger.info('G/T - prediction: {}, {}.'.format(label_converter.decode(gt), label_converter.decode(pred)))
+			logger.info('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(outputs[:num_examples_to_visualize], predictions[:num_examples_to_visualize])]))
 
 		#--------------------
 		if inputs.ndim == 4: inputs = inputs.transpose(0, 2, 3, 1)
@@ -3905,9 +3811,10 @@ def visualize_inference_results(predictions, label_converter, inputs, outputs, o
 			avg_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
 			if logger: logger.info('Average sequence matching ratio = {}.'.format(avg_matching_ratio))
 		if is_simple_matching_accuracy_used:
-			if logger: logger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else -1))
-			if logger: logger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else -1))
-			if logger: logger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else -1))
+			if logger:
+				logger.info('Text: Simple matching accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count if total_text_count > 0 else -1))
+				logger.info('Word: Simple matching accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count if total_word_count > 0 else -1))
+				logger.info('Char: Simple matching accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count if total_char_count > 0 else -1))
 
 #--------------------------------------------------------------------
 
@@ -4167,9 +4074,9 @@ def main():
 		#--------------------
 		if args.target_type == 'char':
 			# Build a model.
-			model, train_forward_functor, criterion, optimizer, scheduler, model_params, max_gradient_norm, model_filepath_format = build_character_model_for_training(model_filepath_to_load, args.model_type, image_shape, args.target_type, args.font_type, output_dir_path, label_converter, logger, device)
+			model, train_forward_functor, criterion, optimizer, scheduler, model_params, max_gradient_norm, model_filepath_format = build_char_model_for_training(model_filepath_to_load, args.model_type, image_shape, args.target_type, args.font_type, output_dir_path, label_converter, logger, device)
 			# Train the model.
-			model_filepath = train_character_recognizer(model, train_forward_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, args.epoch, args.batch, shuffle, num_workers, is_case_sensitive, model_filepath_format, logger, device)
+			model_filepath = train_char_recognizer(model, train_forward_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, args.epoch, args.batch, shuffle, num_workers, is_case_sensitive, model_filepath_format, logger, device)
 		elif args.target_type in ['word', 'textline']:
 			# Build a model.
 			model, infer_functor, train_forward_functor, criterion, optimizer, scheduler, model_params, max_gradient_norm, model_filepath_format = build_text_model_for_training(model_filepath_to_load, args.model_type, image_shape, args.target_type, args.font_type, args.max_len, output_dir_path, label_converter, SOS_ID, EOS_ID, BLANK_LABEL, num_suffixes, lang, logger, device)
@@ -4181,11 +4088,42 @@ def main():
 	if args.eval or args.infer:
 		assert model_filepath
 
+		is_pil = True
 		is_preloaded_image_used = False
 
 		#--------------------
 		if args.target_type == 'char':
-			raise NotImplementedError
+			# Build a moodel.
+			model = build_char_model_for_inference(model_filepath_to_load, image_shape, label_converter.num_classes, logger, device)
+
+			#--------------------
+			# Create data.
+
+			# When detecting chars by CRAFT.
+			image_filepath = '/path/to/image.png'
+			assert os.path.exists(image_filepath)
+
+			craft_refine = False  # Enable a link refiner.
+			craft_cuda = torch.cuda.is_available() and int(args.gpu) >= 0
+			patches = detect_chars_by_craft(image_filepath, craft_refine, craft_cuda, output_dir_path, logger)
+			if patches is None or len(patches) <= 0:
+				logger.warning('No text detected in {}.'.format(image_filepath))
+				return
+
+			if is_pil: patches = list(Image.fromarray(patch) for patch in patches)
+			inputs = images_to_tensor(patches, image_shape, is_pil, logger)
+			outputs = None
+
+			#--------------------
+			# Infer by the model.
+			# TODO [check] >> This implementation is not tested.
+			logger.info('Start inferring...')
+			start_time = time.time()
+			model.eval()
+			with torch.no_grad():
+				predictions = model(inputs)
+			if logger: logger.info('End inferring: {} secs.'.format(time.time() - start_time))
+			predictions = torch.argmax(predictions, dim=1).cpu().numpy()
 		elif args.target_type in ['word', 'textline']:
 			# Build a model.
 			model, infer_functor = build_text_model_for_inference(model_filepath, args.model_type, image_shape, args.max_len, label_converter, SOS_ID, EOS_ID, num_suffixes, lang, logger=logger, device=device)
@@ -4195,7 +4133,7 @@ def main():
 				# Create a dataset.
 				logger.info('Start creating a dataset...')
 				start_time = time.time()
-				dataset = create_dataset(label_converter, image_shape, args.target_type, args.max_len, is_preloaded_image_used, logger)
+				dataset = create_text_dataset(label_converter, image_shape, args.target_type, args.max_len, is_preloaded_image_used, logger)
 				logger.info('End creating a dataset: {} secs.'.format(time.time() - start_time))
 				logger.info('#examples = {}.'.format(len(dataset)))
 
@@ -4206,26 +4144,42 @@ def main():
 			if args.infer and model and infer_functor:
 				# Create data.
 				if True:
-					is_pil = True
-
+					# When loading data.
 					logger.info('Start loading data...')
 					start_time = time.time()
-					images, labels = load_data_from_file(label_converter, image_shape[2], args.target_type, args.max_len, is_pil, logger)
+					images, labels = load_text_data_from_file(label_converter, image_shape[2], args.target_type, args.max_len, is_pil, logger)
 					logger.info('End loading data: {} secs.'.format(time.time() - start_time))
 					assert len(images) == len(labels)
 					logger.info('#examples = {}.'.format(len(images)))
 
-					inputs, _ = data_to_tensor(images, None, label_converter, image_shape, args.max_len, is_pil, logger)
+					inputs = images_to_tensor(images, image_shape, is_pil, logger)
+					#outputs = labels_to_tensor(labels, max_label_len, label_converter)
 					outputs = labels
-				else:
+				elif False:
+					# When using a dataset.
 					logger.info('Start creating a dataset...')
 					start_time = time.time()
-					dataset = create_dataset(label_converter, image_shape, args.target_type, args.max_len, is_preloaded_image_used, logger)
+					dataset = create_text_dataset(label_converter, image_shape, args.target_type, args.max_len, is_preloaded_image_used, logger)
 					logger.info('End creating a dataset: {} secs.'.format(time.time() - start_time))
 					logger.info('#examples = {}.'.format(len(dataset)))
 
 					inputs, outputs = dataset_to_tensor(dataset, args.batch, shuffle, num_workers, logger)
 					outputs = outputs.numpy()
+				else:
+					# When detecting texts by CRAFT.
+					image_filepath = '/path/to/image.png'
+					assert os.path.exists(image_filepath)
+
+					craft_refine = False  # Enable a link refiner.
+					craft_cuda = torch.cuda.is_available() and int(args.gpu) >= 0
+					patches = detect_texts_by_craft(image_filepath, craft_refine, craft_cuda, output_dir_path, logger)
+					if patches is None or len(patches) <= 0:
+						logger.warning('No text detected in {}.'.format(image_filepath))
+						return
+
+					if is_pil: patches = list(Image.fromarray(patch) for patch in patches)
+					inputs = images_to_tensor(patches, image_shape, is_pil, logger)
+					outputs = None
 
 				# Infer by the model.
 				logger.info('Start inferring...')
@@ -4239,14 +4193,8 @@ def main():
 
 				# Visualize inference results.
 				#outputs = None
-				visualize_inference_results(predictions, label_converter, inputs.numpy(), outputs, output_dir_path, is_case_sensitive, logger)
-
-	#--------------------
-	# Recognize text using CRAFT (scene text detector) + character recognizer.
-	#recognize_character_using_craft(image_shape, output_dir_path, int(args.gpu) >= 0, logger, device)
-
-	# Recognize word using CRAFT (scene text detector) + word recognizer.
-	#recognize_word_using_craft(image_shape, output_dir_path, args.max_len + num_suffixes, int(args.gpu) >= 0, label_converter, SOS_ID, logger, device)  # Use RARE #1.
+				num_examples_to_visualize = 50
+				visualize_inference_results(predictions, label_converter, inputs.numpy(), outputs, output_dir_path, is_case_sensitive, num_examples_to_visualize, logger)
 
 #--------------------------------------------------------------------
 
