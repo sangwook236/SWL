@@ -903,8 +903,8 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 			'skewing_angle': 0, 'random_skew': False,  # In degrees counter clockwise.
 			#'blur': 0, 'random_blur': False,  # Blur radius.
 			'blur': 2, 'random_blur': True,  # Blur radius.
-			#'distorsion_type': 0, 'distorsion_orientation': 0,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
-			'distorsion_type': 3, 'distorsion_orientation': 2,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+			'distorsion_type': 0, 'distorsion_orientation': 0,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+			#'distorsion_type': 3, 'distorsion_orientation': 2,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
 			'background_type': 0,  # background_type = 0 (Gaussian noise), 1 (plain white), 2 (quasicrystal), 3 (image).
 			'width': -1,  # Specify a background width when width > 0.
 			'alignment': 1,  # Align an image in a background image. alignment = 0 (left), 1 (center), the rest (right).
@@ -928,10 +928,20 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 			font_filepaths = list()
 
 			is_randomly_generated = False
-			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+			generator_kwargs['distorsion_type'] = 1
+			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 16, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+			generator_kwargs['distorsion_type'] = 2
+			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 16, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+			generator_kwargs['distorsion_type'] = 3
+			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 8, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
 			test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 			is_randomly_generated = True
-			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+			generator_kwargs['distorsion_type'] = 1
+			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 16, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+			generator_kwargs['distorsion_type'] = 2
+			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 16, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+			generator_kwargs['distorsion_type'] = 3
+			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 8, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
 			test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 		if True:
 			lang = 'kr'
@@ -940,10 +950,20 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 			font_filepaths, _ = zip(*font_filepaths)
 
 			is_randomly_generated = False
-			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+			generator_kwargs['distorsion_type'] = 1
+			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 16, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+			generator_kwargs['distorsion_type'] = 2
+			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 16, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+			generator_kwargs['distorsion_type'] = 3
+			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 8, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
 			test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 			is_randomly_generated = True
-			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+			generator_kwargs['distorsion_type'] = 1
+			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 16, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+			generator_kwargs['distorsion_type'] = 2
+			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 16, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+			generator_kwargs['distorsion_type'] = 3
+			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 8, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
 			test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 		train_dataset = torch.utils.data.ConcatDataset(train_datasets)
 		test_dataset = torch.utils.data.ConcatDataset(test_datasets)
@@ -1546,7 +1566,7 @@ def train_char_recognition_model(model, train_forward_functor, criterion, train_
 
 	return model, best_model_filepath
 
-def train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, train_dataloader, test_dataloader, optimizer, label_converter, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler=None, max_gradient_norm=None, model_params=None, is_case_sensitive=False, logger=None, device='cpu'):
+def train_text_recognition_model(model, criterion, train_forward_functor, train_dataloader, test_dataloader, optimizer, label_converter, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler=None, max_gradient_norm=None, model_params=None, is_case_sensitive=False, logger=None, device='cpu'):
 	#if logger: logger.info('Model:\n{}.'.format(model))
 
 	train_log_filepath = os.path.join(output_dir_path, 'train_log.txt')
@@ -1629,7 +1649,7 @@ def evaluate_char_recognition_model(model, dataloader, label_converter, is_case_
 		for images, labels in dataloader:
 			predictions = model(images.to(device))
 
-			_, predictions = torch.max(predictions, dim=1)
+			predictions = torch.argmax(predictions, dim=1)
 			predictions = predictions.cpu().numpy()
 			gts = labels.numpy()
 
@@ -1890,7 +1910,7 @@ def build_rare1_model(image_height, image_width, image_channel, max_time_steps, 
 			def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 				model_outputs = model(inputs.to(device), None, is_train=False, device=device)
 
-				_, model_outputs = torch.max(model_outputs, dim=-1)
+				model_outputs = torch.argmax(model_outputs, dim=-1)
 				if outputs is None or output_lens is None:
 					return model_outputs.cpu().numpy(), None
 				else:
@@ -1984,7 +2004,7 @@ def build_rare1_mixup_model(image_height, image_width, image_channel, max_time_s
 			def infer(model, inputs, outputs=None, output_lens=None, device='cpu'):
 				model_outputs = model(inputs.to(device), None, is_train=False, device=device)
 
-				_, model_outputs = torch.max(model_outputs, dim=-1)
+				model_outputs = torch.argmax(model_outputs, dim=-1)
 				if outputs is None or output_lens is None:
 					return model_outputs.cpu().numpy(), None
 				else:
@@ -2059,7 +2079,7 @@ def build_rare2_model(image_height, image_width, image_channel, max_time_steps, 
 		#model_outputs = model(inputs.to(device), decoder_inputs.to(device), decoder_input_lens.to(device), device=device)
 		model_outputs = model(inputs.to(device), None, None, device=device)
 
-		_, model_outputs = torch.max(model_outputs, dim=-1)
+		model_outputs = torch.argmax(model_outputs, dim=-1)
 		model_outputs = model_outputs.cpu().numpy()
 
 		if outputs is None or output_lens is None:
@@ -2339,7 +2359,7 @@ def build_opennmt_model(image_height, image_width, image_channel, max_time_steps
 			model_outputs = model.generator(model_output_tuple[0]).transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes].
 			#attentions = model_output_tuple[1]['std']
 
-			_, model_outputs = torch.max(model_outputs, dim=-1)
+			model_outputs = torch.argmax(model_outputs, dim=-1)
 			return model_outputs.cpu().numpy(), decoder_outputs.numpy()
 
 	if encoder_type == 'onmt':
@@ -2530,7 +2550,7 @@ def build_rare1_and_opennmt_model(image_height, image_width, image_channel, max_
 			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes].
 			#attentions = model_output_tuple[1]['std']
 
-			_, model_outputs = torch.max(model_outputs, dim=-1)
+			model_outputs = torch.argmax(model_outputs, dim=-1)
 			return model_outputs.cpu().numpy(), decoder_outputs.numpy()
 
 	class MyCompositeModel(torch.nn.Module):
@@ -2688,7 +2708,7 @@ def build_rare2_and_opennmt_model(image_height, image_width, image_channel, max_
 			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes].
 			#attentions = model_output_tuple[1]['std']
 
-			_, model_outputs = torch.max(model_outputs, dim=-1)
+			model_outputs = torch.argmax(model_outputs, dim=-1)
 			return model_outputs.cpu().numpy(), decoder_outputs.numpy()
 
 	class MyCompositeModel(torch.nn.Module):
@@ -2846,7 +2866,7 @@ def build_aster_and_opennmt_model(image_height, image_width, image_channel, max_
 			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes].
 			#attentions = model_output_tuple[1]['std']
 
-			_, model_outputs = torch.max(model_outputs, dim=-1)
+			model_outputs = torch.argmax(model_outputs, dim=-1)
 			return model_outputs.cpu().numpy(), decoder_outputs.numpy()
 
 	class MyCompositeModel(torch.nn.Module):
@@ -3127,7 +3147,7 @@ def build_text_model_for_training(model_filepath_to_load, model_type, image_shap
 	elif model_type == 'transformer':
 		model, infer_functor, train_forward_functor, criterion = build_transformer_model(image_height, image_width, image_channel, max_label_len + label_converter.num_affixes, label_converter, lang, is_train=True)
 	else:
-		model, infer_functor, train_forward_functor, criterion = None, None, None, None
+		raise ValueError('Invalid model type, {}'.format(model_type))
 	if logger: logger.info('End building a model: {} secs.'.format(time.time() - start_time))
 
 	if is_model_initialized:
@@ -3311,7 +3331,7 @@ def train_text_recognizer(model, train_forward_functor, infer_functor, criterion
 	# Train a model.
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, infer_functor, train_dataloader, test_dataloader, optimizer, label_converter, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
+	model, best_model_filepath = train_text_recognition_model(model, criterion, train_forward_functor, train_dataloader, test_dataloader, optimizer, label_converter, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -3375,16 +3395,6 @@ def recognize_text(model, infer_functor, inputs, batch_size=None, logger=None, d
 
 	return predictions
 
-def build_craft_model(craft_refine, craft_cuda, logger=None):
-	import craft.test_utils as test_utils
-
-	craft_trained_model_filepath = './craft/craft_mlt_25k.pth'
-	craft_refiner_model_filepath = './craft/craft_refiner_CTW1500.pth'  # Pretrained refiner model.
-
-	craft_net, craft_refine_net = test_utils.load_craft(craft_trained_model_filepath, craft_refiner_model_filepath, craft_refine, craft_cuda)
-
-	return craft_net, craft_refine_net
-
 def create_label_converter(converter_type, charset):
 	BLANK_LABEL, SOS_ID, EOS_ID = None, None, None
 	num_suffixes = 0
@@ -3446,7 +3456,7 @@ def create_label_converter(converter_type, charset):
 
 	return label_converter, SOS_ID, EOS_ID, BLANK_LABEL, num_suffixes
 
-def dataset_to_tensor(dataset, batch_size, shuffle, num_workers, logger):
+def text_dataset_to_tensor(dataset, batch_size, shuffle, num_workers, logger):
 	dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 
 	# Show data info.
@@ -3529,10 +3539,10 @@ def create_datasets_for_training(charset, wordset, font_list, target_type, image
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	is_mixed_texts_used = True
+	is_mixed_text_used = True
 	if target_type == 'char':
 		# File-based chars: 78,838.
-		if is_mixed_texts_used:
+		if is_mixed_text_used:
 			num_simple_char_examples_per_class, num_noisy_examples_per_class = 300, 300  # For mixed chars.
 		else:
 			char_type = 'simple_char'  # {'simple_char', 'noisy_char', 'file_based_char'}.
@@ -3540,7 +3550,7 @@ def create_datasets_for_training(charset, wordset, font_list, target_type, image
 		char_clipping_ratio_interval = (0.8, 1.25)
 	elif target_type == 'word':
 		# File-based words: 504,279.
-		if is_mixed_texts_used:
+		if is_mixed_text_used:
 			num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed words.
 		else:
 			word_type = 'simple_word'  # {'simple_word', 'random_word', 'aihub_word', 'file_based_word'}.
@@ -3549,7 +3559,7 @@ def create_datasets_for_training(charset, wordset, font_list, target_type, image
 		word_count_interval, space_count_interval, char_space_ratio_interval = None, None, None
 	elif target_type == 'textline':
 		# File-based text lines: 55,835.
-		if is_mixed_texts_used:
+		if is_mixed_text_used:
 			num_simple_examples, num_random_examples, num_trdg_examples = int(5e4), int(5e4), int(5e4)  # For mixed text lines.
 		else:
 			textline_type = 'simple_textline'  # {'simple_textline', 'random_textline', 'trdg_textline', 'aihub_textline', 'file_based_textline'}.
@@ -3567,31 +3577,31 @@ def create_datasets_for_training(charset, wordset, font_list, target_type, image
 	#--------------------
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if target_type == 'char':
-		if is_mixed_texts_used:
+		if is_mixed_text_used:
 			train_dataset, test_dataset = create_mixed_char_datasets(label_converter, charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, logger)
 		else:
 			train_dataset, test_dataset = create_char_datasets(char_type, label_converter, charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, logger)
 	elif target_type == 'word':
-		if is_mixed_texts_used:
+		if is_mixed_text_used:
 			train_dataset, test_dataset = create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, font_list, font_size_interval, color_functor, logger)
 		else:
 			train_dataset, test_dataset = create_word_datasets(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, font_list, font_size_interval, color_functor, logger)
 	elif target_type == 'textline':
-		if is_mixed_texts_used:
+		if is_mixed_text_used:
 			train_dataset, test_dataset = create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, logger)
 		else:
 			train_dataset, test_dataset = create_textline_datasets(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, logger)
 
 	return train_dataset, test_dataset
 
-def create_text_dataset(label_converter, image_shape, target_type, max_label_len, is_preloaded_image_used, logger):
+def create_text_dataset(label_converter, image_shape, target_type, max_label_len, is_preloaded_image_used, is_pil, logger):
 	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	#image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	transform = torchvision.transforms.Compose([
-		ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, logger=logger),
-		#ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, logger=logger),  # batch_size must be 1.
+		ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, is_pil=is_pil, logger=logger),
+		#ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, is_pil=is_pil, logger=logger),  # batch_size must be 1.
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -3647,6 +3657,16 @@ def create_text_dataset(label_converter, image_shape, target_type, max_label_len
 			raise ValueError('Invalid target type, {}'.format(target_type))
 
 	return dataset
+
+def build_craft_model(craft_refine, craft_cuda, logger=None):
+	import craft.test_utils as test_utils
+
+	craft_trained_model_filepath = './craft/craft_mlt_25k.pth'
+	craft_refiner_model_filepath = './craft/craft_refiner_CTW1500.pth'  # Pretrained refiner model.
+
+	craft_net, craft_refine_net = test_utils.load_craft(craft_trained_model_filepath, craft_refiner_model_filepath, craft_refine, craft_cuda)
+
+	return craft_net, craft_refine_net
 
 def detect_chars_by_craft(image_filepath, craft_refine, craft_cuda, output_dir_path, logger):
 	import craft.imgproc as imgproc
@@ -4097,33 +4117,43 @@ def main():
 			model = build_char_model_for_inference(model_filepath_to_load, image_shape, label_converter.num_classes, logger, device)
 
 			#--------------------
-			# Create data.
-
-			# When detecting chars by CRAFT.
-			image_filepath = '/path/to/image.png'
-			assert os.path.exists(image_filepath)
-
-			craft_refine = False  # Enable a link refiner.
-			craft_cuda = torch.cuda.is_available() and int(args.gpu) >= 0
-			patches = detect_chars_by_craft(image_filepath, craft_refine, craft_cuda, output_dir_path, logger)
-			if patches is None or len(patches) <= 0:
-				logger.warning('No text detected in {}.'.format(image_filepath))
-				return
-
-			if is_pil: patches = list(Image.fromarray(patch) for patch in patches)
-			inputs = images_to_tensor(patches, image_shape, is_pil, logger)
-			outputs = None
+			if args.eval and model:
+				raise NotImplementedError
 
 			#--------------------
-			# Infer by the model.
+			if args.infer and model:
+				# Create data.
+				if True:
+					# When detecting chars by CRAFT.
+					image_filepath = '/path/to/image.png'
+					assert os.path.exists(image_filepath)
+
+					craft_refine = False  # Enable a link refiner.
+					craft_cuda = torch.cuda.is_available() and int(args.gpu) >= 0
+					patches = detect_chars_by_craft(image_filepath, craft_refine, craft_cuda, output_dir_path, logger)
+					if patches is None or len(patches) <= 0:
+						logger.warning('No text detected in {}.'.format(image_filepath))
+						return
+
+					if is_pil: patches = list(Image.fromarray(patch) for patch in patches)
+					inputs = images_to_tensor(patches, image_shape, is_pil, logger)
+					outputs = None
+
 			# TODO [check] >> This implementation is not tested.
+			# Infer by the model.
 			logger.info('Start inferring...')
 			start_time = time.time()
 			model.eval()
 			with torch.no_grad():
 				predictions = model(inputs)
-			if logger: logger.info('End inferring: {} secs.'.format(time.time() - start_time))
+				logger.info('End inferring: {} secs.'.format(time.time() - start_time))
 			predictions = torch.argmax(predictions, dim=1).cpu().numpy()
+			logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(predictions.shape, predictions.dtype, np.min(predictions), np.max(predictions)))
+
+			# Visualize inference results.
+			#outputs = None
+			num_examples_to_visualize = 50
+			visualize_inference_results(predictions, label_converter, inputs.numpy(), outputs, output_dir_path, is_case_sensitive, num_examples_to_visualize, logger)
 		elif args.target_type in ['word', 'textline']:
 			# Build a model.
 			model, infer_functor = build_text_model_for_inference(model_filepath, args.model_type, image_shape, args.max_len, label_converter, SOS_ID, EOS_ID, num_suffixes, lang, logger=logger, device=device)
@@ -4133,7 +4163,7 @@ def main():
 				# Create a dataset.
 				logger.info('Start creating a dataset...')
 				start_time = time.time()
-				dataset = create_text_dataset(label_converter, image_shape, args.target_type, args.max_len, is_preloaded_image_used, logger)
+				dataset = create_text_dataset(label_converter, image_shape, args.target_type, args.max_len, is_preloaded_image_used, is_pil, logger)
 				logger.info('End creating a dataset: {} secs.'.format(time.time() - start_time))
 				logger.info('#examples = {}.'.format(len(dataset)))
 
@@ -4159,11 +4189,11 @@ def main():
 					# When using a dataset.
 					logger.info('Start creating a dataset...')
 					start_time = time.time()
-					dataset = create_text_dataset(label_converter, image_shape, args.target_type, args.max_len, is_preloaded_image_used, logger)
+					dataset = create_text_dataset(label_converter, image_shape, args.target_type, args.max_len, is_preloaded_image_used, is_pil, logger)
 					logger.info('End creating a dataset: {} secs.'.format(time.time() - start_time))
 					logger.info('#examples = {}.'.format(len(dataset)))
 
-					inputs, outputs = dataset_to_tensor(dataset, args.batch, shuffle, num_workers, logger)
+					inputs, outputs = text_dataset_to_tensor(dataset, args.batch, shuffle, num_workers, logger)
 					outputs = outputs.numpy()
 				else:
 					# When detecting texts by CRAFT.
