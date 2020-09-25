@@ -32,8 +32,8 @@ def construct_font(korean=True, english=True):
 
 	return tg_util.construct_font(font_dir_paths)
 
-def visualize_font_text(font_dir_path):
-	if False:
+def visualize_font_text(font_dir_path=None, save_image=False):
+	if not font_dir_path:
 		font_list = construct_font(korean=True, english=True)
 	else:
 		font_filepaths = glob.glob(font_dir_path + '/*.ttf')
@@ -90,7 +90,7 @@ def visualize_font_text(font_dir_path):
 	image_size = (1000, 4000)
 
 	#--------------------
-	output_dir_path = './font_test_results'
+	output_dir_path = './font_check_results'
 	os.makedirs(output_dir_path, exist_ok=True)
 
 	invalid_fonts = list()
@@ -100,12 +100,13 @@ def visualize_font_text(font_dir_path):
 		try:
 			img = swl_langproc_util.generate_text_image(text, font_fpath, font_index, font_size, font_color, bg_color, image_size, text_offset, crop_text_area, draw_text_border)
 
-			#img_fpath = os.path.join(output_dir_path, os.path.basename(font_fpath) + '_{}.png'.format(font_index))
-			#print('\tSaved an font image to {}.'.format(img_fpath))
-			#img.save(img_fpath)
-			#cv2.imwrite(img_fpath, np.array(img))
-			#cv2.imshow('Text', np.array(img))
-			#cv2.waitKey(0)
+			if save_image:
+				img_fpath = os.path.join(output_dir_path, os.path.basename(font_fpath) + '_{}.png'.format(font_index))
+				print('\tSaved an font image to {}.'.format(img_fpath))
+				img.save(img_fpath)
+				#cv2.imwrite(img_fpath, np.array(img))
+				#cv2.imshow('Text', np.array(img))
+				#cv2.waitKey(0)
 		except:
 			invalid_fonts.append((font_fpath, font_index))
 
@@ -218,12 +219,14 @@ def main():
 	else:
 		system_font_dir_path = 'C:/Windows/Fonts'
 		font_base_dir_path = 'D:/work/font'
-	#font_dir_path = font_base_dir_path + '/eng_large'
-	#ont_dir_path = font_base_dir_path + '/kor_large'
-	font_dir_path = font_base_dir_path + '/eng_receipt'
+	#font_dir_path = font_base_dir_path + '/kor_small'
+	font_dir_path = font_base_dir_path + '/kor_large'
 	#font_dir_path = font_base_dir_path + '/kor_receipt'
+	#font_dir_path = font_base_dir_path + '/eng_small'
+	#font_dir_path = font_base_dir_path + '/eng_large'
+	#font_dir_path = font_base_dir_path + '/eng_receipt'
 
-	#visualize_font_text(font_dir_path)
+	#visualize_font_text(font_dir_path, save_image=False)
 
 	#check_font_validity(font_dir_path, char_pair=('C', 'M'))  # For English.
 	#check_font_validity(font_dir_path, char_pair=('가', '너'))  # For Korean.

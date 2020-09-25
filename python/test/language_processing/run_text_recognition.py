@@ -903,7 +903,8 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 			'skewing_angle': 0, 'random_skew': False,  # In degrees counter clockwise.
 			#'blur': 0, 'random_blur': False,  # Blur radius.
 			'blur': 2, 'random_blur': True,  # Blur radius.
-			'distorsion_type': 0, 'distorsion_orientation': 0,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+			#'distorsion_type': 0, 'distorsion_orientation': 0,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+			'distorsion_type': 0, 'distorsion_orientation': 2,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
 			#'distorsion_type': 3, 'distorsion_orientation': 2,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
 			'background_type': 0,  # background_type = 0 (Gaussian noise), 1 (plain white), 2 (quasicrystal), 3 (image).
 			'width': -1,  # Specify a background width when width > 0.
@@ -927,44 +928,22 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 			#font_filepaths = trdg.utils.load_fonts(lang)
 			font_filepaths = list()
 
-			is_randomly_generated = False
-			generator_kwargs['distorsion_type'] = 1
-			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 16, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
-			generator_kwargs['distorsion_type'] = 2
-			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 16, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
-			generator_kwargs['distorsion_type'] = 3
-			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 8, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
-			test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
-			is_randomly_generated = True
-			generator_kwargs['distorsion_type'] = 1
-			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 16, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
-			generator_kwargs['distorsion_type'] = 2
-			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 16, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
-			generator_kwargs['distorsion_type'] = 3
-			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 8, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
-			test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
+			for is_randomly_generated in [False, True]:
+				for distorsion_type, divisor in zip((1, 2, 3), (16, 16, 8)):
+					generator_kwargs['distorsion_type'] = distorsion_type
+					train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+				test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 		if True:
 			lang = 'kr'
 			font_types = ['kor-large']  # {'kor-small', 'kor-large', 'kor-receipt'}.
 			font_filepaths = construct_font(font_types)
 			font_filepaths, _ = zip(*font_filepaths)
 
-			is_randomly_generated = False
-			generator_kwargs['distorsion_type'] = 1
-			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 16, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
-			generator_kwargs['distorsion_type'] = 2
-			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 16, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
-			generator_kwargs['distorsion_type'] = 3
-			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 8, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
-			test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
-			is_randomly_generated = True
-			generator_kwargs['distorsion_type'] = 1
-			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 16, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
-			generator_kwargs['distorsion_type'] = 2
-			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 16, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
-			generator_kwargs['distorsion_type'] = 3
-			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 8, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
-			test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
+			for is_randomly_generated in [False, True]:
+				for distorsion_type, divisor in zip((1, 2, 3), (16, 16, 8)):
+					generator_kwargs['distorsion_type'] = distorsion_type
+					train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+				test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 		train_dataset = torch.utils.data.ConcatDataset(train_datasets)
 		test_dataset = torch.utils.data.ConcatDataset(test_datasets)
 	elif textline_type == 'aihub_textline':
@@ -1084,7 +1063,8 @@ def create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_e
 			#'blur': 0, 'random_blur': False,  # Blur radius.
 			'blur': 2, 'random_blur': True,  # Blur radius.
 			#'distorsion_type': 0, 'distorsion_orientation': 0,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
-			'distorsion_type': 3, 'distorsion_orientation': 2,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+			'distorsion_type': 0, 'distorsion_orientation': 2,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+			#'distorsion_type': 3, 'distorsion_orientation': 2,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
 			'background_type': 0,  # background_type = 0 (Gaussian noise), 1 (plain white), 2 (quasicrystal), 3 (image).
 			'width': -1,  # Specify a background width when width > 0.
 			'alignment': 1,  # Align an image in a background image. alignment = 0 (left), 1 (center), the rest (right).
@@ -1108,24 +1088,22 @@ def create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_e
 			#font_filepaths = trdg.utils.load_fonts(lang)
 			font_filepaths = list()
 
-			is_randomly_generated = False
-			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
-			test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
-			is_randomly_generated = True
-			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
-			test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
+			for is_randomly_generated in [False, True]:
+				for distorsion_type, divisor in zip((1, 2, 3), (16, 16, 8)):
+					generator_kwargs['distorsion_type'] = distorsion_type
+					train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+				test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 		if True:
 			lang = 'kr'
 			font_types = ['kor-large']  # {'kor-small', 'kor-large', 'kor-receipt'}.
 			font_filepaths = construct_font(font_types)
 			font_filepaths, _ = zip(*font_filepaths)
 
-			is_randomly_generated = False
-			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
-			test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
-			is_randomly_generated = True
-			train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
-			test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
+			for is_randomly_generated in [False, True]:
+				for distorsion_type, divisor in zip((1, 2, 3), (16, 16, 8)):
+					generator_kwargs['distorsion_type'] = distorsion_type
+					train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+				test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 	if True:
 		# AI-Hub printed text dataset.
 		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
@@ -2880,7 +2858,7 @@ def validate_char_model_in_a_epoch(model, train_forward_functor, dataloader, lab
 			if show:
 				if logger: logger.info('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(batch_outputs, model_outputs)]))
 				show = False
-	avg_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
+	avg_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else total_matching_ratio
 	return losses, top1, top5, avg_matching_ratio
 
 def train_text_model_in_a_epoch(model, criterion, train_forward_functor, optimizer, dataloader, model_params, max_gradient_norm, label_converter, is_case_sensitive, epoch, log_print_freq, logger, device='cpu'):
@@ -2907,7 +2885,7 @@ def train_text_model_in_a_epoch(model, criterion, train_forward_functor, optimiz
 		# Measure accuracy and record loss.
 		model_outputs = torch.argmax(model_outputs.cpu(), dim=-1)
 		total_matching_ratio, _ = compute_sequence_matching_ratio(batch_inputs, batch_outputs, model_outputs, label_converter, is_case_sensitive, error_cases_dir_path=None, error_idx=0)
-		avg_matching_ratio = total_matching_ratio / batch_inputs.size(0) if batch_inputs.size(0) > 0 else -1
+		avg_matching_ratio = total_matching_ratio / batch_inputs.size(0) if batch_inputs.size(0) > 0 else total_matching_ratio
 		losses.update(loss.item(), batch_inputs.size(0))
 		top1.update(avg_matching_ratio * 100, batch_inputs.size(0))
 
@@ -2957,7 +2935,7 @@ def validate_text_model_in_a_epoch(model, criterion, train_forward_functor, data
 			if model_outputs.ndim == 1:
 				model_outputs = torch.unsqueeze(model_outputs, dim=-1)
 			total_matching_ratio, _ = compute_sequence_matching_ratio(batch_inputs, batch_outputs, model_outputs, label_converter, is_case_sensitive, error_cases_dir_path=None, error_idx=0)
-			avg_matching_ratio = total_matching_ratio / batch_inputs.size(0) if batch_inputs.size(0) > 0 else -1
+			avg_matching_ratio = total_matching_ratio / batch_inputs.size(0) if batch_inputs.size(0) > 0 else total_matching_ratio
 			losses.update(loss.item(), batch_inputs.size(0))
 			top1.update(avg_matching_ratio * 100, batch_inputs.size(0))
 
@@ -3245,7 +3223,7 @@ def evaluate_text_recognition_model(model, infer_functor, dataloader, label_conv
 	show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char, logger=logger)
 	if is_sequence_matching_ratio_used:
 		#num_examples = len(dataloader)
-		avg_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
+		avg_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else total_matching_ratio
 		if logger: logger.info('Average sequence matching ratio = {}.'.format(avg_matching_ratio))
 	if is_simple_matching_accuracy_used:
 		if logger:
@@ -3532,60 +3510,54 @@ def create_datasets_for_training(charset, wordset, font_list, target_type, image
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	is_mixed_text_used = True
+	font_size_interval = (10, 100)
+	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
+	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	if target_type == 'char':
+		char_clipping_ratio_interval = (0.8, 1.25)
+
 		# File-based chars: 78,838.
 		if is_mixed_text_used:
 			num_simple_char_examples_per_class, num_noisy_examples_per_class = 300, 300  # For mixed chars.
+			train_dataset, test_dataset = create_mixed_char_datasets(label_converter, charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, logger)
 		else:
 			char_type = 'simple_char'  # {'simple_char', 'noisy_char', 'file_based_char'}.
 			num_train_examples_per_class, num_test_examples_per_class = 500, 50  # For simple and noisy chars.
-		char_clipping_ratio_interval = (0.8, 1.25)
+			train_dataset, test_dataset = create_char_datasets(char_type, label_converter, charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, logger)
 	elif target_type == 'word':
+		word_len_interval = (1, max_label_len)
+		word_count_interval, space_count_interval, char_space_ratio_interval = None, None, None
+
 		# File-based words: 504,279.
 		if is_mixed_text_used:
 			num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed words.
+			train_dataset, test_dataset = create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, font_list, font_size_interval, color_functor, logger)
 		else:
 			word_type = 'simple_word'  # {'simple_word', 'random_word', 'aihub_word', 'file_based_word'}.
 			num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
-		word_len_interval = (1, max_label_len)
-		word_count_interval, space_count_interval, char_space_ratio_interval = None, None, None
+			train_dataset, test_dataset = create_word_datasets(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, font_list, font_size_interval, color_functor, logger)
 	elif target_type == 'textline':
-		# File-based text lines: 55,835.
-		if is_mixed_text_used:
-			num_simple_examples, num_random_examples, num_trdg_examples = int(5e4), int(5e4), int(5e4)  # For mixed text lines.
-		else:
-			textline_type = 'simple_textline'  # {'simple_textline', 'random_textline', 'trdg_textline', 'aihub_textline', 'file_based_textline'}.
-			num_train_examples, num_test_examples = int(2e5), int(2e3)  # For simple, random, and TRDG text lines.
 		word_len_interval = (1, 20)
 		word_count_interval = (1, 5)
 		space_count_interval = (1, 3)
 		char_space_ratio_interval = (0.8, 1.25)
-	else:
-		raise ValueError('Invalid target type, {}'.format(target_type))
-	font_size_interval = (10, 100)
-	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 
-	#--------------------
-	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
-	if target_type == 'char':
+		# File-based text lines: 55,835.
 		if is_mixed_text_used:
-			train_dataset, test_dataset = create_mixed_char_datasets(label_converter, charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, logger)
-		else:
-			train_dataset, test_dataset = create_char_datasets(char_type, label_converter, charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, logger)
-	elif target_type == 'word':
-		if is_mixed_text_used:
-			train_dataset, test_dataset = create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, font_list, font_size_interval, color_functor, logger)
-		else:
-			train_dataset, test_dataset = create_word_datasets(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, font_list, font_size_interval, color_functor, logger)
-	elif target_type == 'textline':
-		if is_mixed_text_used:
+			num_simple_examples, num_random_examples, num_trdg_examples = int(5e4), int(5e4), int(5e4)  # For mixed text lines.
 			train_dataset, test_dataset = create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, logger)
 		else:
+			textline_type = 'simple_textline'  # {'simple_textline', 'random_textline', 'trdg_textline', 'aihub_textline', 'file_based_textline'}.
+			num_train_examples, num_test_examples = int(2e5), int(2e3)  # For simple, random, and TRDG text lines.
 			train_dataset, test_dataset = create_textline_datasets(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, logger)
+	else:
+		raise ValueError('Invalid target type, {}'.format(target_type))
 
 	return train_dataset, test_dataset
 
 def create_text_dataset(label_converter, image_shape, target_type, max_label_len, is_preloaded_image_used, is_pil, logger):
+	is_aihub_data_used = False
+
 	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	#image_height_before_crop, image_width_before_crop = image_height, image_width
@@ -3605,49 +3577,42 @@ def create_text_dataset(label_converter, image_shape, target_type, max_label_len
 	else:
 		data_base_dir_path = 'D:/work/dataset'
 
-	if False:
+	datasets = list()
+	if target_type == 'word':
+		# When using a dataset with an image-label info file.
+		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
+		#image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
+		datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_label_len, is_preloaded_image_used, transform=transform, target_transform=target_transform))
+	elif target_type == 'textline':
+		# When using a dataset with image-label files.
+		"""
+		image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.jpg', recursive=False))
+		label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
+		"""
+		image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/general/sminds/20200812/image/*.jpg', recursive=False))
+		label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/general/sminds/20200812/label/*.txt', recursive=False))
+		if image_filepaths and label_filepaths and len(image_filepaths) == len(label_filepaths):
+			if logger: logger.info('#loaded image files = {}, #loaded label files = {}.'.format(len(image_filepaths), len(label_filepaths)))
+		else:
+			if logger: logger.error('#loaded image files = {}, #loaded label files = {}.'.format(len(image_filepaths), len(label_filepaths)))
+			raise RuntimeError('Invalid input images and labels, {} != {}'.format(len(image_filepaths), len(label_filepaths)))
+
+		datasets.append(text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_label_len, is_preloaded_image_used, transform=transform, target_transform=target_transform))
+
+	if is_aihub_data_used:
 		# When using AI-Hub data.
 		if target_type == 'word':
 			image_types_to_load = ['word']  # {'syllable', 'word', 'sentence'}.
 		elif target_type == 'textline':
 			image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
-		else:
-			raise ValueError('Invalid target type, {}'.format(target_type))
 
 		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
 		aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
 
-		dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=transform, target_transform=target_transform)
-	else:
-		# When using a dataset for an image-label info file or image-label files.
-		if target_type == 'word':
-			raise NotImplementedError('Input data should be assigned')
-			image_filepaths = None
-			label_filepaths = None
+		datasets.append(aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used, transform=transform, target_transform=target_transform))
+	assert datasets, 'NO dataset'
 
-			#dataset = text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_label_len, is_preloaded_image_used, transform=transform, target_transform=target_transform)
-			dataset = text_data.ImageLabelFileBasedWordDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_label_len, is_preloaded_image_used, transform=transform, target_transform=target_transform)
-		elif target_type == 'textline':
-			"""
-			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
-			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
-			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.jpg', recursive=False))
-			label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
-			"""
-			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/general/sminds/20200812/image/*.jpg', recursive=False))
-			label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/general/sminds/20200812/label/*.txt', recursive=False))
-			if image_filepaths and label_filepaths and len(image_filepaths) == len(label_filepaths):
-				if logger: logger.info('#loaded image files = {}, #loaded label files = {}.'.format(len(image_filepaths), len(label_filepaths)))
-			else:
-				if logger: logger.error('#loaded image files = {}, #loaded label files = {}.'.format(len(image_filepaths), len(label_filepaths)))
-				raise RuntimeError('Invalid input images and labels, {} != {}'.format(len(image_filepaths), len(label_filepaths)))
-
-			#dataset = text_data.InfoFileBasedTextLineDataset(label_converter, image_label_info_filepath, image_channel, max_label_len, is_preloaded_image_used, transform=transform, target_transform=target_transform)
-			dataset = text_data.ImageLabelFileBasedTextLineDataset(label_converter, image_filepaths, label_filepaths, image_channel, max_label_len, is_preloaded_image_used, transform=transform, target_transform=target_transform)
-		else:
-			raise ValueError('Invalid target type, {}'.format(target_type))
-
-	return dataset
+	return torch.utils.data.ConcatDataset(datasets)
 
 def build_craft_model(craft_refine, craft_cuda, logger=None):
 	import craft.test_utils as test_utils
@@ -3819,7 +3784,7 @@ def visualize_inference_results(predictions, label_converter, inputs, outputs, o
 		if is_sequence_matching_ratio_used:
 			#num_examples = len(outputs)
 			num_examples = min(len(inputs), len(outputs), len(predictions))
-			avg_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else -1
+			avg_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else total_matching_ratio
 			if logger: logger.info('Average sequence matching ratio = {}.'.format(avg_matching_ratio))
 		if is_simple_matching_accuracy_used:
 			if logger:
@@ -4131,21 +4096,21 @@ def main():
 					inputs = images_to_tensor(patches, image_shape, is_pil, logger)
 					outputs = None
 
-			# TODO [check] >> This implementation is not tested.
-			# Infer by the model.
-			logger.info('Start inferring...')
-			start_time = time.time()
-			model.eval()
-			with torch.no_grad():
-				predictions = model(inputs)
+				# TODO [check] >> This implementation is not tested.
+				# Infer by the model.
+				logger.info('Start inferring...')
+				start_time = time.time()
+				model.eval()
+				with torch.no_grad():
+					predictions = model(inputs)
 				logger.info('End inferring: {} secs.'.format(time.time() - start_time))
-			predictions = torch.argmax(predictions, dim=1).cpu().numpy()
-			logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(predictions.shape, predictions.dtype, np.min(predictions), np.max(predictions)))
+				predictions = torch.argmax(predictions, dim=1).cpu().numpy()
+				logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(predictions.shape, predictions.dtype, np.min(predictions), np.max(predictions)))
 
-			# Visualize inference results.
-			#outputs = None
-			num_examples_to_visualize = 50
-			visualize_inference_results(predictions, label_converter, inputs.numpy(), outputs, output_dir_path, is_case_sensitive, num_examples_to_visualize, logger)
+				# Visualize inference results.
+				#outputs = None
+				num_examples_to_visualize = 50
+				visualize_inference_results(predictions, label_converter, inputs.numpy(), outputs, output_dir_path, is_case_sensitive, num_examples_to_visualize, logger)
 		elif args.target_type in ['word', 'textline']:
 			# Build a model.
 			model, infer_functor = build_text_model_for_inference(model_filepath, args.model_type, image_shape, args.max_len, label_converter, SOS_ID, EOS_ID, num_suffixes, lang, logger=logger, device=device)
