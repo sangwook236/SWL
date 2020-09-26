@@ -265,7 +265,6 @@ class MyRunner(object):
 		model_output_time_steps = image_width // width_downsample_factor
 		max_label_len = min(max_label_len, model_output_time_steps)
 
-		"""
 		#word_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
 		word_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
 		#word_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
@@ -289,6 +288,7 @@ class MyRunner(object):
 			from swl.language_processing.util import draw_character_histogram
 			draw_character_histogram(texts, charset=None)
 
+		"""
 		labels = functools.reduce(lambda x, txt: x.union(txt), texts, set())
 		labels = sorted(labels)
 		#labels = ''.join(sorted(labels))
@@ -520,10 +520,10 @@ class MyRunner(object):
 
 				#--------------------
 				if is_best_model:
-					print('[SWL] Info: Start saving a model to {}...'.format(saved_model_path))
+					print('[SWL] Info: Start saving a model...')
 					start_time = time.time()
 					saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model_ckpt'), global_step=epoch)
-					print('[SWL] Info: End saving a model: {} secs.'.format(time.time() - start_time))
+					print('[SWL] Info: End saving a model to {}: {} secs.'.format(saved_model_path, time.time() - start_time))
 
 				sys.stdout.flush()
 				time.sleep(0)

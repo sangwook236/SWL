@@ -785,10 +785,10 @@ class MyRunner(object):
 
 				#--------------------
 				if is_best_model:
-					print('[SWL] Info: Start saving a model to {}...'.format(saved_model_path))
+					print('[SWL] Info: Start saving a model...')
 					start_time = time.time()
 					saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model_ckpt'), global_step=epoch)
-					print('[SWL] Info: End saving a model: {} secs.'.format(time.time() - start_time))
+					print('[SWL] Info: End saving a model to {}: {} secs.'.format(saved_model_path, time.time() - start_time))
 
 				sys.stdout.flush()
 				time.sleep(0)
@@ -943,7 +943,7 @@ def check_data(dataset, label_converter, batch_size):
 	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
 	jamo2hangeul_functor = lambda jamo_str: hg_util.jamo2hangeul(jamo_str, eojc_str=EOJ, use_separate_consonants=False, use_separate_vowels=True)
 
-	generator = runner.dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=False)
+	generator = dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=False)
 	for batch_step, (batch_data, num_batch_examples) in enumerate(generator):
 		#batch_images (np.array), batch_labels_str (a list of strings), batch_labels_int (a list of sequences) = batch_data
 

@@ -968,10 +968,10 @@ class MyRunner(object):
 
 				#--------------------
 				if is_best_model:
-					print('[SWL] Info: Start saving a model to {}...'.format(saved_model_path))
+					print('[SWL] Info: Start saving a model...')
 					start_time = time.time()
 					saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model_ckpt'), global_step=epoch)
-					print('[SWL] Info: End saving a model: {} secs.'.format(time.time() - start_time))
+					print('[SWL] Info: End saving a model to {}: {} secs.'.format(saved_model_path, time.time() - start_time))
 
 				sys.stdout.flush()
 				time.sleep(0)

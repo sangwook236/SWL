@@ -809,10 +809,10 @@ class MyRunner(object):
 
 				#--------------------
 				if is_best_model:
-					print('[SWL] Info: Start saving a model to {}...'.format(saved_model_path))
+					print('[SWL] Info: Start saving a model...')
 					start_time = time.time()
 					saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model_ckpt'), global_step=epoch)
-					print('[SWL] Info: End saving a model: {} secs.'.format(time.time() - start_time))
+					print('[SWL] Info: End saving a model to {}: {} secs.'.format(saved_model_path, time.time() - start_time))
 
 				sys.stdout.flush()
 				time.sleep(0)
@@ -1004,10 +1004,10 @@ def main():
 
 	is_trained, is_tested, is_inferred = True, True, True
 	is_training_resumed = False
-	initial_epoch, final_epoch, batch_size = 0, 50, 64  # batch_size affects training.
-	train_test_ratio = 0.9 if is_fine_tuned else 0.8
-	is_dataset_generated_at_runtime = True
 	is_fine_tuned = False
+	is_dataset_generated_at_runtime = True
+	initial_epoch, final_epoch, batch_size = 0, 50, 64
+	train_test_ratio = 0.9 if is_fine_tuned else 0.8
 
 	#--------------------
 	runner = MyRunner(image_height, image_width, image_channel, max_label_len, train_test_ratio, is_dataset_generated_at_runtime, is_fine_tuned)

@@ -268,6 +268,7 @@ class MyRunner(object):
 
 		#--------------------
 		print('[SWL] Info: Start loading images...')
+		start_time = time.time()
 		inf_images = list()
 		for fpath in image_filepaths:
 			img = cv2.imread(fpath)
