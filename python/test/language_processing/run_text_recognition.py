@@ -2874,7 +2874,7 @@ def validate_char_model_in_a_epoch(model, train_forward_functor, dataloader, lab
 	avg_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else total_matching_ratio
 	return losses, top1, top5, avg_matching_ratio
 
-def train_text_model_in_a_epoch(model, criterion, train_forward_functor, optimizer, dataloader, model_params, max_gradient_norm, label_converter, is_case_sensitive, epoch, log_print_freq, logger, device='cuda'):
+def train_text_model_in_epoch(model, criterion, train_forward_functor, optimizer, dataloader, model_params, max_gradient_norm, label_converter, is_case_sensitive, epoch, log_print_freq, logger, device='cuda'):
 	#start_epoch_time = time.time()
 	batch_time, data_time = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
 	losses, top1 = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
@@ -2926,7 +2926,7 @@ def train_text_model_in_a_epoch(model, criterion, train_forward_functor, optimiz
 		time.sleep(0)
 	return losses, top1
 
-def validate_text_model_in_a_epoch(model, criterion, train_forward_functor, dataloader, label_converter, is_case_sensitive, logger, device='cuda'):
+def validate_text_model_in_epoch(model, criterion, train_forward_functor, dataloader, label_converter, is_case_sensitive, logger, device='cuda'):
 	losses, top1 = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
 	with torch.no_grad():
 		show = True
@@ -2959,8 +2959,6 @@ def validate_text_model_in_a_epoch(model, criterion, train_forward_functor, data
 	return losses, top1
 
 def train_char_recognition_model(model, train_forward_functor, criterion, train_dataloader, test_dataloader, optimizer, label_converter, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler=None, max_gradient_norm=None, model_params=None, is_case_sensitive=False, logger=None, device='cuda'):
-	#if logger: logger.info('Model:\n{}.'.format(model))
-
 	train_log_filepath = os.path.join(output_dir_path, 'train_log.txt')
 	train_history_filepath = os.path.join(output_dir_path, 'train_history.pkl')
 	train_result_image_filepath = os.path.join(output_dir_path, 'results.png')
@@ -3033,8 +3031,6 @@ def train_char_recognition_model(model, train_forward_functor, criterion, train_
 	return model, best_model_filepath
 
 def train_text_recognition_model(model, criterion, train_forward_functor, train_dataloader, test_dataloader, optimizer, label_converter, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler=None, max_gradient_norm=None, model_params=None, is_case_sensitive=False, logger=None, device='cuda'):
-	#if logger: logger.info('Model:\n{}.'.format(model))
-
 	train_log_filepath = os.path.join(output_dir_path, 'train_log.txt')
 	train_history_filepath = os.path.join(output_dir_path, 'train_history.pkl')
 	train_result_image_filepath = os.path.join(output_dir_path, 'results.png')
@@ -3059,7 +3055,7 @@ def train_text_recognition_model(model, criterion, train_forward_functor, train_
 		#--------------------
 		start_time = time.time()
 		model.train()
-		losses, top1 = train_text_model_in_a_epoch(model, criterion, train_forward_functor, optimizer, train_dataloader, model_params, max_gradient_norm, label_converter, is_case_sensitive, epoch, log_print_freq, logger, device)
+		losses, top1 = train_text_model_in_epoch(model, criterion, train_forward_functor, optimizer, train_dataloader, model_params, max_gradient_norm, label_converter, is_case_sensitive, epoch, log_print_freq, logger, device)
 		if logger: logger.info('Train:      Prec@1 = {top1.avg:.4f}, Error@1 = {error1:.4f}, Loss = {losses.avg:.4f}: {elapsed_time:.6f} secs.'.format(top1=top1, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
 
 		train_loss, train_acc = losses.avg, top1.avg
@@ -3069,7 +3065,7 @@ def train_text_recognition_model(model, criterion, train_forward_functor, train_
 		#--------------------
 		start_time = time.time()
 		model.eval()
-		losses, top1 = validate_text_model_in_a_epoch(model, criterion, train_forward_functor, test_dataloader, label_converter, is_case_sensitive, logger, device)
+		losses, top1 = validate_text_model_in_epoch(model, criterion, train_forward_functor, test_dataloader, label_converter, is_case_sensitive, logger, device)
 		if logger: logger.info('Validation: Prec@1 = {top1.avg:.4f}, Error@1 = {error1:.4f}, Loss = {losses.avg:.4f}: {elapsed_time:.6f} secs.'.format(top1=top1, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
 
 		val_loss, val_acc = losses.avg, top1.avg
@@ -3250,14 +3246,14 @@ def evaluate_text_recognition_model(model, infer_functor, dataloader, label_conv
 		return correct_char_count / total_char_count if total_char_count > 0 else -1
 	else: return -1
 
-def train_char_recognizer(model, train_forward_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, num_epochs, batch_size, shuffle, num_workers, is_case_sensitive, model_filepath_format, logger=None, device='cuda'):
+def train_char_recognizer(model, train_forward_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, num_epochs, batch_size, num_workers, is_case_sensitive, model_filepath_format, logger=None, device='cuda'):
 	initial_epoch, final_epoch = 0, num_epochs
 	log_print_freq = 1000
 
 	if logger: logger.info('Start creating data loaders...')
 	start_time = time.time()
-	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 	if logger: logger.info('End creating data loaders: {} secs.'.format(time.time() - start_time))
 
 	# Show data info.
@@ -3296,14 +3292,14 @@ def train_char_recognizer(model, train_forward_functor, criterion, optimizer, sc
 
 	return model_filepath
 
-def train_text_recognizer(model, train_forward_functor, infer_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, num_epochs, batch_size, shuffle, num_workers, is_case_sensitive, model_filepath_format, logger=None, device='cuda'):
+def train_text_recognizer(model, train_forward_functor, infer_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, num_epochs, batch_size, num_workers, is_case_sensitive, model_filepath_format, logger=None, device='cuda'):
 	initial_epoch, final_epoch = 0, num_epochs
 	log_print_freq = 1000
 
 	if logger: logger.info('Start creating data loaders...')
 	start_time = time.time()
-	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 	if logger: logger.info('End creating data loaders: {} secs.'.format(time.time() - start_time))
 
 	# Show data info.
@@ -3340,10 +3336,10 @@ def train_text_recognizer(model, train_forward_functor, infer_functor, criterion
 
 	return model_filepath
 
-def evaluate_text_recognizer(model, infer_functor, dataset, output_dir_path, label_converter, batch_size, shuffle, num_workers, is_case_sensitive=False, logger=None, device='cuda'):
+def evaluate_text_recognizer(model, infer_functor, dataset, output_dir_path, label_converter, batch_size, num_workers, is_case_sensitive=False, logger=None, device='cuda'):
 	if logger: logger.info('Start creating a dataloader...')
 	start_time = time.time()
-	dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+	dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 	if logger: logger.info('End creating a dataloader: {} secs.'.format(time.time() - start_time))
 
 	# Show data info.
@@ -3439,8 +3435,8 @@ def create_label_converter(converter_type, charset):
 
 	return label_converter, SOS_ID, EOS_ID, BLANK_LABEL, num_suffixes
 
-def text_dataset_to_tensor(dataset, batch_size, shuffle, num_workers, logger):
-	dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+def text_dataset_to_tensor(dataset, batch_size, num_workers, logger):
+	dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
 	# Show data info.
 	#show_text_data_info(dataloader, label_converter, visualize=False, mode='Test', logger=logger)
@@ -4017,9 +4013,8 @@ def main():
 	#if model_filepath: logger.info('Model filepath to save: {}.'.format(model_filepath))
 
 	#--------------------
-	shuffle = False
-	num_workers = 8
 	is_case_sensitive=False
+	num_workers = 8
 
 	lang = args.font_type[:3]
 	if lang == 'kor':
@@ -4065,13 +4060,17 @@ def main():
 		if args.target_type == 'char':
 			# Build a model.
 			model, train_forward_functor, criterion, optimizer, scheduler, model_params, max_gradient_norm, model_filepath_format = build_char_model_for_training(model_filepath_to_load, args.model_type, image_shape, args.target_type, args.font_type, output_dir_path, label_converter, logger, device)
+			#logger.info('Model:\n{}.'.format(model))
+
 			# Train the model.
-			model_filepath = train_char_recognizer(model, train_forward_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, args.epoch, args.batch, shuffle, num_workers, is_case_sensitive, model_filepath_format, logger, device)
+			model_filepath = train_char_recognizer(model, train_forward_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, args.epoch, args.batch, num_workers, is_case_sensitive, model_filepath_format, logger, device)
 		elif args.target_type in ['word', 'textline']:
 			# Build a model.
 			model, infer_functor, train_forward_functor, criterion, optimizer, scheduler, model_params, max_gradient_norm, model_filepath_format = build_text_model_for_training(model_filepath_to_load, args.model_type, image_shape, args.target_type, args.font_type, args.max_len, output_dir_path, label_converter, SOS_ID, EOS_ID, BLANK_LABEL, num_suffixes, lang, logger, device)
+			#logger.info('Model:\n{}.'.format(model))
+
 			# Train the model.
-			model_filepath = train_text_recognizer(model, train_forward_functor, infer_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, args.epoch, args.batch, shuffle, num_workers, is_case_sensitive, model_filepath_format, logger, device)
+			model_filepath = train_text_recognizer(model, train_forward_functor, infer_functor, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, args.epoch, args.batch, num_workers, is_case_sensitive, model_filepath_format, logger, device)
 	elif not model_filepath: model_filepath = model_filepath_to_load
 
 	#--------------------
@@ -4138,7 +4137,7 @@ def main():
 				logger.info('#examples = {}.'.format(len(dataset)))
 
 				# Evaluate the model.
-				evaluate_text_recognizer(model, infer_functor, dataset, output_dir_path, label_converter, args.batch, shuffle, num_workers, is_case_sensitive, logger=logger, device=device)
+				evaluate_text_recognizer(model, infer_functor, dataset, output_dir_path, label_converter, args.batch, num_workers, is_case_sensitive, logger=logger, device=device)
 
 			#--------------------
 			if args.infer and model and infer_functor:
@@ -4163,7 +4162,7 @@ def main():
 					logger.info('End creating a dataset: {} secs.'.format(time.time() - start_time))
 					logger.info('#examples = {}.'.format(len(dataset)))
 
-					inputs, outputs = text_dataset_to_tensor(dataset, args.batch, shuffle, num_workers, logger)
+					inputs, outputs = text_dataset_to_tensor(dataset, args.batch, num_workers, logger)
 					outputs = outputs.numpy()
 				else:
 					# When detecting texts by CRAFT.
