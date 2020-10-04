@@ -2525,6 +2525,7 @@ def build_transformer_model(image_height, image_width, image_channel, max_time_s
 			super().__init__()
 
 			self.model = transformer_ocr.model.make_model(num_classes, N=num_layers, d_model=d_model, d_ff=d_ff, d_feature=d_feature, h=num_heads, dropout=dropout)
+			self.d_model = d_model
 			self.cnn_downsample_factor = 4  # Fixed.
 
 		def forward(self, src, tgt, src_mask, tgt_mask):
@@ -2843,7 +2844,7 @@ def build_text_model_for_training(model_filepath_to_load, model_type, image_shap
 	elif model_type == 'transformer':
 		import transformer_ocr.train
 		optimizer = torch.optim.Adam(model_params, lr=0, betas=(0.9, 0.98), eps=1e-09, weight_decay=0, amsgrad=False)
-		optimizer = transformer_ocr.train.NoamOpt(model.model.tgt_embed[0].d_model, factor=1, warmup=2000, optimizer=optimizer)
+		optimizer = transformer_ocr.train.NoamOpt(model.d_model, factor=1, warmup=2000, optimizer=optimizer)
 		scheduler = None
 	else:
 		optimizer, scheduler = None, None
