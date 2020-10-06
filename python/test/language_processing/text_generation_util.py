@@ -5,7 +5,7 @@ import cv2
 import swl.language_processing.util as swl_langproc_util
 from swl.language_processing.text_generator import Transformer, HangeulJamoGenerator, HangeulLetterGenerator, TextGenerator, SceneProvider, SceneTextGenerator
 
-def construct_charset(digit=True, alphabet_uppercase=True, alphabet_lowercase=True, punctuation=True, space=True, hangeul=True, hangeul_jamo=False, whitespace=False, unit=False, currency=False, latin=False, greek_uppercase=False, greek_lowercase=False, chinese=False, hiragana=False, katakana=False, hangeul_letter_filepath=None):
+def construct_charset(digit=True, alphabet_uppercase=True, alphabet_lowercase=True, punctuation=True, space=True, whitespace=False, hangeul=True, hangeul_jamo=False, latin=False, greek_uppercase=False, greek_lowercase=False, chinese=False, hiragana=False, katakana=False, unit=False, currency=False, symbol=False, math_symbol=False, hangeul_letter_filepath=None):
 	charset = ''
 
 	# Latin.
@@ -21,6 +21,9 @@ def construct_charset(digit=True, alphabet_uppercase=True, alphabet_lowercase=Tr
 		charset += string.punctuation
 	if space:
 		charset += ' '
+	if whitespace:
+		#charset += '\n\t\v\b\r\f\a'
+		charset += '\n\t\v\r\f'
 
 	if hangeul:
 		# Unicode: Hangul Syllables (U+AC00 ~ U+D7AF).
@@ -45,19 +48,6 @@ def construct_charset(digit=True, alphabet_uppercase=True, alphabet_lowercase=Tr
 		charset += 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 		#charset += 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
 
-	if whitespace:
-		#charset += '\n\t\v\b\r\f\a'
-		charset += '\n\t\v\r\f'
-
-	if unit:
-		# REF [site] >> http://xahlee.info/comp/unicode_units.html
-		unicodes = list(range(0x3371, 0x337A + 1)) + list(range(0x3380, 0x33DF + 1)) + [0x33FF]
-		charset += ''.join([chr(ch) for ch in unicodes])
-
-	if currency:
-		# Unicode: Currency Symbols (U+20A0 ~ U+20CF).
-		charset += ''.join([chr(ch) for ch in range(0x20A0, 0x20BF + 1)])
-
 	if latin:
 		# Unicode: Latin-1 Supplement (U+0080 ~ U+00FF), Latin Extended-A (U+0100 ~ U+017F), Latin Extended-B (U+0180 ~ U+024F).
 		charset += ''.join([chr(ch) for ch in range(0x00C0, 0x024F + 1)])
@@ -81,6 +71,47 @@ def construct_charset(digit=True, alphabet_uppercase=True, alphabet_lowercase=Tr
 	if katakana:
 		# Unicode: Katakana (U+30A0 ~ U+30FF).
 		charset += ''.join([chr(ch) for ch in range(0x30A1, 0x30FA + 1)])
+
+	if unit:
+		# REF [site] >> http://xahlee.info/comp/unicode_units.html
+		unicodes = list(range(0x3371, 0x337A + 1)) + list(range(0x3380, 0x33DF + 1)) + [0x33FF]
+		charset += ''.join([chr(ch) for ch in unicodes])
+
+	if currency:
+		# Unicode: Currency Symbols (U+20A0 ~ U+20CF).
+		charset += ''.join([chr(ch) for ch in range(0x20A0, 0x20BF + 1)])
+
+	if symbol:
+		# Unicode: Letterlike Symbols (U+2100 ~ U+214F).
+		charset += ''.join([chr(ch) for ch in range(0x2100, 0x214F + 1)])
+		# Unicode: Number Forms (U+2150 ~ U+218F).
+		charset += ''.join([chr(ch) for ch in range(0x2150, 0x218F + 1)])
+		# Unicode: Arrows (U+2190 ~ U+21FF).
+		charset += ''.join([chr(ch) for ch in range(0x2190, 0x21FF + 1)])
+		# Unicode: Enclosed Alphanumerics (U+2460 ~ U+24FF).
+		#charset += ''.join([chr(ch) for ch in range(0x2460, 0x24FF + 1)])
+		# Unicode: Geometric Shapes (U+25A0 ~ U+25FF).
+		#charset += ''.join([chr(ch) for ch in range(0x25A0, 0x25FF + 1)])
+		# Unicode: Miscellaneous Symbols (U+2600 ~ U+26FF).
+		charset += ''.join([chr(ch) for ch in range(0x2600, 0x26FF + 1)])
+		# Unicode: Dingbats (U+2700 ~ U+27BF).
+		#charset += ''.join([chr(ch) for ch in range(0x2700, 0x27BF + 1)])
+		# Unicode: Supplemental Arrows-A (U+27F0 ~ U+27FF).
+		charset += ''.join([chr(ch) for ch in range(0x27F0, 0x27FF + 1)])
+		# Unicode: Supplemental Arrows-B (U+2900 ~ U+297F).
+		charset += ''.join([chr(ch) for ch in range(0x2900, 0x297F + 1)])
+		# Unicode: Miscellaneous Symbols and Arrows (U+2B00 ~ U+2BFF).
+		charset += ''.join([chr(ch) for ch in range(0x2B00, 0x2BFF + 1)])
+
+	if math_symbol:
+		# Unicode: Mathematical Operators (U+2200 ~ U+22FF).
+		charset += ''.join([chr(ch) for ch in range(0x2200, 0x22FF + 1)])
+		# Unicode: Miscellaneous Mathematical Symbols-A (U+27C0 ~ U+27EF).
+		charset += ''.join([chr(ch) for ch in range(0x27C0, 0x27EF + 1)])
+		# Unicode: Miscellaneous Mathematical Symbols-B (U+2980 ~ U+29FF).
+		charset += ''.join([chr(ch) for ch in range(0x2980, 0x29FF + 1)])
+		# Unicode: Supplemental Mathematical Operators (U+2A00 ~ U+2AFF).
+		charset += ''.join([chr(ch) for ch in range(0x2A00, 0x2AFF + 1)])
 
 	return charset
 
