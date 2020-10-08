@@ -110,7 +110,7 @@ def aihub_printed_text_data_loading_test():
 			assert img.shape[0] == img_height and img.shape[1] == img_width
 	print('End loading AI Hub dataset: {} secs.'.format(time.time() - start_time))
 
-# REF [function] >> visualize_data_with_length() in test_data_test.py.
+# REF [function] >> visualize_data_with_length() in text_data_test.py.
 def visualize_data_with_length(dataloader, label_converter, num_data=10):
 	data_iter = iter(dataloader)
 	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
@@ -123,7 +123,7 @@ def visualize_data_with_length(dataloader, label_converter, num_data=10):
 		if idx >= (num_data - 1): break
 	cv2.destroyAllWindows()
 
-# REF [class] >> ResizeImageToFixedSizeWithPadding in test_data_test.py.
+# REF [class] >> ResizeImageToFixedSizeWithPadding in text_data_test.py.
 class ResizeImageToFixedSizeWithPadding(object):
 	def __init__(self, height, width, is_pil=True):
 		self.height, self.width = height, width
@@ -175,12 +175,12 @@ class ResizeImageToFixedSizeWithPadding(object):
 		return input.resize((width, height), resample=interpolation)
 		"""
 
-# REF [class] >> ToIntTensor in test_data_test.py.
+# REF [class] >> ToIntTensor in text_data_test.py.
 class ToIntTensor(object):
 	def __call__(self, lst):
 		return torch.IntTensor(lst)
 
-# REF [class] >> MySubsetDataset in test_data_test.py.
+# REF [class] >> MySubsetDataset in text_data_test.py.
 class MySubsetDataset(torch.utils.data.Dataset):
 	def __init__(self, subset, transform=None, target_transform=None):
 		self.subset = subset
@@ -198,7 +198,7 @@ class MySubsetDataset(torch.utils.data.Dataset):
 	def __len__(self):
 		return len(self.subset)
 
-# REF [function] >> SimpleWordDataset_test() in test_data_test.py.
+# REF [function] >> SimpleWordDataset_test() in text_data_test.py.
 def AiHubPrintedTextDataset_test():
 	image_height, image_width, image_channel = 64, 640, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
@@ -216,12 +216,18 @@ def AiHubPrintedTextDataset_test():
 	max_label_len = 10
 	is_preloaded_image_used = False
 
-	charset = tg_util.construct_charset()
-
 	train_test_ratio = 0.8
 	batch_size = 64
 	shuffle = True
 	num_workers = 4
+
+	#--------------------
+	charset = tg_util.construct_charset(hangeul=True)
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
+	#print('Classes:\n{}.'.format(label_converter.tokens))
+	print('#classes = {}.'.format(label_converter.num_tokens))
+	print('<PAD> = {}. <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -244,8 +250,6 @@ def AiHubPrintedTextDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
 	dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used)
 
 	num_examples = len(dataset)
@@ -256,7 +260,6 @@ def AiHubPrintedTextDataset_test():
 	test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-	print('#classes = {}.'.format(label_converter.num_tokens))
 
 	#--------------------
 	print('Start creating data loaders...')

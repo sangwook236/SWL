@@ -409,9 +409,6 @@ def SimpleCharacterDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset = tg_util.construct_charset(space=False)
-	font_list = construct_font(korean=True, english=False)
-
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
@@ -419,6 +416,15 @@ def SimpleCharacterDataset_test():
 	batch_size = 64
 	shuffle = True
 	num_workers = 4
+
+	#--------------------
+	charset = tg_util.construct_charset(space=False, hangeul=True)
+	font_list = construct_font(korean=True, english=False)
+
+	label_converter = swl_langproc_util.TokenConverter(list(charset))
+	#print('Classes:\n{}.'.format(label_converter.tokens))
+	print('#classes = {}.'.format(label_converter.num_tokens))
+	print('<PAD> = {}. <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -442,8 +448,6 @@ def SimpleCharacterDataset_test():
 	])
 
 	#--------------------
-	label_converter = swl_langproc_util.TokenConverter(list(charset))
-
 	print('Start creating datasets...')
 	start_time = time.time()
 	chars = list(charset * num_train_examples_per_class)
@@ -454,7 +458,6 @@ def SimpleCharacterDataset_test():
 	test_dataset = text_data.SimpleCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-	print('#classes = {}.'.format(label_converter.num_tokens))
 
 	#--------------------
 	print('Start creating data loaders...')
@@ -489,9 +492,6 @@ def NoisyCharacterDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset = tg_util.construct_charset(space=False)
-	font_list = construct_font(korean=True, english=False)
-
 	num_train_examples_per_class, num_test_examples_per_class = 500, 50
 	font_size_interval = (10, 100)
 	char_clipping_ratio_interval = (0.8, 1.25)
@@ -500,6 +500,15 @@ def NoisyCharacterDataset_test():
 	batch_size = 64
 	shuffle = True
 	num_workers = 4
+
+	#--------------------
+	charset = tg_util.construct_charset(space=False, hangeul=True)
+	font_list = construct_font(korean=True, english=False)
+
+	label_converter = swl_langproc_util.TokenConverter(list(charset))
+	#print('Classes:\n{}.'.format(label_converter.tokens))
+	print('#classes = {}.'.format(label_converter.num_tokens))
+	print('<PAD> = {}. <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -523,8 +532,6 @@ def NoisyCharacterDataset_test():
 	])
 
 	#--------------------
-	label_converter = swl_langproc_util.TokenConverter(list(charset))
-
 	print('Start creating datasets...')
 	start_time = time.time()
 	chars = list(charset * num_train_examples_per_class)
@@ -535,7 +542,6 @@ def NoisyCharacterDataset_test():
 	test_dataset = text_data.NoisyCharacterDataset(label_converter, chars, image_channel, char_clipping_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-	print('#classes = {}.'.format(label_converter.num_tokens))
 
 	#--------------------
 	print('Start creating data loaders...')
@@ -570,8 +576,6 @@ def FileBasedCharacterDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset = tg_util.construct_charset(space=False)
-
 	train_test_ratio = 0.8
 	batch_size = 64
 	shuffle = True
@@ -581,6 +585,14 @@ def FileBasedCharacterDataset_test():
 		data_base_dir_path = '/home/sangwook/work/dataset'
 	else:
 		data_base_dir_path = 'D:/work/dataset'
+
+	#--------------------
+	charset = tg_util.construct_charset(space=False, hangeul=True)
+
+	label_converter = swl_langproc_util.TokenConverter(list(charset))
+	#print('Classes:\n{}.'.format(label_converter.tokens))
+	print('#classes = {}.'.format(label_converter.num_tokens))
+	print('<PAD> = {}. <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -604,8 +616,6 @@ def FileBasedCharacterDataset_test():
 	])
 
 	#--------------------
-	label_converter = swl_langproc_util.TokenConverter(list(charset))
-
 	print('Start creating datasets...')
 	start_time = time.time()
 	datasets = list()
@@ -645,7 +655,6 @@ def FileBasedCharacterDataset_test():
 	test_dataset = MySubsetDataset(test_subset, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-	print('#classes = {}.'.format(label_converter.num_tokens))
 
 	#--------------------
 	print('Start creating data loaders...')
@@ -680,9 +689,6 @@ def SimpleWordDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset, wordset = tg_util.construct_charset(space=False), tg_util.construct_word_set(korean=True, english=True)
-	font_list = construct_font(korean=True, english=False)
-
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	max_word_len = None  # Use max. word length.
 	font_size_interval = (10, 100)
@@ -691,6 +697,16 @@ def SimpleWordDataset_test():
 	batch_size = 64
 	shuffle = True
 	num_workers = 4
+
+	#--------------------
+	charset, wordset = tg_util.construct_charset(space=False, hangeul=True), tg_util.construct_word_set(korean=True, english=True)
+	font_list = construct_font(korean=True, english=False)
+
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
+	#print('Classes:\n{}.'.format(label_converter.tokens))
+	print('#classes = {}.'.format(label_converter.num_tokens))
+	print('<PAD> = {}. <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -716,16 +732,12 @@ def SimpleWordDataset_test():
 	test_target_transform = ToIntTensor()
 
 	#--------------------
-	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
-
 	print('Start creating datasets...')
 	start_time = time.time()
 	train_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_train_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
 	test_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_test_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-	print('#classes = {}.'.format(label_converter.num_tokens))
 
 	#--------------------
 	print('Start creating data loaders...')
@@ -762,9 +774,6 @@ def RandomWordDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset = tg_util.construct_charset(space=False)
-	font_list = construct_font(korean=True, english=False)
-
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	max_word_len = None  # Use max. word length.
 	word_len_interval = (1, 20)
@@ -774,6 +783,16 @@ def RandomWordDataset_test():
 	batch_size = 64
 	shuffle = True
 	num_workers = 4
+
+	#--------------------
+	charset = tg_util.construct_charset(space=False, hangeul=True)
+	font_list = construct_font(korean=True, english=False)
+
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
+	#print('Classes:\n{}.'.format(label_converter.tokens))
+	print('#classes = {}.'.format(label_converter.num_tokens))
+	print('<PAD> = {}. <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -799,9 +818,6 @@ def RandomWordDataset_test():
 	test_target_transform = ToIntTensor()
 
 	#--------------------
-	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
-
 	print('Start creating datasets...')
 	start_time = time.time()
 	chars = charset  # Can make the number of each character different.
@@ -809,7 +825,6 @@ def RandomWordDataset_test():
 	test_dataset = text_data.RandomWordDataset(label_converter, chars, num_test_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-	print('#classes = {}.'.format(label_converter.num_tokens))
 
 	#--------------------
 	print('Start creating data loaders...')
@@ -846,8 +861,6 @@ def FileBasedWordDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset = tg_util.construct_charset(space=False)
-
 	max_word_len = 30
 	train_test_ratio = 0.8
 	batch_size = 64
@@ -858,6 +871,15 @@ def FileBasedWordDataset_test():
 		data_base_dir_path = '/home/sangwook/work/dataset'
 	else:
 		data_base_dir_path = 'D:/work/dataset'
+
+	#--------------------
+	charset = tg_util.construct_charset(space=False, hangeul=True)
+
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
+	#print('Classes:\n{}.'.format(label_converter.tokens))
+	print('#classes = {}.'.format(label_converter.num_tokens))
+	print('<PAD> = {}. <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -883,9 +905,6 @@ def FileBasedWordDataset_test():
 	test_target_transform = ToIntTensor()
 
 	#--------------------
-	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
-
 	print('Start creating datasets...')
 	start_time = time.time()
 	datasets = list()
@@ -920,7 +939,6 @@ def FileBasedWordDataset_test():
 	test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-	print('#classes = {}.'.format(label_converter.num_tokens))
 
 	#--------------------
 	print('Start creating data loaders...')
@@ -957,9 +975,6 @@ def SimpleTextLineDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset, wordset = tg_util.construct_charset(), tg_util.construct_word_set(korean=True, english=True)
-	font_list = construct_font(korean=True, english=False)
-
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	max_textline_len = 80
 	word_count_interval = (1, 5)
@@ -971,6 +986,16 @@ def SimpleTextLineDataset_test():
 	batch_size = 64
 	shuffle = True
 	num_workers = 4
+
+	#--------------------
+	charset, wordset = tg_util.construct_charset(hangeul=True), tg_util.construct_word_set(korean=True, english=True)
+	font_list = construct_font(korean=True, english=False)
+
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
+	#print('Classes:\n{}.'.format(label_converter.tokens))
+	print('#classes = {}.'.format(label_converter.num_tokens))
+	print('<PAD> = {}. <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -996,16 +1021,12 @@ def SimpleTextLineDataset_test():
 	test_target_transform = ToIntTensor()
 
 	#--------------------
-	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
-
 	print('Start creating datasets...')
 	start_time = time.time()
 	train_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_train_examples, image_channel, max_textline_len, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, transform=train_transform, target_transform=train_target_transform)
 	test_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_test_examples, image_channel, max_textline_len, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-	print('#classes = {}.'.format(label_converter.num_tokens))
 
 	#--------------------
 	print('Start creating data loaders...')
@@ -1042,9 +1063,6 @@ def RandomTextLineDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset = tg_util.construct_charset()
-	font_list = construct_font(korean=True, english=False)
-
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
 	max_textline_len = 80
 	word_len_interval = (1, 20)
@@ -1057,6 +1075,16 @@ def RandomTextLineDataset_test():
 	batch_size = 64
 	shuffle = True
 	num_workers = 4
+
+	#--------------------
+	charset = tg_util.construct_charset(hangeul=True)
+	font_list = construct_font(korean=True, english=False)
+
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
+	#print('Classes:\n{}.'.format(label_converter.tokens))
+	print('#classes = {}.'.format(label_converter.num_tokens))
+	print('<PAD> = {}. <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -1082,9 +1110,6 @@ def RandomTextLineDataset_test():
 	test_target_transform = ToIntTensor()
 
 	#--------------------
-	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
-
 	print('Start creating datasets...')
 	start_time = time.time()
 	charset_without_space = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
@@ -1092,7 +1117,6 @@ def RandomTextLineDataset_test():
 	test_dataset = text_data.RandomTextLineDataset(label_converter, charset_without_space, num_test_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-	print('#classes = {}.'.format(label_converter.num_tokens))
 
 	#--------------------
 	print('Start creating data loaders...')
@@ -1128,8 +1152,6 @@ def TextRecognitionDataGeneratorTextLineDataset_test():
 	image_height, image_width, image_channel = 64, 1280, 3
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
-
-	charset = tg_util.construct_charset()
 
 	lang = 'en'  # {'ar', 'cn', 'de', 'en', 'es', 'fr', 'hi', 'kr'}.
 	num_train_examples, num_test_examples = int(1e6), int(1e4)
@@ -1172,6 +1194,15 @@ def TextRecognitionDataGeneratorTextLineDataset_test():
 	num_workers = 4
 
 	#--------------------
+	charset = tg_util.construct_charset(hangeul=True)
+
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
+	#print('Classes:\n{}.'.format(label_converter.tokens))
+	print('#classes = {}.'.format(label_converter.num_tokens))
+	print('<PAD> = {}. <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
+
+	#--------------------
 	train_transform = torchvision.transforms.Compose([
 		RandomAugment(create_text_line_augmenter()),
 		RandomInvert(),
@@ -1195,16 +1226,12 @@ def TextRecognitionDataGeneratorTextLineDataset_test():
 	test_target_transform = ToIntTensor()
 
 	#--------------------
-	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
-
 	print('Start creating datasets...')
 	start_time = time.time()
 	train_dataset = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs)
 	test_dataset = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-	print('#classes = {}.'.format(label_converter.num_tokens))
 
 	#--------------------
 	print('Start creating data loaders...')
@@ -1241,8 +1268,6 @@ def FileBasedTextLineDataset_test():
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	charset = tg_util.construct_charset()
-
 	max_textline_len = 60
 	train_test_ratio = 0.8
 	batch_size = 64
@@ -1253,6 +1278,15 @@ def FileBasedTextLineDataset_test():
 		data_base_dir_path = '/home/sangwook/work/dataset'
 	else:
 		data_base_dir_path = 'D:/work/dataset'
+
+	#--------------------
+	charset = tg_util.construct_charset(hangeul=True)
+
+	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
+	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
+	#print('Classes:\n{}.'.format(label_converter.tokens))
+	print('#classes = {}.'.format(label_converter.num_tokens))
+	print('<PAD> = {}. <UNK> = {}.'.format(label_converter.pad_id, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -1278,9 +1312,6 @@ def FileBasedTextLineDataset_test():
 	test_target_transform = ToIntTensor()
 
 	#--------------------
-	label_converter = swl_langproc_util.TokenConverter(list(charset), pad=None)
-	#label_converter = swl_langproc_util.TokenConverter(list(charset), sos='<SOS>', eos='<EOS>', pad=None)
-
 	print('Start creating datasets...')
 	start_time = time.time()
 	datasets = list()
@@ -1313,7 +1344,6 @@ def FileBasedTextLineDataset_test():
 	test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
-	print('#classes = {}.'.format(label_converter.num_tokens))
 
 	#--------------------
 	print('Start creating data loaders...')

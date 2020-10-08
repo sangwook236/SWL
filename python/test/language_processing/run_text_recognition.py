@@ -923,25 +923,19 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 		}
 
 		train_datasets, test_datasets = list(), list()
-		if True:
-			lang = 'en'  # {'ar', 'cn', 'de', 'en', 'es', 'fr', 'hi'}.
-			#font_filepaths = trdg.utils.load_fonts(lang)
-			font_filepaths = list()
+		langs = ['kr', 'en']  # {'kr', 'ar', 'cn', 'de', 'en', 'es', 'fr', 'hi'}.
+		for lang in langs:
+			if lang == 'kr':
+				font_types = ['kor-large']  # {'kor-small', 'kor-large', 'kor-receipt'}.
+				font_filepaths = construct_font(font_types)
+				font_filepaths, _ = zip(*font_filepaths)
+			else:
+				#font_filepaths = trdg.utils.load_fonts(lang)
+				font_filepaths = list()
 
 			for is_randomly_generated in [False, True]:
-				for distorsion_type, divisor in zip((1, 2, 3), (16, 16, 8)):
-					generator_kwargs['distorsion_type'] = distorsion_type
-					train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
-				test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
-		if True:
-			lang = 'kr'
-			font_types = ['kor-large']  # {'kor-small', 'kor-large', 'kor-receipt'}.
-			font_filepaths = construct_font(font_types)
-			font_filepaths, _ = zip(*font_filepaths)
-
-			for is_randomly_generated in [False, True]:
-				for distorsion_type, divisor in zip((1, 2, 3), (16, 16, 8)):
-					generator_kwargs['distorsion_type'] = distorsion_type
+				for distortion_type, divisor in zip((1, 2, 3), (16, 16, 8)):
+					generator_kwargs['distorsion_type'] = distortion_type
 					train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
 				test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 		train_dataset = torch.utils.data.ConcatDataset(train_datasets)
@@ -1083,25 +1077,19 @@ def create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_e
 
 		num_train_examples = int(num_trdg_examples * train_test_ratio)
 		num_test_examples = num_trdg_examples - num_train_examples
-		if True:
-			lang = 'en'  # {'ar', 'cn', 'de', 'en', 'es', 'fr', 'hi'}.
-			#font_filepaths = trdg.utils.load_fonts(lang)
-			font_filepaths = list()
+		langs = ['kr', 'en']  # {'kr', 'ar', 'cn', 'de', 'en', 'es', 'fr', 'hi'}.
+		for lang in langs:
+			if lang == 'kr':
+				font_types = ['kor-large']  # {'kor-small', 'kor-large', 'kor-receipt'}.
+				font_filepaths = construct_font(font_types)
+				font_filepaths, _ = zip(*font_filepaths)
+			else:
+				#font_filepaths = trdg.utils.load_fonts(lang)
+				font_filepaths = list()
 
 			for is_randomly_generated in [False, True]:
-				for distorsion_type, divisor in zip((1, 2, 3), (16, 16, 8)):
-					generator_kwargs['distorsion_type'] = distorsion_type
-					train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
-				test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
-		if True:
-			lang = 'kr'
-			font_types = ['kor-large']  # {'kor-small', 'kor-large', 'kor-receipt'}.
-			font_filepaths = construct_font(font_types)
-			font_filepaths, _ = zip(*font_filepaths)
-
-			for is_randomly_generated in [False, True]:
-				for distorsion_type, divisor in zip((1, 2, 3), (16, 16, 8)):
-					generator_kwargs['distorsion_type'] = distorsion_type
+				for distortion_type, divisor in zip((1, 2, 3), (16, 16, 8)):
+					generator_kwargs['distorsion_type'] = distortion_type
 					train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
 				test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 	if True:
@@ -4119,7 +4107,7 @@ def main():
 
 	lang = args.font_type[:3]
 	if lang == 'kor':
-		charset = tg_util.construct_charset()
+		charset = tg_util.construct_charset(hangeul=True)
 	elif lang == 'eng':
 		charset = tg_util.construct_charset(hangeul=False)
 	else:

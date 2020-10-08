@@ -57,8 +57,8 @@ def n_gram_language_model_with_prefix_tree_test():
 	words = '\n'.join(words)
 
 	# #classes = #chars + blank label.
-	chars = tg_util.construct_charset(space=False)
-	wordChars = tg_util.construct_charset(digit=False, punctuation=False, space=False)
+	chars = tg_util.construct_charset(space=False, hangeul=True)
+	wordChars = tg_util.construct_charset(digit=False, punctuation=False, space=False, hangeul=True)
 	#chars += "£§àâèéê⊥"
 	#wordChars += "'§àâèéê"
 	wordChars += "'"
