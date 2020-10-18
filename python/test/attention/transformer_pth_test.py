@@ -4,15 +4,185 @@
 import math, copy, time
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.autograd import Variable
-from torchtext import data, datasets
+import torchtext
 import matplotlib.pyplot as plt
+
+class TransformerModel(torch.nn.Module):
+	def __init__(self, num_tokens, d_model, num_heads, dim_feedforward, num_layers, dropout=0.5):
+		super(TransformerModel, self).__init__()
+		self.model_type = 'Transformer'
+		self.src_mask = None
+		self.d_model = d_model
+
+		self.pos_encoder = PositionalEncoding1(d_model, dropout)
+		encoder_layers = torch.nn.TransformerEncoderLayer(d_model, num_heads, dim_feedforward, dropout)
+		self.transformer_encoder = torch.nn.TransformerEncoder(encoder_layers, num_layers)
+		self.encoder = torch.nn.Embedding(num_tokens, d_model)
+		self.decoder = torch.nn.Linear(d_model, num_tokens)
+
+		self.init_weights()
+
+	def forward(self, src):
+		if self.src_mask is None or self.src_mask.size(0) != src.size(0):
+			device = src.device
+			mask = self._generate_square_subsequent_mask(src.size(0)).to(device)
+			self.src_mask = mask
+
+		src = self.encoder(src) * math.sqrt(self.d_model)
+		src = self.pos_encoder(src)
+		output = self.transformer_encoder(src, self.src_mask)
+		output = self.decoder(output)
+		return output
+
+	def init_weights(self):
+		init_range = 0.1
+		self.encoder.weight.data.uniform_(-init_range, init_range)
+		self.decoder.bias.data.zero_()
+		self.decoder.weight.data.uniform_(-init_range, init_range)
+
+	def _generate_square_subsequent_mask(self, sz):
+		mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
+		mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
+		return mask
+
+class PositionalEncoding1(torch.nn.Module):
+	def __init__(self, d_model, dropout=0.1, max_len=5000):
+		super(PositionalEncoding1, self).__init__()
+		self.dropout = torch.nn.Dropout(p=dropout)
+
+		pe = torch.zeros(max_len, d_model)
+		position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+		div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+		pe[:, 0::2] = torch.sin(position * div_term)
+		pe[:, 1::2] = torch.cos(position * div_term)
+		pe = pe.unsqueeze(0).transpose(0, 1)
+		self.register_buffer('pe', pe)
+
+	def forward(self, x):
+		x = x + self.pe[:x.size(0), :]
+		return self.dropout(x)
+
+# REF [site] >> https://pytorch.org/tutorials/beginner/transformer_tutorial.html
+def transformer_tutorial():
+	TEXT = torchtext.data.Field(
+		tokenize=torchtext.data.utils.get_tokenizer('basic_english'),
+		init_token='<sos>', eos_token='<eos>',
+		lower=True
+	)
+	train_txt, val_txt, test_txt = torchtext.datasets.WikiText2.splits(TEXT)
+	TEXT.build_vocab(train_txt)
+
+	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+	def batchify(data, bsz):
+		data = TEXT.numericalize([data.examples[0].text])
+		# Divide the dataset into bsz parts.
+		nbatch = data.size(0) // bsz
+		# Trim off any extra elements that wouldn't cleanly fit (remainders).
+		data = data.narrow(0, 0, nbatch * bsz)
+		# Evenly divide the data across the bsz batches.
+		data = data.view(bsz, -1).t().contiguous()
+		return data.to(device)
+
+	batch_size = 20
+	eval_batch_size = 10
+	train_data = batchify(train_txt, batch_size)
+	val_data = batchify(val_txt, eval_batch_size)
+	test_data = batchify(test_txt, eval_batch_size)
+
+	# Generate input and target sequence.
+	bptt = 35
+	def get_batch(source, i):
+		seq_len = min(bptt, len(source) - 1 - i)
+		data = source[i:i + seq_len]
+		target = source[i + 1:i + 1 + seq_len].view(-1)
+		return data, target
+
+	# Initiate an instance.
+	num_tokens = len(TEXT.vocab.stoi)  # The size of vocabulary.
+	d_model = 200  # Embedding dimension.
+	dim_feedforward = 200  # The dimension of the feed-forward network model in torch.nn.TransformerEncoder.
+	num_layers = 2  # The number of torch.nn.TransformerEncoderLayer in torch.nn.TransformerEncoder.
+	num_heads = 2  # The number of heads in the multi-head attention models.
+	dropout = 0.2  # The dropout value.
+	model = TransformerModel(num_tokens, d_model, num_heads, dim_feedforward, num_layers, dropout).to(device)
+
+	# Run the model.
+	criterion = torch.nn.CrossEntropyLoss()
+	lr = 5.0  # Learning rate.
+	optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+	scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.95)
+
+	def train():
+		model.train()  # Turn on the train mode.
+		total_loss = 0.0
+		start_time = time.time()
+		num_tokens = len(TEXT.vocab.stoi)
+		for batch, i in enumerate(range(0, train_data.size(0) - 1, bptt)):
+			data, targets = get_batch(train_data, i)
+			optimizer.zero_grad()
+			output = model(data)
+			loss = criterion(output.view(-1, num_tokens), targets)
+			loss.backward()
+			torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
+			optimizer.step()
+
+			total_loss += loss.item()
+			log_interval = 200
+			if batch % log_interval == 0 and batch > 0:
+				cur_loss = total_loss / log_interval
+				elapsed = time.time() - start_time
+				print('| epoch {:3d} | {:5d}/{:5d} batches | '
+					'lr {:02.2f} | ms/batch {:5.2f} | '
+					'loss {:5.2f} | ppl {:8.2f}'.format(
+						epoch, batch, len(train_data) // bptt, scheduler.get_lr()[0],
+						elapsed * 1000 / log_interval,
+						cur_loss, math.exp(cur_loss)
+					)
+				)
+				total_loss = 0
+				start_time = time.time()
+
+	def evaluate(eval_model, data_source):
+		eval_model.eval()  # Turn on the evaluation mode.
+		total_loss = 0.0
+		num_tokens = len(TEXT.vocab.stoi)
+		with torch.no_grad():
+			for i in range(0, data_source.size(0) - 1, bptt):
+				data, targets = get_batch(data_source, i)
+				output = eval_model(data)
+				output_flat = output.view(-1, num_tokens)
+				total_loss += len(data) * criterion(output_flat, targets).item()
+		return total_loss / (len(data_source) - 1)
+
+	best_val_loss = float('inf')
+	epochs = 3  # The number of epochs.
+	best_model = None
+
+	for epoch in range(1, epochs + 1):
+		epoch_start_time = time.time()
+		train()
+		val_loss = evaluate(model, val_data)
+		print('-' * 89)
+		print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
+			'valid ppl {:8.2f}'.format(
+				epoch, (time.time() - epoch_start_time),
+				val_loss, math.exp(val_loss)
+			)
+		)
+		print('-' * 89)
+
+		if val_loss < best_val_loss:
+			best_val_loss = val_loss
+			best_model = model
+
+		scheduler.step()
+
+#--------------------------------------------------------------------
 
 def clones(module, N):
 	"Produce N identical layers."
-	return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
+	return torch.nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
 
 def subsequent_mask(size):
 	"Mask out subsequent positions."
@@ -26,18 +196,18 @@ def attention(query, key, value, mask=None, dropout=None):
 	scores = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(d_k)
 	if mask is not None:
 		scores = scores.masked_fill(mask == 0, -1e9)
-	p_attn = F.softmax(scores, dim = -1)
+	p_attn = torch.nn.functional.softmax(scores, dim = -1)
 	if dropout is not None:
 		p_attn = dropout(p_attn)
 	return torch.matmul(p_attn, value), p_attn
 
-class LayerNorm(nn.Module):
+class LayerNorm(torch.nn.Module):
 	"Construct a layernorm module (See citation for details)."
 
 	def __init__(self, features, eps=1e-6):
 		super(LayerNorm, self).__init__()
-		self.a_2 = nn.Parameter(torch.ones(features))
-		self.b_2 = nn.Parameter(torch.zeros(features))
+		self.a_2 = torch.nn.Parameter(torch.ones(features))
+		self.b_2 = torch.nn.Parameter(torch.zeros(features))
 		self.eps = eps
 
 	def forward(self, x):
@@ -45,7 +215,7 @@ class LayerNorm(nn.Module):
 		std = x.std(-1, keepdim=True)
 		return self.a_2 * (x - mean) / (std + self.eps) + self.b_2
 
-class EncoderDecoder(nn.Module):
+class EncoderDecoder(torch.nn.Module):
 	"""
 	A standard Encoder-Decoder architecture. Base for this and many
 	other models.
@@ -69,17 +239,17 @@ class EncoderDecoder(nn.Module):
 	def decode(self, memory, src_mask, tgt, tgt_mask):
 		return self.decoder(self.tgt_embed(tgt), memory, src_mask, tgt_mask)
 
-class Generator(nn.Module):
+class Generator(torch.nn.Module):
 	"Define standard linear + softmax generation step."
 
 	def __init__(self, d_model, vocab):
 		super(Generator, self).__init__()
-		self.proj = nn.Linear(d_model, vocab)
+		self.proj = torch.nn.Linear(d_model, vocab)
 
 	def forward(self, x):
-		return F.log_softmax(self.proj(x), dim=-1)
+		return torch.nn.functional.log_softmax(self.proj(x), dim=-1)
 
-class SublayerConnection(nn.Module):
+class SublayerConnection(torch.nn.Module):
 	"""
 	A residual connection followed by a layer norm.
 	Note for code simplicity the norm is first as opposed to last.
@@ -88,13 +258,13 @@ class SublayerConnection(nn.Module):
 	def __init__(self, size, dropout):
 		super(SublayerConnection, self).__init__()
 		self.norm = LayerNorm(size)
-		self.dropout = nn.Dropout(dropout)
+		self.dropout = torch.nn.Dropout(dropout)
 
 	def forward(self, x, sublayer):
 		"Apply residual connection to any sublayer with the same size."
 		return x + self.dropout(sublayer(self.norm(x)))
 
-class EncoderLayer(nn.Module):
+class EncoderLayer(torch.nn.Module):
 	"Encoder is made up of self-attn and feed forward (defined below)"
 
 	def __init__(self, size, self_attn, feed_forward, dropout):
@@ -109,7 +279,7 @@ class EncoderLayer(nn.Module):
 		x = self.sublayer[0](x, lambda x: self.self_attn(x, x, x, mask))
 		return self.sublayer[1](x, self.feed_forward)
 
-class DecoderLayer(nn.Module):
+class DecoderLayer(torch.nn.Module):
 	"Decoder is made of self-attn, src-attn, and feed forward (defined below)"
 
 	def __init__(self, size, self_attn, src_attn, feed_forward, dropout):
@@ -127,7 +297,7 @@ class DecoderLayer(nn.Module):
 		x = self.sublayer[1](x, lambda x: self.src_attn(x, m, m, src_mask))
 		return self.sublayer[2](x, self.feed_forward)
 
-class Encoder(nn.Module):
+class Encoder(torch.nn.Module):
 	"Core encoder is a stack of N layers"
 
 	def __init__(self, layer, N):
@@ -141,7 +311,7 @@ class Encoder(nn.Module):
 			x = layer(x, mask)
 		return self.norm(x)
 
-class Decoder(nn.Module):
+class Decoder(torch.nn.Module):
 	"Generic N layer decoder with masking."
 
 	def __init__(self, layer, N):
@@ -154,7 +324,7 @@ class Decoder(nn.Module):
 			x = layer(x, memory, src_mask, tgt_mask)
 		return self.norm(x)
 
-class MultiHeadedAttention(nn.Module):
+class MultiHeadedAttention(torch.nn.Module):
 	def __init__(self, h, d_model, dropout=0.1):
 		"Take in model size and number of heads."
 		super(MultiHeadedAttention, self).__init__()
@@ -162,9 +332,9 @@ class MultiHeadedAttention(nn.Module):
 		# We assume d_v always equals d_k.
 		self.d_k = d_model // h
 		self.h = h
-		self.linears = clones(nn.Linear(d_model, d_model), 4)
+		self.linears = clones(torch.nn.Linear(d_model, d_model), 4)
 		self.attn = None
-		self.dropout = nn.Dropout(p=dropout)
+		self.dropout = torch.nn.Dropout(p=dropout)
 
 	def forward(self, query, key, value, mask=None):
 		"Implements Figure 2"
@@ -184,33 +354,33 @@ class MultiHeadedAttention(nn.Module):
 		x = x.transpose(1, 2).contiguous().view(nbatches, -1, self.h * self.d_k)
 		return self.linears[-1](x)
 
-class PositionwiseFeedForward(nn.Module):
+class PositionwiseFeedForward(torch.nn.Module):
 	"Implements FFN equation."
 
 	def __init__(self, d_model, d_ff, dropout=0.1):
 		super(PositionwiseFeedForward, self).__init__()
-		self.w_1 = nn.Linear(d_model, d_ff)
-		self.w_2 = nn.Linear(d_ff, d_model)
-		self.dropout = nn.Dropout(dropout)
+		self.w_1 = torch.nn.Linear(d_model, d_ff)
+		self.w_2 = torch.nn.Linear(d_ff, d_model)
+		self.dropout = torch.nn.Dropout(dropout)
 
 	def forward(self, x):
-		return self.w_2(self.dropout(F.relu(self.w_1(x))))
+		return self.w_2(self.dropout(torch.nn.functional.relu(self.w_1(x))))
 
-class Embeddings(nn.Module):
+class Embeddings(torch.nn.Module):
 	def __init__(self, d_model, vocab):
 		super(Embeddings, self).__init__()
-		self.lut = nn.Embedding(vocab, d_model)
+		self.lut = torch.nn.Embedding(vocab, d_model)
 		self.d_model = d_model
 
 	def forward(self, x):
 		return self.lut(x) * math.sqrt(self.d_model)
 
-class PositionalEncoding(nn.Module):
+class PositionalEncoding2(torch.nn.Module):
 	"Implement the PE function."
 
 	def __init__(self, d_model, dropout, max_len=5000):
-		super(PositionalEncoding, self).__init__()
-		self.dropout = nn.Dropout(p=dropout)
+		super(PositionalEncoding2, self).__init__()
+		self.dropout = torch.nn.Dropout(p=dropout)
 
 		# Compute the positional encodings once in log space.
 		pe = torch.zeros(max_len, d_model)
@@ -222,7 +392,7 @@ class PositionalEncoding(nn.Module):
 		self.register_buffer('pe', pe)
 
 	def forward(self, x):
-		x = x + Variable(self.pe[:, :x.size(1)], requires_grad=False)
+		x = x + torch.autograd.Variable(self.pe[:, :x.size(1)], requires_grad=False)
 		return self.dropout(x)
 
 def make_model(src_vocab, tgt_vocab, N=6, d_model=512, d_ff=2048, h=8, dropout=0.1):
@@ -230,19 +400,19 @@ def make_model(src_vocab, tgt_vocab, N=6, d_model=512, d_ff=2048, h=8, dropout=0
 	c = copy.deepcopy
 	attn = MultiHeadedAttention(h, d_model)
 	ff = PositionwiseFeedForward(d_model, d_ff, dropout)
-	position = PositionalEncoding(d_model, dropout)
+	position = PositionalEncoding2(d_model, dropout)
 	model = EncoderDecoder(
 		Encoder(EncoderLayer(d_model, c(attn), c(ff), dropout), N),
 		Decoder(DecoderLayer(d_model, c(attn), c(attn), c(ff), dropout), N),
-		nn.Sequential(Embeddings(d_model, src_vocab), c(position)),
-		nn.Sequential(Embeddings(d_model, tgt_vocab), c(position)),
+		torch.nn.Sequential(Embeddings(d_model, src_vocab), c(position)),
+		torch.nn.Sequential(Embeddings(d_model, tgt_vocab), c(position)),
 		Generator(d_model, tgt_vocab))
 
 	# This was important from their code.
 	# Initialize parameters with Glorot / fan_avg.
 	for p in model.parameters():
 		if p.dim() > 1:
-			nn.init.xavier_uniform_(p)
+			torch.nn.init.xavier_uniform_(p)
 	return model
 
 class Batch:
@@ -261,7 +431,7 @@ class Batch:
 	def make_std_mask(tgt, pad):
 		"Create a mask to hide padding and future words."
 		tgt_mask = (tgt != pad).unsqueeze(-2)
-		tgt_mask = tgt_mask & Variable(subsequent_mask(tgt.size(-1)).type_as(tgt_mask.data))
+		tgt_mask = tgt_mask & torch.autograd.Variable(subsequent_mask(tgt.size(-1)).type_as(tgt_mask.data))
 		return tgt_mask
 
 def run_epoch(data_iter, model, loss_compute):
@@ -325,12 +495,12 @@ class NoamOpt:
 def get_std_opt(model):
 	return NoamOpt(model.src_embed[0].d_model, 2, 4000, torch.optim.Adam(model.parameters(), lr=0, betas=(0.9, 0.98), eps=1e-9))
 
-class LabelSmoothing(nn.Module):
+class LabelSmoothing(torch.nn.Module):
 	"Implement label smoothing."
 
 	def __init__(self, size, padding_idx, smoothing=0.0):
 		super(LabelSmoothing, self).__init__()
-		self.criterion = nn.KLDivLoss(size_average=False)
+		self.criterion = torch.nn.KLDivLoss(size_average=False)
 		self.padding_idx = padding_idx
 		self.confidence = 1.0 - smoothing
 		self.smoothing = smoothing
@@ -347,7 +517,7 @@ class LabelSmoothing(nn.Module):
 		if mask.dim() > 0:
 			true_dist.index_fill_(0, mask.squeeze(), 0.0)
 		self.true_dist = true_dist
-		return self.criterion(x, Variable(true_dist, requires_grad=False))
+		return self.criterion(x, torch.autograd.Variable(true_dist, requires_grad=False))
 
 def subsequent_mask_test():
 	mask = subsequent_mask(20)
@@ -359,9 +529,9 @@ def subsequent_mask_test():
 def positional_encoding_test():
 	d_model, num_terms = 20, 50
 	#d_model, num_terms = 128, 50
-	pe = PositionalEncoding(d_model, dropout=0)
+	pe = PositionalEncoding2(d_model, dropout=0)
 
-	x = Variable(torch.zeros(1, num_terms, d_model))
+	x = torch.autograd.Variable(torch.zeros(1, num_terms, d_model))
 	y = pe.forward(x)
 	print('x =', x.shape)
 	print('y =', y.shape)
@@ -384,9 +554,11 @@ def make_model_test():
 
 def noam_opt_test():
 	# Three settings of the lrate hyperparameters.
-	opts = [NoamOpt(512, 1, 4000, None),
+	opts = [
+		NoamOpt(512, 1, 4000, None),
 		NoamOpt(512, 1, 8000, None),
-		NoamOpt(256, 1, 4000, None)]
+		NoamOpt(256, 1, 4000, None)
+	]
 
 	plt.plot(np.arange(1, 20000), [[opt.rate(i) for opt in opts] for i in range(1, 20000)])
 	plt.legend(['512:4000', '512:8000', '256:4000'])
@@ -395,10 +567,12 @@ def noam_opt_test():
 def label_smoothing_test():
 	# Example of label smoothing.
 	crit = LabelSmoothing(5, 0, 0.4)
-	predict = torch.FloatTensor([[0, 0.2, 0.7, 0.1, 0],
+	predict = torch.FloatTensor(
+		[[0, 0.2, 0.7, 0.1, 0],
 		[0, 0.2, 0.7, 0.1, 0],
-		[0, 0.2, 0.7, 0.1, 0]])
-	v = crit(Variable(predict.log()), Variable(torch.LongTensor([2, 1, 0])))
+		[0, 0.2, 0.7, 0.1, 0]]
+	)
+	v = crit(torch.autograd.Variable(predict.log()), torch.autograd.Variable(torch.LongTensor([2, 1, 0])))
 
 	# Show the target distributions expected by the system.
 	plt.imshow(crit.true_dist)
@@ -410,7 +584,7 @@ def loss_test():
 		d = x + 3 * 1
 		predict = torch.FloatTensor([[0, x / d, 1 / d, 1 / d, 1 / d],])
 		#print(predict)
-		return crit(Variable(predict.log()), Variable(torch.LongTensor([1]))).data.item()
+		return crit(torch.autograd.Variable(predict.log()), torch.autograd.Variable(torch.LongTensor([1]))).data.item()
 
 	plt.plot(np.arange(1, 100), [loss(x) for x in range(1, 100)])
 	plt.show()
@@ -420,8 +594,8 @@ def data_gen(V, batch, nbatches):
 	for i in range(nbatches):
 		data = torch.from_numpy(np.random.randint(1, V, size=(batch, 10)))
 		data[:, 0] = 1
-		src = Variable(data, requires_grad=False)
-		tgt = Variable(data, requires_grad=False)
+		src = torch.autograd.Variable(data, requires_grad=False)
+		tgt = torch.autograd.Variable(data, requires_grad=False)
 		yield Batch(src, tgt, 0)
 
 class SimpleLossCompute:
@@ -445,7 +619,7 @@ def greedy_decode(model, src, src_mask, max_len, start_symbol):
 	memory = model.encode(src, src_mask)
 	ys = torch.ones(1, 1).fill_(start_symbol).type_as(src.data)
 	for i in range(max_len-1):
-		out = model.decode(memory, src_mask, Variable(ys), Variable(subsequent_mask(ys.size(1)).type_as(src.data)))
+		out = model.decode(memory, src_mask, torch.autograd.Variable(ys), torch.autograd.Variable(subsequent_mask(ys.size(1)).type_as(src.data)))
 		prob = model.generator(out[:, -1])
 		_, next_word = torch.max(prob, dim = 1)
 		next_word = next_word.data[0]
@@ -469,22 +643,22 @@ def first_toy_example():
 
 	#--------------------
 	model.eval()
-	src = Variable(torch.LongTensor([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]))
-	src_mask = Variable(torch.ones(1, 1, 10))
+	src = torch.autograd.Variable(torch.LongTensor([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]))
+	src_mask = torch.autograd.Variable(torch.ones(1, 1, 10))
 	print(greedy_decode(model, src, src_mask, max_len=10, start_symbol=1))
 
-class MyIterator(data.Iterator):
+class MyIterator(torchtext.data.Iterator):
 	def create_batches(self):
 		if self.train:
 			def pool(d, random_shuffler):
-				for p in data.batch(d, self.batch_size * 100):
-					p_batch = data.batch(sorted(p, key=self.sort_key), self.batch_size, self.batch_size_fn)
+				for p in torchtext.data.batch(d, self.batch_size * 100):
+					p_batch = torchtext.data.batch(sorted(p, key=self.sort_key), self.batch_size, self.batch_size_fn)
 					for b in random_shuffler(list(p_batch)):
 						yield b
 			self.batches = pool(self.data(), self.random_shuffler)
 		else:
 			self.batches = []
-			for b in data.batch(self.data(), self.batch_size, self.batch_size_fn):
+			for b in torchtext.data.batch(self.data(), self.batch_size, self.batch_size_fn):
 				self.batches.append(sorted(b, key=self.sort_key))
 
 def rebatch(pad_idx, batch):
@@ -498,31 +672,31 @@ class MultiGPULossCompute:
 	def __init__(self, generator, criterion, devices, opt=None, chunk_size=5):
 		# Send out to different gpus.
 		self.generator = generator
-		self.criterion = nn.parallel.replicate(criterion, devices=devices)
+		self.criterion = torch.nn.parallel.replicate(criterion, devices=devices)
 		self.opt = opt
 		self.devices = devices
 		self.chunk_size = chunk_size
 
 	def __call__(self, out, targets, normalize):
 		total = 0.0
-		generator = nn.parallel.replicate(self.generator, devices=self.devices)
-		out_scatter = nn.parallel.scatter(out, target_gpus=self.devices)
+		generator = torch.nn.parallel.replicate(self.generator, devices=self.devices)
+		out_scatter = torch.nn.parallel.scatter(out, target_gpus=self.devices)
 		out_grad = [[] for _ in out_scatter]
-		targets = nn.parallel.scatter(targets, target_gpus=self.devices)
+		targets = torch.nn.parallel.scatter(targets, target_gpus=self.devices)
 
 		# Divide generating into chunks.
 		chunk_size = self.chunk_size
 		for i in range(0, out_scatter[0].size(1), chunk_size):
 			# Predict distributions.
-			out_column = [[Variable(o[:, i:i+chunk_size].data, requires_grad=self.opt is not None)] for o in out_scatter]
-			gen = nn.parallel.parallel_apply(generator, out_column)
+			out_column = [[torch.autograd.Variable(o[:, i:i+chunk_size].data, requires_grad=self.opt is not None)] for o in out_scatter]
+			gen = torch.nn.parallel.parallel_apply(generator, out_column)
 
 			# Compute loss.
 			y = [(g.contiguous().view(-1, g.size(-1)), t[:, i:i+chunk_size].contiguous().view(-1)) for g, t in zip(gen, targets)]
-			loss = nn.parallel.parallel_apply(self.criterion, y)
+			loss = torch.nn.parallel.parallel_apply(self.criterion, y)
 
 			# Sum and normalize loss.
-			l = nn.parallel.gather(loss, target_device=self.devices[0])
+			l = torch.nn.parallel.gather(loss, target_device=self.devices[0])
 			l = l.sum()[0] / normalize
 			total += l.data[0]
 
@@ -534,9 +708,9 @@ class MultiGPULossCompute:
 
 		# Backprop all loss through transformer.
 		if self.opt is not None:
-			out_grad = [Variable(torch.cat(og, dim=1)) for og in out_grad]
+			out_grad = [torch.autograd.Variable(torch.cat(og, dim=1)) for og in out_grad]
 			o1 = out
-			o2 = nn.parallel.gather(out_grad, target_device=self.devices[0])
+			o2 = torch.nn.parallel.gather(out_grad, target_device=self.devices[0])
 			o1.backward(gradient=o2)
 			self.opt.step()
 			self.opt.optimizer.zero_grad()
@@ -547,7 +721,7 @@ class MultiGPULossCompute:
 def average(model, models):
 	"Average models into model"
 	for ps in zip(*[m.params() for m in [model] + models]):
-		p[0].copy_(torch.sum(*ps[1:]) / len(ps[1:]))
+		ps[0].copy_(torch.sum(*ps[1:]) / len(ps[1:]))
 
 # REF [site] >> http://nlp.seas.harvard.edu/2018/04/03/attention.html
 #	"The Annotated Transformer - Attention Is All You Need".
@@ -568,11 +742,11 @@ def real_world_example():
 		BOS_WORD = '<s>'
 		EOS_WORD = '</s>'
 		BLANK_WORD = '<blank>'
-		SRC = data.Field(tokenize=tokenize_de, pad_token=BLANK_WORD)
-		TGT = data.Field(tokenize=tokenize_en, init_token = BOS_WORD, eos_token = EOS_WORD, pad_token=BLANK_WORD)
+		SRC = torchtext.data.Field(tokenize=tokenize_de, pad_token=BLANK_WORD)
+		TGT = torchtext.data.Field(tokenize=tokenize_en, init_token = BOS_WORD, eos_token = EOS_WORD, pad_token=BLANK_WORD)
 
 		MAX_LEN = 100
-		train, val, test = datasets.IWSLT.splits(
+		train, val, test = torchtext.datasets.IWSLT.splits(
 			exts=('.de', '.en'), fields=(SRC, TGT),
 			filter_pred=lambda x: len(vars(x)['src']) <= MAX_LEN and len(vars(x)['trg']) <= MAX_LEN)
 		MIN_FREQ = 2
@@ -595,7 +769,7 @@ def real_world_example():
 		valid_iter = MyIterator(val, batch_size=BATCH_SIZE, device=0,
 			repeat=False, sort_key=lambda x: (len(x.src), len(x.trg)),
 			batch_size_fn=batch_size_fn, train=False)
-		model_par = nn.DataParallel(model, device_ids=devices)
+		model_par = torch.nn.DataParallel(model, device_ids=devices)
 
 	# Train the model.
 	if False:
@@ -656,7 +830,7 @@ def OpenNMT_example():
 	model.eval()
 	sent = '▁The ▁log ▁file ▁can ▁be ▁sent ▁secret ly ▁with ▁email ▁or ▁FTP ▁to ▁a ▁specified ▁receiver'.split()
 	src = torch.LongTensor([[SRC.stoi[w] for w in sent]])
-	src = Variable(src)
+	src = torch.autograd.Variable(src)
 	src_mask = (src != SRC.stoi['<blank>']).unsqueeze(-2)
 	out = greedy_decode(model, src, src_mask, max_len=60, start_symbol=TGT.stoi['<s>'])
 	print('Translation:', end='\t')
@@ -702,6 +876,17 @@ def OpenNMT_example():
 		plt.show()
 
 def main():
+	# Use only encoders.
+	#	Refer to "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding", arXiv 2019.
+	transformer_tutorial()
+
+	# Use only decoders.
+	#	Refer to "Improving Language Understanding by Generative Pre-Training", 2018 (GPT).
+
+	# Use both encoders and decoders.
+	#	Refer to "Attention Is All You Need", NIPS 2017 (Transformer).
+
+	#--------------------
 	#subsequent_mask_test()
 	#positional_encoding_test()
 	#make_model_test()
@@ -710,7 +895,7 @@ def main():
 	#loss_test()
 
 	#first_toy_example()
-	real_world_example()
+	#real_world_example()
 
 	# TODO [fix] >> KeyError: 'unk_index'
 	#	https://forum.opennmt.net/t/issue-loading-pretrained-models-for-machine-translation/2982/5
