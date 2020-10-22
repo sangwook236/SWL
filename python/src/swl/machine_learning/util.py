@@ -592,19 +592,6 @@ def print_log(print_string, log):
 	log.flush()
 """
 
-def adjust_learning_rate(optimizer, epoch, initial_learning_rate, gammas, schedule):
-	"""Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
-	lr = initial_learning_rate
-	assert len(gammas) == len(schedule), 'Length of gammas and schedule should be equal.'
-	for (gamma, step) in zip(gammas, schedule):
-		if (epoch >= step):
-			lr = lr * gamma
-		else:
-			break
-	for param_group in optimizer.param_groups:
-		param_group['lr'] = lr
-	return lr
-
 def plotting(exp_dir, log_file):
 	# Load the training log dictionary:
 	train_dict = pickle.load(open(log_file, 'rb'))

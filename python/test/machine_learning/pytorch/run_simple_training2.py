@@ -332,10 +332,12 @@ class MyRunner(object):
 #--------------------------------------------------------------------
 
 # REF [site] >> https://github.com/pytorch/pytorch/blob/master/torch/optim/lr_scheduler.py
-class MyLRScheduler(object):
+class MyLR(object):
 	def __init__(self, optimizer, initial_learning_rate, last_epoch=-1):
 		self.optimizer = optimizer
 		self.initial_learning_rate = initial_learning_rate
+		self.last_epoch = last_epoch
+		self.learning_rate = self.initial_learning_rate
 
 		"""
 		# Initialize epoch and base learning rates.
@@ -348,13 +350,10 @@ class MyLRScheduler(object):
 					raise KeyError("param 'initial_lr' is not specified in param_groups[{}] when resuming an optimizer".format(i))
 		self.base_lrs = list(map(lambda group: group['initial_lr'], optimizer.param_groups))
 		"""
-		self.last_epoch = last_epoch
 
 		#self.gammas, self.schedule = None, None
 		self.gammas = [0.1, 0.1, 0.1, 0.1]  # LR is multiplied by gamma on schedule.
 		self.schedule = [20, 30, 40, 50]  # Decrease learning rate at these epochs.
-
-		self.learning_rate = self.initial_learning_rate
 
 	def get_lr(self):
 		return self.learning_rate
@@ -365,7 +364,20 @@ class MyLRScheduler(object):
 		else:
 			self.last_epoch = epoch
 		if self.gammas and self.schedule:
-			self.learning_rate = swl_ml_util.adjust_learning_rate(self.optimizer, self.last_epoch, self.initial_learning_rate, self.gammas, self.schedule)
+			self.learning_rate = self.adjust_learning_rate(self.optimizer, self.last_epoch, self.initial_learning_rate, self.gammas, self.schedule)
+
+	@staticmethod
+	def _adjust_learning_rate(optimizer, epoch, initial_learning_rate, gammas, schedule):
+		lr = initial_learning_rate
+		assert len(gammas) == len(schedule), 'Length of gammas and schedule should be equal.'
+		for (gamma, step) in zip(gammas, schedule):
+			if (epoch >= step):
+				lr = lr * gamma
+			else:
+				break
+		for param_group in optimizer.param_groups:
+			param_group['lr'] = lr
+		return lr
 
 #--------------------------------------------------------------------
 
@@ -594,7 +606,7 @@ def main():
 			criterion = torch.nn.CrossEntropyLoss().to(device)
 			optimizer = torch.optim.SGD(model_params, lr=initial_learning_rate, momentum=momentum, weight_decay=weight_decay, nesterov=True)
 			#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
-			scheduler = MyLRScheduler(optimizer, initial_learning_rate)
+			scheduler = MyLR(optimizer, initial_learning_rate)
 
 			# Train a model.
 			best_model_filepath, history = runner.train(model, criterion, optimizer, scheduler, train_dataloader, test_dataloader, model_checkpoint_filepath, output_dir_path, initial_epoch, final_epoch, logger, device=device)

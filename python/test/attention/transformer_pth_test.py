@@ -55,7 +55,7 @@ class PositionalEncoding1(torch.nn.Module):
 		div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
 		pe[:, 0::2] = torch.sin(position * div_term)
 		pe[:, 1::2] = torch.cos(position * div_term)
-		pe = pe.unsqueeze(0).transpose(0, 1)
+		pe = pe.unsqueeze(0).transpose(0, 1)  # [time-steps, batch size (= 1), PE].
 		self.register_buffer('pe', pe)
 
 	def forward(self, x):
@@ -94,7 +94,7 @@ def transformer_tutorial():
 	bptt = 35
 	def get_batch(source, i):
 		seq_len = min(bptt, len(source) - 1 - i)
-		data = source[i:i + seq_len]
+		data = source[i:i + seq_len]  # [time steps, batch size]
 		target = source[i + 1:i + 1 + seq_len].view(-1)
 		return data, target
 
