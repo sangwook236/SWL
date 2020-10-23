@@ -149,7 +149,7 @@ class MyRunner(object):
 		for epoch in range(initial_epoch, final_epoch):
 			if logger: logger.info('Epoch {}/{}:'.format(epoch + 1, final_epoch))
 
-			current_learning_rate = scheduler.get_lr() if scheduler else 0.0
+			current_learning_rate = scheduler.get_last_lr() if scheduler else 0.0
 			need_hour, need_mins, need_secs = swl_ml_util.convert_secs2time(epoch_time.avg * (final_epoch - epoch))
 			need_time = '[Need: {:02d}:{:02d}:{:02d}]'.format(need_hour, need_mins, need_secs)
 			if logger: logger.info('==>>{:s} [Epoch={:03d}/{:03d}] {:s} [learning_rate={}]'.format(swl_ml_util.time_string(), epoch + 1, final_epoch, need_time, current_learning_rate) \
@@ -373,8 +373,11 @@ class MyLR(object):
 		self.gammas = [0.1, 0.1, 0.1, 0.1]  # LR is multiplied by gamma on schedule.
 		self.schedule = [20, 30, 40, 50]  # Decrease learning rate at these epochs.
 
-	def get_lr(self):
+	def get_last_lr(self):
 		return self.learning_rate
+
+	def get_lr(self):
+		return self.get_last_lr()
 
 	def step(self, epoch=None):
 		if epoch is None:

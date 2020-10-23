@@ -240,6 +240,7 @@ def create_textline_augmenter():
 
 def create_ocrodeg_augmenter():
 	import ocrodeg
+	raise NotImplementedError
 
 def generate_font_colors(image_depth):
 	#random_val = random.randrange(1, 255)
@@ -262,6 +263,73 @@ def generate_font_colors(image_depth):
 	#bg_color = (random.randrange(128),) * image_depth  # A dark grayscale background color.
 	#bg_color = (random.randrange(128, 256),) * image_depth  # A light grayscale background color.
 	return font_color, bg_color
+
+# Noam learning rate decay policy.
+#	Batch-step-based, but not epoch-based, learning rate decay policy.
+#	REF [paper] >> "Attention Is All You Need", NIPS 2017.
+class NoamLR(object):
+	def __init__(self, optimizer, dim_feature, warmup_steps, factor=1, last_step=0):
+		self.optimizer = optimizer
+		self.dim_feature = dim_feature
+		self.warmup_steps = warmup_steps
+		self.factor = factor
+		self.last_step = last_step
+		self.learning_rate = 0
+
+		"""
+		# Initialize step and base learning rates.
+		if last_step == -1:
+			for group in optimizer.param_groups:
+				group.setdefault('initial_lr', group['lr'])
+		else:
+			for i, group in enumerate(optimizer.param_groups):
+				if 'initial_lr' not in group:
+					raise KeyError("param 'initial_lr' is not specified in param_groups[{}] when resuming an optimizer".format(i))
+		self.base_lrs = list(map(lambda group: group['initial_lr'], optimizer.param_groups))
+		"""
+
+	def get_last_lr(self):
+		return self.learning_rate
+
+	def get_lr(self):
+		return self.get_last_lr()
+
+	def step(self, step=None):
+		if step is None:
+			self.last_step += 1
+		else:
+			self.last_step = step
+		self.learning_rate = self._adjust_learning_rate(self.optimizer, self.last_step, self.warmup_steps, self.dim_feature, self.factor)
+
+	@staticmethod
+	def _adjust_learning_rate(optimizer, step, warmup_steps, dim_feature, factor):
+		lr = factor * (dim_feature**(-0.5) * min(step**(-0.5), step * warmup_steps**(-1.5)))
+		for param_group in optimizer.param_groups:
+			param_group['lr'] = lr
+
+# Label smoothing.
+class LabelSmoothingLoss(torch.nn.Module):
+	def __init__(self, num_labels, pad_id=0, smoothing=0.0):
+		super().__init__()
+		self.criterion = torch.nn.KLDivLoss(size_average=False)
+		self.num_labels = num_labels
+		self.pad_id = pad_id
+		self.smoothing = smoothing
+		self.confidence = 1.0 - smoothing
+		#self.true_dist = None
+		
+	def forward(self, inputs, targets):
+		assert inputs.size(1) == self.num_labels
+		#true_dist = inputs.data.clone()
+		#true_dist.fill_(self.smoothing / (self.num_labels - 2))
+		true_dist = torch.full_like(inputs, self.smoothing / (self.num_labels - 2))
+		true_dist.scatter_(1, targets.unsqueeze(dim=1), self.confidence)
+		true_dist[:, self.pad_id] = 0
+		mask = torch.nonzero(targets == self.pad_id)
+		if mask.dim() > 0:
+			true_dist.index_fill_(0, mask.squeeze(), 0.0)
+		#self.true_dist = true_dist
+		return self.criterion(inputs, torch.autograd.Variable(true_dist, requires_grad=False))
 
 class RandomAugment(object):
 	def __init__(self, augmenter, is_pil=True):
@@ -903,8 +971,7 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 			'skewing_angle': 0, 'random_skew': False,  # In degrees counter clockwise.
 			#'blur': 0, 'random_blur': False,  # Blur radius.
 			'blur': 2, 'random_blur': True,  # Blur radius.
-			#'distorsion_type': 0, 'distorsion_orientation': 0,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
-			'distorsion_type': 0, 'distorsion_orientation': 2,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+			'distorsion_type': 0, 'distorsion_orientation': 0,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
 			#'distorsion_type': 3, 'distorsion_orientation': 2,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
 			'background_type': 0,  # background_type = 0 (Gaussian noise), 1 (plain white), 2 (quasicrystal), 3 (image).
 			'width': -1,  # Specify a background width when width > 0.
@@ -936,7 +1003,10 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 			for is_randomly_generated in [False, True]:
 				for distortion_type, divisor in zip((1, 2, 3), (16, 16, 8)):
 					generator_kwargs['distorsion_type'] = distortion_type
+					generator_kwargs['distorsion_orientation'] = random.randrange(3)
 					train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+				generator_kwargs['distorsion_type'] = 0
+				generator_kwargs['distorsion_orientation'] = 0
 				test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 		train_dataset = torch.utils.data.ConcatDataset(train_datasets)
 		test_dataset = torch.utils.data.ConcatDataset(test_datasets)
@@ -1056,8 +1126,7 @@ def create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_e
 			'skewing_angle': 0, 'random_skew': False,  # In degrees counter clockwise.
 			#'blur': 0, 'random_blur': False,  # Blur radius.
 			'blur': 2, 'random_blur': True,  # Blur radius.
-			#'distorsion_type': 0, 'distorsion_orientation': 0,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
-			'distorsion_type': 0, 'distorsion_orientation': 2,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+			'distorsion_type': 0, 'distorsion_orientation': 0,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
 			#'distorsion_type': 3, 'distorsion_orientation': 2,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
 			'background_type': 0,  # background_type = 0 (Gaussian noise), 1 (plain white), 2 (quasicrystal), 3 (image).
 			'width': -1,  # Specify a background width when width > 0.
@@ -1090,7 +1159,10 @@ def create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_e
 			for is_randomly_generated in [False, True]:
 				for distortion_type, divisor in zip((1, 2, 3), (16, 16, 8)):
 					generator_kwargs['distorsion_type'] = distortion_type
+					generator_kwargs['distorsion_orientation'] = random.randrange(3)
 					train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+				generator_kwargs['distorsion_type'] = 0
+				generator_kwargs['distorsion_orientation'] = 0
 				test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 	if True:
 		# AI-Hub printed text dataset.
@@ -1299,10 +1371,10 @@ def build_char_model(label_converter, image_channel, loss_type):
 			import rare.model_char
 			self.model = rare.model_char.create_model(model_name, input_channel, output_channel, num_classes)
 
-		def forward(self, x):
+		def forward(self, x, *args, **kwargs):
 			return self.model(x)
 
-		def train_forward(self, criterion, inputs, outputs, device):
+		def train_forward(self, criterion, inputs, outputs, device='cuda'):
 			inputs, outputs = inputs.to(device), outputs.to(device)
 
 			model_outputs = self.model(inputs)
@@ -1335,10 +1407,10 @@ def build_char_mixup_model(label_converter, image_channel, loss_type):
 			import rare.model_char
 			self.model = rare.model_char.create_mixup_model(model_name, input_channel, output_channel, num_classes)
 
-		def forward(self, x, target=None, mixup_input=False, mixup_hidden=False, mixup_alpha=None, cutout=False, cutout_size=None, device=None):
+		def forward(self, x, target=None, mixup_input=False, mixup_hidden=False, mixup_alpha=None, cutout=False, cutout_size=None, device=None, *args, **kwargs):
 			return self.model(x, target, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, device)
 
-		def train_forward(self, criterion, inputs, outputs, device):
+		def train_forward(self, criterion, inputs, outputs, device='cuda'):
 			inputs, outputs = inputs.to(device), outputs.to(device)
 
 			model_outputs, outputs = self.model(inputs, outputs, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, device)
@@ -1386,13 +1458,10 @@ def build_rare1_model(image_height, image_width, image_channel, max_time_steps, 
 			import rare.model
 			self.model = rare.model.Model(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_time_steps, sos_id, pad_id, transformer, feature_extractor, sequence_model, decoder)
 
-		def forward(self, src, tgt=None, is_train=False, device='cuda'):
-			return self.model(src, tgt, is_train, device)
-
-		def train_forward(self, criterion, inputs, outputs, output_lens, device):
+		def forward(self, inputs, outputs=None, is_train=False, device='cuda', *args, **kwargs):
 			raise NotImplementedError
 
-		def infer(self, inputs, outputs=None, output_lens=None, device='cuda'):
+		def train_forward(self, criterion, inputs, outputs, output_lens, device='cuda'):
 			raise NotImplementedError
 
 	if not loss_type and loss_type == 'ctc':
@@ -1400,7 +1469,11 @@ def build_rare1_model(image_height, image_width, image_channel, max_time_steps, 
 			def __init__(self, image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_time_steps, sos_id, pad_id, transformer, feature_extractor, sequence_model, decoder):
 				super().__init__(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_time_steps, sos_id, pad_id, transformer, feature_extractor, sequence_model, decoder)
 
-			def train_forward(self, criterion, inputs, outputs, output_lens, device):
+			def forward(self, inputs, outputs=None, is_train=False, device='cuda', *args, **kwargs):
+				# TODO [check] >> Not yet tested.
+				return self.model(inputs, outputs, is_train, device)
+
+			def train_forward(self, criterion, inputs, outputs, output_lens, device='cuda'):
 				model_outputs = self.model(inputs.to(device), None, is_train=True, device=device).log_softmax(2)
 
 				N, T = model_outputs.shape[:2]
@@ -1420,7 +1493,16 @@ def build_rare1_model(image_height, image_width, image_channel, max_time_steps, 
 			def __init__(self, image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_time_steps, sos_id, pad_id, transformer, feature_extractor, sequence_model, decoder):
 				super().__init__(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_time_steps, sos_id, pad_id, transformer, feature_extractor, sequence_model, decoder)
 
-			def train_forward(self, criterion, inputs, outputs, output_lens, device):
+			def forward(self, inputs, outputs=None, is_train=False, device='cuda', *args, **kwargs):
+				model_outputs = self.model(inputs, None, is_train=False, device=device)
+
+				model_outputs = torch.argmax(model_outputs, dim=-1)
+				if outputs is None:
+					return model_outputs
+				else:
+					return model_outputs, outputs
+
+			def train_forward(self, criterion, inputs, outputs, output_lens, device='cuda'):
 				outputs = outputs.long()
 
 				# Construct inputs for one-step look-ahead.
@@ -1447,15 +1529,6 @@ def build_rare1_model(image_height, image_width, image_channel, max_time_steps, 
 					concat_model_outputs.append(mo[:dl])
 					concat_decoder_outputs.append(do[:dl])
 				return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device)), model_outputs
-
-			def infer(self, inputs, outputs=None, output_lens=None, device='cuda'):
-				model_outputs = self.model(inputs.to(device), None, is_train=False, device=device)
-
-				model_outputs = torch.argmax(model_outputs, dim=-1)
-				if outputs is None or output_lens is None:
-					return model_outputs.cpu(), None
-				else:
-					return model_outputs.cpu(), outputs
 
 		model = MySimpleModel(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_time_steps, sos_id, pad_id, transformer, feature_extractor, sequence_model, decoder)
 
@@ -1503,13 +1576,10 @@ def build_rare1_mixup_model(image_height, image_width, image_channel, max_time_s
 			import rare.model
 			self.model = rare.model.Model_MixUp(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_time_steps, sos_id, pad_id, transformer, feature_extractor, sequence_model, decoder)
 
-		def forward(self, src, tgt=None, is_train=False, device='cuda'):
-			return self.model(src, tgt, is_train, device)
-
-		def train_forward(self, criterion, inputs, outputs, output_lens, device):
+		def forward(self, inputs, outputs=None, is_train=False, device='cuda', *args, **kwargs):
 			raise NotImplementedError
 
-		def infer(self, inputs, outputs=None, output_lens=None, device='cuda'):
+		def train_forward(self, criterion, inputs, outputs, output_lens, device='cuda'):
 			raise NotImplementedError
 
 	if not loss_type and loss_type == 'ctc':
@@ -1517,7 +1587,11 @@ def build_rare1_mixup_model(image_height, image_width, image_channel, max_time_s
 			def __init__(self, image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_time_steps, sos_id, pad_id, transformer, feature_extractor, sequence_model, decoder):
 				super().__init__(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_time_steps, sos_id, pad_id, transformer, feature_extractor, sequence_model, decoder)
 
-			def train_forward(self, criterion, inputs, outputs, output_lens, device):
+			def forward(self, inputs, outputs=None, is_train=False, device='cuda', *args, **kwargs):
+				# TODO [check] >> Not yet tested.
+				return self.model(inputs, outputs, is_train, device)
+
+			def train_forward(self, criterion, inputs, outputs, output_lens, device='cuda'):
 				model_outputs = self.model(inputs.to(device), None, mixup_input, mixup_hidden, mixup_alpha, cutout, cutout_size, is_train=True, device=device).log_softmax(2)
 
 				N, T = model_outputs.shape[:2]
@@ -1537,7 +1611,16 @@ def build_rare1_mixup_model(image_height, image_width, image_channel, max_time_s
 			def __init__(self, image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_time_steps, sos_id, pad_id, transformer, feature_extractor, sequence_model, decoder):
 				super().__init__(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_time_steps, sos_id, pad_id, transformer, feature_extractor, sequence_model, decoder)
 
-			def train_forward(self, criterion, inputs, outputs, output_lens, device):
+			def forward(self, inputs, outputs=None, is_train=False, device='cuda', *args, **kwargs):
+				model_outputs = self.model(inputs, None, is_train=False, device=device)
+
+				model_outputs = torch.argmax(model_outputs, dim=-1)
+				if outputs is None:
+					return model_outputs, None
+				else:
+					return model_outputs, outputs
+
+			def train_forward(self, criterion, inputs, outputs, output_lens, device='cuda'):
 				outputs = outputs.long()
 
 				# Construct inputs for one-step look-ahead.
@@ -1564,15 +1647,6 @@ def build_rare1_mixup_model(image_height, image_width, image_channel, max_time_s
 					concat_model_outputs.append(mo[:dl])
 					concat_decoder_outputs.append(do[:dl])
 				return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device)), model_outputs
-
-			def infer(self, inputs, outputs=None, output_lens=None, device='cuda'):
-				model_outputs = self.model(inputs.to(device), None, is_train=False, device=device)
-
-				model_outputs = torch.argmax(model_outputs, dim=-1)
-				if outputs is None or output_lens is None:
-					return model_outputs.cpu(), None
-				else:
-					return model_outputs.cpu(), outputs
 
 		model = MySimpleModel(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_time_steps, sos_id, pad_id, transformer, feature_extractor, sequence_model, decoder)
 
@@ -1605,10 +1679,34 @@ def build_rare2_model(image_height, image_width, image_channel, max_time_steps, 
 			import rare.crnn_lang
 			self.model = rare.crnn_lang.CRNN(imgH=image_height, nc=image_channel, nclass=num_classes, nh=hidden_size, n_rnn=num_rnns, num_embeddings=embedding_size, leakyRelu=use_leaky_relu, max_time_steps=max_time_steps, sos_id=sos_id)
 
-		def forward(self, inputs, outputs=None, output_lens=None, device='cuda'):
-			return self.model(inputs, outputs, output_lens, device)
+		def forward(self, inputs, outputs=None, output_lens=None, device='cuda', *args, **kwargs):
+			#model_outputs = self.model(inputs, decoder_inputs, decoder_input_lens, device=device)
+			model_outputs = self.model(inputs, None, None, device=device)
 
-		def train_forward(self, criterion, inputs, outputs, output_lens, device):
+			model_outputs = torch.argmax(model_outputs, dim=-1)
+
+			if outputs is None or output_lens is None:
+				return model_outputs
+			else:
+				# Construct inputs for one-step look-ahead.
+				#decoder_inputs = outputs[:,:-1]
+				#decoder_input_lens = output_lens - 1
+				# Construct outputs for one-step look-ahead.
+				decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
+				#decoder_output_lens = output_lens - 1
+
+				"""
+				separated_model_outputs = np.zeros(decoder_outputs.shape, model_outputs.dtype)
+				start_idx = 0
+				for idx, dl in enumerate(decoder_output_lens):
+					end_idx = start_idx + dl
+					separated_model_outputs[idx,:dl] = model_outputs[start_idx:end_idx]
+					start_idx = end_idx
+				return separated_model_outputs, decoder_outputs
+				"""
+				return model_outputs, decoder_outputs
+
+		def train_forward(self, criterion, inputs, outputs, output_lens, device='cuda'):
 			outputs = outputs.long()
 
 			# Construct inputs for one-step look-ahead.
@@ -1642,33 +1740,6 @@ def build_rare2_model(image_height, image_width, image_channel, max_time_steps, 
 				concat_model_outputs.append(mo[:dl])
 				concat_decoder_outputs.append(do[:dl])
 			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device)), model_outputs
-
-		def infer(self, inputs, outputs=None, output_lens=None, device='cuda'):
-			#model_outputs = self.model(inputs.to(device), decoder_inputs.to(device), decoder_input_lens.to(device), device=device)
-			model_outputs = self.model(inputs.to(device), None, None, device=device)
-
-			model_outputs = torch.argmax(model_outputs, dim=-1)
-
-			if outputs is None or output_lens is None:
-				return model_outputs.cpu(), None
-			else:
-				# Construct inputs for one-step look-ahead.
-				#decoder_inputs = outputs[:,:-1]
-				#decoder_input_lens = output_lens - 1
-				# Construct outputs for one-step look-ahead.
-				decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
-				decoder_output_lens = output_lens - 1
-
-				"""
-				separated_model_outputs = np.zeros(decoder_outputs.shape, model_outputs.dtype)
-				start_idx = 0
-				for idx, dl in enumerate(decoder_output_lens):
-					end_idx = start_idx + dl
-					separated_model_outputs[idx,:dl] = model_outputs[start_idx:end_idx]
-					start_idx = end_idx
-				return separated_model_outputs.cpu(), decoder_outputs
-				"""
-				return model_outputs.cpu(), decoder_outputs
 
 	model = MySimpleModel(image_height, image_channel, num_classes, max_time_steps, hidden_size, num_rnns, embedding_size, use_leaky_relu, sos_id)
 
@@ -1709,10 +1780,42 @@ def build_aster_model(image_height, image_width, image_channel, max_time_steps, 
 				STN_ON=sys_args.STN_ON
 			)
 
-		def forward(self, input_dict, device='cuda'):
-			return self.model(input_dict, device)
+		def forward(self, inputs, outputs=None, output_lens=None, device='cuda', *args, **kwargs):
+			if outputs is None or output_lens is None:
+				input_dict =  {
+					'images': inputs,
+					'rec_targets': None,
+					'rec_lengths': None
+				}
 
-		def train_forward(self, criterion, inputs, outputs, output_lens, device):
+				model_output_dict = self.model(input_dict, device=device)
+
+				model_outputs = model_output_dict['output']['pred_rec']  # [batch size, max label len].
+				#model_output_scores = model_output_dict['output']['pred_rec_score']  # [batch size, max label len].
+
+				return model_outputs
+			else:
+				# Construct outputs for one-step look-ahead.
+				decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
+				decoder_output_lens = output_lens - 1
+
+				input_dict = {
+					'images': inputs,
+					'rec_targets': decoder_outputs,
+					'rec_lengths': decoder_output_lens
+				}
+
+				model_output_dict = self.model(input_dict, device=device)
+
+				#loss = model_output_dict['losses']['loss_rec']
+				model_outputs = model_output_dict['output']['pred_rec']  # [batch size, max label len].
+				#model_output_scores = model_output_dict['output']['pred_rec_score']  # [batch size, max label len].
+
+				# TODO [check] >>
+				#return model_outputs, outputs
+				return model_outputs, decoder_outputs
+
+		def train_forward(self, criterion, inputs, outputs, output_lens, device='cuda'):
 			"""
 			# Construct inputs for one-step look-ahead.
 			if eos_id != pad_id:
@@ -1724,49 +1827,17 @@ def build_aster_model(image_height, image_width, image_channel, max_time_steps, 
 			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
 			decoder_output_lens = output_lens - 1
 
-			input_dict = dict()
-			input_dict['images'] = inputs.to(device)
-			input_dict['rec_targets'] = decoder_outputs.to(device)
-			input_dict['rec_lengths'] = decoder_output_lens.to(device)
+			input_dict = {
+				'images': inputs.to(device),
+				'rec_targets': decoder_outputs.to(device),
+				'rec_lengths': decoder_output_lens.to(device)
+			}
 
 			model_output_dict = self.model(input_dict, device=device)
 
 			loss = model_output_dict['losses']['loss_rec']  # aster.sequence_cross_entropy_loss.SequenceCrossEntropyLoss.
 			model_outputs = model_output_dict['output']['pred_rec']  # [batch size, max label len].
 			return loss, model_outputs
-
-		def infer(self, inputs, outputs=None, output_lens=None, device='cuda'):
-			if outputs is None or output_lens is None:
-				input_dict = dict()
-				input_dict['images'] = inputs.to(device)
-				input_dict['rec_targets'] = None
-				input_dict['rec_lengths'] = None
-
-				model_output_dict = self.model(input_dict, device=device)
-
-				model_outputs = model_output_dict['output']['pred_rec']  # [batch size, max label len].
-				#model_output_scores = model_output_dict['output']['pred_rec_score']  # [batch size, max label len].
-
-				return model_outputs.cpu(), None
-			else:
-				# Construct outputs for one-step look-ahead.
-				decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
-				decoder_output_lens = output_lens - 1
-
-				input_dict = dict()
-				input_dict['images'] = inputs.to(device)
-				input_dict['rec_targets'] = decoder_outputs.to(device)
-				input_dict['rec_lengths'] = decoder_output_lens.to(device)
-
-				model_output_dict = self.model(input_dict, device=device)
-
-				#loss = model_output_dict['losses']['loss_rec']
-				model_outputs = model_output_dict['output']['pred_rec']  # [batch size, max label len].
-				#model_output_scores = model_output_dict['output']['pred_rec_score']  # [batch size, max label len].
-
-				# TODO [check] >>
-				#return model_outputs.cpu(), outputs
-				return model_outputs.cpu(), decoder_outputs
 
 	model = MySimpleModel(image_height, image_channel, num_classes, max_time_steps, hidden_size, eos_id, sys_args)
 
@@ -1937,16 +2008,42 @@ def build_opennmt_model(image_height, image_width, image_channel, max_time_steps
 			self.model.add_module('generator', generator)
 
 		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
-		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
-			# TODO [check] >> Which is correct?
-			return self.model(src, tgt, lengths, bptt, with_align)
-			"""
-			model_output_tuple = self.model(src, tgt, lengths)
-			model_output_tuple[0] = self.model.generator(model_output_tuple[0])
-			return model_output_tuple
-			"""
+		def forward(self, inputs, outputs=None, output_lens=None, bptt=False, with_align=False, *args, **kwargs):
+			if outputs is None or output_lens is None:
+				batch_size = len(inputs)
 
-		def train_forward(self, criterion, inputs, outputs, output_lens, device):
+				if is_beam_search_used:
+					decode_strategy = opennmt_util.create_beam_search_strategy(batch_size, scorer, beam_size, n_best, ratio, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
+				else:
+					decode_strategy = opennmt_util.create_greedy_search_strategy(batch_size, random_sampling_topk, random_sampling_temp, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
+
+				model_output_dict = opennmt_util.translate_batch_with_strategy(self.model, decode_strategy, inputs, batch_size, beam_size, tgt_unk, tgt_vocab, src_vocabs=[])
+
+				model_outputs = model_output_dict['predictions']
+				#scores = model_output_dict['scores']
+				#attentions = model_output_dict['attention']
+				#alignment = model_output_dict['alignment']
+
+				rank_id = 0  # rank_id < n_best.
+				#max_time_steps = functools.reduce(lambda x, y: x if x >= len(y[rank_id]) else len(y[rank_id]), model_outputs, 0)
+				new_model_outputs = torch.full((len(model_outputs), max_time_steps), tgt_pad, dtype=torch.int)
+				for idx, moutp in enumerate(model_outputs):
+					new_model_outputs[idx,:len(moutp[rank_id])] = moutp[rank_id]
+
+				return new_model_outputs
+			else:
+				decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
+				outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T] -> [T, B, 1]. No one-hot encoding.
+
+				model_output_tuple = self.model(inputs, outputs, output_lens)
+
+				model_outputs = self.model.generator(model_output_tuple[0]).transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes].
+				#attentions = model_output_tuple[1]['std']
+
+				model_outputs = torch.argmax(model_outputs, dim=-1)
+				return model_outputs, decoder_outputs
+
+		def train_forward(self, criterion, inputs, outputs, output_lens, device='cuda'):
 			outputs = outputs.long()
 
 			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
@@ -1969,40 +2066,6 @@ def build_opennmt_model(image_height, image_width, image_channel, max_time_steps
 				concat_decoder_outputs.append(do[:dl])
 			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device)), model_outputs
 
-		def infer(self, inputs, outputs=None, output_lens=None, device='cuda'):
-			if outputs is None or output_lens is None:
-				batch_size = len(inputs)
-
-				if is_beam_search_used:
-					decode_strategy = opennmt_util.create_beam_search_strategy(batch_size, scorer, beam_size, n_best, ratio, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
-				else:
-					decode_strategy = opennmt_util.create_greedy_search_strategy(batch_size, random_sampling_topk, random_sampling_temp, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
-
-				model_output_dict = opennmt_util.translate_batch_with_strategy(self.model, decode_strategy, inputs.to(device), batch_size, beam_size, tgt_unk, tgt_vocab, src_vocabs=[])
-
-				model_outputs = model_output_dict['predictions']
-				#scores = model_output_dict['scores']
-				#attentions = model_output_dict['attention']
-				#alignment = model_output_dict['alignment']
-
-				rank_id = 0  # rank_id < n_best.
-				#max_time_steps = functools.reduce(lambda x, y: x if x >= len(y[rank_id]) else len(y[rank_id]), model_outputs, 0)
-				new_model_outputs = torch.full((len(model_outputs), max_time_steps), tgt_pad, dtype=torch.int)
-				for idx, moutp in enumerate(model_outputs):
-					new_model_outputs[idx,:len(moutp[rank_id])] = moutp[rank_id]
-
-				return new_model_outputs.cpu(), None
-			else:
-				decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
-				outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T] -> [T, B, 1]. No one-hot encoding.
-
-				model_output_tuple = self.model(inputs.to(device), outputs.to(device), output_lens.to(device))
-
-				model_outputs = self.model.generator(model_output_tuple[0]).transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes].
-				#attentions = model_output_tuple[1]['std']
-
-				model_outputs = torch.argmax(model_outputs, dim=-1)
-				return model_outputs.cpu(), decoder_outputs
 
 	model = MySimpleModel(encoder, decoder, generator)
 
@@ -2089,23 +2152,42 @@ def build_rare1_and_opennmt_model(image_height, image_width, image_channel, max_
 			self.encoder = opennmt_util.Rare1ImageEncoder(image_height, image_width, input_channel, output_channel, hidden_size=encoder_rnn_size, num_layers=num_encoder_layers, bidirectional=bidirectional_encoder, transformer=transformer, feature_extractor=feature_extractor, sequence_model=sequence_model, num_fiducials=num_fiducials)
 			self.decoder, self.generator = build_decoder_and_generator_for_opennmt(num_classes, word_vec_size, hidden_size=decoder_hidden_size, num_layers=num_decoder_layers, bidirectional_encoder=bidirectional_encoder)
 
-		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
-		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
-			enc_hiddens, enc_outputs, lengths = self.encoder(src, lengths=lengths, device=device)
+		def forward(self, inputs, outputs=None, output_lens=None, *args, **kwargs):
+			if outputs is None or output_lens is None:
+				batch_size = len(inputs)
 
-			if tgt is None or lengths is None:
-				raise NotImplementedError
+				if is_beam_search_used:
+					decode_strategy = opennmt_util.create_beam_search_strategy(batch_size, scorer, beam_size, n_best, ratio, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
+				else:
+					decode_strategy = opennmt_util.create_greedy_search_strategy(batch_size, random_sampling_topk, random_sampling_temp, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
+
+				model_output_dict = opennmt_util.translate_batch_with_strategy(self, decode_strategy, inputs, batch_size, beam_size, tgt_unk, tgt_vocab, src_vocabs=[])
+
+				model_outputs = model_output_dict['predictions']
+				#scores = model_output_dict['scores']
+				#attentions = model_output_dict['attention']
+				#alignment = model_output_dict['alignment']
+
+				rank_id = 0  # rank_id < n_best.
+				#max_time_steps = functools.reduce(lambda x, y: x if x >= len(y[rank_id]) else len(y[rank_id]), model_outputs, 0)
+				new_model_outputs = torch.full((len(model_outputs), max_time_steps), tgt_pad, dtype=torch.int)
+				for idx, moutp in enumerate(model_outputs):
+					new_model_outputs[idx,:len(moutp[rank_id])] = moutp[rank_id]
+
+				return new_model_outputs
 			else:
-				dec_in = tgt[:-1]  # Exclude last target from inputs.
+				decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
+				outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T] -> [T, B, 1]. No one-hot encoding.
 
-				# TODO [check] >> Is it proper to use enc_outputs & enc_hiddens?
-				if bptt is False:
-					self.decoder.init_state(src, enc_outputs, enc_hiddens)
-				dec_outs, attns = self.decoder(dec_in, enc_outputs, memory_lengths=lengths, with_align=with_align)
-				outs = self.generator(dec_outs)
-				return outs, attns
+				model_output_tuple = self._onmt_forward(inputs, outputs, output_lens)
 
-		def train_forward(self, criterion, inputs, outputs, output_lens, device):
+				model_outputs = model_output_tuple[0].transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes].
+				#attentions = model_output_tuple[1]['std']
+
+				model_outputs = torch.argmax(model_outputs, dim=-1)
+				return model_outputs, decoder_outputs
+
+		def train_forward(self, criterion, inputs, outputs, output_lens, device='cuda'):
 			outputs = outputs.long()
 
 			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
@@ -2113,7 +2195,7 @@ def build_rare1_and_opennmt_model(image_height, image_width, image_channel, max_
 			outputs.unsqueeze_(dim=-1)  # [B, T] -> [B, T, 1]. No one-hot encoding.
 			outputs = torch.transpose(outputs, 0, 1)  # [B, T, 1] -> [T, B, 1].
 
-			model_output_tuple = self(inputs.to(device), outputs.to(device), output_lens.to(device))
+			model_output_tuple = self._onmt_forward(inputs.to(device), outputs.to(device), output_lens.to(device))
 
 			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes] where T-1 is for one-step look-ahead.
 			#attentions = model_output_tuple[1]['std']
@@ -2128,40 +2210,18 @@ def build_rare1_and_opennmt_model(image_height, image_width, image_channel, max_
 				concat_decoder_outputs.append(do[:dl])
 			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device)), model_outputs
 
-		def infer(self, inputs, outputs=None, output_lens=None, device='cuda'):
-			if outputs is None or output_lens is None:
-				batch_size = len(inputs)
+		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
+		def _onmt_forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
+			enc_hiddens, enc_outputs, lengths = self.encoder(src, lengths=lengths, device=device)
 
-				if is_beam_search_used:
-					decode_strategy = opennmt_util.create_beam_search_strategy(batch_size, scorer, beam_size, n_best, ratio, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
-				else:
-					decode_strategy = opennmt_util.create_greedy_search_strategy(batch_size, random_sampling_topk, random_sampling_temp, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
+			dec_in = tgt[:-1]  # Exclude last target from inputs.
 
-				model_output_dict = opennmt_util.translate_batch_with_strategy(self, decode_strategy, inputs.to(device), batch_size, beam_size, tgt_unk, tgt_vocab, src_vocabs=[])
-
-				model_outputs = model_output_dict['predictions']
-				#scores = model_output_dict['scores']
-				#attentions = model_output_dict['attention']
-				#alignment = model_output_dict['alignment']
-
-				rank_id = 0  # rank_id < n_best.
-				#max_time_steps = functools.reduce(lambda x, y: x if x >= len(y[rank_id]) else len(y[rank_id]), model_outputs, 0)
-				new_model_outputs = torch.full((len(model_outputs), max_time_steps), tgt_pad, dtype=torch.int)
-				for idx, moutp in enumerate(model_outputs):
-					new_model_outputs[idx,:len(moutp[rank_id])] = moutp[rank_id]
-
-				return new_model_outputs.cpu(), None
-			else:
-				decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
-				outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T] -> [T, B, 1]. No one-hot encoding.
-
-				model_output_tuple = self(inputs.to(device), outputs.to(device), output_lens.to(device))
-
-				model_outputs = model_output_tuple[0].transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes].
-				#attentions = model_output_tuple[1]['std']
-
-				model_outputs = torch.argmax(model_outputs, dim=-1)
-				return model_outputs.cpu(), decoder_outputs
+			# TODO [check] >> Is it proper to use enc_outputs & enc_hiddens?
+			if bptt is False:
+				self.decoder.init_state(src, enc_outputs, enc_hiddens)
+			dec_outs, attns = self.decoder(dec_in, enc_outputs, memory_lengths=lengths, with_align=with_align)
+			outs = self.generator(dec_outs)
+			return outs, attns
 
 	model = MyCompositeModel(image_height, image_width, image_channel, output_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, num_decoder_layers, bidirectional_encoder, transformer=transformer, feature_extractor=feature_extractor, sequence_model=sequence_model, num_fiducials=num_fiducials)
 
@@ -2246,23 +2306,42 @@ def build_rare2_and_opennmt_model(image_height, image_width, image_channel, max_
 			self.encoder = opennmt_util.Rare2ImageEncoder(image_height, image_width, input_channel, hidden_size=encoder_rnn_size, num_layers=num_encoder_layers, bidirectional=bidirectional_encoder, num_fiducials=num_fiducials)
 			self.decoder, self.generator = build_decoder_and_generator_for_opennmt(num_classes, word_vec_size, hidden_size=decoder_hidden_size, num_layers=num_decoder_layers, bidirectional_encoder=bidirectional_encoder)
 
-		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
-		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
-			enc_hiddens, enc_outputs, lengths = self.encoder(src, lengths=lengths, device=device)
+		def forward(self, inputs, outputs=None, output_lens=None, *args, **kwargs):
+			if outputs is None or output_lens is None:
+				batch_size = len(inputs)
 
-			if tgt is None or lengths is None:
-				raise NotImplementedError
+				if is_beam_search_used:
+					decode_strategy = opennmt_util.create_beam_search_strategy(batch_size, scorer, beam_size, n_best, ratio, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
+				else:
+					decode_strategy = opennmt_util.create_greedy_search_strategy(batch_size, random_sampling_topk, random_sampling_temp, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
+
+				model_output_dict = opennmt_util.translate_batch_with_strategy(self, decode_strategy, inputs, batch_size, beam_size, tgt_unk, tgt_vocab, src_vocabs=[])
+
+				model_outputs = model_output_dict['predictions']
+				#scores = model_output_dict['scores']
+				#attentions = model_output_dict['attention']
+				#alignment = model_output_dict['alignment']
+
+				rank_id = 0  # rank_id < n_best.
+				#max_time_steps = functools.reduce(lambda x, y: x if x >= len(y[rank_id]) else len(y[rank_id]), model_outputs, 0)
+				new_model_outputs = torch.full((len(model_outputs), max_time_steps), tgt_pad, dtype=torch.int)
+				for idx, moutp in enumerate(model_outputs):
+					new_model_outputs[idx,:len(moutp[rank_id])] = moutp[rank_id]
+
+				return new_model_outputs
 			else:
-				dec_in = tgt[:-1]  # Exclude last target from inputs.
+				decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
+				outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T] -> [T, B, 1]. No one-hot encoding.
 
-				# TODO [check] >> Is it proper to use enc_outputs & enc_hiddens?
-				if bptt is False:
-					self.decoder.init_state(src, enc_outputs, enc_hiddens)
-				dec_outs, attns = self.decoder(dec_in, enc_outputs, memory_lengths=lengths, with_align=with_align)
-				outs = self.generator(dec_outs)
-				return outs, attns
+				model_output_tuple = self._onmt_forward(inputs, outputs, output_lens)
 
-		def train_forward(self, criterion, inputs, outputs, output_lens, device):
+				model_outputs = model_output_tuple[0].transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes].
+				#attentions = model_output_tuple[1]['std']
+
+				model_outputs = torch.argmax(model_outputs, dim=-1)
+				return model_outputs, decoder_outputs
+
+		def train_forward(self, criterion, inputs, outputs, output_lens, device='cuda'):
 			outputs = outputs.long()
 
 			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
@@ -2270,7 +2349,7 @@ def build_rare2_and_opennmt_model(image_height, image_width, image_channel, max_
 			outputs.unsqueeze_(dim=-1)  # [B, T] -> [B, T, 1]. No one-hot encoding.
 			outputs = torch.transpose(outputs, 0, 1)  # [B, T, 1] -> [T, B, 1].
 
-			model_output_tuple = self(inputs.to(device), outputs.to(device), output_lens.to(device))
+			model_output_tuple = self._onmt_forward(inputs.to(device), outputs.to(device), output_lens.to(device))
 
 			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes] where T-1 is for one-step look-ahead.
 			#attentions = model_output_tuple[1]['std']
@@ -2285,40 +2364,18 @@ def build_rare2_and_opennmt_model(image_height, image_width, image_channel, max_
 				concat_decoder_outputs.append(do[:dl])
 			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device)), model_outputs
 
-		def infer(self, inputs, outputs=None, output_lens=None, device='cuda'):
-			if outputs is None or output_lens is None:
-				batch_size = len(inputs)
+		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
+		def _onmt_forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
+			enc_hiddens, enc_outputs, lengths = self.encoder(src, lengths=lengths, device=device)
 
-				if is_beam_search_used:
-					decode_strategy = opennmt_util.create_beam_search_strategy(batch_size, scorer, beam_size, n_best, ratio, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
-				else:
-					decode_strategy = opennmt_util.create_greedy_search_strategy(batch_size, random_sampling_topk, random_sampling_temp, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
+			dec_in = tgt[:-1]  # Exclude last target from inputs.
 
-				model_output_dict = opennmt_util.translate_batch_with_strategy(self, decode_strategy, inputs.to(device), batch_size, beam_size, tgt_unk, tgt_vocab, src_vocabs=[])
-
-				model_outputs = model_output_dict['predictions']
-				#scores = model_output_dict['scores']
-				#attentions = model_output_dict['attention']
-				#alignment = model_output_dict['alignment']
-
-				rank_id = 0  # rank_id < n_best.
-				#max_time_steps = functools.reduce(lambda x, y: x if x >= len(y[rank_id]) else len(y[rank_id]), model_outputs, 0)
-				new_model_outputs = torch.full((len(model_outputs), max_time_steps), tgt_pad, dtype=torch.int)
-				for idx, moutp in enumerate(model_outputs):
-					new_model_outputs[idx,:len(moutp[rank_id])] = moutp[rank_id]
-
-				return new_model_outputs.cpu(), None
-			else:
-				decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
-				outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T] -> [T, B, 1]. No one-hot encoding.
-
-				model_output_tuple = self(inputs.to(device), outputs.to(device), output_lens.to(device))
-
-				model_outputs = model_output_tuple[0].transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes].
-				#attentions = model_output_tuple[1]['std']
-
-				model_outputs = torch.argmax(model_outputs, dim=-1)
-				return model_outputs.cpu(), decoder_outputs
+			# TODO [check] >> Is it proper to use enc_outputs & enc_hiddens?
+			if bptt is False:
+				self.decoder.init_state(src, enc_outputs, enc_hiddens)
+			dec_outs, attns = self.decoder(dec_in, enc_outputs, memory_lengths=lengths, with_align=with_align)
+			outs = self.generator(dec_outs)
+			return outs, attns
 
 	model = MyCompositeModel(image_height, image_width, image_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, num_decoder_layers, bidirectional_encoder, num_fiducials)
 
@@ -2403,23 +2460,42 @@ def build_aster_and_opennmt_model(image_height, image_width, image_channel, max_
 			self.encoder = opennmt_util.AsterImageEncoder(image_height, image_width, input_channel, num_classes, hidden_size=encoder_rnn_size, num_fiducials=num_fiducials)
 			self.decoder, self.generator = build_decoder_and_generator_for_opennmt(num_classes, word_vec_size, hidden_size=decoder_hidden_size, num_layers=num_decoder_layers, bidirectional_encoder=bidirectional_encoder)
 
-		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
-		def forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
-			enc_hiddens, enc_outputs, lengths = self.encoder(src, lengths=lengths, device=device)
+		def forward(self, inputs, outputs=None, output_lens=None, *args, **kwargs):
+			if outputs is None or output_lens is None:
+				batch_size = len(inputs)
 
-			if tgt is None or lengths is None:
-				raise NotImplementedError
+				if is_beam_search_used:
+					decode_strategy = opennmt_util.create_beam_search_strategy(batch_size, scorer, beam_size, n_best, ratio, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
+				else:
+					decode_strategy = opennmt_util.create_greedy_search_strategy(batch_size, random_sampling_topk, random_sampling_temp, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
+
+				model_output_dict = opennmt_util.translate_batch_with_strategy(self, decode_strategy, inputs, batch_size, beam_size, tgt_unk, tgt_vocab, src_vocabs=[])
+
+				model_outputs = model_output_dict['predictions']
+				#scores = model_output_dict['scores']
+				#attentions = model_output_dict['attention']
+				#alignment = model_output_dict['alignment']
+
+				rank_id = 0  # rank_id < n_best.
+				#max_time_steps = functools.reduce(lambda x, y: x if x >= len(y[rank_id]) else len(y[rank_id]), model_outputs, 0)
+				new_model_outputs = torch.full((len(model_outputs), max_time_steps), tgt_pad, dtype=torch.int)
+				for idx, moutp in enumerate(model_outputs):
+					new_model_outputs[idx,:len(moutp[rank_id])] = moutp[rank_id]
+
+				return new_model_outputs
 			else:
-				dec_in = tgt[:-1]  # Exclude last target from inputs.
+				decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
+				outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T] -> [T, B, 1]. No one-hot encoding.
 
-				# TODO [check] >> Is it proper to use enc_outputs & enc_hiddens?
-				if bptt is False:
-					self.decoder.init_state(src, enc_outputs, enc_hiddens)
-				dec_outs, attns = self.decoder(dec_in, enc_outputs, memory_lengths=lengths, with_align=with_align)
-				outs = self.generator(dec_outs)
-				return outs, attns
+				model_output_tuple = self._onmt_forward(inputs, outputs, output_lens)
 
-		def train_forward(self, criterion, inputs, outputs, output_lens, device):
+				model_outputs = model_output_tuple[0].transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes].
+				#attentions = model_output_tuple[1]['std']
+
+				model_outputs = torch.argmax(model_outputs, dim=-1)
+				return model_outputs, decoder_outputs
+
+		def train_forward(self, criterion, inputs, outputs, output_lens, device='cuda'):
 			outputs = outputs.long()
 
 			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
@@ -2427,7 +2503,7 @@ def build_aster_and_opennmt_model(image_height, image_width, image_channel, max_
 			outputs.unsqueeze_(dim=-1)  # [B, T] -> [B, T, 1]. No one-hot encoding.
 			outputs = torch.transpose(outputs, 0, 1)  # [B, T, 1] -> [T, B, 1].
 
-			model_output_tuple = self(inputs.to(device), outputs.to(device), output_lens.to(device))
+			model_output_tuple = self._onmt_forward(inputs.to(device), outputs.to(device), output_lens.to(device))
 
 			model_outputs = model_output_tuple[0].transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes] where T-1 is for one-step look-ahead.
 			#attentions = model_output_tuple[1]['std']
@@ -2442,40 +2518,21 @@ def build_aster_and_opennmt_model(image_height, image_width, image_channel, max_
 				concat_decoder_outputs.append(do[:dl])
 			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device)), model_outputs
 
-		def infer(self, inputs, outputs=None, output_lens=None, device='cuda'):
-			if outputs is None or output_lens is None:
-				batch_size = len(inputs)
+		# REF [function] >> NMTModel.forward() in https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/models/model.py
+		def _onmt_forward(self, src, tgt=None, lengths=None, bptt=False, with_align=False):
+			enc_hiddens, enc_outputs, lengths = self.encoder(src, lengths=lengths, device=device)
 
-				if is_beam_search_used:
-					decode_strategy = opennmt_util.create_beam_search_strategy(batch_size, scorer, beam_size, n_best, ratio, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
-				else:
-					decode_strategy = opennmt_util.create_greedy_search_strategy(batch_size, random_sampling_topk, random_sampling_temp, min_length, max_length, block_ngram_repeat, tgt_bos, tgt_eos, tgt_pad, exclusion_idxs)
-
-				model_output_dict = opennmt_util.translate_batch_with_strategy(self, decode_strategy, inputs.to(device), batch_size, beam_size, tgt_unk, tgt_vocab, src_vocabs=[])
-
-				model_outputs = model_output_dict['predictions']
-				#scores = model_output_dict['scores']
-				#attentions = model_output_dict['attention']
-				#alignment = model_output_dict['alignment']
-
-				rank_id = 0  # rank_id < n_best.
-				#max_time_steps = functools.reduce(lambda x, y: x if x >= len(y[rank_id]) else len(y[rank_id]), model_outputs, 0)
-				new_model_outputs = torch.full((len(model_outputs), max_time_steps), tgt_pad, dtype=torch.int)
-				for idx, moutp in enumerate(model_outputs):
-					new_model_outputs[idx,:len(moutp[rank_id])] = moutp[rank_id]
-
-				return new_model_outputs.cpu(), None
+			if tgt is None or lengths is None:
+				raise NotImplementedError
 			else:
-				decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
-				outputs = torch.unsqueeze(outputs, dim=-1).transpose(0, 1).long()  # [B, T] -> [T, B, 1]. No one-hot encoding.
+				dec_in = tgt[:-1]  # Exclude last target from inputs.
 
-				model_output_tuple = self(inputs.to(device), outputs.to(device), output_lens.to(device))
-
-				model_outputs = model_output_tuple[0].transpose(0, 1)  # [T-1, B, #classes] -> [B, T-1, #classes].
-				#attentions = model_output_tuple[1]['std']
-
-				model_outputs = torch.argmax(model_outputs, dim=-1)
-				return model_outputs.cpu(), decoder_outputs
+				# TODO [check] >> Is it proper to use enc_outputs & enc_hiddens?
+				if bptt is False:
+					self.decoder.init_state(src, enc_outputs, enc_hiddens)
+				dec_outs, attns = self.decoder(dec_in, enc_outputs, memory_lengths=lengths, with_align=with_align)
+				outs = self.generator(dec_outs)
+				return outs, attns
 
 	model = MyCompositeModel(image_height, image_width, image_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_decoder_layers, bidirectional_encoder, num_fiducials)
 
@@ -2504,7 +2561,9 @@ def build_transformer_model(image_height, image_width, image_channel, max_time_s
 
 	if is_train:
 		# Define a loss function.
+		# TODO [check] >>
 		criterion = transformer_ocr.train.LabelSmoothing(size=label_converter.num_tokens, padding_idx=pad_id, smoothing=smoothing)
+		#criterion = LabelSmoothingLoss(num_labels=label_converter.num_tokens, pad_id=pad_id, smoothing=smoothing)
 	else:
 		criterion = None
 
@@ -2516,30 +2575,7 @@ def build_transformer_model(image_height, image_width, image_channel, max_time_s
 			self.d_model = d_model
 			self.cnn_downsample_factor = 4  # Fixed.
 
-		def forward(self, src, tgt, src_mask, tgt_mask):
-			return self.model(src, tgt, src_mask, tgt_mask)
-
-		def train_forward(self, criterion, inputs, outputs, output_lens, device):
-			outputs = outputs.long()
-
-			# Construct inputs for one-step look-ahead.
-			if eos_id != pad_id:
-				decoder_inputs = outputs[:,:-1].clone()
-				decoder_inputs[decoder_inputs == eos_id] = pad_id  # Remove <EOS> tokens.
-			else: decoder_inputs = outputs[:,:-1]
-			# Construct outputs for one-step look-ahead.
-			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
-
-			batch = transformer_ocr.dataset.Batch(inputs, decoder_inputs, decoder_outputs, self.cnn_downsample_factor, pad=pad_id, device=device)
-			model_outputs = self.model(batch.src, batch.tgt_input, batch.src_mask, batch.tgt_input_mask)
-
-			# REF [function] >> transformer_ocr.train.SimpleLossCompute.__call__().
-			model_outputs = self.model.generator(model_outputs)
-			return criterion(model_outputs.contiguous().view(-1, model_outputs.size(-1)), batch.tgt_output.contiguous().view(-1)) / batch.num_tokens, model_outputs
-
-		def infer(self, inputs, outputs=None, output_lens=None, device='cuda'):
-			inputs = inputs.to(device)
-
+		def forward(self, inputs, outputs=None, output_lens=None, device='cuda', *args, **kwargs):
 			# FIXME [check] >> Why is a single input but not multiple inputs predicted?
 			"""
 			# Predict a single input.
@@ -2561,7 +2597,28 @@ def build_transformer_model(image_height, image_width, image_channel, max_time_s
 			#model_outputs = transformer_ocr.predict.greedy_decode_multi_async1(self.model, inputs, src_mask, max_len=max_time_steps, sos=sos_id, eos=eos_id, pad=pad_id, device=device)
 			#model_outputs = transformer_ocr.predict.greedy_decode_multi_async2(self.model, inputs, src_mask, max_len=max_time_steps, sos=sos_id, eos=eos_id, pad=pad_id, device=device)  # Slow.
 
-			return model_outputs, None if outputs is None else outputs[:,1:]
+			if outputs is None:
+				return model_outputs
+			else:
+				return model_outputs, outputs[:,1:]
+
+		def train_forward(self, criterion, inputs, outputs, output_lens, device='cuda'):
+			outputs = outputs.long()
+
+			# Construct inputs for one-step look-ahead.
+			if eos_id != pad_id:
+				decoder_inputs = outputs[:,:-1].clone()
+				decoder_inputs[decoder_inputs == eos_id] = pad_id  # Remove <EOS> tokens.
+			else: decoder_inputs = outputs[:,:-1]
+			# Construct outputs for one-step look-ahead.
+			decoder_outputs = outputs[:,1:]  # Remove <SOS> tokens.
+
+			batch = transformer_ocr.dataset.Batch(inputs, decoder_inputs, decoder_outputs, self.cnn_downsample_factor, pad=pad_id, device=device)
+			model_outputs = self.model(batch.src, batch.tgt_input, batch.src_mask, batch.tgt_input_mask)
+
+			# REF [function] >> transformer_ocr.train.SimpleLossCompute.__call__().
+			model_outputs = self.model.generator(model_outputs)
+			return criterion(model_outputs.contiguous().view(-1, model_outputs.size(-1)), batch.tgt_output.contiguous().view(-1)) / batch.num_tokens, model_outputs
 
 	model = MySimpleModel(label_converter.num_tokens, num_layers, d_model, d_ff, d_feature, num_heads, dropout)
 
@@ -2830,10 +2887,12 @@ def build_text_model_for_training(model_filepath_to_load, model_type, image_shap
 		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
 		scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
 	elif model_type == 'transformer':
-		import transformer_ocr.train
 		optimizer = torch.optim.Adam(model_params, lr=0, betas=(0.9, 0.98), eps=1e-09, weight_decay=0, amsgrad=False)
+		# TODO [check] >>
+		import transformer_ocr.train
 		optimizer = transformer_ocr.train.NoamOpt(model.d_model, factor=1, warmup=2000, optimizer=optimizer)
 		scheduler = None
+		#scheduler = NoamLR(optimizer, dim_feature=model.d_model, warmup_steps=2000, factor=1)  # Step-based learning rate policy.
 	else:
 		optimizer, scheduler = None, None
 
@@ -2875,7 +2934,7 @@ def build_text_model_for_inference(model_filepath_to_load, model_type, image_sha
 
 	return model
 
-def train_char_model_in_epoch(model, optimizer, dataloader, model_params, max_gradient_norm, epoch, log_print_freq, logger, device='cuda'):
+def train_char_model_in_epoch(model, criterion, optimizer, dataloader, model_params, max_gradient_norm, epoch, log_print_freq, logger, device='cuda'):
 	#start_epoch_time = time.time()
 	batch_time, data_time = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
 	losses, top1, top5 = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
@@ -2891,7 +2950,7 @@ def train_char_model_in_epoch(model, optimizer, dataloader, model_params, max_gr
 		optimizer.zero_grad()
 
 		# Forward + backward + optimize.
-		loss, model_outputs = model.train_forward(batch_inputs, batch_outputs, device)
+		loss, model_outputs = model.train_forward(criterion, batch_inputs, batch_outputs, device)
 		loss.backward()
 		if max_gradient_norm: torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
 		optimizer.step()
@@ -2927,7 +2986,7 @@ def train_char_model_in_epoch(model, optimizer, dataloader, model_params, max_gr
 		time.sleep(0)
 	return losses, top1, top5
 
-def validate_char_model_in_epoch(model, dataloader, label_converter, is_case_sensitive, logger, device='cuda'):
+def validate_char_model_in_epoch(model, criterion, dataloader, label_converter, is_case_sensitive, logger, device='cuda'):
 	losses, top1, top5 = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
 	total_matching_ratio, num_examples = 0, 0
 	with torch.no_grad():
@@ -2943,7 +3002,7 @@ def validate_char_model_in_epoch(model, dataloader, label_converter, is_case_sen
 			"""
 
 			# Forward.
-			loss, model_outputs = model.train_forward(batch_inputs, batch_outputs, device)
+			loss, model_outputs = model.train_forward(criterion, batch_inputs, batch_outputs, device)
 
 			# Measure accuracy and record loss.
 			model_outputs = torch.argmax(model_outputs.cpu(), dim=-1)
@@ -3064,7 +3123,7 @@ def train_char_recognition_model(model, criterion, train_dataloader, test_datalo
 	best_performance_measure = 0.0
 	best_model_filepath = None
 	for epoch in range(initial_epoch, final_epoch):
-		current_learning_rate = scheduler.get_lr() if scheduler else 0.0
+		current_learning_rate = scheduler.get_last_lr() if scheduler else 0.0
 		need_hour, need_mins, need_secs = swl_ml_util.convert_secs2time(epoch_time.avg * (final_epoch - epoch))
 		if logger: logger.info('Epoch {}/{}: Need time = {:02d}:{:02d}:{:02d}, Accuracy (best) = {:.4f}, Error (best) = {:.4f}, Learning rate = {}.'.format(epoch + 1, final_epoch, need_hour, need_mins, need_secs, recorder.max_accuracy(False), 100 - recorder.max_accuracy(False), current_learning_rate))
 		start_epoch_time = time.time()
@@ -3072,7 +3131,7 @@ def train_char_recognition_model(model, criterion, train_dataloader, test_datalo
 		#--------------------
 		start_time = time.time()
 		model.train()
-		losses, top1, top5 = train_char_model_in_epoch(model, optimizer, train_dataloader, model_params, max_gradient_norm, epoch, log_print_freq, logger, device)
+		losses, top1, top5 = train_char_model_in_epoch(model, criterion, optimizer, train_dataloader, model_params, max_gradient_norm, epoch, log_print_freq, logger, device)
 		if logger: logger.info('Train:      Prec@1 = {top1.avg:.4f}, Prec@5 = {top5.avg:.4f}, Error@1 = {error1:.4f}, Loss = {losses.avg:.4f}: {elapsed_time:.6f} secs.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
 
 		train_loss, train_acc = losses.avg, top1.avg
@@ -3082,7 +3141,7 @@ def train_char_recognition_model(model, criterion, train_dataloader, test_datalo
 		#--------------------
 		start_time = time.time()
 		model.eval()
-		losses, top1, top5, avg_matching_ratio = validate_char_model_in_epoch(model, test_dataloader, label_converter, is_case_sensitive, logger, device)
+		losses, top1, top5, avg_matching_ratio = validate_char_model_in_epoch(model, criterion, test_dataloader, label_converter, is_case_sensitive, logger, device)
 		if logger: logger.info('Validation: Prec@1 = {top1.avg:.4f}, Prec@5 = {top5.avg:.4f}, Error@1 = {error1:.4f}, Loss = {losses.avg:.4f}: {elapsed_time:.6f} secs.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
 
 		val_loss, val_acc = losses.avg, top1.avg
@@ -3136,7 +3195,7 @@ def train_text_recognition_model(model, criterion, train_dataloader, test_datalo
 	best_performance_measure = 0.0
 	best_model_filepath = None
 	for epoch in range(initial_epoch, final_epoch):
-		current_learning_rate = scheduler.get_lr() if scheduler else 0.0
+		current_learning_rate = scheduler.get_last_lr() if scheduler else 0.0
 		need_hour, need_mins, need_secs = swl_ml_util.convert_secs2time(epoch_time.avg * (final_epoch - epoch))
 		if logger: logger.info('Epoch {}/{}: Need time = {:02d}:{:02d}:{:02d}, Accuracy (best) = {:.4f}, Error (best) = {:.4f}, Learning rate = {}.'.format(epoch + 1, final_epoch, need_hour, need_mins, need_secs, recorder.max_accuracy(False), 100 - recorder.max_accuracy(False), current_learning_rate))
 		start_epoch_time = time.time()
@@ -3196,7 +3255,7 @@ def evaluate_char_recognition_model(model, dataloader, label_converter, is_case_
 	correct_char_class_count, total_char_class_count = [0] * num_classes, [0] * num_classes
 	error_cases = list()
 	error_idx = 0
-	is_first = True
+	is_visualized = True
 	with torch.no_grad():
 		for images, labels in dataloader:
 			predictions = model(images.to(device))
@@ -3229,7 +3288,7 @@ def evaluate_char_recognition_model(model, dataloader, label_converter, is_case_
 						error_cases.append((gt, pred))
 						error_idx += 1
 
-			if is_first:
+			if is_visualized:
 				# Show images.
 				#show_image(torchvision.utils.make_grid(images))
 
@@ -3239,7 +3298,7 @@ def evaluate_char_recognition_model(model, dataloader, label_converter, is_case_
 				#	if logger: logger.info('G/T - prediction: {}, {}.'.format(gt, pred))
 				if logger: logger.info('G/T - prediction:\n{}.'.format([(gt, pred) for gt, pred in zip(gts, predictions)]))
 
-				is_first = False
+				is_visualized = False
 
 	if error_cases_dir_path is not None:
 		err_fpath = os.path.join(error_cases_dir_path, 'error_cases.txt')
@@ -3266,12 +3325,12 @@ def evaluate_text_recognition_model(model, dataloader, label_converter, is_case_
 	correct_char_class_count, total_char_class_count = [0] * num_classes, [0] * num_classes
 	error_cases = list()
 	error_idx = 0
-	is_first = True
+	is_visualized = True
 	with torch.no_grad():
 		for images, labels, label_lens in dataloader:
-			predictions, gts = model.infer(images, labels, label_lens, device)
+			predictions, gts = model(images.to(device), labels.to(device), output_lens=label_lens.to(device), device=device)
 
-			images_np, predictions, gts = images.numpy(), predictions.numpy(), gts.numpy()
+			images_np, predictions, gts = images.numpy(), predictions.cpu().numpy(), gts.cpu().numpy()
 			if images_np.ndim == 4: images_np = images_np.transpose(0, 2, 3, 1)
 			#minval, maxval = np.min(images_np), np.max(images_np)
 			minval, maxval = -1, 1
@@ -3295,7 +3354,7 @@ def evaluate_text_recognition_model(model, dataloader, label_converter, is_case_
 			correct_char_class_count = list(map(operator.add, correct_char_class_count, batch_correct_char_class_count))
 			total_char_class_count = list(map(operator.add, total_char_class_count, batch_total_char_class_count))
 
-			if is_first:
+			if is_visualized:
 				# Show images.
 				#show_image(torchvision.utils.make_grid(images))
 
@@ -3305,7 +3364,7 @@ def evaluate_text_recognition_model(model, dataloader, label_converter, is_case_
 				#	if logger: logger.info('G/T - prediction: {}, {}.'.format(label_converter.decode(gt), label_converter.decode(pred)))
 				if logger: logger.info('G/T - prediction:\n{}.'.format([(label_converter.decode(gt), label_converter.decode(pred)) for gt, pred in zip(gts, predictions)]))
 
-				is_first = False
+				is_visualized = False
 
 	if error_cases_dir_path is not None:
 		err_fpath = os.path.join(error_cases_dir_path, 'error_cases.txt')
@@ -3450,15 +3509,17 @@ def recognize_text(model, inputs, batch_size=None, logger=None, device='cuda'):
 	if batch_size is not None and batch_size == 1:
 		# Infer one-by-one.
 		with torch.no_grad():
-			predictions = np.array(list(model.infer(inputs[idx:idx+1], device=device)[0][0].numpy() for idx in range(len(inputs))))
+			inputs = inputs.to(device)
+			predictions = np.array(list(model(inputs[idx:idx+1], device=device)[0].cpu().numpy() for idx in range(len(inputs))))
 	else:
 		# Infer batch-by-batch.
 		if batch_size is None: batch_size = len(inputs)
 
 		with torch.no_grad():
+			inputs = inputs.to(device)
 			predictions = list()
 			for idx in range(0, len(inputs), batch_size):
-				predictions.append(model.infer(inputs[idx:idx+batch_size], device=device)[0].numpy())
+				predictions.append(model(inputs[idx:idx+batch_size], device=device).cpu().numpy())
 		predictions = np.vstack(predictions)
 
 	return predictions
@@ -4121,6 +4182,7 @@ def main():
 	else:
 		raise ValueError('Invalid target type, {}'.format(args.target_type))
 	label_converter, SOS_ID, EOS_ID, BLANK_LABEL, num_suffixes = create_label_converter(label_converter_type, charset)
+	#logger.info('Classes:\n{}.'.format(label_converter.tokens))
 	logger.info('#classes = {}.'.format(label_converter.num_tokens))
 	logger.info('<PAD> = {}, <SOS> = {}, <EOS> = {}, <UNK> = {}.'.format(label_converter.pad_id, SOS_ID, EOS_ID, label_converter.encode([label_converter.UNKNOWN], is_bare_output=True)[0]))
 
