@@ -392,7 +392,7 @@ def visualize_data(dataloader, label_converter, num_data=10):
 		if idx >= (num_data - 1): break
 	cv2.destroyAllWindows()
 
-def visualize_data_with_length(dataloader, label_converter, num_data=10):
+def visualize_data_with_length(dataloader, label_converter, num_data=None):
 	data_iter = iter(dataloader)
 	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
@@ -401,7 +401,7 @@ def visualize_data_with_length(dataloader, label_converter, num_data=10):
 		print('Label (len={}): {} (int), {} (str).'.format(l, [ll for ll in lbl if ll != label_converter.pad_id], label_converter.decode(lbl)))
 		cv2.imshow('Image', img)
 		cv2.waitKey(0)
-		if idx >= (num_data - 1): break
+		if num_data and idx >= (num_data - 1): break
 	cv2.destroyAllWindows()
 
 def SimpleCharacterDataset_test():
@@ -1154,7 +1154,8 @@ def TextRecognitionDataGeneratorTextLineDataset_test():
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	lang = 'en'  # {'ar', 'cn', 'de', 'en', 'es', 'fr', 'hi', 'kr'}.
-	num_train_examples, num_test_examples = int(1e6), int(1e4)
+	#num_train_examples, num_test_examples = int(1e6), int(1e4)
+	num_train_examples, num_test_examples = 48, 48
 	max_textline_len = 80
 	if lang == 'kr':
 		font_filepaths = construct_font(korean=True, english=False)
@@ -1171,8 +1172,8 @@ def TextRecognitionDataGeneratorTextLineDataset_test():
 		'skewing_angle': 0, 'random_skew': False,  # In degrees counter clockwise.
 		#'blur': 0, 'random_blur': False,  # Blur radius.
 		'blur': 2, 'random_blur': True,  # Blur radius.
-		#'distorsion_type': 0, 'distorsion_orientation': 0,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
-		'distorsion_type': 3, 'distorsion_orientation': 2,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+		'distorsion_type': 0, 'distorsion_orientation': 0,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+		#'distorsion_type': 3, 'distorsion_orientation': 2,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
 		'background_type': 0,  # background_type = 0 (Gaussian noise), 1 (plain white), 2 (quasicrystal), 3 (image).
 		'width': -1,  # Specify a background width when width > 0.
 		'alignment': 1,  # Align an image in a background image. alignment = 0 (left), 1 (center), the rest (right).
@@ -1228,8 +1229,20 @@ def TextRecognitionDataGeneratorTextLineDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	train_dataset = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs)
-	test_dataset = text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs)
+	train_datasets, test_datasets = list(), list()
+	# distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random).
+	# distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+	distortion_types, distortion_directions = (0, 1, 2, 3), (0, 1, 2)
+	divisor = len(distortion_types) * len(distortion_directions) * 2
+	for is_randomly_generated in [False, True]:
+		for distortion_type in distortion_types:
+			for distortion_direction in distortion_directions:
+				generator_kwargs['distorsion_type'] = distortion_type
+				generator_kwargs['distorsion_orientation'] = distortion_direction
+				train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+				test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
+	train_dataset = torch.utils.data.ConcatDataset(train_datasets)
+	test_dataset = torch.utils.data.ConcatDataset(test_datasets)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 

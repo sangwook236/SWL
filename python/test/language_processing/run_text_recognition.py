@@ -1000,14 +1000,17 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 				#font_filepaths = trdg.utils.load_fonts(lang)
 				font_filepaths = list()
 
+			# distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random).
+			# distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+			distortion_types, distortion_directions = (1, 2, 3), (0, 1, 2)
+			divisor = len(distortion_types) * len(distortion_directions) * 2 * 2
 			for is_randomly_generated in [False, True]:
-				for distortion_type, divisor in zip((1, 2, 3), (16, 16, 8)):
-					generator_kwargs['distorsion_type'] = distortion_type
-					generator_kwargs['distorsion_orientation'] = random.randrange(3)
-					train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
-				generator_kwargs['distorsion_type'] = 0
-				generator_kwargs['distorsion_orientation'] = 0
-				test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
+				for distortion_type in distortion_types:
+					for distortion_direction in distortion_directions:
+						generator_kwargs['distorsion_type'] = distortion_type
+						generator_kwargs['distorsion_orientation'] = distortion_direction
+						train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+						test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 		train_dataset = torch.utils.data.ConcatDataset(train_datasets)
 		test_dataset = torch.utils.data.ConcatDataset(test_datasets)
 	elif textline_type == 'aihub_textline':
@@ -1020,8 +1023,8 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
 		aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
 
-		image_types_to_load = ['sentence']  # {'syllable', 'word', 'sentence'}.
-		#image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
+		#image_types_to_load = ['sentence']  # {'syllable', 'word', 'sentence'}.
+		image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
 		is_preloaded_image_used = False
 		dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_textline_len, is_preloaded_image_used)
 
@@ -1156,21 +1159,24 @@ def create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_e
 				#font_filepaths = trdg.utils.load_fonts(lang)
 				font_filepaths = list()
 
+			# distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random).
+			# distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+			distortion_types, distortion_directions = (1, 2, 3), (0, 1, 2)
+			divisor = len(distortion_types) * len(distortion_directions) * 2 * 2
 			for is_randomly_generated in [False, True]:
-				for distortion_type, divisor in zip((1, 2, 3), (16, 16, 8)):
-					generator_kwargs['distorsion_type'] = distortion_type
-					generator_kwargs['distorsion_orientation'] = random.randrange(3)
-					train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
-				generator_kwargs['distorsion_type'] = 0
-				generator_kwargs['distorsion_orientation'] = 0
-				test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // 4, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
+				for distortion_type in distortion_types:
+					for distortion_direction in distortion_directions:
+						generator_kwargs['distorsion_type'] = distortion_type
+						generator_kwargs['distorsion_orientation'] = distortion_direction
+						train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+						test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 	if True:
 		# AI-Hub printed text dataset.
 		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
 		aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
 
-		image_types_to_load = ['sentence']  # {'syllable', 'word', 'sentence'}.
-		#image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
+		#image_types_to_load = ['sentence']  # {'syllable', 'word', 'sentence'}.
+		image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
 		is_preloaded_image_used = False
 		dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_textline_len, is_preloaded_image_used)
 
