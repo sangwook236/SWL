@@ -3799,6 +3799,162 @@ def create_text_dataset(label_converter, image_shape, target_type, max_label_len
 
 	return torch.utils.data.ConcatDataset(datasets)
 
+def extract_simple_text_rectangle_from_quadrilateral(image, polygons, output_dir_path):
+	text_patches = list()
+	rgb = image.copy()
+	for idx, poly in enumerate(polygons):
+		(x1, y1), (x2, y2) = np.min(poly, axis=0), np.max(poly, axis=0)
+		x1, y1, x2, y2 = math.floor(float(x1)), math.floor(float(y1)), math.ceil(float(x2)), math.ceil(float(y2))
+		#x1, y1, x2, y2 = x1 - 1, y1 - 1, x2 + 1, y2 + 1
+		patch = image[y1:y2,x1:x2]
+		text_patches.append(patch)
+
+		cv2.imwrite(os.path.join(output_dir_path, 'text_{}.png'.format(idx)), patch)
+
+		cv2.rectangle(rgb, (x1, y1), (x2, y2), (random.randint(128, 255), random.randint(128, 255), random.randint(128, 255)), 1, cv2.LINE_8)
+	cv2.imwrite(os.path.join(output_dir_path, 'text_bbox.png'), rgb)
+	return text_patches
+
+def extract_masked_text_rectangle_from_quadrilateral(image, polygons, output_dir_path):
+	image_height, image_width = image.shape[:2]
+	text_patches = list()
+	rgb = image.copy()
+	black_image = np.zeros_like(image)
+	mask_value = (255,) * image.ndim
+	for idx, poly in enumerate(polygons):
+		(x1, y1), (x2, y2) = np.min(poly, axis=0), np.max(poly, axis=0)
+		x1, y1, x2, y2 = math.floor(float(x1)), math.floor(float(y1)), math.ceil(float(x2)), math.ceil(float(y2))
+		x1, y1, x2, y2 = max(0, x1), max(0, y1), min(image_width, x2), min(image_height, y2)
+		#x1, y1, x2, y2 = max(0, x1 - 1), max(0, y1 - 1), min(image_width, x2 + 1), min(image_height, y2 + 1)
+		patch_height, patch_width = y2 - y1, x2 - x1
+		poly = np.expand_dims(np.round(poly).astype(np.int), axis=1)  # For OpenCV.
+
+		mask = np.zeros((patch_height, patch_width) + image.shape[2:], dtype=np.uint8)
+		#cv2.fillPoly(mask, poly - np.array([x1, y1]), mask_value, cv2.LINE_8)  # Error: Not working.
+		cv2.fillConvexPoly(mask, poly - np.array([x1, y1]), mask_value, cv2.LINE_8)
+
+		patch = np.where(mask > 0, image[y1:y2,x1:x2], black_image[:patch_height,:patch_width])
+		text_patches.append(patch)
+
+		cv2.imwrite(os.path.join(output_dir_path, 'text_{}.png'.format(idx)), patch)
+		cv2.polylines(rgb, [poly], True, (random.randint(128, 255), random.randint(128, 255), random.randint(128, 255)), 1, cv2.LINE_8)
+	cv2.imwrite(os.path.join(output_dir_path, 'text_bbox.png'), rgb)
+	return text_patches
+
+def extract_rotated_text_rectangle_from_quadrilateral(image, polygons, output_dir_path):
+	"""
+	def compute_rotation_angle(pts):
+		pts -= np.mean(pts, axis=0)
+		try:
+			# PCA.
+			#eigvals, eigvecs = np.linalg.eig(np.matmul(pts.transpose(), pts))
+			_, singvals, singvecs = np.linalg.svd(pts, full_matrices=False, compute_uv=True)
+			#eigvals = singvals**2
+			#eigvecs = singvecs.transpose()
+			eigvec = singvecs.transpose()[:,0]
+			if eigvec[0] < 0: eigvec = -eigvec
+			return math.atan2(eigvec[1], eigvec[0])
+		except np.LinAlgError as ex:
+			print('numpy.LinAlgError raised: {}.'.format(ex))
+			return None
+
+	def rotate_image(image, angle):
+		#return scipy.ndimage.rotate(image, angle * 180 / math.pi)
+		ctr = tuple(np.array(image.shape[1::-1]) / 2)
+		R = cv2.getRotationMatrix2D(ctr, angle * 180 / math.pi, 1.0)
+		return cv2.warpAffine(image, R, image.shape[1::-1], flags=cv2.INTER_LINEAR)
+
+	image_height, image_width = image.shape[:2]
+	text_patches = list()
+	rgb = image.copy()
+	black_image = np.zeros_like(image)
+	mask_value = (255,) * image.ndim
+	for idx, poly in enumerate(polygons):
+		canvas = np.zeros(image.shape[:2], dtype=np.uint8)
+		cv2.fillConvexPoly(canvas, np.round(poly).astype(np.int), 1, cv2.LINE_8)
+		pts = np.stack(np.nonzero(canvas)).transpose().astype(np.float)[:,[1, 0]]
+		angle = compute_rotation_angle(pts)
+
+		(x1, y1), (x2, y2) = np.min(poly, axis=0), np.max(poly, axis=0)
+		x1, y1, x2, y2 = math.floor(float(x1)), math.floor(float(y1)), math.ceil(float(x2)), math.ceil(float(y2))
+		x1, y1, x2, y2 = max(0, x1), max(0, y1), min(image_width, x2), min(image_height, y2)
+		#x1, y1, x2, y2 = max(0, x1 - 1), max(0, y1 - 1), min(image_width, x2 + 1), min(image_height, y2 + 1)
+		patch_height, patch_width = y2 - y1, x2 - x1
+		poly = np.expand_dims(np.round(poly).astype(np.int), axis=1)  # For OpenCV.
+
+		mask = np.zeros((patch_height, patch_width) + image.shape[2:], dtype=np.uint8)
+		#cv2.fillPoly(mask, poly - np.array([x1, y1]), mask_value, cv2.LINE_8)  # Error: Not working.
+		cv2.fillConvexPoly(mask, poly - np.array([x1, y1]), mask_value, cv2.LINE_8)
+
+		patch = np.where(mask > 0, image[y1:y2,x1:x2], black_image[:patch_height,:patch_width])
+		patch = rotate_image(patch, angle)
+		text_patches.append(patch)
+
+		cv2.imwrite(os.path.join(output_dir_path, 'text_{}.png'.format(idx)), patch)
+		cv2.polylines(rgb, [poly], True, (random.randint(128, 255), random.randint(128, 255), random.randint(128, 255)), 1, cv2.LINE_8)
+	cv2.imwrite(os.path.join(output_dir_path, 'text_bbox.png'), rgb)
+	return text_patches
+	"""
+	text_patches = list()
+	rgb = image.copy()
+	for idx, poly in enumerate(polygons):
+		obb_center, obb_size, obb_angle = cv2.minAreaRect(poly)  # Tuple: (center, size, angle).
+		# TODO [check] >>
+		#if obb_size[0] < obb_size[1]:
+		if obb_angle < -10 or obb_angle > 10:
+			obb_size, obb_angle = obb_size[1::-1], obb_angle + 90
+
+		radius = math.sqrt(obb_size[0]**2 + obb_size[1]**2) / 2
+		dia = math.ceil(radius * 2)
+
+		patch_x1, patch_y1, patch_x2, patch_y2 = max(0, math.floor(obb_center[0] - radius) - 1), max(0, math.floor(obb_center[1] - radius) - 1), min(rgb.shape[1], math.ceil(obb_center[0] + radius) + 1), min(rgb.shape[0], math.ceil(obb_center[1] + radius) + 1)
+		#patch_x1, patch_y1, patch_x2, patch_y2 = max(0, math.floor(obb_center[0] - radius)), max(0, math.floor(obb_center[1] - radius)), min(rgb.shape[1], math.ceil(obb_center[0] + radius) + 1), min(rgb.shape[0], math.ceil(obb_center[1] + radius) + 1)
+		patch = rgb[patch_y1:patch_y2, patch_x1:patch_x2]
+
+		ctr = patch.shape[1] / 2, patch.shape[0] / 2
+		R = cv2.getRotationMatrix2D(ctr, angle=obb_angle, scale=1)
+		rotated = cv2.warpAffine(patch, R, (dia, dia), flags=cv2.INTER_LINEAR)
+
+		rotated_patch = rotated[math.floor(ctr[1] - obb_size[1] / 2):math.ceil(ctr[1] + obb_size[1] / 2), math.floor(ctr[0] - obb_size[0] / 2):math.ceil(ctr[0] + obb_size[0] / 2)]
+		text_patches.append(rotated_patch)
+
+		cv2.imwrite(os.path.join(output_dir_path, 'text_{}.png'.format(idx)), rotated_patch)
+		cv2.polylines(rgb, [np.int0(poly)], True, (random.randint(128, 255), random.randint(128, 255), random.randint(128, 255)), 1, cv2.LINE_8)
+	cv2.imwrite(os.path.join(output_dir_path, 'text_bbox.png'), rgb)
+	return text_patches
+
+def extract_rectified_text_rectangle_from_quadrilateral(image, polygons, output_dir_path):
+	"""
+	# REF [site] >> https://docs.opencv.org/4.5.0/db/da4/samples_2dnn_2text_detection_8cpp-example.html
+	def fourPointsTransform(image, pts, target_pts=None):
+		if target_pts is None:
+			height, width = image.shape[:2]
+			target_pts = ((0, height - 1), (0, 0), (width - 1, 0), (width - 1, height - 1))
+		T = cv2.getPerspectiveTransform(pts, target_pts, solveMethod=cv.DECOMP_LU)
+		return cv2.warpPerspective(image, T, image.shape[1::-1], flags=cv2.INTER_LINEAR)
+	"""
+
+	text_patches = list()
+	rgb = image.copy()
+	for idx, poly in enumerate(polygons):
+		obb_center, obb_size, obb_angle = cv2.minAreaRect(poly)  # Tuple: (center, size, angle).
+		obb_pts = cv2.boxPoints((obb_center, obb_size, obb_angle))  # 4 x 2. np.float32.
+
+		if obb_size[0] >= obb_size[1]:
+			target_pts = np.float32([[0, obb_size[1]], [0, 0], [obb_size[0], 0], [obb_size[0], obb_size[1]]])
+			canvas_size = round(obb_size[0]), round(obb_size[1])
+		else:
+			target_pts = np.float32([[obb_size[1], obb_size[0]], [0, obb_size[0]], [0, 0], [obb_size[1], 0]])
+			canvas_size = round(obb_size[1]), round(obb_size[0])
+		T = cv2.getPerspectiveTransform(obb_pts, target_pts, solveMethod=cv2.DECOMP_LU)  # Four points.
+		patch = cv2.warpPerspective(rgb, T, canvas_size, flags=cv2.INTER_LINEAR)
+		text_patches.append(patch)
+
+		cv2.imwrite(os.path.join(output_dir_path, 'text_{}.png'.format(idx)), patch)
+		cv2.polylines(rgb, [np.int0(poly)], True, (random.randint(128, 255), random.randint(128, 255), random.randint(128, 255)), 1, cv2.LINE_8)
+	cv2.imwrite(os.path.join(output_dir_path, 'text_bbox.png'), rgb)
+	return text_patches
+
 def build_craft_model(craft_refine, craft_cuda, logger=None):
 	import craft.test_utils as test_utils
 
@@ -3903,19 +4059,10 @@ def detect_texts_by_craft(image_filepath, craft_refine, craft_cuda, output_dir_p
 		cv2.waitKey(0)
 		"""
 
-		text_patches = list()
-		rgb = image.copy()
-		for idx, bbox in enumerate(bboxes):
-			(x1, y1), (x2, y2) = np.min(bbox, axis=0), np.max(bbox, axis=0)
-			x1, y1, x2, y2 = round(float(x1)), round(float(y1)), round(float(x2)), round(float(y2))
-			img = image[y1:y2+1,x1:x2+1]
-			text_patches.append(img)
-
-			cv2.imwrite(os.path.join(output_dir_path, 'text_{}.png'.format(idx)), img)
-
-			cv2.rectangle(rgb, (x1, y1), (x2, y2), (random.randint(128, 255), random.randint(128, 255), random.randint(128, 255)), 1, cv2.LINE_4)
-		cv2.imwrite(os.path.join(output_dir_path, 'text_bbox.png'), rgb)
-		return text_patches
+		#return extract_simple_text_rectangle_from_quadrilateral(image, bboxes, output_dir_path)
+		#return extract_masked_text_rectangle_from_quadrilateral(image, bboxes, output_dir_path)
+		#return extract_rotated_text_rectangle_from_quadrilateral(image, bboxes, output_dir_path)
+		return extract_rectified_text_rectangle_from_quadrilateral(image, bboxes, output_dir_path)
 	else: return None
 
 def visualize_inference_results(predictions, label_converter, inputs, outputs, output_dir_path, is_case_sensitive, num_examples_to_visualize, logger):
