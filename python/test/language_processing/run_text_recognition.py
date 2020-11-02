@@ -5,7 +5,7 @@ import sys
 sys.path.append('../../src')
 sys.path.append('./src')
 
-import os, collections, random, functools, itertools, operator, pickle, shutil, glob, datetime, time
+import os, collections, math, random, functools, itertools, operator, pickle, shutil, glob, datetime, time
 import argparse, logging, logging.handlers
 import numpy as np
 import torch
@@ -746,6 +746,7 @@ def create_word_datasets(word_type, label_converter, wordset, chars, num_train_e
 			data_base_dir_path = 'D:/work/dataset'
 
 		# AI-Hub printed text dataset.
+		#	#syllables = 558,600, #words = 277,150, #sentences = 42,350.
 		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
 		aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
 
@@ -764,6 +765,7 @@ def create_word_datasets(word_type, label_converter, wordset, chars, num_train_e
 		else:
 			data_base_dir_path = 'D:/work/dataset'
 
+		# File-based words: 504,279.
 		train_datasets, test_datasets = list(), list()
 		if True:
 			# E2E-MLT Korean dataset.
@@ -861,8 +863,9 @@ def create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examp
 		num_train_examples = int(num_random_examples * train_test_ratio)
 		train_datasets.append(text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform))
 		test_datasets.append(text_data.RandomWordDataset(label_converter, chars, num_random_examples - num_train_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform))
-	if True:
+	if False:
 		# AI-Hub printed text dataset.
+		#	#syllables = 558,600, #words = 277,150, #sentences = 42,350.
 		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
 		aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
 
@@ -875,6 +878,7 @@ def create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examp
 		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
 		train_datasets.append(MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform))
 		test_datasets.append(MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform))
+	# File-based words: 504,279.
 	if True:
 		# E2E-MLT Korean dataset.
 		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
@@ -1020,11 +1024,12 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 			data_base_dir_path = 'D:/work/dataset'
 
 		# AI-Hub printed text dataset.
+		#	#syllables = 558,600, #words = 277,150, #sentences = 42,350.
 		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
 		aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
 
-		#image_types_to_load = ['sentence']  # {'syllable', 'word', 'sentence'}.
-		image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
+		image_types_to_load = ['sentence']  # {'syllable', 'word', 'sentence'}.
+		#image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
 		is_preloaded_image_used = False
 		dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_textline_len, is_preloaded_image_used)
 
@@ -1039,6 +1044,7 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 		else:
 			data_base_dir_path = 'D:/work/dataset'
 
+		# File-based text lines: 55,835.
 		train_datasets, test_datasets = list(), list()
 		if True:
 			# ICDAR 2019 SROIE dataset.
@@ -1170,13 +1176,14 @@ def create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_e
 						generator_kwargs['distorsion_orientation'] = distortion_direction
 						train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
 						test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
-	if True:
+	if False:
 		# AI-Hub printed text dataset.
+		#	#syllables = 558,600, #words = 277,150, #sentences = 42,350.
 		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
 		aihub_data_dir_path = data_base_dir_path + '/ai_hub/korean_font_image/printed'
 
-		#image_types_to_load = ['sentence']  # {'syllable', 'word', 'sentence'}.
-		image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
+		image_types_to_load = ['sentence']  # {'syllable', 'word', 'sentence'}.
+		#image_types_to_load = ['word', 'sentence']  # {'syllable', 'word', 'sentence'}.
 		is_preloaded_image_used = False
 		dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_textline_len, is_preloaded_image_used)
 
@@ -1185,6 +1192,7 @@ def create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_e
 		train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
 		train_datasets.append(MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform))
 		test_datasets.append(MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform))
+	# File-based text lines: 55,835.
 	if True:
 		# ICDAR 2019 SROIE dataset.
 		is_preloaded_image_used = False
@@ -1500,7 +1508,7 @@ def build_rare1_model(image_height, image_width, image_channel, max_time_steps, 
 				super().__init__(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_time_steps, sos_id, pad_id, transformer, feature_extractor, sequence_model, decoder)
 
 			def forward(self, inputs, outputs=None, is_train=False, device='cuda', *args, **kwargs):
-				model_outputs = self.model(inputs, None, is_train=False, device=device)
+				model_outputs = self.model(inputs, outputs, is_train=is_train, device=device)
 
 				model_outputs = torch.argmax(model_outputs, dim=-1)
 				if outputs is None:
@@ -1618,7 +1626,7 @@ def build_rare1_mixup_model(image_height, image_width, image_channel, max_time_s
 				super().__init__(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_time_steps, sos_id, pad_id, transformer, feature_extractor, sequence_model, decoder)
 
 			def forward(self, inputs, outputs=None, is_train=False, device='cuda', *args, **kwargs):
-				model_outputs = self.model(inputs, None, is_train=False, device=device)
+				model_outputs = self.model(inputs, outputs, is_train=is_train, device=device)
 
 				model_outputs = torch.argmax(model_outputs, dim=-1)
 				if outputs is None:
@@ -1687,7 +1695,7 @@ def build_rare2_model(image_height, image_width, image_channel, max_time_steps, 
 
 		def forward(self, inputs, outputs=None, output_lens=None, device='cuda', *args, **kwargs):
 			#model_outputs = self.model(inputs, decoder_inputs, decoder_input_lens, device=device)
-			model_outputs = self.model(inputs, None, None, device=device)
+			model_outputs = self.model(inputs, outputs, output_lens, device=device)
 
 			model_outputs = torch.argmax(model_outputs, dim=-1)
 
@@ -2581,7 +2589,7 @@ def build_transformer_model(image_height, image_width, image_channel, max_time_s
 			self.d_model = d_model
 			self.cnn_downsample_factor = 4  # Fixed.
 
-		def forward(self, inputs, outputs=None, output_lens=None, device='cuda', *args, **kwargs):
+		def forward(self, inputs, outputs=None, device='cuda', *args, **kwargs):
 			# FIXME [check] >> Why is a single input but not multiple inputs predicted?
 			"""
 			# Predict a single input.
@@ -2705,8 +2713,9 @@ def build_char_model_for_training(model_filepath_to_load, model_type, image_shap
 	optimizer = torch.optim.SGD(model_params, lr=0.001, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
 	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 	scheduler = None
+	is_epoch_based_scheduler = True
 
-	return model, criterion, optimizer, scheduler, model_params, max_gradient_norm, model_filepath_format
+	return model, criterion, optimizer, scheduler, is_epoch_based_scheduler, model_params, max_gradient_norm, model_filepath_format
 
 def build_char_model_for_inference(model_filepath_to_load, image_shape, num_classes, logger, device='cuda'):
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
@@ -2868,6 +2877,7 @@ def build_text_model_for_training(model_filepath_to_load, model_type, image_shap
 	#optimizer = torch.optim.RMSprop(model_params, lr=0.01, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0, centered=False)
 	#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 
+	is_epoch_based_scheduler = True
 	if model_type == 'rare1':
 		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
 		scheduler = None
@@ -2893,16 +2903,22 @@ def build_text_model_for_training(model_filepath_to_load, model_type, image_shap
 		optimizer = torch.optim.Adadelta(model_params, lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
 		scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[4, 5], gamma=0.1)
 	elif model_type == 'transformer':
-		optimizer = torch.optim.Adam(model_params, lr=0, betas=(0.9, 0.98), eps=1e-09, weight_decay=0, amsgrad=False)
-		# TODO [check] >>
-		import transformer_ocr.train
-		optimizer = transformer_ocr.train.NoamOpt(model.d_model, factor=1, warmup=2000, optimizer=optimizer)
-		scheduler = None
-		#scheduler = NoamLR(optimizer, dim_feature=model.d_model, warmup_steps=2000, factor=1)  # Step-based learning rate policy.
+		if False:
+			optimizer = torch.optim.Adam(model_params, lr=0, betas=(0.9, 0.98), eps=1e-09, weight_decay=0, amsgrad=False)
+			import transformer_ocr.train
+			optimizer = transformer_ocr.train.NoamOpt(model.d_model, factor=1, warmup=2000, optimizer=optimizer)  # Warning: NoamOpt is not an actual optimizer.
+			scheduler = None
+		elif True:
+			optimizer = torch.optim.Adam(model_params, lr=0, betas=(0.9, 0.98), eps=1e-09, weight_decay=0, amsgrad=False)
+			scheduler = NoamLR(optimizer, dim_feature=model.d_model, warmup_steps=2000, factor=1)  # Batch-step-based, not epoch-based, learning rate policy.
+			is_epoch_based_scheduler = False
+		elif False:
+			optimizer = torch.optim.SGD(model_params, lr=0.1, momentum=0.9, dampening=0, weight_decay=0, nesterov=False)
+			scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=100, eta_min=0, last_epoch=-1)
 	else:
 		optimizer, scheduler = None, None
 
-	return model, criterion, optimizer, scheduler, model_params, max_gradient_norm, model_filepath_format
+	return model, criterion, optimizer, scheduler, is_epoch_based_scheduler, model_params, max_gradient_norm, model_filepath_format
 
 def build_text_model_for_inference(model_filepath_to_load, model_type, image_shape, max_label_len, label_converter, sos_id, eos_id, num_suffixes, lang, logger, device='cuda'):
 	# Build a model.
@@ -2940,7 +2956,7 @@ def build_text_model_for_inference(model_filepath_to_load, model_type, image_sha
 
 	return model
 
-def train_char_model_in_epoch(model, criterion, optimizer, dataloader, model_params, max_gradient_norm, epoch, log_print_freq, logger, device='cuda'):
+def train_char_model_in_epoch(model, criterion, optimizer, dataloader, model_params, max_gradient_norm, scheduler, is_step_based_scheduler, epoch, log_print_freq, logger, device='cuda'):
 	#start_epoch_time = time.time()
 	batch_time, data_time = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
 	losses, top1, top5 = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
@@ -2960,6 +2976,8 @@ def train_char_model_in_epoch(model, criterion, optimizer, dataloader, model_par
 		loss.backward()
 		if max_gradient_norm: torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
 		optimizer.step()
+
+		if scheduler and is_step_based_scheduler: scheduler.step()
 
 		# Measure accuracy and record loss.
 		prec1, prec5 = swl_ml_util.accuracy(torch.argmax(model_outputs.cpu(), dim=-1), batch_outputs[:,1:], topk=(1, 5))
@@ -3028,7 +3046,7 @@ def validate_char_model_in_epoch(model, criterion, dataloader, label_converter, 
 	avg_matching_ratio = total_matching_ratio / num_examples if num_examples > 0 else total_matching_ratio
 	return losses, top1, top5, avg_matching_ratio
 
-def train_text_model_in_epoch(model, criterion, optimizer, dataloader, model_params, max_gradient_norm, label_converter, is_case_sensitive, epoch, log_print_freq, logger, device='cuda'):
+def train_text_model_in_epoch(model, criterion, optimizer, dataloader, model_params, max_gradient_norm, label_converter, scheduler, is_step_based_scheduler, is_case_sensitive, epoch, log_print_freq, logger, device='cuda'):
 	#start_epoch_time = time.time()
 	batch_time, data_time = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
 	losses, top1 = swl_ml_util.AverageMeter(), swl_ml_util.AverageMeter()
@@ -3048,6 +3066,8 @@ def train_text_model_in_epoch(model, criterion, optimizer, dataloader, model_par
 		loss.backward()
 		if max_gradient_norm: torch.nn.utils.clip_grad_norm_(model_params, max_norm=max_gradient_norm)  # Gradient clipping.
 		optimizer.step()
+
+		if scheduler and is_step_based_scheduler: scheduler.step()
 
 		# Measure accuracy and record loss.
 		model_outputs = torch.argmax(model_outputs.cpu(), dim=-1)
@@ -3112,7 +3132,7 @@ def validate_text_model_in_epoch(model, criterion, dataloader, label_converter, 
 				show = False
 	return losses, top1
 
-def train_char_recognition_model(model, criterion, train_dataloader, test_dataloader, optimizer, label_converter, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler=None, max_gradient_norm=None, model_params=None, is_case_sensitive=False, logger=None, device='cuda'):
+def train_char_recognition_model(model, criterion, train_dataloader, test_dataloader, optimizer, label_converter, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler=None, is_epoch_based_scheduler=True, max_gradient_norm=None, model_params=None, is_case_sensitive=False, logger=None, device='cuda'):
 	train_log_filepath = os.path.join(output_dir_path, 'train_log.txt')
 	train_history_filepath = os.path.join(output_dir_path, 'train_history.pkl')
 	train_result_image_filepath = os.path.join(output_dir_path, 'results.png')
@@ -3137,7 +3157,7 @@ def train_char_recognition_model(model, criterion, train_dataloader, test_datalo
 		#--------------------
 		start_time = time.time()
 		model.train()
-		losses, top1, top5 = train_char_model_in_epoch(model, criterion, optimizer, train_dataloader, model_params, max_gradient_norm, epoch, log_print_freq, logger, device)
+		losses, top1, top5 = train_char_model_in_epoch(model, criterion, optimizer, train_dataloader, model_params, max_gradient_norm, scheduler, not is_epoch_based_scheduler, epoch, log_print_freq, logger, device)
 		if logger: logger.info('Train:      Prec@1 = {top1.avg:.4f}, Prec@5 = {top5.avg:.4f}, Error@1 = {error1:.4f}, Loss = {losses.avg:.4f}: {elapsed_time:.6f} secs.'.format(top1=top1, top5=top5, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
 
 		train_loss, train_acc = losses.avg, top1.avg
@@ -3154,7 +3174,7 @@ def train_char_recognition_model(model, criterion, train_dataloader, test_datalo
 		history['val_loss'].append(val_loss)
 		history['val_acc'].append(val_acc)
 
-		if scheduler: scheduler.step()
+		if scheduler and is_epoch_based_scheduler: scheduler.step()
 
 		# Measure elapsed time.
 		epoch_time.update(time.time() - start_epoch_time)
@@ -3184,7 +3204,7 @@ def train_char_recognition_model(model, criterion, train_dataloader, test_datalo
 
 	return model, best_model_filepath
 
-def train_text_recognition_model(model, criterion, train_dataloader, test_dataloader, optimizer, label_converter, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler=None, max_gradient_norm=None, model_params=None, is_case_sensitive=False, logger=None, device='cuda'):
+def train_text_recognition_model(model, criterion, optimizer, train_dataloader, test_dataloader, label_converter, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler=None, is_epoch_based_scheduler=True, max_gradient_norm=None, model_params=None, is_case_sensitive=False, logger=None, device='cuda'):
 	train_log_filepath = os.path.join(output_dir_path, 'train_log.txt')
 	train_history_filepath = os.path.join(output_dir_path, 'train_history.pkl')
 	train_result_image_filepath = os.path.join(output_dir_path, 'results.png')
@@ -3209,7 +3229,7 @@ def train_text_recognition_model(model, criterion, train_dataloader, test_datalo
 		#--------------------
 		start_time = time.time()
 		model.train()
-		losses, top1 = train_text_model_in_epoch(model, criterion, optimizer, train_dataloader, model_params, max_gradient_norm, label_converter, is_case_sensitive, epoch, log_print_freq, logger, device)
+		losses, top1 = train_text_model_in_epoch(model, criterion, optimizer, train_dataloader, model_params, max_gradient_norm, label_converter, scheduler, not is_epoch_based_scheduler, is_case_sensitive, epoch, log_print_freq, logger, device)
 		if logger: logger.info('Train:      Prec@1 = {top1.avg:.4f}, Error@1 = {error1:.4f}, Loss = {losses.avg:.4f}: {elapsed_time:.6f} secs.'.format(top1=top1, error1=100 - top1.avg, losses=losses, elapsed_time=time.time() - start_time))
 
 		train_loss, train_acc = losses.avg, top1.avg
@@ -3226,7 +3246,7 @@ def train_text_recognition_model(model, criterion, train_dataloader, test_datalo
 		history['val_loss'].append(val_loss)
 		history['val_acc'].append(val_acc)
 
-		if scheduler: scheduler.step()
+		if scheduler and is_epoch_based_scheduler: scheduler.step()
 
 		# Measure elapsed time.
 		epoch_time.update(time.time() - start_epoch_time)
@@ -3400,7 +3420,7 @@ def evaluate_text_recognition_model(model, dataloader, label_converter, is_case_
 		return correct_char_count / total_char_count if total_char_count > 0 else -1
 	else: return -1
 
-def train_char_recognizer(model, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, num_epochs, batch_size, num_workers, is_case_sensitive, model_filepath_format, logger=None, device='cuda'):
+def train_char_recognizer(model, criterion, optimizer, scheduler, is_epoch_based_scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, num_epochs, batch_size, num_workers, is_case_sensitive, model_filepath_format, logger=None, device='cuda'):
 	initial_epoch, final_epoch = 0, num_epochs
 	log_print_freq = 1000
 
@@ -3419,7 +3439,7 @@ def train_char_recognizer(model, criterion, optimizer, scheduler, train_dataset,
 
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_char_recognition_model(model, criterion, train_dataloader, test_dataloader, optimizer, label_converter, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
+	model, best_model_filepath = train_char_recognition_model(model, criterion, train_dataloader, test_dataloader, optimizer, label_converter, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, is_epoch_based_scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -3446,7 +3466,7 @@ def train_char_recognizer(model, criterion, optimizer, scheduler, train_dataset,
 
 	return model_filepath
 
-def train_text_recognizer(model, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, num_epochs, batch_size, num_workers, is_case_sensitive, model_filepath_format, logger=None, device='cuda'):
+def train_text_recognizer(model, criterion, optimizer, scheduler, is_epoch_based_scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, num_epochs, batch_size, num_workers, is_case_sensitive, model_filepath_format, logger=None, device='cuda'):
 	initial_epoch, final_epoch = 0, num_epochs
 	log_print_freq = 1000
 
@@ -3750,12 +3770,12 @@ def create_text_dataset(label_converter, image_shape, target_type, max_label_len
 		datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_label_len, is_preloaded_image_used, transform=transform, target_transform=target_transform))
 	elif target_type == 'textline':
 		# When using a dataset with image-label files.
-		"""
-		image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.jpg', recursive=False))
-		label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
-		"""
-		image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/general/sminds/20200812/image/*.jpg', recursive=False))
-		label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/general/sminds/20200812/label/*.txt', recursive=False))
+		if False:
+			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.jpg', recursive=False))
+			label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/receipt/icdar2019_sroie/task1_train_text_line/*.txt', recursive=False))
+		else:
+			image_filepaths = sorted(glob.glob(data_base_dir_path + '/text/general/sminds/20200812/image/*.jpg', recursive=False))
+			label_filepaths = sorted(glob.glob(data_base_dir_path + '/text/general/sminds/20200812/label/*.txt', recursive=False))
 		if image_filepaths and label_filepaths and len(image_filepaths) == len(label_filepaths):
 			if logger: logger.info('#loaded image files = {}, #loaded label files = {}.'.format(len(image_filepaths), len(label_filepaths)))
 		else:
@@ -4216,18 +4236,18 @@ def main():
 		#--------------------
 		if args.target_type == 'char':
 			# Build a model.
-			model, criterion, optimizer, scheduler, model_params, max_gradient_norm, model_filepath_format = build_char_model_for_training(model_filepath_to_load, args.model_type, image_shape, args.target_type, args.font_type, output_dir_path, label_converter, logger, device)
+			model, criterion, optimizer, scheduler, is_epoch_based_scheduler, model_params, max_gradient_norm, model_filepath_format = build_char_model_for_training(model_filepath_to_load, args.model_type, image_shape, args.target_type, args.font_type, output_dir_path, label_converter, logger, device)
 			#logger.info('Model:\n{}.'.format(model))
 
 			# Train the model.
-			model_filepath = train_char_recognizer(model, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, args.epoch, args.batch, num_workers, is_case_sensitive, model_filepath_format, logger, device)
+			model_filepath = train_char_recognizer(model, criterion, optimizer, scheduler, is_epoch_based_scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, args.epoch, args.batch, num_workers, is_case_sensitive, model_filepath_format, logger, device)
 		elif args.target_type in ['word', 'textline']:
 			# Build a model.
-			model, criterion, optimizer, scheduler, model_params, max_gradient_norm, model_filepath_format = build_text_model_for_training(model_filepath_to_load, args.model_type, image_shape, args.target_type, args.font_type, args.max_len, output_dir_path, label_converter, SOS_ID, EOS_ID, BLANK_LABEL, num_suffixes, lang, logger, device)
+			model, criterion, optimizer, scheduler, is_epoch_based_scheduler, model_params, max_gradient_norm, model_filepath_format = build_text_model_for_training(model_filepath_to_load, args.model_type, image_shape, args.target_type, args.font_type, args.max_len, output_dir_path, label_converter, SOS_ID, EOS_ID, BLANK_LABEL, num_suffixes, lang, logger, device)
 			#logger.info('Model:\n{}.'.format(model))
 
 			# Train the model.
-			model_filepath = train_text_recognizer(model, criterion, optimizer, scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, args.epoch, args.batch, num_workers, is_case_sensitive, model_filepath_format, logger, device)
+			model_filepath = train_text_recognizer(model, criterion, optimizer, scheduler, is_epoch_based_scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, args.epoch, args.batch, num_workers, is_case_sensitive, model_filepath_format, logger, device)
 	elif not model_filepath: model_filepath = model_filepath_to_load
 
 	#--------------------
