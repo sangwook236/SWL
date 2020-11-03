@@ -72,21 +72,27 @@ def create_char_augmenter():
 		#	#iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
 		#	#iaa.Flipud(0.5),  # Vertically flip 50% of the images.
 		#])),
-		iaa.Sometimes(0.8, iaa.OneOf([
+		iaa.Sometimes(0.8, iaa.Sequential([
 			iaa.Affine(
 				#scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
 				translate_percent={'x': (-0.2, 0.2), 'y': (-0.2, 0.2)},  # Translate by -20 to +20 percent along x-axis and -20 to +20 percent along y-axis.
 				rotate=(-30, 30),  # Rotate by -10 to +10 degrees.
-				shear=(-10, 10),  # Shear by -10 to +10 degrees.
+				#shear=(-10, 10),  # Shear by -10 to +10 degrees.
 				order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
 				#order=0,  # Use nearest neighbour or bilinear interpolation (fast).
 				#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
 				#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
 				#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
 			),
-			#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
-			#iaa.PerspectiveTransform(scale=(0.01, 0.1)),
-			iaa.ElasticTransformation(alpha=(20.0, 40.0), sigma=(6.0, 8.0)),  # Move pixels locally around (with random strengths).
+			iaa.Sometimes(0.75, iaa.OneOf([
+				iaa.Sequential([
+					iaa.ShearX((-45, 45)),
+					iaa.ShearY((-5, 5))
+				]),
+				iaa.PiecewiseAffine(scale=(0.01, 0.03)),  # Move parts of the image around. Slow.
+				#iaa.PerspectiveTransform(scale=(0.01, 0.1)),
+				iaa.ElasticTransformation(alpha=(20.0, 40.0), sigma=(6.0, 8.0)),  # Move pixels locally around (with random strengths).
+			])),
 		])),
 		iaa.Sometimes(0.5, iaa.OneOf([
 			iaa.AdditiveGaussianNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
@@ -132,21 +138,27 @@ def create_word_augmenter():
 		#	#iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
 		#	#iaa.Flipud(0.5),  # Vertically flip 50% of the images.
 		#])),
-		iaa.Sometimes(0.8, iaa.OneOf([
+		iaa.Sometimes(0.8, iaa.Sequential([
 			iaa.Affine(
 				#scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
 				translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent along x-axis and -10 to +10 percent along y-axis.
-				rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
-				shear=(-5, 5),  # Shear by -5 to +5 degrees.
+				rotate=(-45, 45),  # Rotate by -10 to +10 degrees.
+				#shear=(-5, 5),  # Shear by -5 to +5 degrees.
 				order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
 				#order=0,  # Use nearest neighbour or bilinear interpolation (fast).
 				#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
 				#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
 				#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
 			),
-			#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
-			#iaa.PerspectiveTransform(scale=(0.01, 0.1)),
-			iaa.ElasticTransformation(alpha=(20.0, 40.0), sigma=(6.0, 8.0)),  # Move pixels locally around (with random strengths).
+			iaa.Sometimes(0.75, iaa.OneOf([
+				iaa.Sequential([
+					iaa.ShearX((-45, 45)),
+					iaa.ShearY((-5, 5))
+				]),
+				iaa.PiecewiseAffine(scale=(0.01, 0.03)),  # Move parts of the image around. Slow.
+				#iaa.PerspectiveTransform(scale=(0.01, 0.1)),
+				iaa.ElasticTransformation(alpha=(20.0, 40.0), sigma=(6.0, 8.0)),  # Move pixels locally around (with random strengths).
+			])),
 		])),
 		iaa.Sometimes(0.5, iaa.OneOf([
 			iaa.AdditiveGaussianNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
@@ -192,21 +204,27 @@ def create_textline_augmenter():
 		#	#iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
 		#	#iaa.Flipud(0.5),  # Vertically flip 50% of the images.
 		#])),
-		iaa.Sometimes(0.8, iaa.OneOf([
+		iaa.Sometimes(0.8, iaa.Sequential([
 			iaa.Affine(
 				#scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
 				translate_percent={'x': (-0.05, 0.05), 'y': (-0.05, 0.05)},  # Translate by -5 to +5 percent along x-axis and -5 to +5 percent along y-axis.
-				rotate=(-2, 2),  # Rotate by -2 to +2 degrees.
-				shear=(-2, 2),  # Shear by -2 to +2 degrees.
+				#rotate=(-2, 2),  # Rotate by -2 to +2 degrees.
+				#shear=(-2, 2),  # Shear by -2 to +2 degrees.
 				order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
 				#order=0,  # Use nearest neighbour or bilinear interpolation (fast).
 				#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
 				#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
 				#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
 			),
-			#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
-			#iaa.PerspectiveTransform(scale=(0.01, 0.1)),
-			iaa.ElasticTransformation(alpha=(20.0, 40.0), sigma=(6.0, 8.0)),  # Move pixels locally around (with random strengths).
+			iaa.Sometimes(0.75, iaa.OneOf([
+				iaa.Sequential([
+					iaa.ShearX((-45, 45)),
+					iaa.ShearY((-5, 5))
+				]),
+				iaa.PiecewiseAffine(scale=(0.01, 0.03)),  # Move parts of the image around. Slow.
+				#iaa.PerspectiveTransform(scale=(0.01, 0.1)),
+				iaa.ElasticTransformation(alpha=(20.0, 40.0), sigma=(6.0, 8.0)),  # Move pixels locally around (with random strengths).
+			])),
 		])),
 		iaa.Sometimes(0.5, iaa.OneOf([
 			iaa.AdditiveGaussianNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
@@ -1251,7 +1269,7 @@ def show_image(img):
 	plt.imshow(np.transpose(npimg, (1, 2, 0)))
 	plt.show()
 
-def show_char_data_info(dataloader, label_converter, visualize=True, mode='Train', logger=None):
+def show_char_data_info(dataloader, label_converter, visualize=True, nrow=8, mode='Train', logger=None):
 	dataiter = iter(dataloader)
 	images, labels = dataiter.next()
 	images_np, labels_np = images.numpy(), labels.numpy()
@@ -1261,9 +1279,9 @@ def show_char_data_info(dataloader, label_converter, visualize=True, mode='Train
 
 	if visualize:
 		if logger: logger.info('Labels: {}.'.format(' '.join(label_converter.decode(labels_np))))
-		show_image(torchvision.utils.make_grid(images, nrow=8))
+		show_image(torchvision.utils.make_grid(images, nrow))
 
-def show_text_data_info(dataloader, label_converter, visualize=True, mode='Train', logger=None):
+def show_text_data_info(dataloader, label_converter, visualize=True, nrow=2, mode='Train', logger=None):
 	dataiter = iter(dataloader)
 	images, labels, label_lens = dataiter.next()
 	images_np, labels_np, label_lens_np = images.numpy(), labels.numpy(), label_lens.numpy()
@@ -1276,7 +1294,7 @@ def show_text_data_info(dataloader, label_converter, visualize=True, mode='Train
 		#if logger: logger.info('Labels: {}.'.format(' '.join([label_converter.decode(lbl) for lbl in images_np])))
 		for idx, (lbl, ll) in enumerate(zip(labels_np, label_lens_np)):
 			if logger: logger.info('Label #{} (len = {}): {} (int), {} (str).'.format(idx, ll, lbl, label_converter.decode(lbl)))
-		show_image(torchvision.utils.make_grid(images, nrow=2))
+		show_image(torchvision.utils.make_grid(images, nrow))
 
 def show_per_char_accuracy(correct_char_class_count, total_char_class_count, classes, num_classes, show_acc_per_char=False, logger=None):
 	#for idx in range(num_classes):
@@ -1370,14 +1388,6 @@ def build_char_model(label_converter, image_channel, loss_type):
 	model_name = 'ResNet'  # {'VGG', 'ResNet', 'RCNN'}.
 	input_channel, output_channel = image_channel, 1024
 
-	# Define a loss function.
-	if loss_type == 'xent':
-		criterion = torch.nn.CrossEntropyLoss()
-	elif loss_type == 'nll':
-		criterion = torch.nn.NLLLoss(reduction='sum')
-	else:
-		raise ValueError('Invalid loss type, {}'.format(loss_type))
-
 	class MySimpleModelBase(torch.nn.Module):
 		def __init__(self, model_name, input_channel, output_channel, num_classes):
 			super().__init__()
@@ -1396,6 +1406,15 @@ def build_char_model(label_converter, image_channel, loss_type):
 
 	model = MySimpleModelBase(model_name, input_channel, output_channel, label_converter.num_tokens)
 
+	#--------------------
+	# Define a loss function.
+	if loss_type == 'xent':
+		criterion = torch.nn.CrossEntropyLoss()
+	elif loss_type == 'nll':
+		criterion = torch.nn.NLLLoss(reduction='sum')
+	else:
+		raise ValueError('Invalid loss type, {}'.format(loss_type))
+
 	return model, criterion
 
 def build_char_mixup_model(label_converter, image_channel, loss_type):
@@ -1404,14 +1423,6 @@ def build_char_mixup_model(label_converter, image_channel, loss_type):
 
 	mixup_input, mixup_hidden, mixup_alpha = True, True, 2.0
 	cutout, cutout_size = True, 4
-
-	# Define a loss function.
-	if loss_type == 'xent':
-		criterion = torch.nn.CrossEntropyLoss()
-	elif loss_type == 'nll':
-		criterion = torch.nn.NLLLoss(reduction='sum')
-	else:
-		raise ValueError('Invalid loss type, {}'.format(loss_type))
 
 	class MySimpleModelBase(torch.nn.Module):
 		def __init__(self, model_name, input_channel, output_channel, num_classes):
@@ -1432,6 +1443,15 @@ def build_char_mixup_model(label_converter, image_channel, loss_type):
 
 	model = MySimpleModelBase(model_name, input_channel, output_channel, label_converter.num_tokens)
 
+	#--------------------
+	# Define a loss function.
+	if loss_type == 'xent':
+		criterion = torch.nn.CrossEntropyLoss()
+	elif loss_type == 'nll':
+		criterion = torch.nn.NLLLoss(reduction='sum')
+	else:
+		raise ValueError('Invalid loss type, {}'.format(loss_type))
+
 	return model, criterion
 
 def build_rare1_model(image_height, image_width, image_channel, max_time_steps, num_classes, pad_id, sos_id, blank_label, lang, loss_type=None):
@@ -1450,20 +1470,6 @@ def build_rare1_model(image_height, image_width, image_channel, max_time_steps, 
 		hidden_size = 1024  # The size of the LSTM hidden states.
 	else:
 		hidden_size = 512  # The size of the LSTM hidden states.
-
-	if loss_type is not None:
-		if loss_type == 'ctc':
-			# Define a loss function.
-			criterion = torch.nn.CTCLoss(blank=blank_label, zero_infinity=True)  # The BLANK label.
-
-		elif loss_type in ['xent', 'nll']:
-			# Define a loss function.
-			if loss_type == 'xent':
-				criterion = torch.nn.CrossEntropyLoss(ignore_index=pad_id)  # Ignore the PAD ID.
-			elif loss_type == 'nll':
-				criterion = torch.nn.NLLLoss(ignore_index=pad_id, reduction='sum')  # Ignore the PAD ID.
-	else:
-		criterion = None
 
 	class MySimpleModelBase(torch.nn.Module):
 		def __init__(self, image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_time_steps, sos_id, pad_id, transformer, feature_extractor, sequence_model, decoder):
@@ -1546,6 +1552,21 @@ def build_rare1_model(image_height, image_width, image_channel, max_time_steps, 
 
 		model = MySimpleModel(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_time_steps, sos_id, pad_id, transformer, feature_extractor, sequence_model, decoder)
 
+	#--------------------
+	if loss_type is not None:
+		if loss_type == 'ctc':
+			# Define a loss function.
+			criterion = torch.nn.CTCLoss(blank=blank_label, zero_infinity=True)  # The BLANK label.
+
+		elif loss_type in ['xent', 'nll']:
+			# Define a loss function.
+			if loss_type == 'xent':
+				criterion = torch.nn.CrossEntropyLoss(ignore_index=pad_id)  # Ignore the PAD ID.
+			elif loss_type == 'nll':
+				criterion = torch.nn.NLLLoss(ignore_index=pad_id, reduction='sum')  # Ignore the PAD ID.
+	else:
+		criterion = None
+
 	return model, criterion
 
 def build_rare1_mixup_model(image_height, image_width, image_channel, max_time_steps, num_classes, pad_id, sos_id, blank_label, lang, loss_type=None):
@@ -1567,20 +1588,6 @@ def build_rare1_mixup_model(image_height, image_width, image_channel, max_time_s
 
 	mixup_input, mixup_hidden, mixup_alpha = True, True, 2.0
 	cutout, cutout_size = True, 4
-
-	if loss_type is not None:
-		if loss_type == 'ctc':
-			# Define a loss function.
-			criterion = torch.nn.CTCLoss(blank=blank_label, zero_infinity=True)  # The BLANK label.
-
-		elif loss_type in ['xent', 'nll']:
-			# Define a loss function.
-			if loss_type == 'xent':
-				criterion = torch.nn.CrossEntropyLoss(ignore_index=pad_id)  # Ignore the PAD ID.
-			elif loss_type == 'nll':
-				criterion = torch.nn.NLLLoss(ignore_index=pad_id, reduction='sum')  # Ignore the PAD ID.
-	else:
-		criterion = None
 
 	class MySimpleModelBase(torch.nn.Module):
 		def __init__(self, image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_time_steps, sos_id, pad_id, transformer, feature_extractor, sequence_model, decoder):
@@ -1664,6 +1671,21 @@ def build_rare1_mixup_model(image_height, image_width, image_channel, max_time_s
 
 		model = MySimpleModel(image_height, image_width, num_classes, num_fiducials, input_channel, output_channel, hidden_size, max_time_steps, sos_id, pad_id, transformer, feature_extractor, sequence_model, decoder)
 
+	#--------------------
+	if loss_type is not None:
+		if loss_type == 'ctc':
+			# Define a loss function.
+			criterion = torch.nn.CTCLoss(blank=blank_label, zero_infinity=True)  # The BLANK label.
+
+		elif loss_type in ['xent', 'nll']:
+			# Define a loss function.
+			if loss_type == 'xent':
+				criterion = torch.nn.CrossEntropyLoss(ignore_index=pad_id)  # Ignore the PAD ID.
+			elif loss_type == 'nll':
+				criterion = torch.nn.NLLLoss(ignore_index=pad_id, reduction='sum')  # Ignore the PAD ID.
+	else:
+		criterion = None
+
 	return model, criterion
 
 def build_rare2_model(image_height, image_width, image_channel, max_time_steps, num_classes, pad_id, sos_id, lang, loss_type=None):
@@ -1674,17 +1696,6 @@ def build_rare2_model(image_height, image_width, image_channel, max_time_steps, 
 	num_rnns = 2
 	embedding_size = 256
 	use_leaky_relu = False
-
-	if loss_type is not None:
-		# Define a loss function.
-		if loss_type == 'xent':
-			criterion = torch.nn.CrossEntropyLoss(ignore_index=pad_id)  # Ignore the PAD ID.
-		elif loss_type == 'nll':
-			criterion = torch.nn.NLLLoss(ignore_index=pad_id, reduction='sum')  # Ignore the PAD ID.
-		else:
-			raise ValueError('Invalid loss type, {}'.format(loss_type))
-	else:
-		criterion = None
 
 	class MySimpleModel(torch.nn.Module):
 		def __init__(self, image_height, image_channel, num_classes, max_time_steps, hidden_size, num_rnns, embedding_size, use_leaky_relu, sos_id):
@@ -1757,6 +1768,18 @@ def build_rare2_model(image_height, image_width, image_channel, max_time_steps, 
 
 	model = MySimpleModel(image_height, image_channel, num_classes, max_time_steps, hidden_size, num_rnns, embedding_size, use_leaky_relu, sos_id)
 
+	#--------------------
+	if loss_type is not None:
+		# Define a loss function.
+		if loss_type == 'xent':
+			criterion = torch.nn.CrossEntropyLoss(ignore_index=pad_id)  # Ignore the PAD ID.
+		elif loss_type == 'nll':
+			criterion = torch.nn.NLLLoss(ignore_index=pad_id, reduction='sum')  # Ignore the PAD ID.
+		else:
+			raise ValueError('Invalid loss type, {}'.format(loss_type))
+	else:
+		criterion = None
+
 	return model, criterion
 
 def build_aster_model(image_height, image_width, image_channel, max_time_steps, num_classes, pad_id, eos_id, lang, logger=None):
@@ -1772,14 +1795,6 @@ def build_aster_model(image_height, image_width, image_channel, max_time_steps, 
 	#sys_args.STN_ON = True
 
 	if logger: logger.info('ASTER options: {}.'.format(vars(sys_args)))
-
-	# Define a loss function.
-	#if loss_type == 'xent':
-	#	criterion = torch.nn.CrossEntropyLoss(ignore_index=pad_id)  # Ignore the PAD ID.
-	#elif loss_type == 'nll':
-	#	criterion = torch.nn.NLLLoss(ignore_index=pad_id, reduction='sum')  # Ignore the PAD ID.
-	#else:
-	#	raise ValueError('Invalid loss type, {}'.format(loss_type))
 
 	class MySimpleModel(torch.nn.Module):
 		def __init__(self, image_height, image_channel, num_classes, max_time_steps, hidden_size, eos_id, sys_args):
@@ -1855,6 +1870,15 @@ def build_aster_model(image_height, image_width, image_channel, max_time_steps, 
 
 	model = MySimpleModel(image_height, image_channel, num_classes, max_time_steps, hidden_size, eos_id, sys_args)
 
+	#--------------------
+	# Define a loss function.
+	#if loss_type == 'xent':
+	#	criterion = torch.nn.CrossEntropyLoss(ignore_index=pad_id)  # Ignore the PAD ID.
+	#elif loss_type == 'nll':
+	#	criterion = torch.nn.NLLLoss(ignore_index=pad_id, reduction='sum')  # Ignore the PAD ID.
+	#else:
+	#	raise ValueError('Invalid loss type, {}'.format(loss_type))
+
 	return model, sys_args
 
 def build_decoder_and_generator_for_opennmt(num_classes, word_vec_size, hidden_size, num_layers=2, bidirectional_encoder=True):
@@ -1905,17 +1929,6 @@ def build_opennmt_model(image_height, image_width, image_channel, max_time_steps
 	else:
 		word_vec_size = 80
 		encoder_rnn_size, decoder_hidden_size = 512, 512
-
-	if loss_type is not None:
-		# Define a loss function.
-		if loss_type == 'xent':
-			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id)  # Ignore the PAD ID.
-		elif loss_type == 'nll':
-			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum')  # Ignore the PAD ID.
-		else:
-			raise ValueError('Invalid loss type, {}'.format(loss_type))
-	else:
-		criterion = None
 
 	#--------------------
 	import onmt, onmt.translate
@@ -2080,8 +2093,19 @@ def build_opennmt_model(image_height, image_width, image_channel, max_time_steps
 				concat_decoder_outputs.append(do[:dl])
 			return criterion(torch.cat(concat_model_outputs, 0).to(device), torch.cat(concat_decoder_outputs, 0).to(device)), model_outputs
 
-
 	model = MySimpleModel(encoder, decoder, generator)
+
+	#--------------------
+	if loss_type is not None:
+		# Define a loss function.
+		if loss_type == 'xent':
+			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id)  # Ignore the PAD ID.
+		elif loss_type == 'nll':
+			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum')  # Ignore the PAD ID.
+		else:
+			raise ValueError('Invalid loss type, {}'.format(loss_type))
+	else:
+		criterion = None
 
 	return model, criterion
 
@@ -2103,17 +2127,6 @@ def build_rare1_and_opennmt_model(image_height, image_width, image_channel, max_
 		word_vec_size = 80
 		encoder_rnn_size = 256
 		decoder_hidden_size = encoder_rnn_size * 2 if bidirectional_encoder else encoder_rnn_size
-
-	if loss_type is not None:
-		# Define a loss function.
-		if loss_type == 'xent':
-			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id)  # Ignore the PAD ID.
-		elif loss_type == 'nll':
-			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum')  # Ignore the PAD ID.
-		else:
-			raise ValueError('Invalid loss type, {}'.format(loss_type))
-	else:
-		criterion = None
 
 	#--------------------
 	import onmt, onmt.translate
@@ -2239,6 +2252,18 @@ def build_rare1_and_opennmt_model(image_height, image_width, image_channel, max_
 
 	model = MyCompositeModel(image_height, image_width, image_channel, output_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, num_decoder_layers, bidirectional_encoder, transformer=transformer, feature_extractor=feature_extractor, sequence_model=sequence_model, num_fiducials=num_fiducials)
 
+	#--------------------
+	if loss_type is not None:
+		# Define a loss function.
+		if loss_type == 'xent':
+			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id)  # Ignore the PAD ID.
+		elif loss_type == 'nll':
+			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum')  # Ignore the PAD ID.
+		else:
+			raise ValueError('Invalid loss type, {}'.format(loss_type))
+	else:
+		criterion = None
+
 	return model, criterion
 
 def build_rare2_and_opennmt_model(image_height, image_width, image_channel, max_time_steps, label_converter, lang, loss_type=None, device='cuda'):
@@ -2257,17 +2282,6 @@ def build_rare2_and_opennmt_model(image_height, image_width, image_channel, max_
 		word_vec_size = 80
 		encoder_rnn_size = 256
 		decoder_hidden_size = encoder_rnn_size * 2 if bidirectional_encoder else encoder_rnn_size
-
-	if loss_type is not None:
-		# Define a loss function.
-		if loss_type == 'xent':
-			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id)  # Ignore the PAD ID.
-		elif loss_type == 'nll':
-			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum')  # Ignore the PAD ID.
-		else:
-			raise ValueError('Invalid loss type, {}'.format(loss_type))
-	else:
-		criterion = None
 
 	#--------------------
 	import onmt, onmt.translate
@@ -2393,6 +2407,18 @@ def build_rare2_and_opennmt_model(image_height, image_width, image_channel, max_
 
 	model = MyCompositeModel(image_height, image_width, image_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_encoder_layers, num_decoder_layers, bidirectional_encoder, num_fiducials)
 
+	#--------------------
+	if loss_type is not None:
+		# Define a loss function.
+		if loss_type == 'xent':
+			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id)  # Ignore the PAD ID.
+		elif loss_type == 'nll':
+			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum')  # Ignore the PAD ID.
+		else:
+			raise ValueError('Invalid loss type, {}'.format(loss_type))
+	else:
+		criterion = None
+
 	return model, criterion
 
 def build_aster_and_opennmt_model(image_height, image_width, image_channel, max_time_steps, label_converter, lang, loss_type=None, device='cuda'):
@@ -2411,17 +2437,6 @@ def build_aster_and_opennmt_model(image_height, image_width, image_channel, max_
 		word_vec_size = 80
 		encoder_rnn_size = 256
 		decoder_hidden_size = encoder_rnn_size * 2 if bidirectional_encoder else encoder_rnn_size
-
-	if loss_type is not None:
-		# Define a loss function.
-		if loss_type == 'xent':
-			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id)  # Ignore the PAD ID.
-		elif loss_type == 'nll':
-			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum')  # Ignore the PAD ID.
-		else:
-			raise ValueError('Invalid loss type, {}'.format(loss_type))
-	else:
-		criterion = None
 
 	#--------------------
 	import onmt, onmt.translate
@@ -2550,6 +2565,18 @@ def build_aster_and_opennmt_model(image_height, image_width, image_channel, max_
 
 	model = MyCompositeModel(image_height, image_width, image_channel, label_converter.num_tokens, word_vec_size, encoder_rnn_size, decoder_hidden_size, num_decoder_layers, bidirectional_encoder, num_fiducials)
 
+	#--------------------
+	if loss_type is not None:
+		# Define a loss function.
+		if loss_type == 'xent':
+			criterion = torch.nn.CrossEntropyLoss(ignore_index=label_converter.pad_id)  # Ignore the PAD ID.
+		elif loss_type == 'nll':
+			criterion = torch.nn.NLLLoss(ignore_index=label_converter.pad_id, reduction='sum')  # Ignore the PAD ID.
+		else:
+			raise ValueError('Invalid loss type, {}'.format(loss_type))
+	else:
+		criterion = None
+
 	return model, criterion
 
 # REF [site] >> https://github.com/fengxinjie/Transformer-OCR
@@ -2558,7 +2585,7 @@ def build_transformer_model(image_height, image_width, image_channel, max_time_s
 
 	num_layers = 4
 	num_heads = 8  # The number of head for MultiHeadedAttention.
-	dropout = 0.1  # Dropout probability. [0, 1.0].
+	dropout = 0.1  # Dropout probability. [0, 1].
 	if lang == 'kor':
 		d_model = 256  # The dimension of keys/values/queries in MultiHeadedAttention, also the input size of the first-layer of the PositionwiseFeedForward.
 		d_ff = 1024  # The second-layer of the PositionwiseFeedForward.
@@ -2573,21 +2600,13 @@ def build_transformer_model(image_height, image_width, image_channel, max_time_s
 	pad_id = label_converter.pad_id
 	sos_id, eos_id = label_converter.encode([label_converter.SOS], is_bare_output=True)[0], label_converter.encode([label_converter.EOS], is_bare_output=True)[0]
 
-	if is_train:
-		# Define a loss function.
-		# TODO [check] >>
-		criterion = transformer_ocr.train.LabelSmoothing(size=label_converter.num_tokens, padding_idx=pad_id, smoothing=smoothing)
-		#criterion = LabelSmoothingLoss(num_labels=label_converter.num_tokens, pad_id=pad_id, smoothing=smoothing)
-	else:
-		criterion = None
-
 	class MySimpleModel(torch.nn.Module):
 		def __init__(self, num_classes, num_layers, d_model, d_ff, d_feature, num_heads, dropout):
 			super().__init__()
 
 			self.model = transformer_ocr.model.make_model(num_classes, N=num_layers, d_model=d_model, d_ff=d_ff, d_feature=d_feature, h=num_heads, dropout=dropout)
 			self.d_model = d_model
-			self.cnn_downsample_factor = 4  # Fixed.
+			self.cnn_downsample_factor = 16**2  # Fixed.
 
 		def forward(self, inputs, outputs=None, device='cuda', *args, **kwargs):
 			# FIXME [check] >> Why is a single input but not multiple inputs predicted?
@@ -2595,7 +2614,7 @@ def build_transformer_model(image_height, image_width, image_channel, max_time_s
 			# Predict a single input.
 			# REF [function] >> transformer_ocr.dataset.Batch.__init__()
 			#src_mask = torch.autograd.Variable(torch.from_numpy(np.ones([1, 1, 36], dtype=np.bool)).to(device))
-			src_mask = torch.autograd.Variable(torch.full([1, 1, inputs.size(3) // self.cnn_downsample_factor], True, dtype=torch.bool, device=device))
+			src_mask = torch.autograd.Variable(torch.full([1, 1, (inputs.size(2) * inputs.size(3)) // self.cnn_downsample_factor], True, dtype=torch.bool, device=device))
 			model_outputs = torch.full((len(inputs), max_time_steps), pad_id, dtype=np.int)
 			#for idx, src in enumerate(inputs):
 			#	src = src.unsqueeze(dim=0)
@@ -2605,7 +2624,7 @@ def build_transformer_model(image_height, image_width, image_channel, max_time_s
 				model_outputs[idx,:len(model_outp[0])] = model_outp[0]
 			"""
 			# Predict multiple inputs.
-			src_mask = torch.autograd.Variable(torch.full([1, 1, inputs.size(3) // self.cnn_downsample_factor], True, dtype=torch.bool, device=device))
+			src_mask = torch.autograd.Variable(torch.full([1, 1, (inputs.size(2) * inputs.size(3)) // self.cnn_downsample_factor], True, dtype=torch.bool, device=device))
 			#model_outputs = transformer_ocr.predict.greedy_decode_multi_simple(self.model, inputs, src_mask, max_len=max_time_steps, sos=sos_id, eos=eos_id, pad=pad_id, device=device)
 			model_outputs = transformer_ocr.predict.greedy_decode_multi(self.model, inputs, src_mask, max_len=max_time_steps, sos=sos_id, eos=eos_id, pad=pad_id, device=device)
 			#model_outputs = transformer_ocr.predict.greedy_decode_multi_async1(self.model, inputs, src_mask, max_len=max_time_steps, sos=sos_id, eos=eos_id, pad=pad_id, device=device)
@@ -2635,6 +2654,16 @@ def build_transformer_model(image_height, image_width, image_channel, max_time_s
 			return criterion(model_outputs.contiguous().view(-1, model_outputs.size(-1)), batch.tgt_output.contiguous().view(-1)) / batch.num_tokens, model_outputs
 
 	model = MySimpleModel(label_converter.num_tokens, num_layers, d_model, d_ff, d_feature, num_heads, dropout)
+
+	#--------------------
+	if is_train:
+		# Define a loss function.
+		# Use KL divergence.
+		# TODO [check] >>
+		criterion = transformer_ocr.train.LabelSmoothing(size=label_converter.num_tokens, padding_idx=pad_id, smoothing=smoothing)
+		#criterion = LabelSmoothingLoss(num_labels=label_converter.num_tokens, pad_id=pad_id, smoothing=smoothing)
+	else:
+		criterion = None
 
 	return model, criterion
 
@@ -2736,7 +2765,7 @@ def build_char_model_for_inference(model_filepath_to_load, image_shape, num_clas
 
 	return model
 
-def build_text_model_for_training(model_filepath_to_load, model_type, image_shape, target_type, font_type, max_label_len, output_dir_path, label_converter, sos_id, eos_id, blank_label, num_suffixes, lang, logger, device='cuda'):
+def build_text_model_for_training(model_filepath_to_load, model_type, image_shape, target_type, font_type, max_label_len, output_dir_path, label_converter, sos_id, eos_id, blank_label, num_suffixes, lang, logger=None, device='cuda'):
 	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
@@ -3431,8 +3460,8 @@ def train_char_recognizer(model, criterion, optimizer, scheduler, is_epoch_based
 	if logger: logger.info('End creating data loaders: {} secs.'.format(time.time() - start_time))
 
 	# Show data info.
-	show_char_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
-	show_char_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
+	show_char_data_info(train_dataloader, label_converter, visualize=False, nrow=8, mode='Train', logger=logger)
+	show_char_data_info(test_dataloader, label_converter, visualize=False, nrow=8, mode='Test', logger=logger)
 
 	#--------------------
 	# Train a model.
@@ -3477,8 +3506,8 @@ def train_text_recognizer(model, criterion, optimizer, scheduler, is_epoch_based
 	if logger: logger.info('End creating data loaders: {} secs.'.format(time.time() - start_time))
 
 	# Show data info.
-	show_text_data_info(train_dataloader, label_converter, visualize=False, mode='Train', logger=logger)
-	show_text_data_info(test_dataloader, label_converter, visualize=False, mode='Test', logger=logger)
+	show_text_data_info(train_dataloader, label_converter, visualize=False, nrow=2, mode='Train', logger=logger)
+	show_text_data_info(test_dataloader, label_converter, visualize=False, nrow=2, mode='Test', logger=logger)
 
 	#--------------------
 	# Train a model.
@@ -3517,7 +3546,7 @@ def evaluate_text_recognizer(model, dataset, output_dir_path, label_converter, b
 	if logger: logger.info('End creating a dataloader: {} secs.'.format(time.time() - start_time))
 
 	# Show data info.
-	show_text_data_info(dataloader, label_converter, visualize=False, mode='Test', logger=logger)
+	show_text_data_info(dataloader, label_converter, visualize=False, nrow=2, mode='Test', logger=logger)
 
 	#--------------------
 	error_cases_dir_path = os.path.join(output_dir_path, 'eval_text_error_cases')
@@ -3615,7 +3644,7 @@ def text_dataset_to_tensor(dataset, batch_size, num_workers, logger):
 	dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
 	# Show data info.
-	#show_text_data_info(dataloader, label_converter, visualize=False, mode='Test', logger=logger)
+	#show_text_data_info(dataloader, label_converter, visualize=False, nrow=2, mode='Test', logger=logger)
 
 	inputs, outputs = list(), list()
 	try:
@@ -4061,8 +4090,8 @@ def detect_texts_by_craft(image_filepath, craft_refine, craft_cuda, output_dir_p
 
 		#return extract_simple_text_rectangle_from_quadrilateral(image, bboxes, output_dir_path)
 		#return extract_masked_text_rectangle_from_quadrilateral(image, bboxes, output_dir_path)
-		#return extract_rotated_text_rectangle_from_quadrilateral(image, bboxes, output_dir_path)
-		return extract_rectified_text_rectangle_from_quadrilateral(image, bboxes, output_dir_path)
+		return extract_rotated_text_rectangle_from_quadrilateral(image, bboxes, output_dir_path)
+		#return extract_rectified_text_rectangle_from_quadrilateral(image, bboxes, output_dir_path)
 	else: return None
 
 def visualize_inference_results(predictions, label_converter, inputs, outputs, output_dir_path, is_case_sensitive, num_examples_to_visualize, logger):
