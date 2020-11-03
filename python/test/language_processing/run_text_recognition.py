@@ -2949,7 +2949,7 @@ def build_text_model_for_training(model_filepath_to_load, model_type, image_shap
 
 	return model, criterion, optimizer, scheduler, is_epoch_based_scheduler, model_params, max_gradient_norm, model_filepath_format
 
-def build_text_model_for_inference(model_filepath_to_load, model_type, image_shape, max_label_len, label_converter, sos_id, eos_id, num_suffixes, lang, logger, device='cuda'):
+def build_text_model_for_inference(model_filepath_to_load, model_type, image_shape, max_label_len, label_converter, sos_id, eos_id, num_suffixes, lang, swa=False, logger=None, device='cuda'):
 	# Build a model.
 	if logger: logger.info('Start building a model...')
 	start_time = time.time()
@@ -2974,6 +2974,10 @@ def build_text_model_for_inference(model_filepath_to_load, model_type, image_sha
 	else:
 		raise ValueError('Invalid model type, {}'.format(model_type))
 	if logger: logger.info('End building a model: {} secs.'.format(time.time() - start_time))
+
+	if swa:
+		import torch.optim.swa_utils
+		model = torch.optim.swa_utils.AveragedModel(model, device=device, avg_fn=None)
 
 	# Load a model.
 	if logger: logger.info('Start loading a pretrained model from {}.'.format(model_filepath_to_load))
@@ -3233,7 +3237,7 @@ def train_char_recognition_model(model, criterion, train_dataloader, test_datalo
 
 	return model, best_model_filepath
 
-def train_text_recognition_model(model, criterion, optimizer, train_dataloader, test_dataloader, label_converter, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler=None, is_epoch_based_scheduler=True, max_gradient_norm=None, model_params=None, is_case_sensitive=False, logger=None, device='cuda'):
+def train_text_recognition_model(model, criterion, optimizer, train_dataloader, test_dataloader, label_converter, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler=None, is_epoch_based_scheduler=True, max_gradient_norm=None, model_params=None, is_case_sensitive=False, swa=False, logger=None, device='cuda'):
 	train_log_filepath = os.path.join(output_dir_path, 'train_log.txt')
 	train_history_filepath = os.path.join(output_dir_path, 'train_history.pkl')
 	train_result_image_filepath = os.path.join(output_dir_path, 'results.png')
@@ -3246,11 +3250,23 @@ def train_text_recognition_model(model, criterion, optimizer, train_dataloader, 
 		'val_loss': list()
 	}
 
+	if swa:
+		# REF [site] >>
+		#	https://pytorch.org/blog/pytorch-1.6-now-includes-stochastic-weight-averaging/
+		#	https://pytorch.org/blog/stochastic-weight-averaging-in-pytorch/
+		import torch.optim.swa_utils
+		swa_model = torch.optim.swa_utils.AveragedModel(model, device=device, avg_fn=None)
+		swa_scheduler = torch.optim.swa_utils.SWALR(optimizer, swa_lr=0.05, anneal_epochs=5, anneal_strategy='cos', last_epoch=-1)
+		swa_start_epoch = 20
+
 	epoch_time = swl_ml_util.AverageMeter()
 	best_performance_measure = 0.0
 	best_model_filepath = None
 	for epoch in range(initial_epoch, final_epoch):
-		current_learning_rate = scheduler.get_last_lr() if scheduler else 0.0
+		if swa and epoch >= swa_start_epoch:
+			current_learning_rate = swa_scheduler.get_last_lr() if swa_scheduler else 0.0
+		else:
+			current_learning_rate = scheduler.get_last_lr() if scheduler else 0.0
 		need_hour, need_mins, need_secs = swl_ml_util.convert_secs2time(epoch_time.avg * (final_epoch - epoch))
 		if logger: logger.info('Epoch {}/{}: Need time = {:02d}:{:02d}:{:02d}, Accuracy (best) = {:.4f}, Error (best) = {:.4f}, Learning rate = {}.'.format(epoch + 1, final_epoch, need_hour, need_mins, need_secs, recorder.max_accuracy(False), 100 - recorder.max_accuracy(False), current_learning_rate))
 		start_epoch_time = time.time()
@@ -3275,7 +3291,11 @@ def train_text_recognition_model(model, criterion, optimizer, train_dataloader, 
 		history['val_loss'].append(val_loss)
 		history['val_acc'].append(val_acc)
 
-		if scheduler and is_epoch_based_scheduler: scheduler.step()
+		if swa and epoch >= swa_start_epoch:
+			swa_model.update_parameters(model)
+			swa_scheduler.step()
+		else:
+			if scheduler and is_epoch_based_scheduler: scheduler.step()
 
 		# Measure elapsed time.
 		epoch_time.update(time.time() - start_epoch_time)
@@ -3300,6 +3320,13 @@ def train_text_recognition_model(model, criterion, optimizer, train_dataloader, 
 		pickle.dump(train_log, open(train_history_filepath, 'wb'))
 		swl_ml_util.plotting(output_dir_path, train_history_filepath)
 		if logger: logger.info('Epoch {}/{} completed: {} secs.'.format(epoch + 1, final_epoch, time.time() - start_epoch_time))
+
+	#--------------------
+	if swa:
+		torch.optim.swa_utils.update_bn(train_dataloader, swa_model, device=device)
+
+		swa_model_filepath = model_filepath_format.format('_swa_{}'.format(datetime.datetime.now().strftime('%Y%m%dT%H%M%S')))
+		save_model(swa_model_filepath, swa_model, logger)
 
 	return model, best_model_filepath
 
@@ -3495,7 +3522,7 @@ def train_char_recognizer(model, criterion, optimizer, scheduler, is_epoch_based
 
 	return model_filepath
 
-def train_text_recognizer(model, criterion, optimizer, scheduler, is_epoch_based_scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, num_epochs, batch_size, num_workers, is_case_sensitive, model_filepath_format, logger=None, device='cuda'):
+def train_text_recognizer(model, criterion, optimizer, scheduler, is_epoch_based_scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, num_epochs, batch_size, num_workers, is_case_sensitive, model_filepath_format, swa=False, logger=None, device='cuda'):
 	initial_epoch, final_epoch = 0, num_epochs
 	log_print_freq = 1000
 
@@ -3513,7 +3540,7 @@ def train_text_recognizer(model, criterion, optimizer, scheduler, is_epoch_based
 	# Train a model.
 	if logger: logger.info('Start training...')
 	start_time = time.time()
-	model, best_model_filepath = train_text_recognition_model(model, criterion, train_dataloader, test_dataloader, optimizer, label_converter, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, max_gradient_norm, model_params, is_case_sensitive, logger, device)
+	model, best_model_filepath = train_text_recognition_model(model, criterion, optimizer, train_dataloader, test_dataloader, label_converter, initial_epoch, final_epoch, log_print_freq, model_filepath_format, output_dir_path, scheduler, is_epoch_based_scheduler, max_gradient_norm, model_params, is_case_sensitive, swa, logger, device)
 	if logger: logger.info('End training: {} secs.'.format(time.time() - start_time))
 
 	# Save a model.
@@ -4365,6 +4392,7 @@ def main():
 	#if model_filepath: logger.info('Model filepath to save: {}.'.format(model_filepath))
 
 	#--------------------
+	swa = False  # Apply Stochastic Weight Averaging (SWA).
 	is_case_sensitive=False
 	num_workers = 8
 
@@ -4423,7 +4451,7 @@ def main():
 			#logger.info('Model:\n{}.'.format(model))
 
 			# Train the model.
-			model_filepath = train_text_recognizer(model, criterion, optimizer, scheduler, is_epoch_based_scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, args.epoch, args.batch, num_workers, is_case_sensitive, model_filepath_format, logger, device)
+			model_filepath = train_text_recognizer(model, criterion, optimizer, scheduler, is_epoch_based_scheduler, train_dataset, test_dataset, output_dir_path, label_converter, model_params, max_gradient_norm, args.epoch, args.batch, num_workers, is_case_sensitive, model_filepath_format, swa, logger, device)
 	elif not model_filepath: model_filepath = model_filepath_to_load
 
 	#--------------------
@@ -4478,7 +4506,7 @@ def main():
 				visualize_inference_results(predictions, label_converter, inputs.numpy(), outputs, output_dir_path, is_case_sensitive, num_examples_to_visualize, logger)
 		elif args.target_type in ['word', 'textline']:
 			# Build a model.
-			model = build_text_model_for_inference(model_filepath, args.model_type, image_shape, args.max_len, label_converter, SOS_ID, EOS_ID, num_suffixes, lang, logger=logger, device=device)
+			model = build_text_model_for_inference(model_filepath, args.model_type, image_shape, args.max_len, label_converter, SOS_ID, EOS_ID, num_suffixes, lang, swa, logger=logger, device=device)
 
 			#--------------------
 			if args.eval and model:
