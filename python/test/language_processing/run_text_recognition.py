@@ -282,72 +282,31 @@ def generate_font_colors(image_depth):
 	#bg_color = (random.randrange(128, 256),) * image_depth  # A light grayscale background color.
 	return font_color, bg_color
 
-# Noam learning rate decay policy.
-#	Batch-step-based, but not epoch-based, learning rate decay policy.
-#	REF [paper] >> "Attention Is All You Need", NIPS 2017.
-class NoamLR(object):
-	def __init__(self, optimizer, dim_feature, warmup_steps, factor=1, last_step=0):
-		self.optimizer = optimizer
-		self.dim_feature = dim_feature
-		self.warmup_steps = warmup_steps
-		self.factor = factor
-		self.last_step = last_step
-		self.learning_rate = 0
+class EnlargeImageForGeometricTransformation(object):
+	def __init__(self, height=None, width=None, is_pil=True):
+		self.height, self.width = height, width
+		self.resize_functor = self._enlarge_background_by_pil if is_pil else self._enlarge_background_by_opencv
 
-		"""
-		# Initialize step and base learning rates.
-		if last_step == -1:
-			for group in optimizer.param_groups:
-				group.setdefault('initial_lr', group['lr'])
-		else:
-			for i, group in enumerate(optimizer.param_groups):
-				if 'initial_lr' not in group:
-					raise KeyError("param 'initial_lr' is not specified in param_groups[{}] when resuming an optimizer".format(i))
-		self.base_lrs = list(map(lambda group: group['initial_lr'], optimizer.param_groups))
-		"""
-
-	def get_last_lr(self):
-		return self.learning_rate
-
-	def get_lr(self):
-		return self.get_last_lr()
-
-	def step(self, step=None):
-		if step is None:
-			self.last_step += 1
-		else:
-			self.last_step = step
-		self.learning_rate = self._adjust_learning_rate(self.optimizer, self.last_step, self.warmup_steps, self.dim_feature, self.factor)
+	def __call__(self, x):
+		return self.resize_functor(x, self.height, self.width)
 
 	@staticmethod
-	def _adjust_learning_rate(optimizer, step, warmup_steps, dim_feature, factor):
-		lr = factor * (dim_feature**(-0.5) * min(step**(-0.5), step * warmup_steps**(-1.5)))
-		for param_group in optimizer.param_groups:
-			param_group['lr'] = lr
+	def _enlarge_background_by_pil(image, height=None, width=None):
+		if height is None or width is None:
+			width = height = math.ceil(math.sqrt(image.width**2 + image.height**2))
+		sx, sy = (width - image.width) // 2, (height - image.height) // 2
+		enlarged = Image.new(image.mode, (width, height), color=0)
+		enlarged.paste(image, (sx, sy))
+		return enlarged
 
-# Label smoothing.
-class LabelSmoothingLoss(torch.nn.Module):
-	def __init__(self, num_labels, pad_id=0, smoothing=0.0):
-		super().__init__()
-		self.criterion = torch.nn.KLDivLoss(size_average=False)
-		self.num_labels = num_labels
-		self.pad_id = pad_id
-		self.smoothing = smoothing
-		self.confidence = 1.0 - smoothing
-		#self.true_dist = None
-		
-	def forward(self, inputs, targets):
-		assert inputs.size(1) == self.num_labels
-		#true_dist = inputs.data.clone()
-		#true_dist.fill_(self.smoothing / (self.num_labels - 2))
-		true_dist = torch.full_like(inputs, self.smoothing / (self.num_labels - 2))
-		true_dist.scatter_(1, targets.unsqueeze(dim=1), self.confidence)
-		true_dist[:, self.pad_id] = 0
-		mask = torch.nonzero(targets == self.pad_id)
-		if mask.dim() > 0:
-			true_dist.index_fill_(0, mask.squeeze(), 0.0)
-		#self.true_dist = true_dist
-		return self.criterion(inputs, torch.autograd.Variable(true_dist, requires_grad=False))
+	@staticmethod
+	def _enlarge_background_by_opencv(image, height=None, width=None):
+		if height is None or width is None:
+			height = width = math.ceil(math.sqrt(image.shape[0]**2 + image.shape[1]**2))
+		sy, sx = (height - image.shape[0]) // 2, (width - image.shape[1]) // 2
+		enlarged = np.zeros((height, width) + image.shape[2:], dtype=image.dtype)
+		enlarged[sy:sy+image.shape[0],sx:sx+image.shape[1]] = image
+		return enlarged
 
 class RandomAugment(object):
 	def __init__(self, augmenter, is_pil=True):
@@ -519,6 +478,7 @@ class MySubsetDataset(torch.utils.data.Dataset):
 def create_char_datasets(char_type, label_converter, charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, logger=None):
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
+		#EnlargeBackground(height=None, width=None, is_pil=is_pil),
 		RandomAugment(create_char_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
@@ -529,6 +489,8 @@ def create_char_datasets(char_type, label_converter, charset, num_train_examples
 		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	test_transform = torchvision.transforms.Compose([
+		#EnlargeBackground(height=None, width=None, is_pil=is_pil),
+		#RandomAugment(create_char_augmenter()),
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
 		ResizeImageToFixedSizeWithPadding(image_height, image_width, logger=logger),
@@ -537,6 +499,11 @@ def create_char_datasets(char_type, label_converter, charset, num_train_examples
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
+
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
 
 	if char_type == 'simple_char':
 		chars = list(charset * num_train_examples_per_class)
@@ -553,11 +520,6 @@ def create_char_datasets(char_type, label_converter, charset, num_train_examples
 		random.shuffle(chars)
 		test_dataset = text_data.NoisyCharacterDataset(label_converter, chars, image_channel, char_clipping_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform)
 	elif char_type == 'file_based_char':
-		if 'posix' == os.name:
-			data_base_dir_path = '/home/sangwook/work/dataset'
-		else:
-			data_base_dir_path = 'D:/work/dataset'
-
 		train_datasets, test_datasets = list(), list()
 		if True:
 			# REF [function] >> generate_chars_from_chars74k_data() in chars74k_data_test.py
@@ -624,9 +586,10 @@ def create_char_datasets(char_type, label_converter, charset, num_train_examples
 
 	return train_dataset, test_dataset
 
-def create_mixed_char_datasets(label_converter, charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, logger=None):
+def create_mixed_char_datasets(label_converter, charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, is_pil=True, logger=None):
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
+		#EnlargeBackground(height=None, width=None, is_pil=is_pil),
 		RandomAugment(create_char_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
@@ -637,6 +600,8 @@ def create_mixed_char_datasets(label_converter, charset, num_simple_char_example
 		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	test_transform = torchvision.transforms.Compose([
+		#EnlargeBackground(height=None, width=None, is_pil=is_pil),
+		#RandomAugment(create_char_augmenter()),
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
 		ResizeImageToFixedSizeWithPadding(image_height, image_width, logger=logger),
@@ -727,9 +692,10 @@ def create_mixed_char_datasets(label_converter, charset, num_simple_char_example
 
 	return train_dataset, test_dataset
 
-def create_word_datasets(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, logger=None):
+def create_word_datasets(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, is_pil=True, logger=None):
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
+		EnlargeImageForGeometricTransformation(height=None, width=None, is_pil=is_pil),
 		RandomAugment(create_word_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
@@ -741,6 +707,8 @@ def create_word_datasets(word_type, label_converter, wordset, chars, num_train_e
 	])
 	train_target_transform = ToIntTensor()
 	test_transform = torchvision.transforms.Compose([
+		EnlargeImageForGeometricTransformation(height=None, width=None, is_pil=is_pil),
+		#RandomAugment(create_word_augmenter()),
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
 		ResizeImageToFixedSizeWithPadding(image_height, image_width, logger=logger),
@@ -751,6 +719,11 @@ def create_word_datasets(word_type, label_converter, wordset, chars, num_train_e
 	])
 	test_target_transform = ToIntTensor()
 
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+
 	if word_type == 'simple_word':
 		train_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_train_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
 		test_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_test_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
@@ -758,11 +731,6 @@ def create_word_datasets(word_type, label_converter, wordset, chars, num_train_e
 		train_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
 		test_dataset = text_data.RandomWordDataset(label_converter, chars, num_test_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
 	elif word_type == 'aihub_word':
-		if 'posix' == os.name:
-			data_base_dir_path = '/home/sangwook/work/dataset'
-		else:
-			data_base_dir_path = 'D:/work/dataset'
-
 		# AI-Hub printed text dataset.
 		#	#syllables = 558,600, #words = 277,150, #sentences = 42,350.
 		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
@@ -778,11 +746,6 @@ def create_word_datasets(word_type, label_converter, wordset, chars, num_train_e
 		train_dataset = MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform)
 		test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
 	elif word_type == 'file_based_word':
-		if 'posix' == os.name:
-			data_base_dir_path = '/home/sangwook/work/dataset'
-		else:
-			data_base_dir_path = 'D:/work/dataset'
-
 		# File-based words: 504,279.
 		train_datasets, test_datasets = list(), list()
 		if True:
@@ -846,6 +809,7 @@ def create_word_datasets(word_type, label_converter, wordset, chars, num_train_e
 def create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, logger=None):
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
+		EnlargeImageForGeometricTransformation(height=None, width=None, is_pil=is_pil),
 		RandomAugment(create_word_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
@@ -857,6 +821,8 @@ def create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examp
 	])
 	train_target_transform = ToIntTensor()
 	test_transform = torchvision.transforms.Compose([
+		EnlargeImageForGeometricTransformation(height=None, width=None, is_pil=is_pil),
+		#RandomAugment(create_word_augmenter()),
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
 		ResizeImageToFixedSizeWithPadding(image_height, image_width, logger=logger),
@@ -953,9 +919,10 @@ def create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examp
 
 	return train_dataset, test_dataset
 
-def create_textline_datasets(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, logger=None):
+def create_textline_datasets(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, is_pil=True, logger=None):
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
+		#EnlargeBackground(height=None, width=None, is_pil=is_pil),
 		RandomAugment(create_textline_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
@@ -967,6 +934,8 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 	])
 	train_target_transform = ToIntTensor()
 	test_transform = torchvision.transforms.Compose([
+		#EnlargeBackground(height=None, width=None, is_pil=is_pil),
+		#RandomAugment(create_textline_augmenter()),
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
 		ResizeImageToFixedSizeWithPadding(image_height, image_width, logger=logger),
@@ -976,6 +945,11 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
 	test_target_transform = ToIntTensor()
+
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
 
 	if textline_type == 'simple_textline':
 		train_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_train_examples, image_channel, max_textline_len, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
@@ -1015,16 +989,16 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 		langs = ['kr', 'en']  # {'kr', 'ar', 'cn', 'de', 'en', 'es', 'fr', 'hi'}.
 		for lang in langs:
 			if lang == 'kr':
-				font_types = ['kor-large']  # {'kor-small', 'kor-large', 'kor-receipt'}.
-				font_filepaths = construct_font(font_types)
-				font_filepaths, _ = zip(*font_filepaths)
+			font_types = ['kor-large']  # {'kor-small', 'kor-large', 'kor-receipt'}.
+			font_filepaths = construct_font(font_types)
+			font_filepaths, _ = zip(*font_filepaths)
 			else:
-				#font_filepaths = trdg.utils.load_fonts(lang)
-				font_filepaths = list()
+			#font_filepaths = trdg.utils.load_fonts(lang)
+			font_filepaths = list()
 
-			# distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random).
-			# distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
-			distortion_types, distortion_directions = (1, 2, 3), (0, 1, 2)
+		# distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random).
+		# distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+		distortion_types, distortion_directions = (1, 2, 3), (0, 1, 2)
 			divisor = len(distortion_types) * len(distortion_directions) * 2 * 2
 			for is_randomly_generated in [False, True]:
 				for distortion_type in distortion_types:
@@ -1036,11 +1010,6 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 		train_dataset = torch.utils.data.ConcatDataset(train_datasets)
 		test_dataset = torch.utils.data.ConcatDataset(test_datasets)
 	elif textline_type == 'aihub_textline':
-		if 'posix' == os.name:
-			data_base_dir_path = '/home/sangwook/work/dataset'
-		else:
-			data_base_dir_path = 'D:/work/dataset'
-
 		# AI-Hub printed text dataset.
 		#	#syllables = 558,600, #words = 277,150, #sentences = 42,350.
 		aihub_data_json_filepath = data_base_dir_path + '/ai_hub/korean_font_image/printed/printed_data_info.json'
@@ -1057,11 +1026,6 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 		train_dataset = MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform)
 		test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
 	elif textline_type == 'file_based_textline':
-		if 'posix' == os.name:
-			data_base_dir_path = '/home/sangwook/work/dataset'
-		else:
-			data_base_dir_path = 'D:/work/dataset'
-
 		# File-based text lines: 55,835.
 		train_datasets, test_datasets = list(), list()
 		if True:
@@ -1105,9 +1069,10 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 
 	return train_dataset, test_dataset
 
-def create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, logger=None):
+def create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, is_pil=True, logger=None):
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
+		#EnlargeBackground(height=None, width=None, is_pil=is_pil),
 		RandomAugment(create_textline_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
@@ -1119,6 +1084,8 @@ def create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_e
 	])
 	train_target_transform = ToIntTensor()
 	test_transform = torchvision.transforms.Compose([
+		#EnlargeBackground(height=None, width=None, is_pil=is_pil),
+		#RandomAugment(create_textline_augmenter()),
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
 		ResizeImageToFixedSizeWithPadding(image_height, image_width, logger=logger),
@@ -1176,16 +1143,16 @@ def create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_e
 		langs = ['kr', 'en']  # {'kr', 'ar', 'cn', 'de', 'en', 'es', 'fr', 'hi'}.
 		for lang in langs:
 			if lang == 'kr':
-				font_types = ['kor-large']  # {'kor-small', 'kor-large', 'kor-receipt'}.
-				font_filepaths = construct_font(font_types)
-				font_filepaths, _ = zip(*font_filepaths)
+			font_types = ['kor-large']  # {'kor-small', 'kor-large', 'kor-receipt'}.
+			font_filepaths = construct_font(font_types)
+			font_filepaths, _ = zip(*font_filepaths)
 			else:
-				#font_filepaths = trdg.utils.load_fonts(lang)
-				font_filepaths = list()
+			#font_filepaths = trdg.utils.load_fonts(lang)
+			font_filepaths = list()
 
-			# distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random).
-			# distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
-			distortion_types, distortion_directions = (1, 2, 3), (0, 1, 2)
+		# distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random).
+		# distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+		distortion_types, distortion_directions = (1, 2, 3), (0, 1, 2)
 			divisor = len(distortion_types) * len(distortion_directions) * 2 * 2
 			for is_randomly_generated in [False, True]:
 				for distortion_type in distortion_types:
@@ -2614,7 +2581,7 @@ def build_transformer_model(image_height, image_width, image_channel, max_time_s
 			# Predict a single input.
 			# REF [function] >> transformer_ocr.dataset.Batch.__init__()
 			#src_mask = torch.autograd.Variable(torch.from_numpy(np.ones([1, 1, 36], dtype=np.bool)).to(device))
-			src_mask = torch.autograd.Variable(torch.full([1, 1, (inputs.size(2) * inputs.size(3)) // self.cnn_downsample_factor], True, dtype=torch.bool, device=device))
+			src_mask = torch.autograd.Variable(torch.full([1, 1, inputs.size(2) * inputs.size(3) // self.cnn_downsample_factor], True, dtype=torch.bool, device=device))
 			model_outputs = torch.full((len(inputs), max_time_steps), pad_id, dtype=np.int)
 			#for idx, src in enumerate(inputs):
 			#	src = src.unsqueeze(dim=0)
@@ -2624,7 +2591,7 @@ def build_transformer_model(image_height, image_width, image_channel, max_time_s
 				model_outputs[idx,:len(model_outp[0])] = model_outp[0]
 			"""
 			# Predict multiple inputs.
-			src_mask = torch.autograd.Variable(torch.full([1, 1, (inputs.size(2) * inputs.size(3)) // self.cnn_downsample_factor], True, dtype=torch.bool, device=device))
+			src_mask = torch.autograd.Variable(torch.full([1, 1, inputs.size(2) * inputs.size(3) // self.cnn_downsample_factor], True, dtype=torch.bool, device=device))
 			#model_outputs = transformer_ocr.predict.greedy_decode_multi_simple(self.model, inputs, src_mask, max_len=max_time_steps, sos=sos_id, eos=eos_id, pad=pad_id, device=device)
 			model_outputs = transformer_ocr.predict.greedy_decode_multi(self.model, inputs, src_mask, max_len=max_time_steps, sos=sos_id, eos=eos_id, pad=pad_id, device=device)
 			#model_outputs = transformer_ocr.predict.greedy_decode_multi_async1(self.model, inputs, src_mask, max_len=max_time_steps, sos=sos_id, eos=eos_id, pad=pad_id, device=device)
@@ -2988,6 +2955,73 @@ def build_text_model_for_inference(model_filepath_to_load, model_type, image_sha
 	model = model.to(device)
 
 	return model
+
+# Noam learning rate decay policy.
+#	Batch-step-based, but not epoch-based, learning rate decay policy.
+#	REF [paper] >> "Attention Is All You Need", NIPS 2017.
+class NoamLR(object):
+	def __init__(self, optimizer, dim_feature, warmup_steps, factor=1, last_step=0):
+		self.optimizer = optimizer
+		self.dim_feature = dim_feature
+		self.warmup_steps = warmup_steps
+		self.factor = factor
+		self.last_step = last_step
+		self.learning_rate = 0
+
+		"""
+		# Initialize step and base learning rates.
+		if last_step == -1:
+			for group in optimizer.param_groups:
+				group.setdefault('initial_lr', group['lr'])
+		else:
+			for i, group in enumerate(optimizer.param_groups):
+				if 'initial_lr' not in group:
+					raise KeyError("param 'initial_lr' is not specified in param_groups[{}] when resuming an optimizer".format(i))
+		self.base_lrs = list(map(lambda group: group['initial_lr'], optimizer.param_groups))
+		"""
+
+	def get_last_lr(self):
+		return self.learning_rate
+
+	def get_lr(self):
+		return self.get_last_lr()
+
+	def step(self, step=None):
+		if step is None:
+			self.last_step += 1
+		else:
+			self.last_step = step
+		self.learning_rate = self._adjust_learning_rate(self.optimizer, self.last_step, self.warmup_steps, self.dim_feature, self.factor)
+
+	@staticmethod
+	def _adjust_learning_rate(optimizer, step, warmup_steps, dim_feature, factor):
+		lr = factor * (dim_feature**(-0.5) * min(step**(-0.5), step * warmup_steps**(-1.5)))
+		for param_group in optimizer.param_groups:
+			param_group['lr'] = lr
+
+# Label smoothing.
+class LabelSmoothingLoss(torch.nn.Module):
+	def __init__(self, num_labels, pad_id=0, smoothing=0.0):
+		super().__init__()
+		self.criterion = torch.nn.KLDivLoss(size_average=False)
+		self.num_labels = num_labels
+		self.pad_id = pad_id
+		self.smoothing = smoothing
+		self.confidence = 1.0 - smoothing
+		#self.true_dist = None
+		
+	def forward(self, inputs, targets):
+		assert inputs.size(1) == self.num_labels
+		#true_dist = inputs.data.clone()
+		#true_dist.fill_(self.smoothing / (self.num_labels - 2))
+		true_dist = torch.full_like(inputs, self.smoothing / (self.num_labels - 2))
+		true_dist.scatter_(1, targets.unsqueeze(dim=1), self.confidence)
+		true_dist[:, self.pad_id] = 0
+		mask = torch.nonzero(targets == self.pad_id)
+		if mask.dim() > 0:
+			true_dist.index_fill_(0, mask.squeeze(), 0.0)
+		#self.true_dist = true_dist
+		return self.criterion(inputs, torch.autograd.Variable(true_dist, requires_grad=False))
 
 def train_char_model_in_epoch(model, criterion, optimizer, dataloader, model_params, max_gradient_norm, scheduler, is_step_based_scheduler, epoch, log_print_freq, logger, device='cuda'):
 	#start_epoch_time = time.time()
@@ -3745,7 +3779,7 @@ def load_text_data_from_file(label_converter, image_channel, target_type, max_la
 
 	return images, labels_int
 
-def create_datasets_for_training(charset, wordset, font_list, target_type, image_shape, label_converter, max_label_len, train_test_ratio, logger):
+def create_datasets_for_training(charset, wordset, font_list, target_type, image_shape, label_converter, max_label_len, train_test_ratio, is_pil, logger):
 	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
@@ -3760,11 +3794,11 @@ def create_datasets_for_training(charset, wordset, font_list, target_type, image
 		# File-based chars: 78,838.
 		if is_mixed_text_used:
 			num_simple_char_examples_per_class, num_noisy_examples_per_class = 300, 300  # For mixed chars.
-			train_dataset, test_dataset = create_mixed_char_datasets(label_converter, charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, logger)
+			train_dataset, test_dataset = create_mixed_char_datasets(label_converter, charset, num_simple_char_examples_per_class, num_noisy_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, is_pil, logger)
 		else:
 			char_type = 'simple_char'  # {'simple_char', 'noisy_char', 'file_based_char'}.
 			num_train_examples_per_class, num_test_examples_per_class = 500, 50  # For simple and noisy chars.
-			train_dataset, test_dataset = create_char_datasets(char_type, label_converter, charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, logger)
+			train_dataset, test_dataset = create_char_datasets(char_type, label_converter, charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, is_pil, logger)
 	elif target_type == 'word':
 		word_len_interval = (1, max_label_len)
 		word_count_interval, space_count_interval, char_space_ratio_interval = None, None, None
@@ -3776,7 +3810,7 @@ def create_datasets_for_training(charset, wordset, font_list, target_type, image
 		else:
 			word_type = 'simple_word'  # {'simple_word', 'random_word', 'aihub_word', 'file_based_word'}.
 			num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
-			train_dataset, test_dataset = create_word_datasets(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, font_list, font_size_interval, color_functor, logger)
+			train_dataset, test_dataset = create_word_datasets(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, font_list, font_size_interval, color_functor, is_pil, logger)
 	elif target_type == 'textline':
 		word_len_interval = (1, 20)
 		word_count_interval = (1, 5)
@@ -3790,7 +3824,7 @@ def create_datasets_for_training(charset, wordset, font_list, target_type, image
 		else:
 			textline_type = 'simple_textline'  # {'simple_textline', 'random_textline', 'trdg_textline', 'aihub_textline', 'file_based_textline'}.
 			num_train_examples, num_test_examples = int(2e5), int(2e3)  # For simple, random, and TRDG text lines.
-			train_dataset, test_dataset = create_textline_datasets(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, logger)
+			train_dataset, test_dataset = create_textline_datasets(textline_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, is_pil, logger)
 	else:
 		raise ValueError('Invalid target type, {}'.format(target_type))
 
@@ -4392,8 +4426,9 @@ def main():
 	#if model_filepath: logger.info('Model filepath to save: {}.'.format(model_filepath))
 
 	#--------------------
-	swa = False  # Apply Stochastic Weight Averaging (SWA).
-	is_case_sensitive=False
+	swa = False  # Specified whether Stochastic Weight Averaging (SWA) is applied or not.
+	is_case_sensitive = False
+	is_pil = True  # Specifies whether PIL or OpenCV is used.
 	num_workers = 8
 
 	lang = args.font_type[:3]
@@ -4433,7 +4468,7 @@ def main():
 		# Create datasets.
 		logger.info('Start creating datasets...')
 		start_time = time.time()
-		train_dataset, test_dataset = create_datasets_for_training(charset, wordset, font_list, args.target_type, image_shape, label_converter, args.max_len, train_test_ratio, logger)
+		train_dataset, test_dataset = create_datasets_for_training(charset, wordset, font_list, args.target_type, image_shape, label_converter, args.max_len, train_test_ratio, is_pil, logger)
 		logger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
 		logger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
@@ -4458,7 +4493,6 @@ def main():
 	if args.eval or args.infer:
 		assert model_filepath
 
-		is_pil = True
 		is_preloaded_image_used = False
 
 		#--------------------

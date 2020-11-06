@@ -1,7 +1,8 @@
 import os, math, random, functools
 import numpy as np
 import torch
-import PIL, cv2
+from PIL import Image, ImageDraw, ImageFont
+import cv2
 import swl.language_processing.util as swl_langproc_util
 
 #--------------------------------------------------------------------
@@ -15,22 +16,6 @@ class TextDatasetBase(torch.utils.data.Dataset):
 	@property
 	def label_converter(self):
 		return self._label_converter
-
-	@staticmethod
-	def _enlarge_background_by_pil(image, mode):
-		dia = math.ceil(math.sqrt(image.width**2 + image.height**2))
-		sx, sy = (dia - image.width) // 2, (dia - image.height) // 2
-		enlarged = PIL.Image.new(mode, (dia, dia), color=0)
-		enlarged.paste(image, (sx, sy))
-		return enlarged
-
-	@staticmethod
-	def _enlarge_background_by_opencv(image):
-		dia = math.ceil(math.sqrt(image.shape[0]**2 + image.shape[1]**2))
-		sy, sx = (dia - image.shape[0]) // 2, (dia - image.shape[1]) // 2
-		enlarged = np.zeros_like(image)
-		enlarged[sy:sy+image.shape[0],sx:sx+image.shape[1]] = image
-		return enlarged
 
 #--------------------------------------------------------------------
 
@@ -268,9 +253,9 @@ class NoisyCharacterDataset(TextDatasetBase):
 			alpha, beta = 0.75, 0.5  # Min. character width ratio and min. font width ratio.
 			if True:
 				image_size = (math.ceil(len(ch3) * font_size * 1.1), math.ceil((ch3.count('\n') + 1) * font_size * 1.1))
-				draw_img = PIL.Image.new(mode=self.mode, size=image_size, color=bg_color)
-				draw = PIL.ImageDraw.Draw(draw_img)
-				font = PIL.ImageFont.truetype(font=font_type, size=font_size, index=font_index)
+				draw_img = Image.new(mode=self.mode, size=image_size, color=bg_color)
+				draw = ImageDraw.Draw(draw_img)
+				font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
 
 				ch_widths = [draw.textsize(ch, font=font)[0] for ch in ch3]
 				ch_width = max(alpha * ch_widths[1], beta * font_size)
@@ -337,11 +322,11 @@ class FileBasedCharacterDataset(FileBasedTextDatasetBase):
 
 	def __getitem__(self, idx):
 		if self.is_preloaded_image_used:
-			image = PIL.Image.fromarray(self.images[idx])
+			image = Image.fromarray(self.images[idx])
 		else:
 			fpath = os.path.join(self.data_dir_path, self.images[idx])
 			try:
-				image = PIL.Image.open(fpath)
+				image = Image.open(fpath)
 			except IOError as ex:
 				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
 				image = None
@@ -412,10 +397,6 @@ class SimpleWordDataset(TextDatasetBase):
 			except OSError as ex:
 				print('[SWL] Error: font_type = {}, font_index = {}, font_size = {}, word = {}: {}.'.format(font_type, font_index, font_size, word, ex))
 				continue
-
-			# FIXME [delete] >>
-			image = self._enlarge_background_by_pil(image, self.mode)
-			#image = self._enlarge_background_by_opencv(image)
 
 			#if image and image.mode != self.mode:
 			#	image = image.convert(self.mode)
@@ -491,10 +472,6 @@ class RandomWordDataset(TextDatasetBase):
 				print('[SWL] Error: font_type = {}, font_index = {}, font_size = {}, word = {}: {}.'.format(font_type, font_index, font_size, word, ex))
 				continue
 
-			# FIXME [delete] >>
-			image = self._enlarge_background_by_pil(image, self.mode)
-			#image = self._enlarge_background_by_opencv(image)
-
 			#if image and image.mode != self.mode:
 			#	image = image.convert(self.mode)
 			#image = np.array(image, np.uint8)
@@ -543,11 +520,11 @@ class FileBasedWordDatasetBase(FileBasedTextDatasetBase):
 
 	def __getitem__(self, idx):
 		if self.is_preloaded_image_used:
-			image = PIL.Image.fromarray(self.images[idx])
+			image = Image.fromarray(self.images[idx])
 		else:
 			fpath = self.images[idx] if self.data_dir_path is None else os.path.join(self.data_dir_path, self.images[idx])
 			try:
-				image = PIL.Image.open(fpath)
+				image = Image.open(fpath)
 			except IOError as ex:
 				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
 				image = None
@@ -555,10 +532,6 @@ class FileBasedWordDatasetBase(FileBasedTextDatasetBase):
 		word_id = self.labels_int[idx]  # Decorated/undecorated label ID.
 		target_len = len(word_id)
 		target[:target_len] = word_id
-
-		# FIXME [delete] >>
-		image = self._enlarge_background_by_pil(image, self.mode)
-		#image = self._enlarge_background_by_opencv(image)
 
 		if image and image.mode != self.mode:
 			image = image.convert(self.mode)
@@ -937,11 +910,11 @@ class FileBasedTextLineDatasetBase(FileBasedTextDatasetBase):
 
 	def __getitem__(self, idx):
 		if self.is_preloaded_image_used:
-			image = PIL.Image.fromarray(self.images[idx])
+			image = Image.fromarray(self.images[idx])
 		else:
 			fpath = self.images[idx] if self.data_dir_path is None else os.path.join(self.data_dir_path, self.images[idx])
 			try:
-				image = PIL.Image.open(fpath)
+				image = Image.open(fpath)
 			except IOError as ex:
 				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
 				image = None
