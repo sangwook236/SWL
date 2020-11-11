@@ -32,11 +32,11 @@ class FileBasedTextDatasetBase(TextDatasetBase):
 			with open(image_label_info_filepath, 'r', encoding='UTF8') as fd:
 				#lines = fd.readlines()  # A list of strings.
 				lines = fd.read().splitlines()  # A list of strings.
-		except FileNotFoundError as ex:
-			print('[SWL] Error: File not found: {}.'.format(image_label_info_filepath))
-			raise
 		except UnicodeDecodeError as ex:
-			print('[SWL] Error: Unicode decode error: {}.'.format(image_label_info_filepath))
+			print('[SWL] Error: Unicode decode error, {}: {}.'.format(image_label_info_filepath, ex))
+			raise
+		except FileNotFoundError as ex:
+			print('[SWL] Error: File not found, {}: {}.'.format(image_label_info_filepath, ex))
 			raise
 
 		if 1 == image_channel:
@@ -110,11 +110,11 @@ class FileBasedTextDatasetBase(TextDatasetBase):
 					#label_str = fd.read()
 					#label_str = fd.read().rstrip()
 					label_str = fd.read().rstrip('\n')
-			except FileNotFoundError as ex:
-				print('[SWL] Error: File not found: {}.'.format(lbl_fpath))
-				continue
 			except UnicodeDecodeError as ex:
-				print('[SWL] Error: Unicode decode error: {}.'.format(lbl_fpath))
+				print('[SWL] Error: Unicode decode error, {}: {}.'.format(lbl_fpath, ex))
+				continue
+			except FileNotFoundError as ex:
+				print('[SWL] Error: File not found, {}: {}.'.format(lbl_fpath, ex))
 				continue
 			if len(label_str) > max_label_len:
 				print('[SWL] Warning: Too long label: {} > {}.'.format(len(label_str), max_label_len))
@@ -328,7 +328,7 @@ class FileBasedCharacterDataset(FileBasedTextDatasetBase):
 			try:
 				image = Image.open(fpath)
 			except IOError as ex:
-				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
+				print('[SWL] Error: Failed to load an image, {}: {}.'.format(fpath, ex))
 				image = None
 		target = self.labels_int[idx][0]  # Undecorated label ID.
 
@@ -526,7 +526,7 @@ class FileBasedWordDatasetBase(FileBasedTextDatasetBase):
 			try:
 				image = Image.open(fpath)
 			except IOError as ex:
-				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
+				print('[SWL] Error: Failed to load an image, {}: {}.'.format(fpath, ex))
 				image = None
 		target = [self.pad_id] * self.max_time_steps
 		word_id = self.labels_int[idx]  # Decorated/undecorated label ID.
@@ -916,7 +916,7 @@ class FileBasedTextLineDatasetBase(FileBasedTextDatasetBase):
 			try:
 				image = Image.open(fpath)
 			except IOError as ex:
-				print('[SWL] Error: Failed to load an image: {}.'.format(fpath))
+				print('[SWL] Error: Failed to load an image, {}: {}.'.format(fpath, ex))
 				image = None
 		target = [self.pad_id] * self.max_time_steps
 		textline_id = self.labels_int[idx]  # Decorated/undecorated label ID.

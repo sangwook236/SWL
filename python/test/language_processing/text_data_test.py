@@ -359,10 +359,6 @@ class ResizeImageToFixedSizeWithPadding(object):
 		return input.resize((width, height), resample=interpolation)
 		"""
 
-class ToIntTensor(object):
-	def __call__(self, lst):
-		return torch.IntTensor(lst)
-
 class MySubsetDataset(torch.utils.data.Dataset):
 	def __init__(self, subset, transform=None, target_transform=None):
 		self.subset = subset
@@ -465,17 +461,16 @@ def SimpleCharacterDataset_test():
 	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
+	print('#train steps per epoch = {}, #test steps per epoch = {}.'.format(len(train_dataloader), len(test_dataloader)))
 
 	#--------------------
 	# Show data info.
-	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
 	data_iter = iter(train_dataloader)
 	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels = images.numpy(), labels.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
 
-	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
 	data_iter = iter(test_dataloader)
 	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels = images.numpy(), labels.numpy()
@@ -549,17 +544,16 @@ def NoisyCharacterDataset_test():
 	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
+	print('#train steps per epoch = {}, #test steps per epoch = {}.'.format(len(train_dataloader), len(test_dataloader)))
 
 	#--------------------
 	# Show data info.
-	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
 	data_iter = iter(train_dataloader)
 	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels = images.numpy(), labels.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
 
-	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
 	data_iter = iter(test_dataloader)
 	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels = images.numpy(), labels.numpy()
@@ -662,17 +656,16 @@ def FileBasedCharacterDataset_test():
 	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
+	print('#train steps per epoch = {}, #test steps per epoch = {}.'.format(len(train_dataloader), len(test_dataloader)))
 
 	#--------------------
 	# Show data info.
-	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
 	data_iter = iter(train_dataloader)
 	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels = images.numpy(), labels.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
 
-	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
 	data_iter = iter(test_dataloader)
 	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels = images.numpy(), labels.numpy()
@@ -719,7 +712,7 @@ def SimpleWordDataset_test():
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
-	train_target_transform = ToIntTensor()
+	train_target_transform = torch.IntTensor
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
@@ -729,7 +722,7 @@ def SimpleWordDataset_test():
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
-	test_target_transform = ToIntTensor()
+	test_target_transform = torch.IntTensor
 
 	#--------------------
 	print('Start creating datasets...')
@@ -745,10 +738,10 @@ def SimpleWordDataset_test():
 	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
+	print('#train steps per epoch = {}, #test steps per epoch = {}.'.format(len(train_dataloader), len(test_dataloader)))
 
 	#--------------------
 	# Show data info.
-	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
 	data_iter = iter(train_dataloader)
 	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
@@ -756,7 +749,6 @@ def SimpleWordDataset_test():
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
 	print('Train label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
-	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
 	data_iter = iter(test_dataloader)
 	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
@@ -805,7 +797,7 @@ def RandomWordDataset_test():
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
-	train_target_transform = ToIntTensor()
+	train_target_transform = torch.IntTensor
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
@@ -815,7 +807,7 @@ def RandomWordDataset_test():
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
-	test_target_transform = ToIntTensor()
+	test_target_transform = torch.IntTensor
 
 	#--------------------
 	print('Start creating datasets...')
@@ -832,10 +824,10 @@ def RandomWordDataset_test():
 	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
+	print('#train steps per epoch = {}, #test steps per epoch = {}.'.format(len(train_dataloader), len(test_dataloader)))
 
 	#--------------------
 	# Show data info.
-	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
 	data_iter = iter(train_dataloader)
 	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
@@ -843,7 +835,6 @@ def RandomWordDataset_test():
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
 	print('Train label: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
-	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
 	data_iter = iter(test_dataloader)
 	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
@@ -892,7 +883,7 @@ def FileBasedWordDataset_test():
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
-	train_target_transform = ToIntTensor()
+	train_target_transform = torch.IntTensor
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
@@ -902,7 +893,7 @@ def FileBasedWordDataset_test():
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
-	test_target_transform = ToIntTensor()
+	test_target_transform = torch.IntTensor
 
 	#--------------------
 	print('Start creating datasets...')
@@ -946,10 +937,10 @@ def FileBasedWordDataset_test():
 	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
+	print('#train steps per epoch = {}, #test steps per epoch = {}.'.format(len(train_dataloader), len(test_dataloader)))
 
 	#--------------------
 	# Show data info.
-	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
 	data_iter = iter(train_dataloader)
 	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
@@ -957,7 +948,6 @@ def FileBasedWordDataset_test():
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
 	print('Train label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
-	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
 	data_iter = iter(test_dataloader)
 	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
@@ -1008,7 +998,7 @@ def SimpleTextLineDataset_test():
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
-	train_target_transform = ToIntTensor()
+	train_target_transform = torch.IntTensor
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
@@ -1018,7 +1008,7 @@ def SimpleTextLineDataset_test():
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
-	test_target_transform = ToIntTensor()
+	test_target_transform = torch.IntTensor
 
 	#--------------------
 	print('Start creating datasets...')
@@ -1034,10 +1024,10 @@ def SimpleTextLineDataset_test():
 	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
+	print('#train steps per epoch = {}, #test steps per epoch = {}.'.format(len(train_dataloader), len(test_dataloader)))
 
 	#--------------------
 	# Show data info.
-	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
 	data_iter = iter(train_dataloader)
 	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
@@ -1045,7 +1035,6 @@ def SimpleTextLineDataset_test():
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
 	print('Train label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
-	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
 	data_iter = iter(test_dataloader)
 	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
@@ -1097,7 +1086,7 @@ def RandomTextLineDataset_test():
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
-	train_target_transform = ToIntTensor()
+	train_target_transform = torch.IntTensor
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
@@ -1107,7 +1096,7 @@ def RandomTextLineDataset_test():
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
-	test_target_transform = ToIntTensor()
+	test_target_transform = torch.IntTensor
 
 	#--------------------
 	print('Start creating datasets...')
@@ -1124,10 +1113,10 @@ def RandomTextLineDataset_test():
 	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
+	print('#train steps per epoch = {}, #test steps per epoch = {}.'.format(len(train_dataloader), len(test_dataloader)))
 
 	#--------------------
 	# Show data info.
-	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
 	data_iter = iter(train_dataloader)
 	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
@@ -1135,7 +1124,6 @@ def RandomTextLineDataset_test():
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
 	print('Train label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
-	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
 	data_iter = iter(test_dataloader)
 	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
@@ -1214,7 +1202,7 @@ def TextRecognitionDataGeneratorTextLineDataset_test():
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
-	train_target_transform = ToIntTensor()
+	train_target_transform = torch.IntTensor
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
@@ -1224,7 +1212,7 @@ def TextRecognitionDataGeneratorTextLineDataset_test():
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
-	test_target_transform = ToIntTensor()
+	test_target_transform = torch.IntTensor
 
 	#--------------------
 	print('Start creating datasets...')
@@ -1252,10 +1240,10 @@ def TextRecognitionDataGeneratorTextLineDataset_test():
 	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
+	print('#train steps per epoch = {}, #test steps per epoch = {}.'.format(len(train_dataloader), len(test_dataloader)))
 
 	#--------------------
 	# Show data info.
-	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
 	data_iter = iter(train_dataloader)
 	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
@@ -1263,7 +1251,6 @@ def TextRecognitionDataGeneratorTextLineDataset_test():
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
 	print('Train label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
-	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
 	data_iter = iter(test_dataloader)
 	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
@@ -1312,7 +1299,7 @@ def FileBasedTextLineDataset_test():
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
-	train_target_transform = ToIntTensor()
+	train_target_transform = torch.IntTensor
 	test_transform = torchvision.transforms.Compose([
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
@@ -1322,7 +1309,7 @@ def FileBasedTextLineDataset_test():
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
-	test_target_transform = ToIntTensor()
+	test_target_transform = torch.IntTensor
 
 	#--------------------
 	print('Start creating datasets...')
@@ -1364,10 +1351,10 @@ def FileBasedTextLineDataset_test():
 	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
+	print('#train steps per epoch = {}, #test steps per epoch = {}.'.format(len(train_dataloader), len(test_dataloader)))
 
 	#--------------------
 	# Show data info.
-	print('#train steps per epoch = {}.'.format(len(train_dataloader)))
 	data_iter = iter(train_dataloader)
 	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
@@ -1375,7 +1362,6 @@ def FileBasedTextLineDataset_test():
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
 	print('Train label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
-	print('#test steps per epoch = {}.'.format(len(test_dataloader)))
 	data_iter = iter(test_dataloader)
 	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
