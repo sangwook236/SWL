@@ -10,7 +10,7 @@ import argparse, logging, logging.handlers
 import numpy as np
 import torch
 import torchvision
-from PIL import Image, ImageOps
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 import cv2
 import matplotlib.pyplot as plt
 import swl.machine_learning.util as swl_ml_util
@@ -4255,6 +4255,138 @@ def detect_texts_by_craft(image_filepath, craft_refine, craft_cuda, output_dir_p
 		#return extract_rectified_text_rectangle_from_polygon(image, bboxes, output_dir_path)
 	else: return None
 
+def crop_text_region_in_image(images):
+	min_image_height, min_image_width = 10, 10
+	use_laplacian = True
+	if use_laplacian:
+		sum_threshold = 300
+		offset, margin = 5, 5
+	else:
+		sum_threshold = 1000  # ???
+		offset, margin = 2, 5
+	cropped_images = list()
+	for img in images:
+		if use_laplacian:
+			gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+			gray = cv2.GaussianBlur(gray,  (5, 5), cv2.BORDER_DEFAULT)
+			#gray = 255 - gray
+			#_, gray = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+			#gray = cv2.adaptiveThreshold(gray, 1, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2)
+			#gray = cv2.adaptiveThreshold(gray, 1, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+			laplacian = cv2.Laplacian(gray, cv2.CV_16S, ksize=3, borderType=cv2.BORDER_DEFAULT)
+			#minval, maxval = np.min(laplacian), np.max(laplacian)
+			#laplacian = cv2.adaptiveThreshold(((laplacian - minval) * 255 / (maxval - minval)).astype(np.uint8), 1, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+
+			#indices = np.nonzero(np.abs(laplacian[offset:-offset,offset:-offset]) > sum_threshold)
+			indices = np.nonzero(np.abs(np.sum(laplacian[offset:-offset], axis=1)) > sum_threshold)[0], np.nonzero(np.abs(np.sum(laplacian[:,offset:-offset], axis=0)) > sum_threshold)[0]
+
+			"""
+			minval, maxval = np.min(laplacian), np.max(laplacian)
+			cv2.imshow('Laplacian', (laplacian - minval) / (maxval - minval))
+
+			plt.title('Laplacian Sum (X)')
+			plt.plot(range(laplacian.shape[1] - 10), np.sum(laplacian[:,5:-5], axis=0), color='red')
+			plt.show()
+			"""
+		else:
+			#indices = np.nonzero(np.abs(img[offset:-offset,offset:-offset]) > sum_threshold)
+			indices = np.nonzero(np.abs(np.sum(img[offset:-offset], axis=1)) > sum_threshold)[0], np.nonzero(np.abs(np.sum(img[:,offset:-offset], axis=0)) > sum_threshold)[0]
+
+			"""
+			plt.title('Image Sum (X)')
+			plt.plot(range(img.shape[1] - 4), np.sum(img[:,2:-2], axis=0), color='red')
+			plt.show()
+			"""
+
+		if indices[0].size != 0 and indices[1].size != 0:
+			y1, y2, x1, x2 = np.min(indices[0]) + offset - margin, np.max(indices[0]) + offset + margin, np.min(indices[1]) + offset - margin, np.max(indices[1]) + offset + margin
+			cropped = img[y1:y2,x1:x2] if y2 - y1 > 1 and x2 - x1 > 1 else None
+		else: cropped = None
+		cropped_images.append(cropped)
+
+		"""
+		cv2.imshow('Image', img)
+		cv2.imshow('Gray', gray)
+		if cropped is not None:
+			cv2.imshow('Cropped', cropped)
+		cv2.waitKey(0)
+		"""
+	return cropped_images
+
+def extract_cells_in_table(image_filepath, cell_contours, output_dir_path, logger):
+	if len(cell_contours) <= 0: return None
+
+	output_dir_path = os.path.join(output_dir_path, 'table_results')
+	os.makedirs(output_dir_path, exist_ok=True)
+
+	image = cv2.imread(image_filepath)
+	if image is None:
+		if logger: logger.error('File not found, {}.'.format(image_filepath))
+		return None
+
+		if True:
+		aabboxes = list(cv2.boundingRect(contour) for contour in cell_contours) # (left, top, width, height).
+		text_patches = extract_text_rectangle_from_aabb(image, aabboxes, output_dir_path)
+		return crop_text_region_in_image(text_patches)
+		else:
+		#cell_contours = list(cv2.convexHull(contour) for contour in cell_contours)  # Optional.
+
+			"""
+			cv2.imshow('Input', image)
+			rgb = image.copy()
+			for contour in cell_contours:
+				color = (random.randint(128, 255), random.randint(128, 255), random.randint(128, 255))
+				cv2.drawContours(rgb, [np.round(np.expand_dims(contour, axis=1)).astype(np.int32)], 0, color, 1, cv2.LINE_AA)
+			cv2.imshow('Cell Contours', rgb)
+			cv2.waitKey(0)
+			"""
+
+			#return extract_simple_text_rectangle_from_polygon(image, cell_contours, output_dir_path)
+			#return extract_masked_text_rectangle_from_polygon(image, cell_contours, output_dir_path)
+			return extract_rotated_text_rectangle_from_polygon(image, cell_contours, output_dir_path)
+			#return extract_rectified_text_rectangle_from_polygon(image, cell_contours, output_dir_path)
+
+def visualize_table_recognition_results(image_filepath, cell_contours, cell_patches, valid_cell_texts, output_dir_path, logger):
+	if len(cell_contours) <= 0 or len(cell_patches) <= 0 or len(valid_cell_texts) <= 0: return None
+
+	output_dir_path = os.path.join(output_dir_path, 'table_results')
+	os.makedirs(output_dir_path, exist_ok=True)
+
+	image = cv2.imread(image_filepath)
+	if image is None:
+		if logger: logger.error('File not found, {}.'.format(image_filepath))
+		return
+
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		font_base_dir_path = '/home/sangwook/work/font'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_base_dir_path = 'D:/work/font'
+	font_filepath = font_base_dir_path + '/kor_large/batang.ttf'
+
+	canvas = Image.new(mode='RGB', size=(image.shape[1], image.shape[0]), color=(255, 255, 255))
+	draw = ImageDraw.Draw(canvas)
+	patch_idx = 0
+	for contour, patch in zip(cell_contours, cell_patches):
+		aabb = cv2.boundingRect(contour)  # (left, top, width, height).
+		left, top, right, bottom = aabb[0], aabb[1], aabb[0] + aabb[2], aabb[1] + aabb[3]
+		draw.rectangle((left, top, right, bottom), outline=(127, 127, 127), width=2)
+
+		if patch is not None:
+			try:
+				font = ImageFont.truetype(font=font_filepath, size=patch.shape[0], index=0)
+			except Exception as ex:
+				if logger: logger.warning('Invalid font, {}: {}.'.format(font_filepath, ex))
+				return
+
+			txt = valid_cell_texts[patch_idx]
+			txt = txt.replace('<UNK>', '')  # Optional.
+			draw.text(xy=(left, top), text=txt, font=font, fill=(0, 0, 0))
+
+			patch_idx += 1
+	canvas.save(output_dir_path + '/table_cell.png')
+
 def visualize_inference_results(predictions, label_converter, inputs, outputs, output_dir_path, is_case_sensitive, num_examples_to_visualize, logger):
 	if not num_examples_to_visualize or num_examples_to_visualize <= 0:
 		num_examples_to_visualize = len(predictions)
@@ -4680,6 +4812,33 @@ def main():
 
 					inputs, outputs = text_dataset_to_tensor(dataset, args.batch, num_workers, logger)
 					outputs = outputs.numpy()
+				elif False:
+					# When extracting cells in a table.
+					table_info_filepath = '/path/to/table_info.pkl'
+					assert os.path.exists(table_info_filepath)
+
+					if logger: logger.info('Start loading table info...')
+					start_time = time.time()
+					try:
+						# Table information:
+						#	REF [file] >> ${DataAnalysis_HOME}/app/document_image_processing/recognize_table_structure.py
+						with open(table_info_filepath, 'rb') as fd:
+							image_filepath, cell_contours, cell_neighbors, table_graph = pickle.load(fd)
+						assert len(cell_contours) == len(cell_neighbors)
+					except FileNotFoundError as ex:
+						if logger: logger.error('File not found, {}: {}.'.format(table_info_filepath, ex))
+						return None
+					if logger: logger.info('End loading table info: {} secs.'.format(time.time() - start_time))
+
+					cell_patches = extract_cells_in_table(image_filepath, cell_contours, output_dir_path, logger)
+					if cell_patches is None or len(cell_patches) <= 0:
+						logger.warning('No text detected in {}.'.format(table_info_filepath))
+						return
+
+					valid_cell_patches = list(patch for patch in cell_patches if patch is not None)
+					if is_pil: valid_cell_patches = list(Image.fromarray(patch) for patch in valid_cell_patches)
+					inputs = images_to_tensor(valid_cell_patches, image_shape, is_pil, logger)
+					outputs = None
 				else:
 					# When detecting texts by CRAFT.
 					image_filepath = '/path/to/image.png'
@@ -4707,10 +4866,15 @@ def main():
 				logger.info('End inferring: {} secs.'.format(time.time() - start_time))
 				logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(predictions.shape, predictions.dtype, np.min(predictions), np.max(predictions)))
 
-				# Visualize inference results.
-				#outputs = None
-				num_examples_to_visualize = 50
-				visualize_inference_results(predictions, label_converter, inputs.numpy(), outputs, output_dir_path, is_case_sensitive, num_examples_to_visualize, logger)
+				if True:
+					# Visualize inference results.
+					#outputs = None
+					num_examples_to_visualize = 50
+					visualize_inference_results(predictions, label_converter, inputs.numpy(), outputs, output_dir_path, is_case_sensitive, num_examples_to_visualize, logger)
+				else:
+					# Visualize table recognition results.
+					predictions = list(label_converter.decode(pred) for pred in predictions)
+					visualize_table_recognition_results(image_filepath, cell_contours, cell_patches, predictions, output_dir_path, logger)
 
 #--------------------------------------------------------------------
 
