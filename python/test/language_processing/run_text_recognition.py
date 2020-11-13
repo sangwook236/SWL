@@ -256,10 +256,6 @@ def create_textline_augmenter():
 
 	return augmenter
 
-def create_ocrodeg_augmenter():
-	import ocrodeg
-	raise NotImplementedError
-
 def generate_font_colors(image_depth):
 	#random_val = random.randrange(1, 255)
 
@@ -444,10 +440,6 @@ class ResizeImageWithMaxWidth(object):
 		#if width < self.min_width_threshold:
 		#	if self.logger: self.logger.warning('Too small image: The image width {} should be larger than or equal to {}.'.format(width, self.min_width_threshold))
 
-class ToIntTensor(object):
-	def __call__(self, lst):
-		return torch.IntTensor(lst)
-
 class ToIntTensorWithPadding(object):
 	def __init__(self, pad, max_len):
 		self.pad, self.max_len = pad, max_len
@@ -475,7 +467,47 @@ class MySubsetDataset(torch.utils.data.Dataset):
 	def __len__(self):
 		return len(self.subset)
 
-def create_char_datasets(char_type, label_converter, charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, logger=None):
+# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
+def generate_trdg_datasets(num_train_examples, num_test_examples, image_channel, lang_infos, background_infos, distortion_types, distortion_directions, label_converter, max_text_len, font_size, num_words, is_variable_length, train_transform, train_target_transform, test_transform, test_target_transform):
+	generator_kwargs = {
+		'skewing_angle': 0, 'random_skew': False,  # In degrees counter clockwise.
+		#'blur': 0, 'random_blur': False,  # Blur radius.
+		'blur': 2, 'random_blur': True,  # Blur radius.
+		'distorsion_type': 0, 'distorsion_orientation': 0,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+		#'distorsion_type': 3, 'distorsion_orientation': 2,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+		'background_type': 0,  # background_type = 0 (Gaussian noise), 1 (plain white), 2 (quasicrystal), 3 (image).
+		'width': -1,  # Specify a background width when width > 0.
+		'alignment': 1,  # Align an image in a background image. alignment = 0 (left), 1 (center), the rest (right).
+		'image_dir': None,  # Background image directory which is used when background_type = 3.
+		'is_handwritten': False,
+		#'text_color': '#282828',
+		'text_color': '#000000,#FFFFFF',  # (0x00, 0x00, 0x00) ~ (0xFF, 0xFF, 0xFF).
+		'orientation': 0,  # orientation = 0 (horizontal), 1 (vertical).
+		'space_width': 1.0,  # The ratio of space width.
+		'character_spacing': 0,  # Control space between characters (in pixels).
+		'margins': (5, 5, 5, 5),  # For finer layout control. (top, left, bottom, right).
+		'fit': False,  # For finer layout control. Specify if images and masks are cropped or not.
+		'output_mask': False,  # Specify if a character-level mask for each image is outputted or not.
+		'word_split': False  # Split on word instead of per-character. This is useful for ligature-based languages.
+	}
+
+	train_datasets, test_datasets = list(), list()
+	divisor = len(lang_infos) * len(background_infos) * len(distortion_types) * len(distortion_directions) * 2  # Words in dictionary or randomly generated words.
+	for lang, font_filepaths in lang_infos:
+		for background_type, background_image_dir in background_infos:
+			generator_kwargs['background_type'] = background_type
+			generator_kwargs['image_dir'] = background_image_dir
+			for distortion_type in distortion_types:
+				generator_kwargs['distorsion_type'] = distortion_type
+				for distortion_direction in distortion_directions:
+					generator_kwargs['distorsion_orientation'] = distortion_direction
+					for is_randomly_generated in [False, True]:
+						train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // divisor, image_channel, max_text_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
+						test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // divisor, image_channel, max_text_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
+
+	return train_datasets, test_datasets
+
+def create_char_datasets(char_type, label_converter, charset, num_train_examples_per_class, num_test_examples_per_class, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, char_clipping_ratio_interval, font_list, font_size_interval, color_functor, is_pil=True, logger=None):
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
 		#EnlargeBackground(height=None, width=None, is_pil=is_pil),
@@ -705,10 +737,10 @@ def create_word_datasets(word_type, label_converter, wordset, chars, num_train_e
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
-	train_target_transform = ToIntTensor()
+	train_target_transform = torch.IntTensor
 	test_transform = torchvision.transforms.Compose([
 		EnlargeImageForGeometricTransformation(height=None, width=None, is_pil=is_pil),
-		#RandomAugment(create_word_augmenter()),
+		RandomAugment(create_word_augmenter()),
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
 		ResizeImageToFixedSizeWithPadding(image_height, image_width, logger=logger),
@@ -717,7 +749,7 @@ def create_word_datasets(word_type, label_converter, wordset, chars, num_train_e
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
-	test_target_transform = ToIntTensor()
+	test_target_transform = torch.IntTensor
 
 	if 'posix' == os.name:
 		data_base_dir_path = '/home/sangwook/work/dataset'
@@ -730,6 +762,43 @@ def create_word_datasets(word_type, label_converter, wordset, chars, num_train_e
 	elif word_type == 'random_word':
 		train_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
 		test_dataset = text_data.RandomWordDataset(label_converter, chars, num_test_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
+	elif word_type == 'trdg_word':
+		font_size = image_height
+		num_words = 1
+		is_variable_length = False
+
+		lang_infos = list()
+		if True:
+			lang = 'kr'
+			font_types = ['kor-large']  # {'kor-small', 'kor-large', 'kor-receipt'}.
+			font_filepaths = construct_font(font_types)
+			font_filepaths, _ = zip(*font_filepaths)
+			lang_infos.append((lang, font_filepaths))
+		if True:
+			lang = 'en'
+			if False:
+				#font_filepaths = trdg.utils.load_fonts(lang)
+				font_filepaths = list()
+			else:
+				font_types = ['eng-large']  # {'eng-small', 'eng-large', 'eng-receipt'}.
+				font_filepaths = construct_font(font_types)
+				font_filepaths, _ = zip(*font_filepaths)
+			lang_infos.append((lang, font_filepaths))
+		if False:
+			lang = 'cn'  # {'ar', 'cn', 'de', 'en', 'es', 'fr', 'hi'}.
+			#font_filepaths = trdg.utils.load_fonts(lang)
+			font_filepaths = list()
+			lang_infos.append((lang, font_filepaths))
+		# background_type = 0 (Gaussian noise), 1 (plain white), 2 (quasicrystal), 3 (image).
+		#background_infos = [(0, None)]
+		background_infos = [(0, None), (3, os.path.join(data_base_dir_path, 'background_image'))]
+		# distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random).
+		# distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+		distortion_types, distortion_directions = (1, 2, 3), (0, 1, 2)
+
+		train_datasets, test_datasets = generate_trdg_datasets(num_train_examples, num_test_examples, image_channel, lang_infos, background_infos, distortion_types, distortion_directions, label_converter, max_word_len, font_size, num_words, is_variable_length, train_transform, train_target_transform, test_transform, test_target_transform)
+		train_dataset = torch.utils.data.ConcatDataset(train_datasets)
+		test_dataset = torch.utils.data.ConcatDataset(test_datasets)
 	elif word_type == 'aihub_word':
 		# AI-Hub printed text dataset.
 		#	#syllables = 558,600, #words = 277,150, #sentences = 42,350.
@@ -806,7 +875,7 @@ def create_word_datasets(word_type, label_converter, wordset, chars, num_train_e
 
 	return train_dataset, test_dataset
 
-def create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, logger=None):
+def create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_word_len, word_len_interval, font_list, font_size_interval, color_functor, is_pil=True, logger=None):
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
 		EnlargeImageForGeometricTransformation(height=None, width=None, is_pil=is_pil),
@@ -819,10 +888,10 @@ def create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examp
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
-	train_target_transform = ToIntTensor()
+	train_target_transform = torch.IntTensor
 	test_transform = torchvision.transforms.Compose([
 		EnlargeImageForGeometricTransformation(height=None, width=None, is_pil=is_pil),
-		#RandomAugment(create_word_augmenter()),
+		RandomAugment(create_word_augmenter()),
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
 		ResizeImageToFixedSizeWithPadding(image_height, image_width, logger=logger),
@@ -831,7 +900,7 @@ def create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examp
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
-	test_target_transform = ToIntTensor()
+	test_target_transform = torch.IntTensor
 
 	if 'posix' == os.name:
 		data_base_dir_path = '/home/sangwook/work/dataset'
@@ -847,6 +916,46 @@ def create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examp
 		num_train_examples = int(num_random_examples * train_test_ratio)
 		train_datasets.append(text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform))
 		test_datasets.append(text_data.RandomWordDataset(label_converter, chars, num_random_examples - num_train_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform))
+	if True:
+		font_size = image_height
+		num_words = 1
+		is_variable_length = True
+
+		num_train_examples = int(num_trdg_examples * train_test_ratio)
+		num_test_examples = num_trdg_examples - num_train_examples
+
+		lang_infos = list()
+		if True:
+			lang = 'kr'
+			font_types = ['kor-large']  # {'kor-small', 'kor-large', 'kor-receipt'}.
+			font_filepaths = construct_font(font_types)
+			font_filepaths, _ = zip(*font_filepaths)
+			lang_infos.append((lang, font_filepaths))
+		if True:
+			lang = 'en'
+			if False:
+				#font_filepaths = trdg.utils.load_fonts(lang)
+				font_filepaths = list()
+			else:
+				font_types = ['eng-large']  # {'eng-small', 'eng-large', 'eng-receipt'}.
+				font_filepaths = construct_font(font_types)
+				font_filepaths, _ = zip(*font_filepaths)
+			lang_infos.append((lang, font_filepaths))
+		if False:
+			lang = 'cn'  # {'ar', 'cn', 'de', 'en', 'es', 'fr', 'hi'}.
+			#font_filepaths = trdg.utils.load_fonts(lang)
+			font_filepaths = list()
+			lang_infos.append((lang, font_filepaths))
+		# background_type = 0 (Gaussian noise), 1 (plain white), 2 (quasicrystal), 3 (image).
+		#background_infos = [(0, None)]
+		background_infos = [(0, None), (3, os.path.join(data_base_dir_path, 'background_image'))]
+		# distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random).
+		# distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
+		distortion_types, distortion_directions = (1, 2, 3), (0, 1, 2)
+
+		trdg_train_datasets, trdg_test_datasets = generate_trdg_datasets(num_train_examples, num_test_examples, image_channel, lang_infos, background_infos, distortion_types, distortion_directions, label_converter, max_word_len, font_size, num_words, is_variable_length, train_transform, train_target_transform, test_transform, test_target_transform)
+		train_datasets.extend(trdg_train_datasets)
+		test_datasets.extend(trdg_test_datasets)
 	if False:
 		# AI-Hub printed text dataset.
 		#	#syllables = 558,600, #words = 277,150, #sentences = 42,350.
@@ -932,7 +1041,7 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
-	train_target_transform = ToIntTensor()
+	train_target_transform = torch.IntTensor
 	test_transform = torchvision.transforms.Compose([
 		#EnlargeBackground(height=None, width=None, is_pil=is_pil),
 		#RandomAugment(create_textline_augmenter()),
@@ -944,7 +1053,7 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
-	test_target_transform = ToIntTensor()
+	test_target_transform = torch.IntTensor
 
 	if 'posix' == os.name:
 		data_base_dir_path = '/home/sangwook/work/dataset'
@@ -958,55 +1067,40 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 		train_dataset = text_data.RandomTextLineDataset(label_converter, chars, num_train_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
 		test_dataset = text_data.RandomTextLineDataset(label_converter, chars, num_test_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
 	elif textline_type == 'trdg_textline':
-		# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
 		font_size = image_height
 		num_words = word_count_interval[1]  # TODO [check] >>
 		is_variable_length = True
 
-		generator_kwargs = {
-			'skewing_angle': 0, 'random_skew': False,  # In degrees counter clockwise.
-			#'blur': 0, 'random_blur': False,  # Blur radius.
-			'blur': 2, 'random_blur': True,  # Blur radius.
-			'distorsion_type': 0, 'distorsion_orientation': 0,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
-			#'distorsion_type': 3, 'distorsion_orientation': 2,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
-			'background_type': 0,  # background_type = 0 (Gaussian noise), 1 (plain white), 2 (quasicrystal), 3 (image).
-			'width': -1,  # Specify a background width when width > 0.
-			'alignment': 1,  # Align an image in a background image. alignment = 0 (left), 1 (center), the rest (right).
-			'image_dir': None,  # Background image directory which is used when background_type = 3.
-			'is_handwritten': False,
-			#'text_color': '#282828',
-			'text_color': '#000000,#FFFFFF',  # (0x00, 0x00, 0x00) ~ (0xFF, 0xFF, 0xFF).
-			'orientation': 0,  # orientation = 0 (horizontal), 1 (vertical).
-			'space_width': 1.0,  # The ratio of space width.
-			'character_spacing': 0,  # Control space between characters (in pixels).
-			'margins': (5, 5, 5, 5),  # For finer layout control. (top, left, bottom, right).
-			'fit': False,  # For finer layout control. Specify if images and masks are cropped or not.
-			'output_mask': False,  # Specify if a character-level mask for each image is outputted or not.
-			'word_split': False  # Split on word instead of per-character. This is useful for ligature-based languages.
-		}
-
-		train_datasets, test_datasets = list(), list()
-		langs = ['kr', 'en']  # {'kr', 'ar', 'cn', 'de', 'en', 'es', 'fr', 'hi'}.
-		for lang in langs:
-			if lang == 'kr':
+		lang_infos = list()
+		if True:
+			lang = 'kr'
 			font_types = ['kor-large']  # {'kor-small', 'kor-large', 'kor-receipt'}.
 			font_filepaths = construct_font(font_types)
 			font_filepaths, _ = zip(*font_filepaths)
+			lang_infos.append((lang, font_filepaths))
+		if True:
+			lang = 'en'
+			if False:
+				#font_filepaths = trdg.utils.load_fonts(lang)
+				font_filepaths = list()
 			else:
+				font_types = ['eng-large']  # {'eng-small', 'eng-large', 'eng-receipt'}.
+				font_filepaths = construct_font(font_types)
+				font_filepaths, _ = zip(*font_filepaths)
+			lang_infos.append((lang, font_filepaths))
+		if False:
+			lang = 'cn'  # {'ar', 'cn', 'de', 'en', 'es', 'fr', 'hi'}.
 			#font_filepaths = trdg.utils.load_fonts(lang)
 			font_filepaths = list()
-
+			lang_infos.append((lang, font_filepaths))
+		# background_type = 0 (Gaussian noise), 1 (plain white), 2 (quasicrystal), 3 (image).
+		background_infos = [(0, None)]
+		#background_infos = [(0, None), (3, os.path.join(data_base_dir_path, 'background_image'))]
 		# distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random).
 		# distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
 		distortion_types, distortion_directions = (1, 2, 3), (0, 1, 2)
-			divisor = len(distortion_types) * len(distortion_directions) * 2 * 2
-			for is_randomly_generated in [False, True]:
-				for distortion_type in distortion_types:
-					for distortion_direction in distortion_directions:
-						generator_kwargs['distorsion_type'] = distortion_type
-						generator_kwargs['distorsion_orientation'] = distortion_direction
-						train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
-						test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
+
+		train_datasets, test_datasets = generate_trdg_datasets(num_train_examples, num_test_examples, image_channel, lang_infos, background_infos, distortion_types, distortion_directions, label_converter, max_textline_len, font_size, num_words, is_variable_length, train_transform, train_target_transform, test_transform, test_target_transform)
 		train_dataset = torch.utils.data.ConcatDataset(train_datasets)
 		test_dataset = torch.utils.data.ConcatDataset(test_datasets)
 	elif textline_type == 'aihub_textline':
@@ -1082,7 +1176,7 @@ def create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_e
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
-	train_target_transform = ToIntTensor()
+	train_target_transform = torch.IntTensor
 	test_transform = torchvision.transforms.Compose([
 		#EnlargeBackground(height=None, width=None, is_pil=is_pil),
 		#RandomAugment(create_textline_augmenter()),
@@ -1094,7 +1188,7 @@ def create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_e
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
-	test_target_transform = ToIntTensor()
+	test_target_transform = torch.IntTensor
 
 	if 'posix' == os.name:
 		data_base_dir_path = '/home/sangwook/work/dataset'
@@ -1111,56 +1205,45 @@ def create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_e
 		train_datasets.append(text_data.RandomTextLineDataset(label_converter, chars, num_train_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform))
 		test_datasets.append(text_data.RandomTextLineDataset(label_converter, chars, num_random_examples - num_train_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform))
 	if True:
-		# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
 		font_size = image_height
 		num_words = word_count_interval[1]  # TODO [check] >>
 		is_variable_length = True
 
-		generator_kwargs = {
-			'skewing_angle': 0, 'random_skew': False,  # In degrees counter clockwise.
-			#'blur': 0, 'random_blur': False,  # Blur radius.
-			'blur': 2, 'random_blur': True,  # Blur radius.
-			'distorsion_type': 0, 'distorsion_orientation': 0,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
-			#'distorsion_type': 3, 'distorsion_orientation': 2,  # distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random). distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
-			'background_type': 0,  # background_type = 0 (Gaussian noise), 1 (plain white), 2 (quasicrystal), 3 (image).
-			'width': -1,  # Specify a background width when width > 0.
-			'alignment': 1,  # Align an image in a background image. alignment = 0 (left), 1 (center), the rest (right).
-			'image_dir': None,  # Background image directory which is used when background_type = 3.
-			'is_handwritten': False,
-			#'text_color': '#282828',
-			'text_color': '#000000,#FFFFFF',  # (0x00, 0x00, 0x00) ~ (0xFF, 0xFF, 0xFF).
-			'orientation': 0,  # orientation = 0 (horizontal), 1 (vertical).
-			'space_width': 1.0,  # The ratio of space width.
-			'character_spacing': 0,  # Control space between characters (in pixels).
-			'margins': (5, 5, 5, 5),  # For finer layout control. (top, left, bottom, right).
-			'fit': False,  # For finer layout control. Specify if images and masks are cropped or not.
-			'output_mask': False,  # Specify if a character-level mask for each image is outputted or not.
-			'word_split': False  # Split on word instead of per-character. This is useful for ligature-based languages.
-		}
-
 		num_train_examples = int(num_trdg_examples * train_test_ratio)
 		num_test_examples = num_trdg_examples - num_train_examples
-		langs = ['kr', 'en']  # {'kr', 'ar', 'cn', 'de', 'en', 'es', 'fr', 'hi'}.
-		for lang in langs:
-			if lang == 'kr':
+
+		lang_infos = list()
+		if True:
+			lang = 'kr'
 			font_types = ['kor-large']  # {'kor-small', 'kor-large', 'kor-receipt'}.
 			font_filepaths = construct_font(font_types)
 			font_filepaths, _ = zip(*font_filepaths)
+			lang_infos.append((lang, font_filepaths))
+		if True:
+			lang = 'en'
+			if False:
+				#font_filepaths = trdg.utils.load_fonts(lang)
+				font_filepaths = list()
 			else:
+				font_types = ['eng-large']  # {'eng-small', 'eng-large', 'eng-receipt'}.
+				font_filepaths = construct_font(font_types)
+				font_filepaths, _ = zip(*font_filepaths)
+			lang_infos.append((lang, font_filepaths))
+		if False:
+			lang = 'cn'  # {'ar', 'cn', 'de', 'en', 'es', 'fr', 'hi'}.
 			#font_filepaths = trdg.utils.load_fonts(lang)
 			font_filepaths = list()
-
+			lang_infos.append((lang, font_filepaths))
+		# background_type = 0 (Gaussian noise), 1 (plain white), 2 (quasicrystal), 3 (image).
+		background_infos = [(0, None)]
+		#background_infos = [(0, None), (3, os.path.join(data_base_dir_path, 'background_image'))]
 		# distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random).
 		# distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
 		distortion_types, distortion_directions = (1, 2, 3), (0, 1, 2)
-			divisor = len(distortion_types) * len(distortion_directions) * 2 * 2
-			for is_randomly_generated in [False, True]:
-				for distortion_type in distortion_types:
-					for distortion_direction in distortion_directions:
-						generator_kwargs['distorsion_type'] = distortion_type
-						generator_kwargs['distorsion_orientation'] = distortion_direction
-						train_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_train_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=train_transform, target_transform=train_target_transform, **generator_kwargs))
-						test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
+
+		trdg_train_datasets, trdg_test_datasets = generate_trdg_datasets(num_train_examples, num_test_examples, image_channel, lang_infos, background_infos, distortion_types, distortion_directions, label_converter, max_textline_len, font_size, num_words, is_variable_length, train_transform, train_target_transform, test_transform, test_target_transform)
+		train_datasets.extend(trdg_train_datasets)
+		test_datasets.extend(trdg_test_datasets)
 	if False:
 		# AI-Hub printed text dataset.
 		#	#syllables = 558,600, #words = 277,150, #sentences = 42,350.
@@ -3519,6 +3602,7 @@ def train_char_recognizer(model, criterion, optimizer, scheduler, is_epoch_based
 	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 	if logger: logger.info('End creating data loaders: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('#train steps per epoch = {}, #test steps per epoch = {}.'.format(len(train_dataloader), len(test_dataloader)))
 
 	# Show data info.
 	show_char_data_info(train_dataloader, label_converter, visualize=False, nrow=8, mode='Train', logger=logger)
@@ -3565,6 +3649,7 @@ def train_text_recognizer(model, criterion, optimizer, scheduler, is_epoch_based
 	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 	if logger: logger.info('End creating data loaders: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('#train steps per epoch = {}, #test steps per epoch = {}.'.format(len(train_dataloader), len(test_dataloader)))
 
 	# Show data info.
 	show_text_data_info(train_dataloader, label_converter, visualize=False, nrow=2, mode='Train', logger=logger)
@@ -3737,7 +3822,7 @@ def images_to_tensor(images, image_shape, is_pil, logger):
 	return torch.stack(inputs)
 
 def labels_to_tensor(labels, max_label_len, label_converter):
-	#target_transform = ToIntTensor()
+	#target_transform = torch.IntTensor
 	target_transform = ToIntTensorWithPadding(label_converter.pad_id, max_label_len)
 
 	outputs = list(target_transform(label_converter.encode(lbl)) for lbl in labels)
@@ -3779,12 +3864,11 @@ def load_text_data_from_file(label_converter, image_channel, target_type, max_la
 
 	return images, labels_int
 
-def create_datasets_for_training(charset, wordset, font_list, target_type, image_shape, label_converter, max_label_len, train_test_ratio, is_pil, logger):
+def create_datasets_for_training(charset, wordset, font_list, target_type, image_shape, label_converter, max_label_len, train_test_ratio, is_mixed_text_used, is_pil, logger):
 	image_height, image_width, image_channel = image_shape
 	#image_height_before_crop, image_width_before_crop = int(image_height * 1.1), int(image_width * 1.1)
 	image_height_before_crop, image_width_before_crop = image_height, image_width
 
-	is_mixed_text_used = True
 	font_size_interval = (10, 100)
 	color_functor = functools.partial(generate_font_colors, image_depth=image_channel)
 	chars = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
@@ -3805,10 +3889,10 @@ def create_datasets_for_training(charset, wordset, font_list, target_type, image
 
 		# File-based words: 504,279.
 		if is_mixed_text_used:
-			num_simple_examples, num_random_examples = int(5e5), int(5e5)  # For mixed words.
-			train_dataset, test_dataset = create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examples, num_random_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, font_list, font_size_interval, color_functor, logger)
+			num_simple_examples, num_random_examples, num_trdg_examples = int(6e5), int(3e5), int(6e5)  # For mixed words.
+			train_dataset, test_dataset = create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, font_list, font_size_interval, color_functor, is_pil, logger)
 		else:
-			word_type = 'simple_word'  # {'simple_word', 'random_word', 'aihub_word', 'file_based_word'}.
+			word_type = 'simple_word'  # {'simple_word', 'random_word', 'trdg_word', 'aihub_word', 'file_based_word'}.
 			num_train_examples, num_test_examples = int(1e6), int(1e4)  # For simple and random words.
 			train_dataset, test_dataset = create_word_datasets(word_type, label_converter, wordset, chars, num_train_examples, num_test_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, font_list, font_size_interval, color_functor, is_pil, logger)
 	elif target_type == 'textline':
@@ -3845,7 +3929,7 @@ def create_text_dataset(label_converter, image_shape, target_type, max_label_len
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize(mean=(0.5,) * image_channel, std=(0.5,) * image_channel)  # [0, 1] -> [-1, 1].
 	])
-	target_transform = ToIntTensor()
+	target_transform = torch.IntTensor
 
 	if 'posix' == os.name:
 		data_base_dir_path = '/home/sangwook/work/dataset'
@@ -3889,7 +3973,23 @@ def create_text_dataset(label_converter, image_shape, target_type, max_label_len
 
 	return torch.utils.data.ConcatDataset(datasets)
 
-def extract_simple_text_rectangle_from_quadrilateral(image, polygons, output_dir_path):
+def extract_text_rectangle_from_aabb(image, aabboxes, output_dir_path):
+	text_patches = list()
+	rgb = image.copy()
+	for idx, bbox in enumerate(aabboxes):
+		x1, y1, x2, y2 = bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3]
+		x1, y1, x2, y2 = math.floor(float(x1)), math.floor(float(y1)), math.ceil(float(x2)), math.ceil(float(y2))
+		#x1, y1, x2, y2 = x1 - 1, y1 - 1, x2 + 1, y2 + 1
+		patch = image[y1:y2,x1:x2]
+		text_patches.append(patch)
+
+		cv2.imwrite(os.path.join(output_dir_path, 'text_{}.png'.format(idx)), patch)
+
+		cv2.rectangle(rgb, (x1, y1), (x2, y2), (random.randint(128, 255), random.randint(128, 255), random.randint(128, 255)), 1, cv2.LINE_8)
+	cv2.imwrite(os.path.join(output_dir_path, 'text_bbox.png'), rgb)
+	return text_patches
+
+def extract_simple_text_rectangle_from_polygon(image, polygons, output_dir_path):
 	text_patches = list()
 	rgb = image.copy()
 	for idx, poly in enumerate(polygons):
@@ -3905,7 +4005,7 @@ def extract_simple_text_rectangle_from_quadrilateral(image, polygons, output_dir
 	cv2.imwrite(os.path.join(output_dir_path, 'text_bbox.png'), rgb)
 	return text_patches
 
-def extract_masked_text_rectangle_from_quadrilateral(image, polygons, output_dir_path):
+def extract_masked_text_rectangle_from_polygon(image, polygons, output_dir_path):
 	image_height, image_width = image.shape[:2]
 	text_patches = list()
 	rgb = image.copy()
@@ -3931,7 +4031,7 @@ def extract_masked_text_rectangle_from_quadrilateral(image, polygons, output_dir
 	cv2.imwrite(os.path.join(output_dir_path, 'text_bbox.png'), rgb)
 	return text_patches
 
-def extract_rotated_text_rectangle_from_quadrilateral(image, polygons, output_dir_path):
+def extract_rotated_text_rectangle_from_polygon(image, polygons, output_dir_path):
 	"""
 	def compute_rotation_angle(pts):
 		pts -= np.mean(pts, axis=0)
@@ -3945,7 +4045,7 @@ def extract_rotated_text_rectangle_from_quadrilateral(image, polygons, output_di
 			if eigvec[0] < 0: eigvec = -eigvec
 			return math.atan2(eigvec[1], eigvec[0])
 		except np.LinAlgError as ex:
-			print('numpy.LinAlgError raised: {}.'.format(ex))
+			if logger: logger.error('numpy.LinAlgError raised: {}.'.format(ex))
 			return None
 
 	def rotate_image(image, angle):
@@ -4013,7 +4113,7 @@ def extract_rotated_text_rectangle_from_quadrilateral(image, polygons, output_di
 	cv2.imwrite(os.path.join(output_dir_path, 'text_bbox.png'), rgb)
 	return text_patches
 
-def extract_rectified_text_rectangle_from_quadrilateral(image, polygons, output_dir_path):
+def extract_rectified_text_rectangle_from_polygon(image, polygons, output_dir_path):
 	"""
 	# REF [site] >> https://docs.opencv.org/4.5.0/db/da4/samples_2dnn_2text_detection_8cpp-example.html
 	def fourPointsTransform(image, pts, target_pts=None):
@@ -4149,10 +4249,10 @@ def detect_texts_by_craft(image_filepath, craft_refine, craft_cuda, output_dir_p
 		cv2.waitKey(0)
 		"""
 
-		#return extract_simple_text_rectangle_from_quadrilateral(image, bboxes, output_dir_path)
-		#return extract_masked_text_rectangle_from_quadrilateral(image, bboxes, output_dir_path)
-		return extract_rotated_text_rectangle_from_quadrilateral(image, bboxes, output_dir_path)
-		#return extract_rectified_text_rectangle_from_quadrilateral(image, bboxes, output_dir_path)
+		#return extract_simple_text_rectangle_from_polygon(image, bboxes, output_dir_path)
+		#return extract_masked_text_rectangle_from_polygon(image, bboxes, output_dir_path)
+		return extract_rotated_text_rectangle_from_polygon(image, bboxes, output_dir_path)
+		#return extract_rectified_text_rectangle_from_polygon(image, bboxes, output_dir_path)
 	else: return None
 
 def visualize_inference_results(predictions, label_converter, inputs, outputs, output_dir_path, is_case_sensitive, num_examples_to_visualize, logger):
@@ -4456,6 +4556,7 @@ def main():
 		#is_resumed = args.model_file is not None
 
 		train_test_ratio = 0.8
+		is_mixed_text_used = True
 		if args.target_type == 'char':
 			wordset = None
 		elif args.target_type in ['word', 'textline']:
@@ -4468,7 +4569,7 @@ def main():
 		# Create datasets.
 		logger.info('Start creating datasets...')
 		start_time = time.time()
-		train_dataset, test_dataset = create_datasets_for_training(charset, wordset, font_list, args.target_type, image_shape, label_converter, args.max_len, train_test_ratio, is_pil, logger)
+		train_dataset, test_dataset = create_datasets_for_training(charset, wordset, font_list, args.target_type, image_shape, label_converter, args.max_len, train_test_ratio, is_mixed_text_used, is_pil, logger)
 		logger.info('End creating datasets: {} secs.'.format(time.time() - start_time))
 		logger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
