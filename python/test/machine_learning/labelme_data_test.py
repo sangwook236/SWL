@@ -5,11 +5,67 @@ import sys
 sys.path.append('../../src')
 sys.path.append('./src')
 
-import os, glob, time
+import os, functools, glob, time
 import numpy as np
 import torch, torchvision
 import cv2
 import labelme_data
+
+def LabelMeDataset_test():
+	image_channel = 3
+
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+	data_dir_path = data_base_dir_path + '/text/table/sminds'
+
+	json_filepaths = glob.glob(data_dir_path + '/**/*.json', recursive=False)
+	print('#loaded JSON files = {}.'.format(len(json_filepaths)))
+
+	#--------------------
+	print('Start creating datasets...')
+	start_time = time.time()
+	dataset = labelme_data.LabelMeDataset(json_filepaths, image_channel)
+	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+	print('#files = {}.'.format(len(dataset)))
+
+	if False:
+		for idx, dat in enumerate(dataset):
+			print('Data #{}:'.format(idx))
+			print('\tversion = {}.'.format(dat['version']))
+			print('\tflags = {}.'.format(dat['flags']))
+			print('\tlineColor = {}.'.format(dat['lineColor']))
+			print('\tfillColor = {}.'.format(dat['fillColor']))
+			print('\timagePath = {}.'.format(dat['imagePath']))
+			print('\timageData = {}.'.format(dat['imageData']))
+			print('\timageWidth = {}.'.format(dat['imageWidth']))
+			print('\timageHeight = {}.'.format(dat['imageHeight']))
+
+			for sidx, shape in enumerate(dat['shapes']):
+				print('\tShape #{}:'.format(sidx))
+				print('\t\tlabel = {}.'.format(shape['label']))
+				print('\t\tline_color = {}.'.format(shape['line_color']))
+				print('\t\tfill_color = {}.'.format(shape['fill_color']))
+				print('\t\tpoints = {}.'.format(shape['points']))
+				print('\t\tshape_type = {}.'.format(shape['shape_type']))
+
+			if idx >= 2: break
+
+	#--------------------
+	num_shapes = functools.reduce(lambda nn, dat: nn + len(dat['shapes']), dataset, 0)
+	print('#shapes = {}.'.format(num_shapes))
+
+	shape_counts = dict()
+	for dat in dataset:
+		for shape in dat['shapes']:
+			if shape['label'] in shape_counts:
+				shape_counts[shape['label']] += 1
+			else:
+				shape_counts[shape['label']] = 1
+	print('Shape labels = {}.'.format(list(shape_counts.keys())))
+	print('#total examples = {}.'.format(sum(shape_counts.values())))
+	print('#examples of each shape = {}.'.format(shape_counts))
 
 def create_augmenter():
 	#import imgaug as ia
@@ -77,6 +133,64 @@ def create_augmenter():
 
 	return augmenter
 
+class ConvertPILMode(object):
+	def __init__(self, mode='RGB'):
+		self.mode = mode
+
+	def __call__(self, x):
+		return x.convert(self.mode)
+
+class ResizeImageToFixedSizeWithPadding(object):
+	def __init__(self, height, width, is_pil=True):
+		self.height, self.width = height, width
+		self.resize_functor = self._resize_by_pil if is_pil else self._resize_by_opencv
+
+	def __call__(self, x):
+		return self.resize_functor(x, self.height, self.width)
+
+	# REF [function] >> RunTimeTextLineDatasetBase._resize_by_opencv() in text_line_data.py.
+	def _resize_by_opencv(self, input, height, width, *args, **kwargs):
+		interpolation = cv2.INTER_AREA
+		"""
+		hi, wi = input.shape[:2]
+		if wi >= width:
+			return cv2.resize(input, (width, height), interpolation=interpolation)
+		else:
+			aspect_ratio = height / hi
+			min_width = min(width, int(wi * aspect_ratio))
+			input = cv2.resize(input, (min_width, height), interpolation=interpolation)
+			if min_width < width:
+				image_zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
+				image_zeropadded[:,:min_width] = input[:,:min_width]
+				return image_zeropadded
+			else:
+				return input
+		"""
+		hi, wi = input.shape[:2]
+		aspect_ratio = height / hi
+		min_width = min(width, int(wi * aspect_ratio))
+		zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
+		zeropadded[:,:min_width] = cv2.resize(input, (min_width, height), interpolation=interpolation)
+		return zeropadded
+		"""
+		return cv2.resize(input, (width, height), interpolation=interpolation)
+		"""
+
+	# REF [function] >> RunTimeTextLineDatasetBase._resize_by_pil() in text_line_data.py.
+	def _resize_by_pil(self, input, height, width, *args, **kwargs):
+		import PIL.Image
+
+		interpolation = PIL.Image.BICUBIC
+		wi, hi = input.size
+		aspect_ratio = height / hi
+		min_width = min(width, int(wi * aspect_ratio))
+		zeropadded = PIL.Image.new(input.mode, (width, height), color=0)
+		zeropadded.paste(input.resize((min_width, height), resample=interpolation), (0, 0, min_width, height))
+		return zeropadded
+		"""
+		return input.resize((width, height), resample=interpolation)
+		"""
+
 class MySubsetDataset(torch.utils.data.Dataset):
 	def __init__(self, subset, transform=None, target_transform=None):
 		self.subset = subset
@@ -128,14 +242,16 @@ def FigureLabelMeDataset_test():
 	train_transform = torchvision.transforms.Compose([
 		#RandomAugment(create_augmenter()),
 		#ConvertPILMode(mode='RGB'),
-		torchvision.transforms.Resize((image_height, image_width)),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
+		#torchvision.transforms.Resize((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
 	train_target_transform = torch.IntTensor
 	test_transform = torchvision.transforms.Compose([
 		#ConvertPILMode(mode='RGB'),
-		torchvision.transforms.Resize((image_height, image_width)),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
+		#torchvision.transforms.Resize((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
@@ -153,7 +269,7 @@ def FigureLabelMeDataset_test():
 	train_dataset = MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform)
 	test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
-	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
+	print('#examples = {}, #train examples = {}, #test examples = {}.'.format(len(dataset), len(train_dataset), len(test_dataset)))
 
 	#--------------------
 	print('Start creating data loaders...')
@@ -183,7 +299,8 @@ def FigureLabelMeDataset_test():
 	visualize_data(test_dataloader, num_data=10)
 
 def main():
-	FigureLabelMeDataset_test()
+	LabelMeDataset_test()
+	#FigureLabelMeDataset_test()
 
 #--------------------------------------------------------------------
 
