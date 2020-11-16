@@ -142,7 +142,8 @@ def create_word_augmenter():
 			iaa.Affine(
 				#scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
 				translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent along x-axis and -10 to +10 percent along y-axis.
-				rotate=(-45, 45),  # Rotate by -10 to +10 degrees.
+				#rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
+				rotate=(-45, 45),  # Rotate by -45 to +45 degrees.
 				#shear=(-5, 5),  # Shear by -5 to +5 degrees.
 				order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
 				#order=0,  # Use nearest neighbour or bilinear interpolation (fast).
@@ -790,8 +791,8 @@ def create_word_datasets(word_type, label_converter, wordset, chars, num_train_e
 			font_filepaths = list()
 			lang_infos.append((lang, font_filepaths))
 		# background_type = 0 (Gaussian noise), 1 (plain white), 2 (quasicrystal), 3 (image).
-		#background_infos = [(0, None)]
-		background_infos = [(0, None), (3, os.path.join(data_base_dir_path, 'background_image'))]
+		background_infos = [(0, None)]
+		#background_infos = [(0, None), (3, os.path.join(data_base_dir_path, 'background_image'))]
 		# distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random).
 		# distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
 		distortion_types, distortion_directions = (1, 2, 3), (0, 1, 2)
@@ -947,8 +948,8 @@ def create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examp
 			font_filepaths = list()
 			lang_infos.append((lang, font_filepaths))
 		# background_type = 0 (Gaussian noise), 1 (plain white), 2 (quasicrystal), 3 (image).
-		#background_infos = [(0, None)]
-		background_infos = [(0, None), (3, os.path.join(data_base_dir_path, 'background_image'))]
+		background_infos = [(0, None)]
+		#background_infos = [(0, None), (3, os.path.join(data_base_dir_path, 'background_image'))]
 		# distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random).
 		# distorsion_orientation = 0 (vertical), 1 (horizontal), 2 (both).
 		distortion_types, distortion_directions = (1, 2, 3), (0, 1, 2)
@@ -4232,28 +4233,30 @@ def detect_texts_by_craft(image_filepath, craft_refine, craft_cuda, output_dir_p
 	if logger: logger.info('End running CRAFT: {} secs.'.format(time.time() - start_time))
 
 	if len(bboxes) > 0:
-		output_dir_path = os.path.join(output_dir_path, 'text_craft_results')
+		image = cv2.imread(image_filepath)
+		if image is None:
+			if logger: logger.error('File not found, {}.'.format(image_filepath))
+			return None, None
+
+		if False:
+			cv2.imshow('Input', image)
+			rgb1, rgb2 = image.copy(), image.copy()
+			for bbox, poly in zip(bboxes, polys):
+				color = (random.randint(128, 255), random.randint(128, 255), random.randint(128, 255))
+				cv2.drawContours(rgb1, [np.round(np.expand_dims(bbox, axis=1)).astype(np.int32)], 0, color, 1, cv2.LINE_AA)
+				cv2.drawContours(rgb2, [np.round(np.expand_dims(poly, axis=1)).astype(np.int32)], 0, color, 1, cv2.LINE_AA)
+			cv2.imshow('BBox', rgb1)
+			cv2.imshow('Poly', rgb2)
+			cv2.waitKey(0)
+
+		output_dir_path = os.path.join(output_dir_path, 'craft_results')
 		os.makedirs(output_dir_path, exist_ok=True)
 
-		image = cv2.imread(image_filepath)
-
-		"""
-		cv2.imshow('Input', image)
-		rgb1, rgb2 = image.copy(), image.copy()
-		for bbox, poly in zip(bboxes, polys):
-			color = (random.randint(128, 255), random.randint(128, 255), random.randint(128, 255))
-			cv2.drawContours(rgb1, [np.round(np.expand_dims(bbox, axis=1)).astype(np.int32)], 0, color, 1, cv2.LINE_AA)
-			cv2.drawContours(rgb2, [np.round(np.expand_dims(poly, axis=1)).astype(np.int32)], 0, color, 1, cv2.LINE_AA)
-		cv2.imshow('BBox', rgb1)
-		cv2.imshow('Poly', rgb2)
-		cv2.waitKey(0)
-		"""
-
-		#return extract_simple_text_rectangle_from_polygon(image, bboxes, output_dir_path)
-		#return extract_masked_text_rectangle_from_polygon(image, bboxes, output_dir_path)
-		return extract_rotated_text_rectangle_from_polygon(image, bboxes, output_dir_path)
-		#return extract_rectified_text_rectangle_from_polygon(image, bboxes, output_dir_path)
-	else: return None
+		#return extract_simple_text_rectangle_from_polygon(image, bboxes, output_dir_path), bboxes
+		#return extract_masked_text_rectangle_from_polygon(image, bboxes, output_dir_path), bboxes
+		return extract_rotated_text_rectangle_from_polygon(image, bboxes, output_dir_path), bboxes
+		#return extract_rectified_text_rectangle_from_polygon(image, bboxes, output_dir_path), bboxes
+	else: return None, None
 
 def crop_text_region_in_image(images):
 	min_image_height, min_image_width = 10, 10
@@ -4316,22 +4319,22 @@ def crop_text_region_in_image(images):
 def extract_cells_in_table(image_filepath, cell_contours, output_dir_path, logger):
 	if len(cell_contours) <= 0: return None
 
-	output_dir_path = os.path.join(output_dir_path, 'table_results')
-	os.makedirs(output_dir_path, exist_ok=True)
-
 	image = cv2.imread(image_filepath)
 	if image is None:
 		if logger: logger.error('File not found, {}.'.format(image_filepath))
 		return None
 
-		if True:
-		aabboxes = list(cv2.boundingRect(contour) for contour in cell_contours) # (left, top, width, height).
+	output_dir_path = os.path.join(output_dir_path, 'table_results')
+	os.makedirs(output_dir_path, exist_ok=True)
+
+	if True:
+		aabboxes = list(cv2.boundingRect(contour) for contour in cell_contours)  # (left, top, width, height).
 		text_patches = extract_text_rectangle_from_aabb(image, aabboxes, output_dir_path)
 		return crop_text_region_in_image(text_patches)
-		else:
+	else:
 		#cell_contours = list(cv2.convexHull(contour) for contour in cell_contours)  # Optional.
 
-			"""
+		if False:
 			cv2.imshow('Input', image)
 			rgb = image.copy()
 			for contour in cell_contours:
@@ -4339,23 +4342,22 @@ def extract_cells_in_table(image_filepath, cell_contours, output_dir_path, logge
 				cv2.drawContours(rgb, [np.round(np.expand_dims(contour, axis=1)).astype(np.int32)], 0, color, 1, cv2.LINE_AA)
 			cv2.imshow('Cell Contours', rgb)
 			cv2.waitKey(0)
-			"""
 
-			#return extract_simple_text_rectangle_from_polygon(image, cell_contours, output_dir_path)
-			#return extract_masked_text_rectangle_from_polygon(image, cell_contours, output_dir_path)
-			return extract_rotated_text_rectangle_from_polygon(image, cell_contours, output_dir_path)
-			#return extract_rectified_text_rectangle_from_polygon(image, cell_contours, output_dir_path)
+		#return extract_simple_text_rectangle_from_polygon(image, cell_contours, output_dir_path)
+		#return extract_masked_text_rectangle_from_polygon(image, cell_contours, output_dir_path)
+		return extract_rotated_text_rectangle_from_polygon(image, cell_contours, output_dir_path)
+		#return extract_rectified_text_rectangle_from_polygon(image, cell_contours, output_dir_path)
 
 def visualize_table_recognition_results(image_filepath, cell_contours, cell_patches, valid_cell_texts, output_dir_path, logger):
 	if len(cell_contours) <= 0 or len(cell_patches) <= 0 or len(valid_cell_texts) <= 0: return None
-
-	output_dir_path = os.path.join(output_dir_path, 'table_results')
-	os.makedirs(output_dir_path, exist_ok=True)
 
 	image = cv2.imread(image_filepath)
 	if image is None:
 		if logger: logger.error('File not found, {}.'.format(image_filepath))
 		return
+
+	#output_dir_path = os.path.join(output_dir_path, 'table_results')
+	#os.makedirs(output_dir_path, exist_ok=True)
 
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
@@ -4385,7 +4387,44 @@ def visualize_table_recognition_results(image_filepath, cell_contours, cell_patc
 			draw.text(xy=(left, top), text=txt, font=font, fill=(0, 0, 0))
 
 			patch_idx += 1
-	canvas.save(output_dir_path + '/table_cell.png')
+	canvas.save(output_dir_path + '/table_result.png')
+
+def visualize_scene_text_recognition_results(image_filepath, text_bboxes, texts, output_dir_path, logger):
+	if len(text_bboxes) <= 0: return None
+
+	image = cv2.imread(image_filepath)
+	if image is None:
+		if logger: logger.error('File not found, {}.'.format(image_filepath))
+		return
+
+	#output_dir_path = os.path.join(output_dir_path, 'scene_text_results')
+	#os.makedirs(output_dir_path, exist_ok=True)
+
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		font_base_dir_path = '/home/sangwook/work/font'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_base_dir_path = 'D:/work/font'
+	font_filepath = font_base_dir_path + '/kor_large/batang.ttf'
+
+	canvas = Image.new(mode='RGB', size=(image.shape[1], image.shape[0]), color=(255, 255, 255))
+	draw = ImageDraw.Draw(canvas)
+	for bbox, txt in zip(text_bboxes, texts):
+		(left, top), (right, bottom) = np.min(bbox, axis=0), np.max(bbox, axis=0)
+		left, top, right, bottom = math.floor(left), math.floor(top), math.ceil(right), math.ceil(bottom)
+
+		try:
+			obb = cv2.minAreaRect(bbox)  # Tuple: (center, size, angle).
+			font_size = int(min(obb[1]) / 2)
+			font = ImageFont.truetype(font=font_filepath, size=font_size, index=0)
+		except Exception as ex:
+			if logger: logger.warning('Invalid font, {}: {}.'.format(font_filepath, ex))
+			return
+
+		txt = txt.replace('<UNK>', '')  # Optional.
+		draw.text(xy=(left, top), text=txt, font=font, fill=(0, 0, 0))
+	canvas.save(output_dir_path + '/scene_text_result.png')
 
 def visualize_inference_results(predictions, label_converter, inputs, outputs, output_dir_path, is_case_sensitive, num_examples_to_visualize, logger):
 	if not num_examples_to_visualize or num_examples_to_visualize <= 0:
@@ -4422,7 +4461,7 @@ def visualize_inference_results(predictions, label_converter, inputs, outputs, o
 		if is_simple_matching_accuracy_used:
 			correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count, error_cases = compute_simple_matching_accuracy(inputs, outputs, predictions, label_converter, is_case_sensitive, error_cases_dir_path, error_idx=0)
 
-		if error_cases_dir_path:
+		if is_sequence_matching_ratio_used and error_cases_dir_path:
 			err_fpath = os.path.join(error_cases_dir_path, 'error_cases.txt')
 			try:
 				with open(err_fpath, 'w', encoding='UTF8') as fd:
@@ -4846,7 +4885,7 @@ def main():
 
 					craft_refine = False  # Enable a link refiner.
 					craft_cuda = torch.cuda.is_available() and int(args.gpu) >= 0
-					patches = detect_texts_by_craft(image_filepath, craft_refine, craft_cuda, output_dir_path, logger)
+					patches, text_bboxes = detect_texts_by_craft(image_filepath, craft_refine, craft_cuda, output_dir_path, logger)
 					if patches is None or len(patches) <= 0:
 						logger.warning('No text detected in {}.'.format(image_filepath))
 						return
@@ -4866,15 +4905,19 @@ def main():
 				logger.info('End inferring: {} secs.'.format(time.time() - start_time))
 				logger.info('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(predictions.shape, predictions.dtype, np.min(predictions), np.max(predictions)))
 
-				if True:
+				if False:
+					# Visualize table recognition results.
+					predictions = list(label_converter.decode(pred) for pred in predictions)
+					visualize_table_recognition_results(image_filepath, cell_contours, cell_patches, predictions, output_dir_path, logger)
+				elif False:
+					# Visualize scene text recognition results.
+					predictions = list(label_converter.decode(pred) for pred in predictions)
+					visualize_scene_text_recognition_results(image_filepath, text_bboxes, predictions, output_dir_path, logger)
+				else:
 					# Visualize inference results.
 					#outputs = None
 					num_examples_to_visualize = 50
 					visualize_inference_results(predictions, label_converter, inputs.numpy(), outputs, output_dir_path, is_case_sensitive, num_examples_to_visualize, logger)
-				else:
-					# Visualize table recognition results.
-					predictions = list(label_converter.decode(pred) for pred in predictions)
-					visualize_table_recognition_results(image_filepath, cell_contours, cell_patches, predictions, output_dir_path, logger)
 
 #--------------------------------------------------------------------
 

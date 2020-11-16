@@ -800,8 +800,14 @@ class TextRecognitionDataGeneratorTextLineDataset(TextDatasetBase):
 
 	def __getitem__(self, idx):
 		while True:
-			image, text = next(self.generator)
-			#(image, mask), text = next(self.generator)
+			while True:
+				try:
+					image, text = next(self.generator)
+					#(image, mask), text = next(self.generator)
+					break
+				except Exception as ex:
+					print('[SWL] Warning: TRDG exception, {}.'.format(ex))
+					continue
 
 			if len(text) > self.max_textline_len:
 				continue
