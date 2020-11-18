@@ -4254,8 +4254,8 @@ def detect_texts_by_craft(image_filepath, craft_refine, craft_cuda, output_dir_p
 
 		#return extract_simple_text_rectangle_from_polygon(image, bboxes, output_dir_path), bboxes
 		#return extract_masked_text_rectangle_from_polygon(image, bboxes, output_dir_path), bboxes
-		return extract_rotated_text_rectangle_from_polygon(image, bboxes, output_dir_path), bboxes
-		#return extract_rectified_text_rectangle_from_polygon(image, bboxes, output_dir_path), bboxes
+		#return extract_rotated_text_rectangle_from_polygon(image, bboxes, output_dir_path), bboxes  # FIXME [check] >>
+		return extract_rectified_text_rectangle_from_polygon(image, bboxes, output_dir_path), bboxes
 	else: return None, None
 
 def crop_text_region_in_image(images):
@@ -4348,7 +4348,7 @@ def extract_cells_in_table(image_filepath, cell_contours, output_dir_path, logge
 		return extract_rotated_text_rectangle_from_polygon(image, cell_contours, output_dir_path)
 		#return extract_rectified_text_rectangle_from_polygon(image, cell_contours, output_dir_path)
 
-def visualize_table_recognition_results(image_filepath, cell_contours, cell_patches, valid_cell_texts, output_dir_path, logger):
+def visualize_table_recognition_results(image_filepath, cell_contours, cell_patches, valid_cell_texts, output_dir_path, logger=None):
 	if len(cell_contours) <= 0 or len(cell_patches) <= 0 or len(valid_cell_texts) <= 0: return None
 
 	image = cv2.imread(image_filepath)
@@ -4389,7 +4389,7 @@ def visualize_table_recognition_results(image_filepath, cell_contours, cell_patc
 			patch_idx += 1
 	canvas.save(output_dir_path + '/table_result.png')
 
-def visualize_scene_text_recognition_results(image_filepath, text_bboxes, texts, output_dir_path, logger):
+def visualize_scene_text_recognition_results(image_filepath, text_bboxes, texts, output_dir_path, is_2x=False, logger=None):
 	if len(text_bboxes) <= 0: return None
 
 	image = cv2.imread(image_filepath)
@@ -4408,15 +4408,17 @@ def visualize_scene_text_recognition_results(image_filepath, text_bboxes, texts,
 		font_base_dir_path = 'D:/work/font'
 	font_filepath = font_base_dir_path + '/kor_large/batang.ttf'
 
-	canvas = Image.new(mode='RGB', size=(image.shape[1], image.shape[0]), color=(255, 255, 255))
+	scale_factor = 2 if is_2x else 1
+	canvas = Image.new(mode='RGB', size=(image.shape[1] * scale_factor, image.shape[0] * scale_factor), color=(255, 255, 255))
 	draw = ImageDraw.Draw(canvas)
 	for bbox, txt in zip(text_bboxes, texts):
 		(left, top), (right, bottom) = np.min(bbox, axis=0), np.max(bbox, axis=0)
-		left, top, right, bottom = math.floor(left), math.floor(top), math.ceil(right), math.ceil(bottom)
+		left, top, right, bottom = math.floor(left * scale_factor), math.floor(top * scale_factor), math.ceil(right * scale_factor), math.ceil(bottom * scale_factor)
 
 		try:
 			obb = cv2.minAreaRect(bbox)  # Tuple: (center, size, angle).
-			font_size = int(min(obb[1]) / 2)
+			#font_size = int(min(obb[1]) * scale_factor)
+			font_size = int(min(obb[1]))
 			font = ImageFont.truetype(font=font_filepath, size=font_size, index=0)
 		except Exception as ex:
 			if logger: logger.warning('Invalid font, {}: {}.'.format(font_filepath, ex))
@@ -4426,7 +4428,7 @@ def visualize_scene_text_recognition_results(image_filepath, text_bboxes, texts,
 		draw.text(xy=(left, top), text=txt, font=font, fill=(0, 0, 0))
 	canvas.save(output_dir_path + '/scene_text_result.png')
 
-def visualize_inference_results(predictions, label_converter, inputs, outputs, output_dir_path, is_case_sensitive, num_examples_to_visualize, logger):
+def visualize_inference_results(predictions, label_converter, inputs, outputs, output_dir_path, is_case_sensitive, num_examples_to_visualize, logger=None):
 	if not num_examples_to_visualize or num_examples_to_visualize <= 0:
 		num_examples_to_visualize = len(predictions)
 
@@ -4912,7 +4914,7 @@ def main():
 				elif False:
 					# Visualize scene text recognition results.
 					predictions = list(label_converter.decode(pred) for pred in predictions)
-					visualize_scene_text_recognition_results(image_filepath, text_bboxes, predictions, output_dir_path, logger)
+					visualize_scene_text_recognition_results(image_filepath, text_bboxes, predictions, output_dir_path, is_2x=False, logger=logger)
 				else:
 					# Visualize inference results.
 					#outputs = None
