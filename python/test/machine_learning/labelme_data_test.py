@@ -298,9 +298,95 @@ def FigureLabelMeDataset_test():
 	visualize_data(train_dataloader, num_data=10)
 	visualize_data(test_dataloader, num_data=10)
 
+# REF [function] >> collate_fn() in https://github.com/pytorch/vision/tree/master/references/detection/utils.py
+def collate_fn(batch):
+	return tuple(zip(*batch))
+
+def FigureDetectionLabelMeDataset_test():
+	image_height, image_width, image_channel = 320, 320, 3
+
+	is_preloaded_image_used = True
+	train_test_ratio = 0.8
+	batch_size = 64
+	shuffle = True
+	num_workers = 8
+
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+	data_dir_path = data_base_dir_path + '/text/table/sminds'
+
+	json_filepaths = glob.glob(data_dir_path + '/**/*.json', recursive=False)
+	print('#loaded JSON files = {}.'.format(len(json_filepaths)))
+
+	#--------------------
+	train_transform = torchvision.transforms.Compose([
+		#RandomAugment(create_augmenter()),
+		#ConvertPILMode(mode='RGB'),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
+		#torchvision.transforms.Resize((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	])
+	test_transform = torchvision.transforms.Compose([
+		#ConvertPILMode(mode='RGB'),
+		ResizeImageToFixedSizeWithPadding(image_height, image_width),
+		#torchvision.transforms.Resize((image_height, image_width)),
+		torchvision.transforms.ToTensor(),
+		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	])
+
+	#--------------------
+	print('Start creating datasets...')
+	start_time = time.time()
+	dataset = labelme_data.FigureDetectionLabelMeDataset(json_filepaths, image_channel, is_preloaded_image_used)
+
+	num_examples = len(dataset)
+	num_train_examples = int(num_examples * train_test_ratio)
+
+	train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
+	train_dataset = MySubsetDataset(train_subset, transform=train_transform)
+	test_dataset = MySubsetDataset(test_subset, transform=test_transform)
+	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+	print('#examples = {}, #train examples = {}, #test examples = {}.'.format(len(dataset), len(train_dataset), len(test_dataset)))
+
+	#--------------------
+	print('Start creating data loaders...')
+	start_time = time.time()
+	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, collate_fn=collate_fn)
+	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, collate_fn=collate_fn)
+	print('End creating data loaders: {} secs.'.format(time.time() - start_time))
+	print('#train steps per epoch = {}, #test steps per epoch = {}.'.format(len(train_dataloader), len(test_dataloader)))
+
+	#--------------------
+	# Show data info.
+	data_iter = iter(train_dataloader)
+	images, targets = data_iter.next()  # tuple of torch.Tensor's & tuple of dicts.
+	image0, target0 = images[0].numpy(), targets[0]
+	bboxes0, labels0 = target0['boxes'].numpy(), target0['labels'].numpy()
+	print('Train image: #images = {}, shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(len(images), image0.shape, image0.dtype, np.min(image0), np.max(image0)))
+	print("Train target: #targets = {}, target's keys = {}.".format(len(targets), target0.keys()))
+	print("Train target: Boxes' shape = {}, boxes' dtype = {}, labels' shape = {}, labels' dtype = {}.".format(bboxes0.shape, bboxes0.dtype, labels0.shape, labels0.dtype))
+
+	data_iter = iter(test_dataloader)
+	images, targets = data_iter.next()  # tuple of torch.Tensor's & tuple of dicts.
+	image0, target0 = images[0].numpy(), targets[0]
+	bboxes0, labels0 = target0['boxes'].numpy(), target0['labels'].numpy()
+	print('Test image: #images = {}, shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(len(images), image0.shape, image0.dtype, np.min(image0), np.max(image0)))
+	print("Test target: #targets = {}, target's keys = {}.".format(len(targets), target0.keys()))
+	print("Test target: Boxes' shape = {}, boxes' dtype = {}, labels' shape = {}, labels' dtype = {}.".format(bboxes0.shape, bboxes0.dtype, labels0.shape, labels0.dtype))
+
+	#--------------------
+	# Visualize.
+	#visualize_data(train_dataloader, num_data=10)
+	#visualize_data(test_dataloader, num_data=10)
+
 def main():
-	LabelMeDataset_test()
+	#LabelMeDataset_test()
+
 	#FigureLabelMeDataset_test()
+	FigureDetectionLabelMeDataset_test()
 
 #--------------------------------------------------------------------
 
