@@ -20,7 +20,7 @@ def LabelMeDataset_test():
 		data_base_dir_path = 'D:/work/dataset'
 	data_dir_path = data_base_dir_path + '/text/table/sminds'
 
-	json_filepaths = glob.glob(data_dir_path + '/**/*.json', recursive=False)
+	json_filepaths = glob.glob(data_dir_path + '/*.json', recursive=False)
 	print('#loaded JSON files = {}.'.format(len(json_filepaths)))
 
 	#--------------------
@@ -235,7 +235,7 @@ def FigureLabelMeDataset_test():
 		data_base_dir_path = 'D:/work/dataset'
 	data_dir_path = data_base_dir_path + '/text/table/sminds'
 
-	json_filepaths = glob.glob(data_dir_path + '/**/*.json', recursive=False)
+	json_filepaths = glob.glob(data_dir_path + '/labelme_??/*.json', recursive=False)
 	print('#loaded JSON files = {}.'.format(len(json_filepaths)))
 
 	#--------------------
@@ -298,14 +298,14 @@ def FigureLabelMeDataset_test():
 	visualize_data(train_dataloader, num_data=10)
 	visualize_data(test_dataloader, num_data=10)
 
-# REF [function] >> collate_fn() in https://github.com/pytorch/vision/tree/master/references/detection/utils.py
-def collate_fn(batch):
-	return tuple(zip(*batch))
-
 def FigureDetectionLabelMeDataset_test():
-	image_height, image_width, image_channel = 320, 320, 3
+	# NOTE [info] >> In order to deal with "OSError: [Errno 24] Too many open files" error. 
+	torch.multiprocessing.set_sharing_strategy('file_system')
 
-	is_preloaded_image_used = True
+	image_height, image_width, image_channel = 640, 640, 3
+
+	is_pkl_used = True
+	is_preloaded_image_used = False
 	train_test_ratio = 0.8
 	batch_size = 64
 	shuffle = True
@@ -317,8 +317,11 @@ def FigureDetectionLabelMeDataset_test():
 		data_base_dir_path = 'D:/work/dataset'
 	data_dir_path = data_base_dir_path + '/text/table/sminds'
 
-	json_filepaths = glob.glob(data_dir_path + '/**/*.json', recursive=False)
-	print('#loaded JSON files = {}.'.format(len(json_filepaths)))
+	if is_pkl_used:
+		figure_pkl_filepath = os.path.join(data_dir_path, 'sminds_figures.pkl')
+	else:
+		json_filepaths = glob.glob(data_dir_path + '/labelme_??/*.json', recursive=False)
+		print('#loaded JSON files = {}.'.format(len(json_filepaths)))
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -340,7 +343,10 @@ def FigureDetectionLabelMeDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	dataset = labelme_data.FigureDetectionLabelMeDataset(json_filepaths, image_channel, is_preloaded_image_used)
+	if is_pkl_used:
+		dataset = labelme_data.FigureDetectionLabelMeDataset2(figure_pkl_filepath, image_channel)
+	else:
+		dataset = labelme_data.FigureDetectionLabelMeDataset(json_filepaths, image_channel, is_preloaded_image_used)
 
 	num_examples = len(dataset)
 	num_train_examples = int(num_examples * train_test_ratio)
@@ -352,6 +358,10 @@ def FigureDetectionLabelMeDataset_test():
 	print('#examples = {}, #train examples = {}, #test examples = {}.'.format(len(dataset), len(train_dataset), len(test_dataset)))
 
 	#--------------------
+	# REF [function] >> collate_fn() in https://github.com/pytorch/vision/tree/master/references/detection/utils.py
+	def collate_fn(batch):
+		return tuple(zip(*batch))
+
 	print('Start creating data loaders...')
 	start_time = time.time()
 	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, collate_fn=collate_fn)

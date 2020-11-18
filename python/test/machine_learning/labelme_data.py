@@ -1,4 +1,4 @@
-import os, math, itertools, functools, json
+import os, math, itertools, functools, json, glob
 import multiprocessing as mp
 import numpy as np
 import torch
@@ -288,6 +288,10 @@ class FigureLabelMeDataset(torch.utils.data.Dataset):
 				print('[SWL] Error: File not found, {}: {}.'.format(json_filepath, ex))
 				continue
 
+			if not json_data['shapes']:
+				print('[SWL] Warning: No shape in a JSON file, {}.'.format(json_filepath))
+				continue
+
 			try:
 				dir_path = os.path.dirname(json_filepath)
 				image_filepath = os.path.join(dir_path, json_data['imagePath'])
@@ -374,6 +378,10 @@ class FigureLabelMeDataset(torch.utils.data.Dataset):
 			print('[SWL] Error: File not found, {}: {}.'.format(json_filepath, ex))
 			return None
 
+		if not json_data['shapes']:
+			print('[SWL] Warning: No shape in a JSON file, {}.'.format(json_filepath))
+			return None
+
 		try:
 			dir_path = os.path.dirname(json_filepath)
 			image_filepath = os.path.join(dir_path, json_data['imagePath'])
@@ -411,11 +419,12 @@ class FigureLabelMeDataset(torch.utils.data.Dataset):
 
 # REF [class] >> PennFudanDataset in ${SWDT_PYTHON_HOME}/rnd/test/machine_learning/pytorch/pytorch_object_detection.py.
 class FigureDetectionLabelMeDataset(torch.utils.data.Dataset):
-	def __init__(self, json_filepaths, image_channel, is_preloaded_image_used=True, transform=None):
+	def __init__(self, json_filepaths, image_channel, is_preloaded_image_used=True, transform=None, target_transform=None):
 		super().__init__()
 
 		self.is_preloaded_image_used = is_preloaded_image_used
 		self.transform = transform
+		self.target_transform = target_transform
 
 		#self.valid_labels = ['table-all', 'table-partial', 'table-hv', 'table-bare', 'picture', 'diagram', 'unclear']
 		self.valid_labels = ['table-all', 'table-partial', 'table-hv', 'table-bare', 'picture', 'diagram', 'unclear', 'table-all_unclear', 'table-partial_unclear', 'table-hv_unclear', 'table-bare_unclear', 'picture_unclear', 'diagram_unclear']
@@ -438,6 +447,8 @@ class FigureDetectionLabelMeDataset(torch.utils.data.Dataset):
 
 	def __getitem__(self, idx):
 		image, boxes, labels = self.figures[idx]
+		assert len(boxes) == len(labels)
+
 		if self.is_preloaded_image_used:
 			image = Image.fromarray(image)
 		else:
@@ -447,7 +458,6 @@ class FigureDetectionLabelMeDataset(torch.utils.data.Dataset):
 			except IOError as ex:
 				print('[SWL] Error: Failed to load an image, {}: {}.'.format(img_fpath, ex))
 				image = None
-		assert len(boxes) == len(labels)
 
 		num_objs = len(boxes)
 		# Keypoint visibility:
@@ -481,6 +491,8 @@ class FigureDetectionLabelMeDataset(torch.utils.data.Dataset):
 
 		if self.transform:
 			image = self.transform(image)
+		if self.target_transform:
+			target = self.target_transform(target)
 
 		return image, target
 
@@ -622,6 +634,259 @@ class FigureDetectionLabelMeDataset(torch.utils.data.Dataset):
 				bboxes.append((left, top, right, bottom))
 				labels.append(self.valid_labels.index(label))
 			return [(img if is_preloaded_image_used else image_filepath), np.array(bboxes), np.array(labels)] if bboxes and labels else None
+		except Exception as ex:
+			print('[SWL] Warning: Parsing error in a JSON file, {}: {}.'.format(json_filepath, ex))
+			return None
+
+#--------------------------------------------------------------------
+
+# REF [class] >> PennFudanDataset in ${SWDT_PYTHON_HOME}/rnd/test/machine_learning/pytorch/pytorch_object_detection.py.
+class FigureDetectionLabelMeDataset2(torch.utils.data.Dataset):
+	def __init__(self, figure_pkl_filepath, image_channel, transform=None, target_transform=None):
+		super().__init__()
+
+		self.is_preloaded_image_used = False
+		self.transform = transform
+		self.target_transform = target_transform
+
+		#self.valid_labels = ['table-all', 'table-partial', 'table-hv', 'table-bare', 'picture', 'diagram', 'unclear']
+		self.valid_labels = ['table-all', 'table-partial', 'table-hv', 'table-bare', 'picture', 'diagram', 'unclear', 'table-all_unclear', 'table-partial_unclear', 'table-hv_unclear', 'table-bare_unclear', 'picture_unclear', 'diagram_unclear']
+
+		if image_channel == 1:
+			self.mode = 'L'
+			#self.mode = '1'
+		elif image_channel == 3:
+			self.mode = 'RGB'
+		elif image_channel == 4:
+			self.mode = 'RGBA'
+		else:
+			raise ValueError('Invalid image channel, {}'.format(image_channel))
+
+		self.pkl_dir_path = os.path.dirname(figure_pkl_filepath)
+		if not os.path.exists(figure_pkl_filepath):
+			# Save figure infos to a pickle file.
+			self.figures = self.save_figures(figure_pkl_filepath, image_channel)
+		else:
+			# Load figure infos from a pickle file.
+			self.figures = self.load_figures(figure_pkl_filepath)
+
+	def __len__(self):
+		return len(self.figures)
+
+	def __getitem__(self, idx):
+		image, boxes, labels = self.figures[idx]
+		assert len(boxes) == len(labels)
+
+		if self.is_preloaded_image_used:
+			image = Image.fromarray(image)
+		else:
+			img_fpath = os.path.join(self.pkl_dir_path, image)
+			try:
+				image = Image.open(img_fpath)
+			except IOError as ex:
+				print('[SWL] Error: Failed to load an image, {}: {}.'.format(img_fpath, ex))
+				image = None
+
+		num_objs = len(boxes)
+		# Keypoint visibility:
+		#	If visibility == 0, a keypoint is not in the image.
+		#	If visibility == 1, a keypoint is in the image but not visible, namely maybe behind of an object.
+		#	if visibility == 2, a keypoint looks clearly, not hidden.
+		keypoints = np.array([[[box[0], box[1], 2], [box[0], box[3], 2], [box[2], box[3], 2], [box[2], box[1], 2]] for box in boxes])
+
+		boxes = torch.tensor(boxes, dtype=torch.float32)
+		keypoints = torch.tensor(keypoints, dtype=torch.float32)
+		labels = torch.tensor(labels, dtype=torch.int64)
+
+		image_id = torch.tensor([idx])
+		area = (boxes[:,3] - boxes[:,1]) * (boxes[:,2] - boxes[:,0])
+		# Suppose all instances are not crowd.
+		iscrowd = torch.zeros((num_objs,), dtype=torch.int64)
+
+		target = {
+			'boxes': boxes,
+			#'masks': masks,
+			'keypoints': keypoints,
+			'labels': labels,
+			'image_id': image_id,
+			'area': area,
+			'iscrowd': iscrowd,
+		}
+
+		if image and image.mode != self.mode:
+			image = image.convert(self.mode)
+		#image = np.array(image, np.uint8)
+
+		if self.transform:
+			image = self.transform(image)
+		if self.target_transform:
+			target = self.target_transform(target)
+
+		return image, target
+
+	def get_label(self, label_id):
+		return self.valid_labels[label_id]
+
+	def save_figures(self, figure_pkl_filepath, image_channel):
+		# TODO [check] >> Temporary implementation.
+		json_filepaths = glob.glob(self.pkl_dir_path + '/labelme_??/*.json', recursive=False)
+
+		#figures = self._load_from_json(json_filepaths, image_channel, self.is_preloaded_image_used)
+		figures = self._load_from_json_async(json_filepaths, image_channel, self.is_preloaded_image_used)
+
+		import pickle
+		try:
+			with open(figure_pkl_filepath, 'wb') as fd:
+				pickle.dump(figures, fd)
+		except FileNotFoundError as ex:
+			print('File not found, {}: {}.'.format(figure_pkl_filepath, ex))
+
+		return figures
+
+	def load_figures(self, figure_pkl_filepath):
+		import pickle
+		try:
+			with open(figure_pkl_filepath, 'rb') as fd:
+				return pickle.load(fd)
+		except FileNotFoundError as ex:
+			print('File not found, {}: {}.'.format(figure_pkl_filepath, ex))
+			return None
+
+	def _load_from_json(self, json_filepaths, image_channel, is_preloaded_image_used):
+		if 1 == image_channel:
+			flag = cv2.IMREAD_GRAYSCALE
+		elif 3 == image_channel:
+			flag = cv2.IMREAD_COLOR
+		elif 4 == image_channel:
+			flag = cv2.IMREAD_ANYCOLOR  # ?
+		else:
+			flag = cv2.IMREAD_UNCHANGED
+
+		figures = list()
+		for json_filepath in json_filepaths:
+			try:
+				with open(json_filepath, 'r') as fd:
+					json_data = json.load(fd)
+			except UnicodeDecodeError as ex:
+				print('[SWL] Error: Unicode decode error, {}: {}.'.format(json_filepath, ex))
+				continue
+			except FileNotFoundError as ex:
+				print('[SWL] Error: File not found, {}: {}.'.format(json_filepath, ex))
+				continue
+
+			if not json_data['shapes']:
+				print('[SWL] Warning: No shape in a JSON file, {}.'.format(json_filepath))
+				continue
+
+			try:
+				json_dir_path = os.path.dirname(json_filepath)
+				image_filepath = os.path.join(json_dir_path, json_data['imagePath'])
+				image_height, image_width = json_data['imageHeight'], json_data['imageWidth']
+
+				img = cv2.imread(image_filepath, flag)
+				if img is None:
+					print('[SWL] Warning: Failed to load an image, {}.'.format(image_filepath))
+					continue
+				if img.shape[0] != image_height or img.shape[1] != image_width:
+					print('[SWL] Warning: Invalid image shape, ({}, {}) != ({}, {}).'.format(img.shape[0], img.shape[1], image_height, image_width))
+					continue
+
+				bboxes, labels = list(), list()
+				for shape in json_data['shapes']:
+					label, shape_type = shape['label'], shape['shape_type']
+					if label not in self.valid_labels:
+						print('[SWL] Warning: Invalid label, {}.'.format(label))
+						continue
+					if shape_type != 'rectangle':
+						print('[SWL] Warning: Invalid shape type, {}.'.format(shape_type))
+						continue
+
+					(left, top), (right, bottom) = shape['points']
+					assert left >= 0 and top >= 0 and right <= img.shape[1] and bottom <= img.shape[0]
+					left, top, right, bottom = math.floor(left), math.floor(top), math.ceil(right), math.ceil(bottom)
+					bboxes.append([left, top, right, bottom])
+					labels.append(self.valid_labels.index(label))
+				figures.append([img if is_preloaded_image_used else os.path.relpath(image_filepath, self.pkl_dir_path), np.array(bboxes), np.array(labels)] if bboxes and labels else None)
+			except Exception as ex:
+				print('[SWL] Warning: Parsing error in a JSON file, {}: {}.'.format(json_filepath, ex))
+				figures.append(None)
+
+		return figures
+
+	def _load_from_json_async(self, json_filepaths, image_channel, is_preloaded_image_used):
+		if 1 == image_channel:
+			flag = cv2.IMREAD_GRAYSCALE
+		elif 3 == image_channel:
+			flag = cv2.IMREAD_COLOR
+		elif 4 == image_channel:
+			flag = cv2.IMREAD_ANYCOLOR  # ?
+		else:
+			flag = cv2.IMREAD_UNCHANGED
+
+		#--------------------
+		async_results = list()
+		def async_callback(result):
+			# This is called whenever sqr_with_sleep(i) returns a result.
+			# async_results is modified only by the main process, not the pool workers.
+			async_results.append(result)
+
+		num_processes = 8
+		#timeout = 10
+		timeout = None
+		#with mp.Pool(processes=num_processes, initializer=initialize_lock, initargs=(lock,)) as pool:
+		with mp.Pool(processes=num_processes) as pool:
+			#results = pool.map_async(functools.partial(self._worker_proc, pkl_dir_path=self.pkl_dir_path, valid_labels=self.valid_labels, flag=flag, is_preloaded_image_used=is_preloaded_image_used), json_filepaths)
+			results = pool.map_async(functools.partial(self._worker_proc, pkl_dir_path=self.pkl_dir_path, valid_labels=self.valid_labels, flag=flag, is_preloaded_image_used=is_preloaded_image_used), json_filepaths, callback=async_callback)
+
+			results.get(timeout)
+
+		figures = list(res for res in async_results[0] if res is not None)
+		return figures
+
+	def _worker_proc(self, json_filepath, pkl_dir_path, valid_labels, flag, is_preloaded_image_used):
+		try:
+			with open(json_filepath, 'r') as fd:
+				json_data = json.load(fd)
+		except UnicodeDecodeError as ex:
+			print('[SWL] Error: Unicode decode error, {}: {}.'.format(json_filepath, ex))
+			return None
+		except FileNotFoundError as ex:
+			print('[SWL] Error: File not found, {}: {}.'.format(json_filepath, ex))
+			return None
+
+		if not json_data['shapes']:
+			print('[SWL] Warning: No shape in a JSON file, {}.'.format(json_filepath))
+			return None
+
+		try:
+			json_dir_path = os.path.dirname(json_filepath)
+			image_filepath = os.path.join(json_dir_path, json_data['imagePath'])
+			image_height, image_width = json_data['imageHeight'], json_data['imageWidth']
+
+			img = cv2.imread(image_filepath, flag)
+			if img is None:
+				print('[SWL] Warning: Failed to load an image, {}.'.format(image_filepath))
+				return None
+			if img.shape[0] != image_height or img.shape[1] != image_width:
+				print('[SWL] Warning: Invalid image shape, ({}, {}) != ({}, {}).'.format(img.shape[0], img.shape[1], image_height, image_width))
+				return None
+
+			bboxes, labels = list(), list()
+			for shape in json_data['shapes']:
+				label, shape_type = shape['label'], shape['shape_type']
+				if label not in valid_labels:
+					print('[SWL] Warning: Invalid label, {}.'.format(label))
+					return None
+				if shape_type != 'rectangle':
+					print('[SWL] Warning: Invalid shape type, {}.'.format(shape_type))
+					return None
+
+				(left, top), (right, bottom) = shape['points']
+				assert left >= 0 and top >= 0 and right <= img.shape[1] and bottom <= img.shape[0]
+				left, top, right, bottom = math.floor(left), math.floor(top), math.ceil(right), math.ceil(bottom)
+				bboxes.append((left, top, right, bottom))
+				labels.append(self.valid_labels.index(label))
+			return [(img if is_preloaded_image_used else os.path.relpath(image_filepath, pkl_dir_path)), np.array(bboxes), np.array(labels)] if bboxes and labels else None
 		except Exception as ex:
 			print('[SWL] Warning: Parsing error in a JSON file, {}: {}.'.format(json_filepath, ex))
 			return None
