@@ -5,7 +5,7 @@ import sys
 sys.path.append('../../src')
 sys.path.append('./src')
 
-import os, functools, glob, time
+import os, math, itertools, functools, glob, json, time
 import numpy as np
 import torch, torchvision
 import cv2
@@ -48,6 +48,7 @@ def LabelMeDataset_test():
 				print('\t\tline_color = {}.'.format(shape['line_color']))
 				print('\t\tfill_color = {}.'.format(shape['fill_color']))
 				print('\t\tpoints = {}.'.format(shape['points']))
+				print('\t\tgroup_id = {}.'.format(shape['group_id']))
 				print('\t\tshape_type = {}.'.format(shape['shape_type']))
 
 			if idx >= 2: break
@@ -208,7 +209,7 @@ class MySubsetDataset(torch.utils.data.Dataset):
 	def __len__(self):
 		return len(self.subset)
 
-def visualize_data(dataloader, num_data=10):
+def visualize_data(dataloader, num_data=None):
 	data_iter = iter(dataloader)
 	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels = images.numpy(), labels.numpy()
@@ -217,13 +218,268 @@ def visualize_data(dataloader, num_data=10):
 		print('Label: {}.'.format(lbl))
 		cv2.imshow('Image', img)
 		cv2.waitKey(0)
-		if idx >= (num_data - 1): break
+		if num_data and idx >= (num_data - 1): break
 	cv2.destroyAllWindows()
 
-def FigureLabelMeDataset_test():
-	image_height, image_width, image_channel = 320, 320, 3
+def visualize_detection_data(dataloader, num_data=None):
+	colors = [(0, 0, 255), (0, 255, 0), (255, 0, 0), (0, 255, 255), (255, 0, 255), (255, 255, 0)]
 
-	is_preloaded_image_used = True
+	data_iter = iter(dataloader)
+	images, targets = data_iter.next()  # tuple of torch.Tensor's & tuple of dicts.
+	for idx, (img, tgt) in enumerate(zip(images, targets)):
+		img, boxes, labels = img.numpy().transpose(1, 2, 0), tgt['boxes'].numpy(), tgt['labels'].numpy()
+		# NOTE [info] >> In order to deal with "TypeError: an integer is required (got type tuple)" error.
+		img = np.ascontiguousarray(img)
+
+		print('Labels: {}.'.format(labels))
+		for ii, (left, top, right, bottom) in enumerate(boxes):
+			# FIXME [fix] >> Need resizing.
+			#assert left >= 0 and top >= 0 and right <= img.shape[1] and bottom <= img.shape[0], ((left, top, right, bottom), (img.shape))
+			left, top, right, bottom = max(math.floor(left), 0), max(math.floor(top), 0), min(math.ceil(right), img.shape[1] - 1), min(math.ceil(bottom), img.shape[0] - 1)
+			cv2.rectangle(img, (left, top), (right, bottom), colors[ii % len(colors)], 2, cv2.LINE_8)
+		cv2.imshow('Image', img)
+		cv2.waitKey(0)
+		if num_data and idx >= (num_data - 1): break
+	cv2.destroyAllWindows()
+
+def sminds_figure_data_worker_proc(json_filepath, data_dir_path, classes, flag, is_preloaded_image_used):
+	try:
+		with open(json_filepath, 'r') as fd:
+			json_data = json.load(fd)
+	except UnicodeDecodeError as ex:
+		print('[SWL] Error: Unicode decode error, {}: {}.'.format(json_filepath, ex))
+		return None
+	except FileNotFoundError as ex:
+		print('[SWL] Error: File not found, {}: {}.'.format(json_filepath, ex))
+		return None
+
+	if not json_data['shapes']:
+		print('[SWL] Warning: No shape in a JSON file, {}.'.format(json_filepath))
+		return None
+
+	try:
+		json_dir_path = os.path.dirname(json_filepath)
+		image_filepath = os.path.join(json_dir_path, json_data['imagePath'])
+		image_height, image_width = json_data['imageHeight'], json_data['imageWidth']
+
+		img = cv2.imread(image_filepath, flag)
+		if img is None:
+			print('[SWL] Warning: Failed to load an image, {}.'.format(image_filepath))
+			return None
+		if img.shape[0] != image_height or img.shape[1] != image_width:
+			print('[SWL] Warning: Invalid image shape, ({}, {}) != ({}, {}).'.format(img.shape[0], img.shape[1], image_height, image_width))
+			return None
+
+		figures, labels = list(), list()
+		for shape in json_data['shapes']:
+			label, shape_type = shape['label'], shape['shape_type']
+			if label not in classes:
+				print('[SWL] Warning: Invalid label, {} in {}.'.format(label, json_filepath))
+				return None
+			if shape_type != 'rectangle':
+				print('[SWL] Warning: Invalid shape type, {} in {}.'.format(shape_type, json_filepath))
+				return None
+
+			(left, top), (right, bottom) = shape['points']
+			#assert left >= 0 and top >= 0 and right <= img.shape[1] and bottom <= img.shape[0], ((left, top, right, bottom), (img.shape))
+			left, top, right, bottom = max(math.floor(left), 0), max(math.floor(top), 0), min(math.ceil(right), img.shape[1] - 1), min(math.ceil(bottom), img.shape[0] - 1)
+			figures.append(img[top:bottom,left:right] if is_preloaded_image_used else (os.path.relpath(image_filepath, data_dir_path), (left, top, right, bottom)))
+			labels.append([classes.index(label)])
+		return figures, labels
+	except KeyError as ex:
+		print('[SWL] Warning: Key error in JSON file, {}: {}.'.format(json_filepath, ex))
+		return None, None
+
+def sminds_figure_data_json_loading_test():
+	def _load_data_from_json(json_filepaths, data_dir_path, image_channel, classes, is_preloaded_image_used):
+		if 1 == image_channel:
+			flag = cv2.IMREAD_GRAYSCALE
+		elif 3 == image_channel:
+			flag = cv2.IMREAD_COLOR
+		elif 4 == image_channel:
+			flag = cv2.IMREAD_ANYCOLOR  # ?
+		else:
+			flag = cv2.IMREAD_UNCHANGED
+
+		figures, labels = list(), list()
+		for json_filepath in json_filepaths:
+			try:
+				with open(json_filepath, 'r') as fd:
+					json_data = json.load(fd)
+			except UnicodeDecodeError as ex:
+				print('[SWL] Error: Unicode decode error, {}: {}.'.format(json_filepath, ex))
+				continue
+			except FileNotFoundError as ex:
+				print('[SWL] Error: File not found, {}: {}.'.format(json_filepath, ex))
+				continue
+
+			if not json_data['shapes']:
+				print('[SWL] Warning: No shape in a JSON file, {}.'.format(json_filepath))
+				continue
+
+			try:
+				json_dir_path = os.path.dirname(json_filepath)
+				image_filepath = os.path.join(json_dir_path, json_data['imagePath'])
+				image_height, image_width = json_data['imageHeight'], json_data['imageWidth']
+
+				img = cv2.imread(image_filepath, flag)
+				if img is None:
+					print('[SWL] Warning: Failed to load an image, {}.'.format(image_filepath))
+					continue
+				if img.shape[0] != image_height or img.shape[1] != image_width:
+					print('[SWL] Warning: Invalid image shape, ({}, {}) != ({}, {}).'.format(img.shape[0], img.shape[1], image_height, image_width))
+					continue
+
+				for shape in json_data['shapes']:
+					label, shape_type = shape['label'], shape['shape_type']
+					if label not in classes:
+						print('[SWL] Warning: Invalid label, {} in {}.'.format(label, json_filepath))
+						continue
+					if shape_type != 'rectangle':
+						print('[SWL] Warning: Invalid shape type, {} in {}.'.format(shape_type, json_filepath))
+						continue
+
+					(left, top), (right, bottom) = shape['points']
+					#assert left >= 0 and top >= 0 and right <= img.shape[1] and bottom <= img.shape[0], ((left, top, right, bottom), (img.shape))
+					left, top, right, bottom = max(math.floor(left), 0), max(math.floor(top), 0), min(math.ceil(right), img.shape[1] - 1), min(math.ceil(bottom), img.shape[0] - 1)
+					figures.append(img[top:bottom,left:right] if is_preloaded_image_used else (os.path.relpath(image_filepath, data_dir_path), (left, top, right, bottom)))
+					labels.append([classes.index(label)])
+			except KeyError as ex:
+				print('[SWL] Warning: Key error in JSON file, {}: {}.'.format(json_filepath, ex))
+				figures.append(None)
+				labels.append(None)
+
+		return figures, labels
+
+	def _load_data_from_json_async(json_filepaths, data_dir_path, image_channel, classes, is_preloaded_image_used):
+		if 1 == image_channel:
+			flag = cv2.IMREAD_GRAYSCALE
+		elif 3 == image_channel:
+			flag = cv2.IMREAD_COLOR
+		elif 4 == image_channel:
+			flag = cv2.IMREAD_ANYCOLOR  # ?
+		else:
+			flag = cv2.IMREAD_UNCHANGED
+
+		#--------------------
+		import multiprocessing as mp
+
+		async_results = list()
+		def async_callback(result):
+			# This is called whenever sqr_with_sleep(i) returns a result.
+			# async_results is modified only by the main process, not the pool workers.
+			async_results.append(result)
+
+		num_processes = 8
+		#timeout = 10
+		timeout = None
+		#with mp.Pool(processes=num_processes, initializer=initialize_lock, initargs=(lock,)) as pool:
+		with mp.Pool(processes=num_processes) as pool:
+			#results = pool.map_async(functools.partial(sminds_figure_data_worker_proc, data_dir_path=data_dir_path, classes=classes, flag=flag, is_preloaded_image_used=is_preloaded_image_used), json_filepaths)
+			results = pool.map_async(functools.partial(sminds_figure_data_worker_proc, data_dir_path=data_dir_path, classes=classes, flag=flag, is_preloaded_image_used=is_preloaded_image_used), json_filepaths, callback=async_callback)
+
+			results.get(timeout)
+
+		async_results = list(res for res in async_results[0] if res is not None)
+		figures, labels = zip(*async_results)
+		figures, labels = list(itertools.chain(*figures)), list(itertools.chain(*labels))
+
+		return figures, labels
+
+	#--------------------
+	image_channel = 3
+	is_preloaded_image_used = False
+
+	#classes = ['table-all', 'table-partial', 'table-hv', 'table-bare', 'picture', 'diagram', 'unclear']
+	classes = ['table-all', 'table-partial', 'table-hv', 'table-bare', 'picture', 'diagram', 'unclear', 'table-all_unclear', 'table-partial_unclear', 'table-hv_unclear', 'table-bare_unclear', 'picture_unclear', 'diagram_unclear']
+
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+	data_dir_path = data_base_dir_path + '/text/table/sminds'
+	pkl_filepath = data_dir_path + '/sminds_figures.pkl'
+	json_filepaths = glob.glob(data_dir_path + '/labelme_??/*.json', recursive=False)
+
+	#--------------------
+	print('Start loading SMinds figure data...')
+	start_time = time.time()
+	#figures, labels = _load_data_from_json(json_filepaths, data_dir_path, image_channel, classes, is_preloaded_image_used)
+	figures, labels = _load_data_from_json_async(json_filepaths, data_dir_path, image_channel, classes, is_preloaded_image_used)
+	print('End loading SMinds figure data: {} secs.'.format(time.time() - start_time))
+	assert (figures is None and labels is None) or len(figures) == len(labels)
+
+	#--------------------
+	if True:
+		# Save to a pickle file.
+		import pickle
+		print('Start saving SMinds figure data to {}...'.format(pkl_filepath))
+		start_time = time.time()
+		try:
+			with open(pkl_filepath, 'wb') as fd:
+				pickle.dump((figures, labels), fd)
+		except FileNotFoundError as ex:
+			print('File not found, {}: {}.'.format(pkl_filepath, ex))
+		print('End saving SMinds figure data: {} secs.'.format(time.time() - start_time))
+
+def sminds_figure_data_pickle_loading_test():
+	image_channel = 3
+	is_preloaded_image_used = False
+
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+	data_dir_path = data_base_dir_path + '/text/table/sminds'
+	pkl_filepath = data_dir_path + '/sminds_figures.pkl'
+
+	# Load from a pickle file.
+	import pickle
+	print('Start loading SMinds figure data from {}...'.format(pkl_filepath))
+	start_time = time.time()
+	try:
+		with open(pkl_filepath, 'rb') as fd:
+			figures, labels = pickle.load(fd)
+	except FileNotFoundError as ex:
+		print('File not found, {}: {}.'.format(pkl_filepath, ex))
+	print('End loading SMinds figure data : {} secs.'.format(time.time() - start_time))
+	assert (figures is None and labels is None) or len(figures) == len(labels)
+	print('#loaded data = {}.'.format(len(figures)))
+
+	#--------------------
+	if True:
+		if 1 == image_channel:
+			flag = cv2.IMREAD_GRAYSCALE
+		elif 3 == image_channel:
+			flag = cv2.IMREAD_COLOR
+		elif 4 == image_channel:
+			flag = cv2.IMREAD_ANYCOLOR  # ?
+		else:
+			flag = cv2.IMREAD_UNCHANGED
+
+		num_data = 10
+		for idx, (fig, lbl) in enumerate(zip(figures, labels)):
+			print('Label: {}.'.format(lbl))
+			if is_preloaded_image_used:
+				img = fig
+			else:
+				img_fpath, (left, top, right, bottom) = fig
+				img_fpath = os.path.join(data_dir_path, img_fpath)
+				img = cv2.imread(img_fpath, flag)
+				#assert left >= 0 and top >= 0 and right <= img.shape[1] and bottom <= img.shape[0], ((left, top, right, bottom), (img.shape))
+				left, top, right, bottom = max(math.floor(left), 0), max(math.floor(top), 0), min(math.ceil(right), img.shape[1] - 1), min(math.ceil(bottom), img.shape[0] - 1)
+				img = img[top:bottom,left:right]
+			cv2.imshow('Image', img)
+			cv2.waitKey(0)
+			if num_data and idx >= (num_data - 1): break
+		cv2.destroyAllWindows()
+
+def FigureLabelMeDataset_test():
+	#classes = ['table-all', 'table-partial', 'table-hv', 'table-bare', 'picture', 'diagram', 'unclear']
+	classes = ['table-all', 'table-partial', 'table-hv', 'table-bare', 'picture', 'diagram', 'unclear', 'table-all_unclear', 'table-partial_unclear', 'table-hv_unclear', 'table-bare_unclear', 'picture_unclear', 'diagram_unclear']
+
+	image_height, image_width, image_channel = 512, 512, 3
+	is_preloaded_image_used = False
 	train_test_ratio = 0.8
 	batch_size = 64
 	shuffle = True
@@ -234,9 +490,7 @@ def FigureLabelMeDataset_test():
 	else:
 		data_base_dir_path = 'D:/work/dataset'
 	data_dir_path = data_base_dir_path + '/text/table/sminds'
-
-	json_filepaths = glob.glob(data_dir_path + '/labelme_??/*.json', recursive=False)
-	print('#loaded JSON files = {}.'.format(len(json_filepaths)))
+	pkl_filepath = data_dir_path + '/sminds_figures.pkl'
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -260,7 +514,7 @@ def FigureLabelMeDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	dataset = labelme_data.FigureLabelMeDataset(json_filepaths, image_channel, is_preloaded_image_used)
+	dataset = labelme_data.FigureLabelMeDataset(pkl_filepath, image_channel, classes, is_preloaded_image_used)
 
 	num_examples = len(dataset)
 	num_train_examples = int(num_examples * train_test_ratio)
@@ -298,13 +552,246 @@ def FigureLabelMeDataset_test():
 	visualize_data(train_dataloader, num_data=10)
 	visualize_data(test_dataloader, num_data=10)
 
+def sminds_figure_detection_data_worker_proc(json_filepath, data_dir_path, classes, flag, is_preloaded_image_used):
+	try:
+		with open(json_filepath, 'r') as fd:
+			json_data = json.load(fd)
+	except UnicodeDecodeError as ex:
+		print('[SWL] Error: Unicode decode error, {}: {}.'.format(json_filepath, ex))
+		return None
+	except FileNotFoundError as ex:
+		print('[SWL] Error: File not found, {}: {}.'.format(json_filepath, ex))
+		return None
+
+	if not json_data['shapes']:
+		print('[SWL] Warning: No shape in a JSON file, {}.'.format(json_filepath))
+		return None
+
+	try:
+		json_dir_path = os.path.dirname(json_filepath)
+		image_filepath = os.path.join(json_dir_path, json_data['imagePath'])
+		image_height, image_width = json_data['imageHeight'], json_data['imageWidth']
+
+		img = cv2.imread(image_filepath, flag)
+		if img is None:
+			print('[SWL] Warning: Failed to load an image, {}.'.format(image_filepath))
+			return None
+		if img.shape[0] != image_height or img.shape[1] != image_width:
+			print('[SWL] Warning: Invalid image shape, ({}, {}) != ({}, {}).'.format(img.shape[0], img.shape[1], image_height, image_width))
+			return None
+
+		bboxes, labels = list(), list()
+		for shape in json_data['shapes']:
+			label, shape_type = shape['label'], shape['shape_type']
+			if label not in classes:
+				print('[SWL] Warning: Invalid label, {} in {}.'.format(label, json_filepath))
+				return None
+			if shape_type != 'rectangle':
+				print('[SWL] Warning: Invalid shape type, {} in {}.'.format(shape_type, json_filepath))
+				return None
+
+			(left, top), (right, bottom) = shape['points']
+			#assert left >= 0 and top >= 0 and right <= img.shape[1] and bottom <= img.shape[0], ((left, top, right, bottom), (img.shape))
+			left, top, right, bottom = max(math.floor(left), 0), max(math.floor(top), 0), min(math.ceil(right), img.shape[1] - 1), min(math.ceil(bottom), img.shape[0] - 1)
+			bboxes.append((left, top, right, bottom))
+			labels.append(classes.index(label))
+		return [(img if is_preloaded_image_used else os.path.relpath(image_filepath, data_dir_path)), np.array(bboxes), np.array(labels)] if bboxes and labels else None
+	except KeyError as ex:
+		print('[SWL] Warning: Key error in a JSON file, {}: {}.'.format(json_filepath, ex))
+		return None
+
+def sminds_figure_detection_data_json_loading_test():
+	def _load_data_from_json(json_filepaths, data_dir_path, image_channel, classes, is_preloaded_image_used):
+		if 1 == image_channel:
+			flag = cv2.IMREAD_GRAYSCALE
+		elif 3 == image_channel:
+			flag = cv2.IMREAD_COLOR
+		elif 4 == image_channel:
+			flag = cv2.IMREAD_ANYCOLOR  # ?
+		else:
+			flag = cv2.IMREAD_UNCHANGED
+
+		figures = list()
+		for json_filepath in json_filepaths:
+			try:
+				with open(json_filepath, 'r') as fd:
+					json_data = json.load(fd)
+			except UnicodeDecodeError as ex:
+				print('[SWL] Error: Unicode decode error, {}: {}.'.format(json_filepath, ex))
+				continue
+			except FileNotFoundError as ex:
+				print('[SWL] Error: File not found, {}: {}.'.format(json_filepath, ex))
+				continue
+
+			if not json_data['shapes']:
+				print('[SWL] Warning: No shape in a JSON file, {}.'.format(json_filepath))
+				continue
+
+			try:
+				json_dir_path = os.path.dirname(json_filepath)
+				image_filepath = os.path.join(json_dir_path, json_data['imagePath'])
+				image_height, image_width = json_data['imageHeight'], json_data['imageWidth']
+
+				img = cv2.imread(image_filepath, flag)
+				if img is None:
+					print('[SWL] Warning: Failed to load an image, {}.'.format(image_filepath))
+					continue
+				if img.shape[0] != image_height or img.shape[1] != image_width:
+					print('[SWL] Warning: Invalid image shape, ({}, {}) != ({}, {}).'.format(img.shape[0], img.shape[1], image_height, image_width))
+					continue
+
+				bboxes, labels = list(), list()
+				for shape in json_data['shapes']:
+					label, shape_type = shape['label'], shape['shape_type']
+					if label not in classes:
+						print('[SWL] Warning: Invalid label, {} in {}.'.format(label, json_filepath))
+						continue
+					if shape_type != 'rectangle':
+						print('[SWL] Warning: Invalid shape type, {} in {}.'.format(shape_type, json_filepath))
+						continue
+
+					(left, top), (right, bottom) = shape['points']
+					#assert left >= 0 and top >= 0 and right <= img.shape[1] and bottom <= img.shape[0], ((left, top, right, bottom), (img.shape))
+					left, top, right, bottom = max(math.floor(left), 0), max(math.floor(top), 0), min(math.ceil(right), img.shape[1] - 1), min(math.ceil(bottom), img.shape[0] - 1)
+					bboxes.append([left, top, right, bottom])
+					labels.append(classes.index(label))
+				figures.append([img if is_preloaded_image_used else os.path.relpath(image_filepath, data_dir_path), np.array(bboxes), np.array(labels)] if bboxes and labels else None)
+			except KeyError as ex:
+				print('[SWL] Warning: Key error in a JSON file, {}: {}.'.format(json_filepath, ex))
+				figures.append(None)
+
+		return figures
+
+	def _load_data_from_json_async(json_filepaths, data_dir_path, image_channel, classes, is_preloaded_image_used):
+		if 1 == image_channel:
+			flag = cv2.IMREAD_GRAYSCALE
+		elif 3 == image_channel:
+			flag = cv2.IMREAD_COLOR
+		elif 4 == image_channel:
+			flag = cv2.IMREAD_ANYCOLOR  # ?
+		else:
+			flag = cv2.IMREAD_UNCHANGED
+
+		#--------------------
+		import multiprocessing as mp
+
+		async_results = list()
+		def async_callback(result):
+			# This is called whenever sqr_with_sleep(i) returns a result.
+			# async_results is modified only by the main process, not the pool workers.
+			async_results.append(result)
+
+		num_processes = 8
+		#timeout = 10
+		timeout = None
+		#with mp.Pool(processes=num_processes, initializer=initialize_lock, initargs=(lock,)) as pool:
+		with mp.Pool(processes=num_processes) as pool:
+			#results = pool.map_async(functools.partial(sminds_figure_detection_data_worker_proc, data_dir_path=data_dir_path, classes=classes, flag=flag, is_preloaded_image_used=is_preloaded_image_used), json_filepaths)
+			results = pool.map_async(functools.partial(sminds_figure_detection_data_worker_proc, data_dir_path=data_dir_path, classes=classes, flag=flag, is_preloaded_image_used=is_preloaded_image_used), json_filepaths, callback=async_callback)
+
+			results.get(timeout)
+
+		figures = list(res for res in async_results[0] if res is not None)
+		return figures
+
+	#--------------------
+	image_channel = 3
+	is_preloaded_image_used = False
+
+	#classes = ['table-all', 'table-partial', 'table-hv', 'table-bare', 'picture', 'diagram', 'unclear']
+	classes = ['table-all', 'table-partial', 'table-hv', 'table-bare', 'picture', 'diagram', 'unclear', 'table-all_unclear', 'table-partial_unclear', 'table-hv_unclear', 'table-bare_unclear', 'picture_unclear', 'diagram_unclear']
+
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+	data_dir_path = data_base_dir_path + '/text/table/sminds'
+	pkl_filepath = data_dir_path + '/sminds_figure_detection.pkl'
+	json_filepaths = glob.glob(data_dir_path + '/labelme_??/*.json', recursive=False)
+
+	#--------------------
+	print('Start loading SMinds figure data...')
+	start_time = time.time()
+	#figures = _load_data_from_json(json_filepaths, data_dir_path, image_channel, classes, is_preloaded_image_used)
+	figures = _load_data_from_json_async(json_filepaths, data_dir_path, image_channel, classes, is_preloaded_image_used)
+	print('End loading SMinds figure data: {} secs.'.format(time.time() - start_time))
+
+	#--------------------
+	if True:
+		# Save figure infos to a pickle file.
+		import pickle
+		print('Start saving SMinds figure detection data to {}...'.format(pkl_filepath))
+		start_time = time.time()
+		try:
+			with open(pkl_filepath, 'wb') as fd:
+				pickle.dump(figures, fd)
+		except FileNotFoundError as ex:
+			print('File not found, {}: {}.'.format(pkl_filepath, ex))
+		print('End saving SMinds figure detection data: {} secs.'.format(time.time() - start_time))
+
+def sminds_figure_detection_data_pickle_loading_test():
+	image_channel = 3
+	is_preloaded_image_used = False
+	
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+	data_dir_path = data_base_dir_path + '/text/table/sminds'
+	pkl_filepath = data_dir_path + '/sminds_figure_detection.pkl'
+
+	# Load from a pickle file.
+	import pickle
+	print('Start loading SMinds figure detection data from {}...'.format(pkl_filepath))
+	start_time = time.time()
+	try:
+		with open(pkl_filepath, 'rb') as fd:
+			figure_detection_data = pickle.load(fd)
+	except FileNotFoundError as ex:
+		print('File not found, {}: {}.'.format(pkl_filepath, ex))
+	print('End loading SMinds figure detection data : {} secs.'.format(time.time() - start_time))
+	print('#figure detection data = {}.'.format(len(figure_detection_data)))
+
+	#--------------------
+	if True:
+		if 1 == image_channel:
+			flag = cv2.IMREAD_GRAYSCALE
+		elif 3 == image_channel:
+			flag = cv2.IMREAD_COLOR
+		elif 4 == image_channel:
+			flag = cv2.IMREAD_ANYCOLOR  # ?
+		else:
+			flag = cv2.IMREAD_UNCHANGED
+
+		colors = [(0, 0, 255), (0, 255, 0), (255, 0, 0), (0, 255, 255), (255, 0, 255), (255, 255, 0)]
+
+		num_data = 10
+		for idx, (img, boxes, labels) in enumerate(figure_detection_data):
+			if not is_preloaded_image_used:
+				img_fpath = os.path.join(data_dir_path, img)
+				img = cv2.imread(img_fpath, flag)
+				if img is None:
+					print('File not found, {}.'.format(img_fpath))
+					continue
+
+			print('Labels: {}.'.format(labels))
+			for ii, (left, top, right, bottom) in enumerate(boxes):
+				#assert left >= 0 and top >= 0 and right <= img.shape[1] and bottom <= img.shape[0], ((left, top, right, bottom), (img.shape))
+				left, top, right, bottom = max(math.floor(left), 0), max(math.floor(top), 0), min(math.ceil(right), img.shape[1] - 1), min(math.ceil(bottom), img.shape[0] - 1)
+				cv2.rectangle(img, (left, top), (right, bottom), colors[ii % len(colors)], 2, cv2.LINE_8)
+			cv2.imshow('Image', img)
+			cv2.waitKey(0)
+			if num_data and idx >= (num_data - 1): break
+		cv2.destroyAllWindows()
+
 def FigureDetectionLabelMeDataset_test():
 	# NOTE [info] >> In order to deal with "OSError: [Errno 24] Too many open files" error. 
 	torch.multiprocessing.set_sharing_strategy('file_system')
 
-	image_height, image_width, image_channel = 640, 640, 3
+	#classes = ['table-all', 'table-partial', 'table-hv', 'table-bare', 'picture', 'diagram', 'unclear']
+	classes = ['table-all', 'table-partial', 'table-hv', 'table-bare', 'picture', 'diagram', 'unclear', 'table-all_unclear', 'table-partial_unclear', 'table-hv_unclear', 'table-bare_unclear', 'picture_unclear', 'diagram_unclear']
 
-	is_pkl_used = True
+	image_height, image_width, image_channel = 1024, 1024, 3
 	is_preloaded_image_used = False
 	train_test_ratio = 0.8
 	batch_size = 64
@@ -316,12 +803,7 @@ def FigureDetectionLabelMeDataset_test():
 	else:
 		data_base_dir_path = 'D:/work/dataset'
 	data_dir_path = data_base_dir_path + '/text/table/sminds'
-
-	if is_pkl_used:
-		figure_pkl_filepath = os.path.join(data_dir_path, 'sminds_figures.pkl')
-	else:
-		json_filepaths = glob.glob(data_dir_path + '/labelme_??/*.json', recursive=False)
-		print('#loaded JSON files = {}.'.format(len(json_filepaths)))
+	pkl_filepath = data_dir_path + '/sminds_figure_detection.pkl'
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
@@ -343,10 +825,7 @@ def FigureDetectionLabelMeDataset_test():
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	if is_pkl_used:
-		dataset = labelme_data.FigureDetectionLabelMeDataset2(figure_pkl_filepath, image_channel)
-	else:
-		dataset = labelme_data.FigureDetectionLabelMeDataset(json_filepaths, image_channel, is_preloaded_image_used)
+	dataset = labelme_data.FigureDetectionLabelMeDataset(pkl_filepath, image_channel, classes)
 
 	num_examples = len(dataset)
 	num_train_examples = int(num_examples * train_test_ratio)
@@ -375,27 +854,38 @@ def FigureDetectionLabelMeDataset_test():
 	images, targets = data_iter.next()  # tuple of torch.Tensor's & tuple of dicts.
 	image0, target0 = images[0].numpy(), targets[0]
 	bboxes0, labels0 = target0['boxes'].numpy(), target0['labels'].numpy()
-	print('Train image: #images = {}, shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(len(images), image0.shape, image0.dtype, np.min(image0), np.max(image0)))
-	print("Train target: #targets = {}, target's keys = {}.".format(len(targets), target0.keys()))
+	print('Train data: #images = {}, #targets = {}.'.format(len(images), len(targets)))
+	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(image0.shape, image0.dtype, np.min(image0), np.max(image0)))
+	print('Train target: Keys = {}.'.format(list(target0.keys())))
 	print("Train target: Boxes' shape = {}, boxes' dtype = {}, labels' shape = {}, labels' dtype = {}.".format(bboxes0.shape, bboxes0.dtype, labels0.shape, labels0.dtype))
 
 	data_iter = iter(test_dataloader)
 	images, targets = data_iter.next()  # tuple of torch.Tensor's & tuple of dicts.
 	image0, target0 = images[0].numpy(), targets[0]
 	bboxes0, labels0 = target0['boxes'].numpy(), target0['labels'].numpy()
-	print('Test image: #images = {}, shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(len(images), image0.shape, image0.dtype, np.min(image0), np.max(image0)))
-	print("Test target: #targets = {}, target's keys = {}.".format(len(targets), target0.keys()))
+	print('Test data: #images = {}, #targets = {}.'.format(len(images), len(targets)))
+	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(image0.shape, image0.dtype, np.min(image0), np.max(image0)))
+	print('Test target: Keys = {}.'.format(list(target0.keys())))
 	print("Test target: Boxes' shape = {}, boxes' dtype = {}, labels' shape = {}, labels' dtype = {}.".format(bboxes0.shape, bboxes0.dtype, labels0.shape, labels0.dtype))
 
 	#--------------------
 	# Visualize.
-	#visualize_data(train_dataloader, num_data=10)
-	#visualize_data(test_dataloader, num_data=10)
+	visualize_detection_data(train_dataloader, num_data=10)
+	visualize_detection_data(test_dataloader, num_data=10)
 
 def main():
 	#LabelMeDataset_test()
 
+	#--------------------
+	#sminds_figure_data_json_loading_test()
+	#sminds_figure_data_pickle_loading_test()
+
 	#FigureLabelMeDataset_test()
+
+	#--------------------
+	#sminds_figure_detection_data_json_loading_test()
+	#sminds_figure_detection_data_pickle_loading_test()
+
 	FigureDetectionLabelMeDataset_test()
 
 #--------------------------------------------------------------------

@@ -5,6 +5,10 @@ import cv2
 
 #--------------------------------------------------------------------
 
+# NOTE [info] >> In order to deal with "Can't pickle local object" error.
+def decorate_token(x, prefix_ids, suffix_ids):
+	return prefix_ids + x + suffix_ids
+
 class TokenConverterBase(object):
 	def __init__(self, tokens, unknown='<UNK>', sos=None, eos=None, pad=None, prefixes=None, suffixes=None, additional_tokens=None):
 		"""
@@ -58,7 +62,7 @@ class TokenConverterBase(object):
 				self.pad = None
 
 		self.auxiliary_token_ids = [self._pad_id] + prefix_ids + suffix_ids
-		self.decoration_functor = lambda x: prefix_ids + x + suffix_ids
+		self.decoration_functor = functools.partial(decorate_token, prefix_ids=prefix_ids, suffix_ids=suffix_ids)
 
 		if self.eos:
 			eos_id = extended_tokens.index(self.eos)
