@@ -280,13 +280,12 @@ class FigureLabelMeDataset(torch.utils.data.Dataset):
 
 # REF [class] >> PennFudanDataset in ${SWDT_PYTHON_HOME}/rnd/test/machine_learning/pytorch/pytorch_object_detection.py.
 class FigureDetectionLabelMeDataset(torch.utils.data.Dataset):
-	def __init__(self, pkl_filepath, image_channel, classes, transform=None, target_transform=None):
+	def __init__(self, pkl_filepath, image_channel, classes, is_preloaded_image_used=True, transform=None):
 		super().__init__()
 
 		self.classes = classes
-		self.is_preloaded_image_used = False
+		self.is_preloaded_image_used = is_preloaded_image_used
 		self.transform = transform
-		self.target_transform = target_transform
 		self.data_dir_path = os.path.dirname(pkl_filepath)
 
 		if image_channel == 1:
@@ -332,6 +331,7 @@ class FigureDetectionLabelMeDataset(torch.utils.data.Dataset):
 		#	if visibility == 2, a keypoint looks clearly, not hidden.
 		keypoints = np.array([[[box[0], box[1], 2], [box[0], box[3], 2], [box[2], box[3], 2], [box[2], box[1], 2]] for box in boxes])
 
+		"""
 		boxes = torch.tensor(boxes, dtype=torch.float32)
 		keypoints = torch.tensor(keypoints, dtype=torch.float32)
 		labels = torch.tensor(labels, dtype=torch.int64)
@@ -340,6 +340,11 @@ class FigureDetectionLabelMeDataset(torch.utils.data.Dataset):
 		area = (boxes[:,3] - boxes[:,1]) * (boxes[:,2] - boxes[:,0])
 		# Suppose all instances are not crowd.
 		iscrowd = torch.zeros((num_objs,), dtype=torch.int64)
+		"""
+		image_id = np.array([idx])
+		area = (boxes[:,3] - boxes[:,1]) * (boxes[:,2] - boxes[:,0])
+		# Suppose all instances are not crowd.
+		iscrowd = np.zeros((num_objs,), dtype=np.int64)
 
 		target = {
 			'boxes': boxes,
@@ -356,9 +361,7 @@ class FigureDetectionLabelMeDataset(torch.utils.data.Dataset):
 		#image = np.array(image, np.uint8)
 
 		if self.transform:
-			image = self.transform(image)
-		if self.target_transform:
-			target = self.target_transform(target)
+			image, target = self.transform(image, target)
 
 		return image, target
 

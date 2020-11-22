@@ -11,64 +11,7 @@ import torch, torchvision
 import cv2
 import labelme_data
 
-def LabelMeDataset_test():
-	image_channel = 3
-
-	if 'posix' == os.name:
-		data_base_dir_path = '/home/sangwook/work/dataset'
-	else:
-		data_base_dir_path = 'D:/work/dataset'
-	data_dir_path = data_base_dir_path + '/text/table/sminds'
-
-	json_filepaths = glob.glob(data_dir_path + '/*.json', recursive=False)
-	print('#loaded JSON files = {}.'.format(len(json_filepaths)))
-
-	#--------------------
-	print('Start creating datasets...')
-	start_time = time.time()
-	dataset = labelme_data.LabelMeDataset(json_filepaths, image_channel)
-	print('End creating datasets: {} secs.'.format(time.time() - start_time))
-	print('#files = {}.'.format(len(dataset)))
-
-	if False:
-		for idx, dat in enumerate(dataset):
-			print('Data #{}:'.format(idx))
-			print('\tversion = {}.'.format(dat['version']))
-			print('\tflags = {}.'.format(dat['flags']))
-			print('\tlineColor = {}.'.format(dat['lineColor']))
-			print('\tfillColor = {}.'.format(dat['fillColor']))
-			print('\timagePath = {}.'.format(dat['imagePath']))
-			print('\timageData = {}.'.format(dat['imageData']))
-			print('\timageWidth = {}.'.format(dat['imageWidth']))
-			print('\timageHeight = {}.'.format(dat['imageHeight']))
-
-			for sidx, shape in enumerate(dat['shapes']):
-				print('\tShape #{}:'.format(sidx))
-				print('\t\tlabel = {}.'.format(shape['label']))
-				print('\t\tline_color = {}.'.format(shape['line_color']))
-				print('\t\tfill_color = {}.'.format(shape['fill_color']))
-				print('\t\tpoints = {}.'.format(shape['points']))
-				print('\t\tgroup_id = {}.'.format(shape['group_id']))
-				print('\t\tshape_type = {}.'.format(shape['shape_type']))
-
-			if idx >= 2: break
-
-	#--------------------
-	num_shapes = functools.reduce(lambda nn, dat: nn + len(dat['shapes']), dataset, 0)
-	print('#shapes = {}.'.format(num_shapes))
-
-	shape_counts = dict()
-	for dat in dataset:
-		for shape in dat['shapes']:
-			if shape['label'] in shape_counts:
-				shape_counts[shape['label']] += 1
-			else:
-				shape_counts[shape['label']] = 1
-	print('Shape labels = {}.'.format(list(shape_counts.keys())))
-	print('#total examples = {}.'.format(sum(shape_counts.values())))
-	print('#examples of each shape = {}.'.format(shape_counts))
-
-def create_augmenter():
+def create_imgaug_augmenter():
 	#import imgaug as ia
 	from imgaug import augmenters as iaa
 
@@ -134,6 +77,19 @@ def create_augmenter():
 
 	return augmenter
 
+class AugmentByImgaug(object):
+	def __init__(self, augmenter, is_pil=True):
+		if is_pil:
+			import PIL.Image
+			self.augment_functor = lambda x: PIL.Image.fromarray(augmenter.augment_image(np.array(x)))
+			#self.augment_functor = lambda x: PIL.Image.fromarray(augmenter.augment_images(np.array(x)))
+		else:
+			self.augment_functor = lambda x: augmenter.augment_image(x)
+			#self.augment_functor = lambda x: augmenter.augment_images(x)
+
+	def __call__(self, x):
+		return self.augment_functor(x)
+
 class ConvertPILMode(object):
 	def __init__(self, mode='RGB'):
 		self.mode = mode
@@ -141,56 +97,69 @@ class ConvertPILMode(object):
 	def __call__(self, x):
 		return x.convert(self.mode)
 
+def compute_scale_factor(canvas_height, canvas_width, image_height, image_width, max_scale_factor=3, re_scale_factor=0.5):
+	h_scale_factor, w_scale_factor = canvas_height / image_height, canvas_width / image_width
+	#scale_factor = min(h_scale_factor, w_scale_factor)
+	scale_factor = min(h_scale_factor, w_scale_factor, max_scale_factor)
+	#return scale_factor, scale_factor
+	return max(scale_factor, min(h_scale_factor, re_scale_factor)), max(scale_factor, min(w_scale_factor, re_scale_factor))
+
 class ResizeImageToFixedSizeWithPadding(object):
-	def __init__(self, height, width, is_pil=True):
+	def __init__(self, height, width, warn_about_small_image=False, is_pil=True, logger=None):
 		self.height, self.width = height, width
 		self.resize_functor = self._resize_by_pil if is_pil else self._resize_by_opencv
+		self.logger = logger
+
+		self.min_height_threshold, self.min_width_threshold = 30, 30
+		self.warn = self._warn_about_small_image if warn_about_small_image else lambda *args, **kwargs: None
 
 	def __call__(self, x):
 		return self.resize_functor(x, self.height, self.width)
 
-	# REF [function] >> RunTimeTextLineDatasetBase._resize_by_opencv() in text_line_data.py.
-	def _resize_by_opencv(self, input, height, width, *args, **kwargs):
-		interpolation = cv2.INTER_AREA
-		"""
-		hi, wi = input.shape[:2]
-		if wi >= width:
-			return cv2.resize(input, (width, height), interpolation=interpolation)
-		else:
-			aspect_ratio = height / hi
-			min_width = min(width, int(wi * aspect_ratio))
-			input = cv2.resize(input, (min_width, height), interpolation=interpolation)
-			if min_width < width:
-				image_zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
-				image_zeropadded[:,:min_width] = input[:,:min_width]
-				return image_zeropadded
-			else:
-				return input
-		"""
-		hi, wi = input.shape[:2]
-		aspect_ratio = height / hi
-		min_width = min(width, int(wi * aspect_ratio))
-		zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
-		zeropadded[:,:min_width] = cv2.resize(input, (min_width, height), interpolation=interpolation)
-		return zeropadded
-		"""
-		return cv2.resize(input, (width, height), interpolation=interpolation)
-		"""
+	# REF [function] >> RunTimeTextLineDatasetBase._resize_by_opencv() in ${SWL_PYTHON_HOME}/test/language_processing/text_line_data.py.
+	def _resize_by_opencv(self, input, canvas_height, canvas_width, *args, **kwargs):
+		min_height, min_width = canvas_height // 2, canvas_width // 2
 
-	# REF [function] >> RunTimeTextLineDatasetBase._resize_by_pil() in text_line_data.py.
-	def _resize_by_pil(self, input, height, width, *args, **kwargs):
+		image_height, image_width = input.shape[:2]
+		self.warn(image_height, image_width)
+		image_height, image_width = max(image_height, 1), max(image_width, 1)
+
+		h_scale_factor, w_scale_factor = compute_scale_factor(canvas_height, canvas_width, image_height, image_width)
+
+		#tgt_height, tgt_width = image_height, canvas_width
+		tgt_height, tgt_width = int(image_height * h_scale_factor), int(image_width * w_scale_factor)
+		#tgt_height, tgt_width = max(int(image_height * h_scale_factor), min_height), max(int(image_width * w_scale_factor), min_width)
+		assert tgt_height > 0 and tgt_width > 0
+
+		zeropadded = np.zeros((canvas_height, canvas_width) + input.shape[2:], dtype=input.dtype)
+		zeropadded[:tgt_height,:tgt_width] = cv2.resize(input, (tgt_width, tgt_height), interpolation=cv2.INTER_AREA)
+		return zeropadded
+
+	# REF [function] >> RunTimeTextLineDatasetBase._resize_by_pil() in ${SWL_PYTHON_HOME}/test/language_processing/text_line_data.py.
+	def _resize_by_pil(self, input, canvas_height, canvas_width, *args, **kwargs):
+		min_height, min_width = canvas_height // 2, canvas_width // 2
+
+		image_width, image_height = input.size
+		self.warn(image_height, image_width)
+		image_height, image_width = max(image_height, 1), max(image_width, 1)
+
+		h_scale_factor, w_scale_factor = compute_scale_factor(canvas_height, canvas_width, image_height, image_width)
+
+		#tgt_height, tgt_width = image_height, canvas_width
+		tgt_height, tgt_width = int(image_height * h_scale_factor), int(image_width * w_scale_factor)
+		#tgt_height, tgt_width = max(int(image_height * h_scale_factor), min_height), max(int(image_width * w_scale_factor), min_width)
+		assert tgt_height > 0 and tgt_width > 0
+
 		import PIL.Image
-
-		interpolation = PIL.Image.BICUBIC
-		wi, hi = input.size
-		aspect_ratio = height / hi
-		min_width = min(width, int(wi * aspect_ratio))
-		zeropadded = PIL.Image.new(input.mode, (width, height), color=0)
-		zeropadded.paste(input.resize((min_width, height), resample=interpolation), (0, 0, min_width, height))
+		zeropadded = PIL.Image.new(input.mode, (canvas_width, canvas_height), color=0)
+		zeropadded.paste(input.resize((tgt_width, tgt_height), resample=PIL.Image.BICUBIC), (0, 0, tgt_width, tgt_height))
 		return zeropadded
-		"""
-		return input.resize((width, height), resample=interpolation)
-		"""
+
+	def _warn_about_small_image(self, height, width):
+		if height < self.min_height_threshold:
+			if self.logger: self.logger.warning('Too small image: The image height {} should be larger than or equal to {}.'.format(height, self.min_height_threshold))
+		#if width < self.min_width_threshold:
+		#	if self.logger: self.logger.warning('Too small image: The image width {} should be larger than or equal to {}.'.format(width, self.min_width_threshold))
 
 class MySubsetDataset(torch.utils.data.Dataset):
 	def __init__(self, subset, transform=None, target_transform=None):
@@ -204,6 +173,20 @@ class MySubsetDataset(torch.utils.data.Dataset):
 			inp = self.transform(inp)
 		if self.target_transform:
 			outp = self.target_transform(outp)
+		return inp, outp
+
+	def __len__(self):
+		return len(self.subset)
+
+class MyPairSubsetDataset(torch.utils.data.Dataset):
+	def __init__(self, subset, transform=None):
+		self.subset = subset
+		self.transform = transform
+
+	def __getitem__(self, idx):
+		inp, outp = self.subset[idx]
+		if self.transform:
+			inp, outp = self.transform(inp, outp)
 		return inp, outp
 
 	def __len__(self):
@@ -227,20 +210,79 @@ def visualize_detection_data(dataloader, num_data=None):
 	data_iter = iter(dataloader)
 	images, targets = data_iter.next()  # tuple of torch.Tensor's & tuple of dicts.
 	for idx, (img, tgt) in enumerate(zip(images, targets)):
-		img, boxes, labels = img.numpy().transpose(1, 2, 0), tgt['boxes'].numpy(), tgt['labels'].numpy()
+		if img is None:
+			print('Invalid image: image = {}.'.format(img))
+			continue
+		#img, boxes, labels = img.numpy().transpose(1, 2, 0), tgt['boxes'].numpy(), tgt['labels'].numpy()
+		img, boxes, labels = img.numpy().transpose(1, 2, 0), tgt['boxes'], tgt['labels']
 		# NOTE [info] >> In order to deal with "TypeError: an integer is required (got type tuple)" error.
 		img = np.ascontiguousarray(img)
 
 		print('Labels: {}.'.format(labels))
 		for ii, (left, top, right, bottom) in enumerate(boxes):
-			# FIXME [fix] >> Need resizing.
 			#assert left >= 0 and top >= 0 and right <= img.shape[1] and bottom <= img.shape[0], ((left, top, right, bottom), (img.shape))
-			left, top, right, bottom = max(math.floor(left), 0), max(math.floor(top), 0), min(math.ceil(right), img.shape[1] - 1), min(math.ceil(bottom), img.shape[0] - 1)
 			cv2.rectangle(img, (left, top), (right, bottom), colors[ii % len(colors)], 2, cv2.LINE_8)
 		cv2.imshow('Image', img)
 		cv2.waitKey(0)
 		if num_data and idx >= (num_data - 1): break
 	cv2.destroyAllWindows()
+
+def LabelMeDataset_test():
+	image_channel = 3
+
+	if 'posix' == os.name:
+		data_base_dir_path = '/home/sangwook/work/dataset'
+	else:
+		data_base_dir_path = 'D:/work/dataset'
+	data_dir_path = data_base_dir_path + '/text/table/sminds'
+
+	json_filepaths = glob.glob(data_dir_path + '/*.json', recursive=False)
+	print('#loaded JSON files = {}.'.format(len(json_filepaths)))
+
+	#--------------------
+	print('Start creating datasets...')
+	start_time = time.time()
+	dataset = labelme_data.LabelMeDataset(json_filepaths, image_channel)
+	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+	print('#files = {}.'.format(len(dataset)))
+
+	if False:
+		for idx, dat in enumerate(dataset):
+			print('Data #{}:'.format(idx))
+			print('\tversion = {}.'.format(dat['version']))
+			print('\tflags = {}.'.format(dat['flags']))
+			print('\tlineColor = {}.'.format(dat['lineColor']))
+			print('\tfillColor = {}.'.format(dat['fillColor']))
+			print('\timagePath = {}.'.format(dat['imagePath']))
+			print('\timageData = {}.'.format(dat['imageData']))
+			print('\timageWidth = {}.'.format(dat['imageWidth']))
+			print('\timageHeight = {}.'.format(dat['imageHeight']))
+
+			for sidx, shape in enumerate(dat['shapes']):
+				print('\tShape #{}:'.format(sidx))
+				print('\t\tlabel = {}.'.format(shape['label']))
+				print('\t\tline_color = {}.'.format(shape['line_color']))
+				print('\t\tfill_color = {}.'.format(shape['fill_color']))
+				print('\t\tpoints = {}.'.format(shape['points']))
+				print('\t\tgroup_id = {}.'.format(shape['group_id']))
+				print('\t\tshape_type = {}.'.format(shape['shape_type']))
+
+			if idx >= 2: break
+
+	#--------------------
+	num_shapes = functools.reduce(lambda nn, dat: nn + len(dat['shapes']), dataset, 0)
+	print('#shapes = {}.'.format(num_shapes))
+
+	shape_counts = dict()
+	for dat in dataset:
+		for shape in dat['shapes']:
+			if shape['label'] in shape_counts:
+				shape_counts[shape['label']] += 1
+			else:
+				shape_counts[shape['label']] = 1
+	print('Shape labels = {}.'.format(list(shape_counts.keys())))
+	print('#total examples = {}.'.format(sum(shape_counts.values())))
+	print('#examples of each shape = {}.'.format(shape_counts))
 
 def sminds_figure_data_worker_proc(json_filepath, data_dir_path, classes, flag, is_preloaded_image_used):
 	try:
@@ -494,7 +536,7 @@ def FigureLabelMeDataset_test():
 
 	#--------------------
 	train_transform = torchvision.transforms.Compose([
-		#RandomAugment(create_augmenter()),
+		#AugmentByImgaug(create_imgaug_augmenter()),
 		#ConvertPILMode(mode='RGB'),
 		ResizeImageToFixedSizeWithPadding(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
@@ -518,7 +560,6 @@ def FigureLabelMeDataset_test():
 
 	num_examples = len(dataset)
 	num_train_examples = int(num_examples * train_test_ratio)
-
 	train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
 	train_dataset = MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform)
 	test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
@@ -791,7 +832,7 @@ def FigureDetectionLabelMeDataset_test():
 	#classes = ['table-all', 'table-partial', 'table-hv', 'table-bare', 'picture', 'diagram', 'unclear']
 	classes = ['table-all', 'table-partial', 'table-hv', 'table-bare', 'picture', 'diagram', 'unclear', 'table-all_unclear', 'table-partial_unclear', 'table-hv_unclear', 'table-bare_unclear', 'picture_unclear', 'diagram_unclear']
 
-	image_height, image_width, image_channel = 1024, 1024, 3
+	image_height, image_width, image_channel = 512, 512, 3
 	is_preloaded_image_used = False
 	train_test_ratio = 0.8
 	batch_size = 64
@@ -806,33 +847,31 @@ def FigureDetectionLabelMeDataset_test():
 	pkl_filepath = data_dir_path + '/sminds_figure_detection.pkl'
 
 	#--------------------
-	train_transform = torchvision.transforms.Compose([
-		#RandomAugment(create_augmenter()),
-		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height, image_width),
-		#torchvision.transforms.Resize((image_height, image_width)),
-		torchvision.transforms.ToTensor(),
-		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	import detection_transforms
+	train_transform = detection_transforms.Compose([
+		detection_transforms.AugmentByImgaug(create_imgaug_augmenter()),
+		#detection_transforms.ConvertPILMode(mode='RGB'),
+		#ResizeImageToFixedSizeWithPadding(image_height, image_width),
+		detection_transforms.ToTensor(),
+		#detection_transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
-	test_transform = torchvision.transforms.Compose([
-		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height, image_width),
-		#torchvision.transforms.Resize((image_height, image_width)),
-		torchvision.transforms.ToTensor(),
-		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	test_transform = detection_transforms.Compose([
+		#detection_transforms.ConvertPILMode(mode='RGB'),
+		#ResizeImageToFixedSizeWithPadding(image_height, image_width),
+		detection_transforms.ToTensor(),
+		#detection_transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
 
 	#--------------------
 	print('Start creating datasets...')
 	start_time = time.time()
-	dataset = labelme_data.FigureDetectionLabelMeDataset(pkl_filepath, image_channel, classes)
+	dataset = labelme_data.FigureDetectionLabelMeDataset(pkl_filepath, image_channel, classes, is_preloaded_image_used)
 
 	num_examples = len(dataset)
 	num_train_examples = int(num_examples * train_test_ratio)
-
 	train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
-	train_dataset = MySubsetDataset(train_subset, transform=train_transform)
-	test_dataset = MySubsetDataset(test_subset, transform=test_transform)
+	train_dataset = MyPairSubsetDataset(train_subset, transform=train_transform)
+	test_dataset = MyPairSubsetDataset(test_subset, transform=test_transform)
 	print('End creating datasets: {} secs.'.format(time.time() - start_time))
 	print('#examples = {}, #train examples = {}, #test examples = {}.'.format(len(dataset), len(train_dataset), len(test_dataset)))
 
@@ -853,7 +892,8 @@ def FigureDetectionLabelMeDataset_test():
 	data_iter = iter(train_dataloader)
 	images, targets = data_iter.next()  # tuple of torch.Tensor's & tuple of dicts.
 	image0, target0 = images[0].numpy(), targets[0]
-	bboxes0, labels0 = target0['boxes'].numpy(), target0['labels'].numpy()
+	#bboxes0, labels0 = target0['boxes'].numpy(), target0['labels'].numpy()
+	bboxes0, labels0 = target0['boxes'], target0['labels']
 	print('Train data: #images = {}, #targets = {}.'.format(len(images), len(targets)))
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(image0.shape, image0.dtype, np.min(image0), np.max(image0)))
 	print('Train target: Keys = {}.'.format(list(target0.keys())))
@@ -862,7 +902,8 @@ def FigureDetectionLabelMeDataset_test():
 	data_iter = iter(test_dataloader)
 	images, targets = data_iter.next()  # tuple of torch.Tensor's & tuple of dicts.
 	image0, target0 = images[0].numpy(), targets[0]
-	bboxes0, labels0 = target0['boxes'].numpy(), target0['labels'].numpy()
+	#bboxes0, labels0 = target0['boxes'].numpy(), target0['labels'].numpy()
+	bboxes0, labels0 = target0['boxes'], target0['labels']
 	print('Test data: #images = {}, #targets = {}.'.format(len(images), len(targets)))
 	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(image0.shape, image0.dtype, np.min(image0), np.max(image0)))
 	print('Test target: Keys = {}.'.format(list(target0.keys())))
