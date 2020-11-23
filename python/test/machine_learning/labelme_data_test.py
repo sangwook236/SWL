@@ -97,14 +97,7 @@ class ConvertPILMode(object):
 	def __call__(self, x):
 		return x.convert(self.mode)
 
-def compute_scale_factor(canvas_height, canvas_width, image_height, image_width, max_scale_factor=3, re_scale_factor=0.5):
-	h_scale_factor, w_scale_factor = canvas_height / image_height, canvas_width / image_width
-	#scale_factor = min(h_scale_factor, w_scale_factor)
-	scale_factor = min(h_scale_factor, w_scale_factor, max_scale_factor)
-	#return scale_factor, scale_factor
-	return max(scale_factor, min(h_scale_factor, re_scale_factor)), max(scale_factor, min(w_scale_factor, re_scale_factor))
-
-class ResizeImageToFixedSizeWithPadding(object):
+class ResizeToFixedSize(object):
 	def __init__(self, height, width, warn_about_small_image=False, is_pil=True, logger=None):
 		self.height, self.width = height, width
 		self.resize_functor = self._resize_by_pil if is_pil else self._resize_by_opencv
@@ -116,34 +109,42 @@ class ResizeImageToFixedSizeWithPadding(object):
 	def __call__(self, x):
 		return self.resize_functor(x, self.height, self.width)
 
+	@staticmethod
+	def _compute_scale_factor(canvas_height, canvas_width, image_height, image_width, max_scale_factor=3, re_scale_factor=0.5):
+		h_scale_factor, w_scale_factor = canvas_height / image_height, canvas_width / image_width
+		#scale_factor = min(h_scale_factor, w_scale_factor)
+		scale_factor = min(h_scale_factor, w_scale_factor, max_scale_factor)
+		#return scale_factor, scale_factor
+		return max(scale_factor, min(h_scale_factor, re_scale_factor)), max(scale_factor, min(w_scale_factor, re_scale_factor))
+
 	# REF [function] >> RunTimeTextLineDatasetBase._resize_by_opencv() in ${SWL_PYTHON_HOME}/test/language_processing/text_line_data.py.
-	def _resize_by_opencv(self, input, canvas_height, canvas_width, *args, **kwargs):
+	def _resize_by_opencv(self, image, canvas_height, canvas_width, *args, **kwargs):
 		min_height, min_width = canvas_height // 2, canvas_width // 2
 
-		image_height, image_width = input.shape[:2]
+		image_height, image_width = image.shape[:2]
 		self.warn(image_height, image_width)
 		image_height, image_width = max(image_height, 1), max(image_width, 1)
 
-		h_scale_factor, w_scale_factor = compute_scale_factor(canvas_height, canvas_width, image_height, image_width)
+		h_scale_factor, w_scale_factor = self._compute_scale_factor(canvas_height, canvas_width, image_height, image_width)
 
 		#tgt_height, tgt_width = image_height, canvas_width
 		tgt_height, tgt_width = int(image_height * h_scale_factor), int(image_width * w_scale_factor)
 		#tgt_height, tgt_width = max(int(image_height * h_scale_factor), min_height), max(int(image_width * w_scale_factor), min_width)
 		assert tgt_height > 0 and tgt_width > 0
 
-		zeropadded = np.zeros((canvas_height, canvas_width) + input.shape[2:], dtype=input.dtype)
-		zeropadded[:tgt_height,:tgt_width] = cv2.resize(input, (tgt_width, tgt_height), interpolation=cv2.INTER_AREA)
+		zeropadded = np.zeros((canvas_height, canvas_width) + image.shape[2:], dtype=image.dtype)
+		zeropadded[:tgt_height,:tgt_width] = cv2.resize(image, (tgt_width, tgt_height), interpolation=cv2.INTER_AREA)
 		return zeropadded
 
 	# REF [function] >> RunTimeTextLineDatasetBase._resize_by_pil() in ${SWL_PYTHON_HOME}/test/language_processing/text_line_data.py.
-	def _resize_by_pil(self, input, canvas_height, canvas_width, *args, **kwargs):
+	def _resize_by_pil(self, image, canvas_height, canvas_width, *args, **kwargs):
 		min_height, min_width = canvas_height // 2, canvas_width // 2
 
-		image_width, image_height = input.size
+		image_width, image_height = image.size
 		self.warn(image_height, image_width)
 		image_height, image_width = max(image_height, 1), max(image_width, 1)
 
-		h_scale_factor, w_scale_factor = compute_scale_factor(canvas_height, canvas_width, image_height, image_width)
+		h_scale_factor, w_scale_factor = self._compute_scale_factor(canvas_height, canvas_width, image_height, image_width)
 
 		#tgt_height, tgt_width = image_height, canvas_width
 		tgt_height, tgt_width = int(image_height * h_scale_factor), int(image_width * w_scale_factor)
@@ -151,8 +152,8 @@ class ResizeImageToFixedSizeWithPadding(object):
 		assert tgt_height > 0 and tgt_width > 0
 
 		import PIL.Image
-		zeropadded = PIL.Image.new(input.mode, (canvas_width, canvas_height), color=0)
-		zeropadded.paste(input.resize((tgt_width, tgt_height), resample=PIL.Image.BICUBIC), (0, 0, tgt_width, tgt_height))
+		zeropadded = PIL.Image.new(image.mode, (canvas_width, canvas_height), color=0)
+		zeropadded.paste(image.resize((tgt_width, tgt_height), resample=PIL.Image.BICUBIC), (0, 0, tgt_width, tgt_height))
 		return zeropadded
 
 	def _warn_about_small_image(self, height, width):
@@ -213,15 +214,19 @@ def visualize_detection_data(dataloader, num_data=None):
 		if img is None:
 			print('Invalid image: image = {}.'.format(img))
 			continue
-		#img, boxes, labels = img.numpy().transpose(1, 2, 0), tgt['boxes'].numpy(), tgt['labels'].numpy()
-		img, boxes, labels = img.numpy().transpose(1, 2, 0), tgt['boxes'], tgt['labels']
+		#img, boxes, keypoints, labels = img.numpy().transpose(1, 2, 0), tgt['boxes'].numpy(), tgt['keypoints'].numpy(), tgt['labels'].numpy()
+		img, boxes, keypoints, labels = img.numpy().transpose(1, 2, 0), tgt['boxes'], tgt['keypoints'], tgt['labels']
 		# NOTE [info] >> In order to deal with "TypeError: an integer is required (got type tuple)" error.
 		img = np.ascontiguousarray(img)
 
 		print('Labels: {}.'.format(labels))
 		for ii, (left, top, right, bottom) in enumerate(boxes):
 			#assert left >= 0 and top >= 0 and right <= img.shape[1] and bottom <= img.shape[0], ((left, top, right, bottom), (img.shape))
-			cv2.rectangle(img, (left, top), (right, bottom), colors[ii % len(colors)], 2, cv2.LINE_8)
+			cv2.rectangle(img, (math.floor(left), math.floor(top)), (math.ceil(right), math.ceil(bottom)), colors[ii % len(colors)], 2, cv2.LINE_8)
+		for ii, pts in enumerate(keypoints):
+			for x, y, visibility in pts:
+				#assert x >= 0 and y >= 0 and x <= img.shape[1] and y <= img.shape[0], ((x, y), (img.shape))
+				cv2.circle(img, (math.floor(x), math.floor(y)), 2, colors[ii % len(colors)], 2, cv2.FILLED)
 		cv2.imshow('Image', img)
 		cv2.waitKey(0)
 		if num_data and idx >= (num_data - 1): break
@@ -538,7 +543,7 @@ def FigureLabelMeDataset_test():
 	train_transform = torchvision.transforms.Compose([
 		#AugmentByImgaug(create_imgaug_augmenter()),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height, image_width),
+		ResizeToFixedSize(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -546,7 +551,7 @@ def FigureLabelMeDataset_test():
 	train_target_transform = torch.IntTensor
 	test_transform = torchvision.transforms.Compose([
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height, image_width),
+		ResizeToFixedSize(image_height, image_width),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -847,19 +852,19 @@ def FigureDetectionLabelMeDataset_test():
 	pkl_filepath = data_dir_path + '/sminds_figure_detection.pkl'
 
 	#--------------------
-	import detection_transforms
-	train_transform = detection_transforms.Compose([
-		detection_transforms.AugmentByImgaug(create_imgaug_augmenter()),
-		#detection_transforms.ConvertPILMode(mode='RGB'),
-		#ResizeImageToFixedSizeWithPadding(image_height, image_width),
-		detection_transforms.ToTensor(),
-		#detection_transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	import swl.machine_learning.pair_transforms as pair_transforms
+	train_transform = pair_transforms.Compose([
+		pair_transforms.AugmentByImgaug(create_imgaug_augmenter()),
+		#pair_transforms.ConvertPILMode(mode='RGB'),
+		pair_transforms.ResizeToFixedSize(image_height, image_width),
+		pair_transforms.ToTensor(),
+		#pair_transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
-	test_transform = detection_transforms.Compose([
-		#detection_transforms.ConvertPILMode(mode='RGB'),
-		#ResizeImageToFixedSizeWithPadding(image_height, image_width),
-		detection_transforms.ToTensor(),
-		#detection_transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+	test_transform = pair_transforms.Compose([
+		#pair_transforms.ConvertPILMode(mode='RGB'),
+		#pair_transforms.ResizeToFixedSize(image_height, image_width),
+		pair_transforms.ToTensor(),
+		#pair_transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
 
 	#--------------------
