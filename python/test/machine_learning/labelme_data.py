@@ -30,8 +30,17 @@ class LabelMeDataset(torch.utils.data.Dataset):
 		imageHeight
 		"""
 
-		#self.data_dicts = self._load_data_from_json(json_filepaths, image_channel)
-		self.data_dicts = self._load_data_from_json_async(json_filepaths, image_channel)
+		if 1 == image_channel:
+			flag = cv2.IMREAD_GRAYSCALE
+		elif 3 == image_channel:
+			flag = cv2.IMREAD_COLOR
+		elif 4 == image_channel:
+			flag = cv2.IMREAD_ANYCOLOR  # ?
+		else:
+			flag = cv2.IMREAD_UNCHANGED
+
+		#self.data_dicts = self._load_data_from_json_files(json_filepaths, flag)
+		self.data_dicts = self._load_data_from_json_files_async(json_filepaths, flag)
 
 	def __len__(self):
 		return len(self.data_dicts)
@@ -39,96 +48,11 @@ class LabelMeDataset(torch.utils.data.Dataset):
 	def __getitem__(self, idx):
 		return self.data_dicts[idx]
 
-	def _load_data_from_json(self, json_filepaths, image_channel):
-		if 1 == image_channel:
-			flag = cv2.IMREAD_GRAYSCALE
-		elif 3 == image_channel:
-			flag = cv2.IMREAD_COLOR
-		elif 4 == image_channel:
-			flag = cv2.IMREAD_ANYCOLOR  # ?
-		else:
-			flag = cv2.IMREAD_UNCHANGED
+	def _load_data_from_json_files(self, json_filepaths, flag):
+		data_dicts = list(self._load_data_from_json(json_filepaths, flag) for json_filepath in json_filepaths)
+		return list(dat for dat in data_dicts[0] if dat is not None)
 
-		data_dicts = list()
-		for json_filepath in json_filepaths:
-			try:
-				with open(json_filepath, 'r') as fd:
-					json_data = json.load(fd)
-			except UnicodeDecodeError as ex:
-				print('[SWL] Error: Unicode decode error, {}: {}.'.format(json_filepath, ex))
-				continue
-			except FileNotFoundError as ex:
-				print('[SWL] Error: File not found, {}: {}.'.format(json_filepath, ex))
-				continue
-
-			try:
-				version = json_data['version']
-				flags = json_data['flags']
-				line_color, fill_color = json_data['lineColor'], json_data['fillColor']
-
-				dir_path = os.path.dirname(json_filepath)
-				image_filepath = os.path.join(dir_path, json_data['imagePath'])
-				image_data = json_data['imageData']
-				image_height, image_width = json_data['imageHeight'], json_data['imageWidth']
-
-				img = cv2.imread(image_filepath, flag)
-				if img is None:
-					print('[SWL] Error: Failed to load an image, {}.'.format(image_filepath))
-					continue
-
-				shapes = list()
-				for shape in json_data['shapes']:
-					label, points, group_id, shape_type = shape['label'], shape['points'], shape['group_id'], shape['shape_type']
-					#shape_line_color, shape_fill_color = shape['line_color'], shape['fill_color']
-					try:
-						shape_line_color = shape['line_color']
-					except KeyError as ex:
-						#print('[SWL] Warning: Key error in JSON file, {}: {}.'.format(json_filepath, ex))
-						shape_line_color = None
-					try:
-						shape_fill_color = shape['fill_color']
-					except KeyError as ex:
-						#print('[SWL] Warning: Key error in JSON file, {}: {}.'.format(json_filepath, ex))
-						shape_fill_color = None
-					shape_dict = {
-						'label': label,
-						'line_color': shape_line_color,
-						'fill_color': shape_fill_color,
-						'points': points,
-						'group_id': group_id,
-						'shape_type': shape_type,
-					}
-					shapes.append(shape_dict)
-
-				data_dict = {
-					'version': version,
-					'flags': flags,
-					'shapes': shapes,
-					'lineColor': line_color,
-					'fillColor': fill_color,
-					'imagePath': image_filepath,
-					'imageData': image_data,
-					'imageWidth': image_width,
-					'imageHeight': image_height,
-				}
-				data_dicts.append(data_dict)
-			except KeyError as ex:
-				print('[SWL] Warning: Key error in JSON file, {}: {}.'.format(json_filepath, ex))
-				data_dicts.append(None)
-
-		return data_dicts
-
-	def _load_data_from_json_async(self, json_filepaths, image_channel):
-		if 1 == image_channel:
-			flag = cv2.IMREAD_GRAYSCALE
-		elif 3 == image_channel:
-			flag = cv2.IMREAD_COLOR
-		elif 4 == image_channel:
-			flag = cv2.IMREAD_ANYCOLOR  # ?
-		else:
-			flag = cv2.IMREAD_UNCHANGED
-
-		#--------------------
+	def _load_data_from_json_files_async(self, json_filepaths, flag):
 		async_results = list()
 		def async_callback(result):
 			# This is called whenever sqr_with_sleep(i) returns a result.
@@ -140,15 +64,15 @@ class LabelMeDataset(torch.utils.data.Dataset):
 		timeout = None
 		#with mp.Pool(processes=num_processes, initializer=initialize_lock, initargs=(lock,)) as pool:
 		with mp.Pool(processes=num_processes) as pool:
-			#results = pool.map_async(functools.partial(self._worker_proc, flag=flag), json_filepaths)
-			results = pool.map_async(functools.partial(self._worker_proc, flag=flag), json_filepaths, callback=async_callback)
+			#results = pool.map_async(functools.partial(self._load_data_from_json, flag=flag), json_filepaths)
+			results = pool.map_async(functools.partial(self._load_data_from_json, flag=flag), json_filepaths, callback=async_callback)
 
 			results.get(timeout)
 
 		data_dicts = list(res for res in async_results[0] if res is not None)
 		return data_dicts
 
-	def _worker_proc(self, json_filepath, flag):
+	def _load_data_from_json(self, json_filepath, flag):
 		try:
 			with open(json_filepath, 'r') as fd:
 				json_data = json.load(fd)
@@ -162,7 +86,17 @@ class LabelMeDataset(torch.utils.data.Dataset):
 		try:
 			version = json_data['version']
 			flags = json_data['flags']
-			line_color, fill_color = json_data['lineColor'], json_data['fillColor']
+			#line_color, fill_color = json_data['lineColor'], json_data['fillColor']
+			try:
+				line_color = json_data['lineColor']
+			except KeyError as ex:
+				#print('[SWL] Warning: Key error in JSON file, {}: {}.'.format(json_filepath, ex))
+				line_color = None
+			try:
+				fill_color = json_data['fillColor']
+			except KeyError as ex:
+				#print('[SWL] Warning: Key error in JSON file, {}: {}.'.format(json_filepath, ex))
+				fill_color = None
 
 			dir_path = os.path.dirname(json_filepath)
 			image_filepath = os.path.join(dir_path, json_data['imagePath'])
@@ -177,8 +111,13 @@ class LabelMeDataset(torch.utils.data.Dataset):
 
 			shapes = list()
 			for shape in json_data['shapes']:
-				label, points, group_id, shape_type = shape['label'], shape['points'], shape['group_id'], shape['shape_type']
-				#shape_line_color, shape_fill_color = shape['line_color'], shape['fill_color']
+				label, points, shape_type = shape['label'], shape['points'], shape['shape_type']
+				#group_id, shape_line_color, shape_fill_color = shape['group_id'], shape['line_color'], shape['fill_color']
+				try:
+					group_id = shape['group_id']
+				except KeyError as ex:
+					#print('[SWL] Warning: Key error in JSON file, {}: {}.'.format(json_filepath, ex))
+					group_id = None
 				try:
 					shape_line_color = shape['line_color']
 				except KeyError as ex:
