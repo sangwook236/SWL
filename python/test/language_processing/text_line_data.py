@@ -108,8 +108,8 @@ class TextLineDatasetBase(abc.ABC):
 		if wi >= width:
 			return cv2.resize(image, (width, height), interpolation=interpolation)
 		else:
-			aspect_ratio = height / hi
-			min_width = min(width, int(wi * aspect_ratio))
+			scale_factor = height / hi
+			min_width = min(width, int(wi * scale_factor))
 			image = cv2.resize(image, (min_width, height), interpolation=interpolation)
 			if min_width < width:
 				image_zeropadded = np.zeros((height, width) + image.shape[2:], dtype=image.dtype)
@@ -119,8 +119,8 @@ class TextLineDatasetBase(abc.ABC):
 				return image
 		"""
 		hi, wi = image.shape[:2]
-		aspect_ratio = height / hi
-		min_width = min(width, int(wi * aspect_ratio))
+		scale_factor = height / hi
+		min_width = min(width, int(wi * scale_factor))
 		zeropadded = np.zeros((height, width) + image.shape[2:], dtype=image.dtype)
 		zeropadded[:,:min_width] = cv2.resize(image, (min_width, height), interpolation=interpolation)
 		return zeropadded
@@ -132,8 +132,8 @@ class TextLineDatasetBase(abc.ABC):
 		import PIL.Image
 
 		wi, hi = image.size
-		aspect_ratio = height / hi
-		min_width = min(width, int(wi * aspect_ratio))
+		scale_factor = height / hi
+		min_width = min(width, int(wi * scale_factor))
 		zeropadded = PIL.Image.new(image.mode, (width, height), color=0)
 		zeropadded.paste(image.resize((min_width, height), resample=interpolation), (0, 0, min_width, height))
 		return zeropadded

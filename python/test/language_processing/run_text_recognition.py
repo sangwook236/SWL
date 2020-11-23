@@ -305,7 +305,7 @@ class EnlargeImageForGeometricTransformation(object):
 		enlarged[sy:sy+image.shape[0],sx:sx+image.shape[1]] = image
 		return enlarged
 
-class RandomAugment(object):
+class AugmentByImgaug(object):
 	def __init__(self, augmenter, is_pil=True):
 		if is_pil:
 			self.augment_functor = lambda x: Image.fromarray(augmenter.augment_image(np.array(x)))
@@ -336,7 +336,7 @@ class ConvertNumpyToRGB(object):
 			return x
 		else: raise ValueError('Invalid dimension, {}'.format(x.ndim))
 
-class ResizeImageToFixedSizeWithPadding(object):
+class ResizeToFixedSize(object):
 	def __init__(self, height, width, warn_about_small_image=False, is_pil=True, logger=None):
 		self.height, self.width = height, width
 		self.resize_functor = self._resize_by_pil if is_pil else self._resize_by_opencv
@@ -349,52 +349,52 @@ class ResizeImageToFixedSizeWithPadding(object):
 		return self.resize_functor(x, self.height, self.width)
 
 	# REF [function] >> RunTimeTextLineDatasetBase._resize_by_opencv() in text_line_data.py.
-	def _resize_by_opencv(self, input, height, width, *args, **kwargs):
+	def _resize_by_opencv(self, image, height, width, *args, **kwargs):
 		interpolation = cv2.INTER_AREA
 		"""
-		hi, wi = input.shape[:2]
+		hi, wi = image.shape[:2]
 		if wi >= width:
-			return cv2.resize(input, (width, height), interpolation=interpolation)
+			return cv2.resize(image, (width, height), interpolation=interpolation)
 		else:
-			aspect_ratio = height / hi
-			#min_width = min(width, int(wi * aspect_ratio))
-			min_width = max(min(width, int(wi * aspect_ratio)), height // 2)
+			scale_factor = height / hi
+			#min_width = min(width, int(wi * scale_factor))
+			min_width = max(min(width, int(wi * scale_factor)), height // 2)
 			assert min_width > 0 and height > 0
-			input = cv2.resize(input, (min_width, height), interpolation=interpolation)
+			image = cv2.resize(image, (min_width, height), interpolation=interpolation)
 			if min_width < width:
-				image_zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
-				image_zeropadded[:,:min_width] = input[:,:min_width]
+				image_zeropadded = np.zeros((height, width) + image.shape[2:], dtype=image.dtype)
+				image_zeropadded[:,:min_width] = image[:,:min_width]
 				return image_zeropadded
 			else:
-				return input
+				return image
 		"""
-		hi, wi = input.shape[:2]
+		hi, wi = image.shape[:2]
 		self.warn(hi, wi)
-		aspect_ratio = height / hi
-		#min_width = min(width, int(wi * aspect_ratio))
-		min_width = max(min(width, int(wi * aspect_ratio)), height // 2)
+		scale_factor = height / hi
+		#min_width = min(width, int(wi * scale_factor))
+		min_width = max(min(width, int(wi * scale_factor)), height // 2)
 		assert min_width > 0 and height > 0
-		zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
-		zeropadded[:,:min_width] = cv2.resize(input, (min_width, height), interpolation=interpolation)
+		zeropadded = np.zeros((height, width) + image.shape[2:], dtype=image.dtype)
+		zeropadded[:,:min_width] = cv2.resize(image, (min_width, height), interpolation=interpolation)
 		return zeropadded
 		"""
-		return cv2.resize(input, (width, height), interpolation=interpolation)
+		return cv2.resize(image, (width, height), interpolation=interpolation)
 		"""
 
 	# REF [function] >> RunTimeTextLineDatasetBase._resize_by_pil() in text_line_data.py.
-	def _resize_by_pil(self, input, height, width, *args, **kwargs):
+	def _resize_by_pil(self, image, height, width, *args, **kwargs):
 		interpolation = Image.BICUBIC
-		wi, hi = input.size
+		wi, hi = image.size
 		self.warn(hi, wi)
-		aspect_ratio = height / hi
-		#min_width = min(width, int(wi * aspect_ratio))
-		min_width = max(min(width, int(wi * aspect_ratio)), height // 2)
+		scale_factor = height / hi
+		#min_width = min(width, int(wi * scale_factor))
+		min_width = max(min(width, int(wi * scale_factor)), height // 2)
 		assert min_width > 0 and height > 0
-		zeropadded = Image.new(input.mode, (width, height), color=0)
-		zeropadded.paste(input.resize((min_width, height), resample=interpolation), (0, 0, min_width, height))
+		zeropadded = Image.new(image.mode, (width, height), color=0)
+		zeropadded.paste(image.resize((min_width, height), resample=interpolation), (0, 0, min_width, height))
 		return zeropadded
 		"""
-		return input.resize((width, height), resample=interpolation)
+		return image.resize((width, height), resample=interpolation)
 		"""
 
 	def _warn_about_small_image(self, height, width):
@@ -403,7 +403,7 @@ class ResizeImageToFixedSizeWithPadding(object):
 		#if width < self.min_width_threshold:
 		#	if self.logger: self.logger.warning('Too small image: The image width {} should be larger than or equal to {}.'.format(width, self.min_width_threshold))
 
-class ResizeImageWithMaxWidth(object):
+class ResizeToBelowMaxWidth(object):
 	def __init__(self, height, max_width, warn_about_small_image, is_pil=True, logger=None):
 		self.height, self.max_width = height, max_width
 		self.resize_functor = self._resize_by_pil if is_pil else self._resize_by_opencv
@@ -415,25 +415,25 @@ class ResizeImageWithMaxWidth(object):
 	def __call__(self, x):
 		return self.resize_functor(x, self.height, self.max_width)
 
-	def _resize_by_opencv(self, input, height, max_width, *args, **kwargs):
+	def _resize_by_opencv(self, image, height, max_width, *args, **kwargs):
 		interpolation = cv2.INTER_AREA
-		hi, wi = input.shape[:2]
+		hi, wi = image.shape[:2]
 		self.warn(hi, wi)
-		aspect_ratio = height / hi
-		#min_width = min(max_width, int(wi * aspect_ratio))
-		min_width = max(min(max_width, int(wi * aspect_ratio)), height // 2)
+		scale_factor = height / hi
+		#min_width = min(max_width, int(wi * scale_factor))
+		min_width = max(min(max_width, int(wi * scale_factor)), height // 2)
 		assert min_width > 0 and height > 0
-		return cv2.resize(input, (min_width, height), interpolation=interpolation)
+		return cv2.resize(image, (min_width, height), interpolation=interpolation)
 
-	def _resize_by_pil(self, input, height, max_width, *args, **kwargs):
+	def _resize_by_pil(self, image, height, max_width, *args, **kwargs):
 		interpolation = Image.BICUBIC
-		wi, hi = input.size
+		wi, hi = image.size
 		self.warn(hi, wi)
-		aspect_ratio = height / hi
-		#min_width = min(max_width, int(wi * aspect_ratio))
-		min_width = max(min(max_width, int(wi * aspect_ratio)), height // 2)
+		scale_factor = height / hi
+		#min_width = min(max_width, int(wi * scale_factor))
+		min_width = max(min(max_width, int(wi * scale_factor)), height // 2)
 		assert min_width > 0 and height > 0
-		return input.resize((min_width, height), resample=interpolation)
+		return image.resize((min_width, height), resample=interpolation)
 
 	def _warn_about_small_image(self, height, width):
 		if height < self.min_height_threshold:
@@ -441,7 +441,7 @@ class ResizeImageWithMaxWidth(object):
 		#if width < self.min_width_threshold:
 		#	if self.logger: self.logger.warning('Too small image: The image width {} should be larger than or equal to {}.'.format(width, self.min_width_threshold))
 
-class ToIntTensorWithPadding(object):
+class ToPaddedIntTensor(object):
 	def __init__(self, pad, max_len):
 		self.pad, self.max_len = pad, max_len
 
@@ -512,10 +512,10 @@ def create_char_datasets(char_type, label_converter, charset, num_train_examples
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
 		#EnlargeBackground(height=None, width=None, is_pil=is_pil),
-		RandomAugment(create_char_augmenter()),
+		AugmentByImgaug(create_char_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop, logger=logger),
+		ResizeToFixedSize(image_height_before_crop, image_width_before_crop, logger=logger),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -523,10 +523,10 @@ def create_char_datasets(char_type, label_converter, charset, num_train_examples
 	])
 	test_transform = torchvision.transforms.Compose([
 		#EnlargeBackground(height=None, width=None, is_pil=is_pil),
-		#RandomAugment(create_char_augmenter()),
+		#AugmentByImgaug(create_char_augmenter()),
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height, image_width, logger=logger),
+		ResizeToFixedSize(image_height, image_width, logger=logger),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -623,10 +623,10 @@ def create_mixed_char_datasets(label_converter, charset, num_simple_char_example
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
 		#EnlargeBackground(height=None, width=None, is_pil=is_pil),
-		RandomAugment(create_char_augmenter()),
+		AugmentByImgaug(create_char_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop, logger=logger),
+		ResizeToFixedSize(image_height_before_crop, image_width_before_crop, logger=logger),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -634,10 +634,10 @@ def create_mixed_char_datasets(label_converter, charset, num_simple_char_example
 	])
 	test_transform = torchvision.transforms.Compose([
 		#EnlargeBackground(height=None, width=None, is_pil=is_pil),
-		#RandomAugment(create_char_augmenter()),
+		#AugmentByImgaug(create_char_augmenter()),
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height, image_width, logger=logger),
+		ResizeToFixedSize(image_height, image_width, logger=logger),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -729,10 +729,10 @@ def create_word_datasets(word_type, label_converter, wordset, chars, num_train_e
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
 		EnlargeImageForGeometricTransformation(height=None, width=None, is_pil=is_pil),
-		RandomAugment(create_word_augmenter()),
+		AugmentByImgaug(create_word_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop, logger=logger),
+		ResizeToFixedSize(image_height_before_crop, image_width_before_crop, logger=logger),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -741,10 +741,10 @@ def create_word_datasets(word_type, label_converter, wordset, chars, num_train_e
 	train_target_transform = torch.IntTensor
 	test_transform = torchvision.transforms.Compose([
 		EnlargeImageForGeometricTransformation(height=None, width=None, is_pil=is_pil),
-		RandomAugment(create_word_augmenter()),
+		AugmentByImgaug(create_word_augmenter()),
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height, image_width, logger=logger),
+		ResizeToFixedSize(image_height, image_width, logger=logger),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -880,10 +880,10 @@ def create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examp
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
 		EnlargeImageForGeometricTransformation(height=None, width=None, is_pil=is_pil),
-		RandomAugment(create_word_augmenter()),
+		AugmentByImgaug(create_word_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop, logger=logger),
+		ResizeToFixedSize(image_height_before_crop, image_width_before_crop, logger=logger),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -892,10 +892,10 @@ def create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examp
 	train_target_transform = torch.IntTensor
 	test_transform = torchvision.transforms.Compose([
 		EnlargeImageForGeometricTransformation(height=None, width=None, is_pil=is_pil),
-		RandomAugment(create_word_augmenter()),
+		AugmentByImgaug(create_word_augmenter()),
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height, image_width, logger=logger),
+		ResizeToFixedSize(image_height, image_width, logger=logger),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -1033,10 +1033,10 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
 		#EnlargeBackground(height=None, width=None, is_pil=is_pil),
-		RandomAugment(create_textline_augmenter()),
+		AugmentByImgaug(create_textline_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop, logger=logger),
+		ResizeToFixedSize(image_height_before_crop, image_width_before_crop, logger=logger),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -1045,10 +1045,10 @@ def create_textline_datasets(textline_type, label_converter, wordset, chars, num
 	train_target_transform = torch.IntTensor
 	test_transform = torchvision.transforms.Compose([
 		#EnlargeBackground(height=None, width=None, is_pil=is_pil),
-		#RandomAugment(create_textline_augmenter()),
+		#AugmentByImgaug(create_textline_augmenter()),
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height, image_width, logger=logger),
+		ResizeToFixedSize(image_height, image_width, logger=logger),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -1168,10 +1168,10 @@ def create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_e
 	# Load and normalize datasets.
 	train_transform = torchvision.transforms.Compose([
 		#EnlargeBackground(height=None, width=None, is_pil=is_pil),
-		RandomAugment(create_textline_augmenter()),
+		AugmentByImgaug(create_textline_augmenter()),
 		RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height_before_crop, image_width_before_crop, logger=logger),
+		ResizeToFixedSize(image_height_before_crop, image_width_before_crop, logger=logger),
 		#torchvision.transforms.Resize((image_height_before_crop, image_width_before_crop)),
 		#torchvision.transforms.RandomCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -1180,10 +1180,10 @@ def create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_e
 	train_target_transform = torch.IntTensor
 	test_transform = torchvision.transforms.Compose([
 		#EnlargeBackground(height=None, width=None, is_pil=is_pil),
-		#RandomAugment(create_textline_augmenter()),
+		#AugmentByImgaug(create_textline_augmenter()),
 		#RandomInvert(),
 		#ConvertPILMode(mode='RGB'),
-		ResizeImageToFixedSizeWithPadding(image_height, image_width, logger=logger),
+		ResizeToFixedSize(image_height, image_width, logger=logger),
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -3811,8 +3811,8 @@ def images_to_tensor(images, image_shape, is_pil, logger):
 	#image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	transform = torchvision.transforms.Compose([
-		ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, is_pil=is_pil, logger=logger),
-		#ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, is_pil=is_pil, logger=logger),  # batch_size must be 1.
+		ResizeToFixedSize(image_height, image_width, warn_about_small_image=True, is_pil=is_pil, logger=logger),
+		#ResizeToBelowMaxWidth(image_height, image_width, warn_about_small_image=True, is_pil=is_pil, logger=logger),  # batch_size must be 1.
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -3824,7 +3824,7 @@ def images_to_tensor(images, image_shape, is_pil, logger):
 
 def labels_to_tensor(labels, max_label_len, label_converter):
 	#target_transform = torch.IntTensor
-	target_transform = ToIntTensorWithPadding(label_converter.pad_id, max_label_len)
+	target_transform = ToPaddedIntTensor(label_converter.pad_id, max_label_len)
 
 	outputs = list(target_transform(label_converter.encode(lbl)) for lbl in labels)
 	return torch.stack(outputs)
@@ -3923,8 +3923,8 @@ def create_text_dataset(label_converter, image_shape, target_type, max_label_len
 	#image_height_before_crop, image_width_before_crop = image_height, image_width
 
 	transform = torchvision.transforms.Compose([
-		ResizeImageToFixedSizeWithPadding(image_height, image_width, warn_about_small_image=True, is_pil=is_pil, logger=logger),
-		#ResizeImageWithMaxWidth(image_height, image_width, warn_about_small_image=True, is_pil=is_pil, logger=logger),  # batch_size must be 1.
+		ResizeToFixedSize(image_height, image_width, warn_about_small_image=True, is_pil=is_pil, logger=logger),
+		#ResizeToBelowMaxWidth(image_height, image_width, warn_about_small_image=True, is_pil=is_pil, logger=logger),  # batch_size must be 1.
 		#torchvision.transforms.Resize((image_height, image_width)),
 		#torchvision.transforms.CenterCrop((image_height, image_width)),
 		torchvision.transforms.ToTensor(),
@@ -4316,13 +4316,8 @@ def crop_text_region_in_image(images):
 		"""
 	return cropped_images
 
-def extract_cells_in_table(image_filepath, cell_contours, output_dir_path, logger):
+def extract_cells_in_table(image, cell_contours, output_dir_path, logger):
 	if len(cell_contours) <= 0: return None
-
-	image = cv2.imread(image_filepath)
-	if image is None:
-		if logger: logger.error('File not found, {}.'.format(image_filepath))
-		return None
 
 	output_dir_path = os.path.join(output_dir_path, 'table_results')
 	os.makedirs(output_dir_path, exist_ok=True)
@@ -4348,28 +4343,15 @@ def extract_cells_in_table(image_filepath, cell_contours, output_dir_path, logge
 		return extract_rotated_text_rectangle_from_polygon(image, cell_contours, output_dir_path)
 		#return extract_rectified_text_rectangle_from_polygon(image, cell_contours, output_dir_path)
 
-def visualize_table_recognition_results(image_filepath, cell_contours, cell_patches, valid_cell_texts, output_dir_path, logger=None):
+def visualize_table_recognition_results(image_shape, cell_contours, cell_patches, valid_cell_texts, font_filepath, output_dir_path, logger=None):
 	if len(cell_contours) <= 0 or len(cell_patches) <= 0 or len(valid_cell_texts) <= 0: return None
-
-	image = cv2.imread(image_filepath)
-	if image is None:
-		if logger: logger.error('File not found, {}.'.format(image_filepath))
-		return
 
 	#output_dir_path = os.path.join(output_dir_path, 'table_results')
 	#os.makedirs(output_dir_path, exist_ok=True)
 
-	if 'posix' == os.name:
-		system_font_dir_path = '/usr/share/fonts'
-		font_base_dir_path = '/home/sangwook/work/font'
-	else:
-		system_font_dir_path = 'C:/Windows/Fonts'
-		font_base_dir_path = 'D:/work/font'
-	font_filepath = font_base_dir_path + '/kor_large/batang.ttf'
-
-	canvas = Image.new(mode='RGB', size=(image.shape[1], image.shape[0]), color=(255, 255, 255))
+	canvas = Image.new(mode='RGB', size=(image_shape[1], image_shape[0]), color=(255, 255, 255))
 	draw = ImageDraw.Draw(canvas)
-	patch_idx = 0
+	valid_patch_idx = 0
 	for contour, patch in zip(cell_contours, cell_patches):
 		aabb = cv2.boundingRect(contour)  # (left, top, width, height).
 		left, top, right, bottom = aabb[0], aabb[1], aabb[0] + aabb[2], aabb[1] + aabb[3]
@@ -4380,22 +4362,17 @@ def visualize_table_recognition_results(image_filepath, cell_contours, cell_patc
 				font = ImageFont.truetype(font=font_filepath, size=patch.shape[0], index=0)
 			except Exception as ex:
 				if logger: logger.warning('Invalid font, {}: {}.'.format(font_filepath, ex))
-				return
+				continue
 
-			txt = valid_cell_texts[patch_idx]
+			txt = valid_cell_texts[valid_patch_idx]
 			txt = txt.replace('<UNK>', '')  # Optional.
 			draw.text(xy=(left, top), text=txt, font=font, fill=(0, 0, 0))
 
-			patch_idx += 1
+			valid_patch_idx += 1
 	canvas.save(output_dir_path + '/table_result.png')
 
-def visualize_scene_text_recognition_results(image_filepath, text_bboxes, texts, output_dir_path, is_2x=False, logger=None):
+def visualize_scene_text_recognition_results(image_shape, text_bboxes, texts, output_dir_path, is_2x=False, logger=None):
 	if len(text_bboxes) <= 0: return None
-
-	image = cv2.imread(image_filepath)
-	if image is None:
-		if logger: logger.error('File not found, {}.'.format(image_filepath))
-		return
 
 	#output_dir_path = os.path.join(output_dir_path, 'scene_text_results')
 	#os.makedirs(output_dir_path, exist_ok=True)
@@ -4409,7 +4386,7 @@ def visualize_scene_text_recognition_results(image_filepath, text_bboxes, texts,
 	font_filepath = font_base_dir_path + '/kor_large/batang.ttf'
 
 	scale_factor = 2 if is_2x else 1
-	canvas = Image.new(mode='RGB', size=(image.shape[1] * scale_factor, image.shape[0] * scale_factor), color=(255, 255, 255))
+	canvas = Image.new(mode='RGB', size=(image_shape[1] * scale_factor, image_shape[0] * scale_factor), color=(255, 255, 255))
 	draw = ImageDraw.Draw(canvas)
 	for bbox, txt in zip(text_bboxes, texts):
 		(left, top), (right, bottom) = np.min(bbox, axis=0), np.max(bbox, axis=0)
@@ -4855,14 +4832,14 @@ def main():
 					outputs = outputs.numpy()
 				elif False:
 					# When extracting cells in a table.
+					# Table information:
+					#	REF [file] >> ${DataAnalysis_HOME}/app/document_image_processing/recognize_table_structure.py
 					table_info_filepath = '/path/to/table_info.pkl'
 					assert os.path.exists(table_info_filepath)
 
 					if logger: logger.info('Start loading table info...')
 					start_time = time.time()
 					try:
-						# Table information:
-						#	REF [file] >> ${DataAnalysis_HOME}/app/document_image_processing/recognize_table_structure.py
 						with open(table_info_filepath, 'rb') as fd:
 							image_filepath, cell_contours, cell_neighbors, table_graph = pickle.load(fd)
 						assert len(cell_contours) == len(cell_neighbors)
@@ -4871,9 +4848,14 @@ def main():
 						return None
 					if logger: logger.info('End loading table info: {} secs.'.format(time.time() - start_time))
 
-					cell_patches = extract_cells_in_table(image_filepath, cell_contours, output_dir_path, logger)
+					image = cv2.imread(image_filepath)
+					if image is None:
+						if logger: logger.error('File not found, {}.'.format(image_filepath))
+						return
+
+					cell_patches = extract_cells_in_table(image, cell_contours, output_dir_path, logger)
 					if cell_patches is None or len(cell_patches) <= 0:
-						logger.warning('No text detected in {}.'.format(table_info_filepath))
+						logger.warning('No text cell detected in {}.'.format(table_info_filepath))
 						return
 
 					valid_cell_patches = list(patch for patch in cell_patches if patch is not None)
@@ -4910,11 +4892,26 @@ def main():
 				if False:
 					# Visualize table recognition results.
 					predictions = list(label_converter.decode(pred) for pred in predictions)
-					visualize_table_recognition_results(image_filepath, cell_contours, cell_patches, predictions, output_dir_path, logger)
+
+					if 'posix' == os.name:
+						system_font_dir_path = '/usr/share/fonts'
+						font_base_dir_path = '/home/sangwook/work/font'
+					else:
+						system_font_dir_path = 'C:/Windows/Fonts'
+						font_base_dir_path = 'D:/work/font'
+					font_filepath = font_base_dir_path + '/kor_large/batang.ttf'
+
+					visualize_table_recognition_results(image.shape, cell_contours, cell_patches, predictions, font_filepath, output_dir_path, logger)
 				elif False:
 					# Visualize scene text recognition results.
 					predictions = list(label_converter.decode(pred) for pred in predictions)
-					visualize_scene_text_recognition_results(image_filepath, text_bboxes, predictions, output_dir_path, is_2x=False, logger=logger)
+
+					image = cv2.imread(image_filepath)
+					if image is None:
+						if logger: logger.error('File not found, {}.'.format(image_filepath))
+						return
+
+					visualize_scene_text_recognition_results(image.shape, text_bboxes, predictions, output_dir_path, is_2x=False, logger=logger)
 				else:
 					# Visualize inference results.
 					#outputs = None
