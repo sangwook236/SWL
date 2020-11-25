@@ -132,7 +132,7 @@ def e2e_mlt_test():
 		data_base_dir_path = '/home/sangwook/work/dataset'
 	else:
 		data_base_dir_path = 'D:/work/dataset'
-	e2e_mlt_dir_path = data_base_dir_path + '/text/e2e_mlt'
+	e2e_mlt_dir_path = data_base_dir_path + '/text/scene_text/e2e_mlt'
 
 	if True:
 		e2e_mlt_lang = 'Korean'
@@ -235,7 +235,7 @@ def generate_chars_from_e2e_mlt_data():
 		data_base_dir_path = '/home/sangwook/work/dataset'
 	else:
 		data_base_dir_path = 'D:/work/dataset'
-	e2e_mlt_dir_path = data_base_dir_path + '/text/e2e_mlt'
+	e2e_mlt_dir_path = data_base_dir_path + '/text/scene_text/e2e_mlt'
 
 	if True:
 		lang_tag = 'kr'
@@ -340,7 +340,7 @@ def generate_words_from_e2e_mlt_data():
 		data_base_dir_path = '/home/sangwook/work/dataset'
 	else:
 		data_base_dir_path = 'D:/work/dataset'
-	e2e_mlt_dir_path = data_base_dir_path + '/text/e2e_mlt'
+	e2e_mlt_dir_path = data_base_dir_path + '/text/scene_text/e2e_mlt'
 
 	if True:
 		lang_tag = 'kr'

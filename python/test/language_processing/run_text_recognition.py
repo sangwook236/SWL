@@ -567,7 +567,7 @@ def create_char_datasets(char_type, label_converter, charset, num_train_examples
 			test_dataset = MySubsetDataset(test_subset, transform=test_transform)
 		if True:
 			# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
-			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_kr.txt'
+			image_label_info_filepath = data_base_dir_path + '/text/scene_text/e2e_mlt/char_images_kr.txt'
 			is_preloaded_image_used = True
 			dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used)
 
@@ -578,7 +578,7 @@ def create_char_datasets(char_type, label_converter, charset, num_train_examples
 			test_dataset = MySubsetDataset(test_subset, transform=test_transform)
 		if True:
 			# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
-			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_en.txt'
+			image_label_info_filepath = data_base_dir_path + '/text/scene_text/e2e_mlt/char_images_en.txt'
 			is_preloaded_image_used = True
 			dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used)
 
@@ -589,7 +589,7 @@ def create_char_datasets(char_type, label_converter, charset, num_train_examples
 			test_dataset = MySubsetDataset(test_subset, transform=test_transform)
 		if True:
 			# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
-			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_kr.txt'
+			image_label_info_filepath = data_base_dir_path + '/text/scene_text/icdar_mlt_2019/char_images_kr.txt'
 			is_preloaded_image_used = True
 			dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used)
 
@@ -600,7 +600,7 @@ def create_char_datasets(char_type, label_converter, charset, num_train_examples
 			test_dataset = MySubsetDataset(test_subset, transform=test_transform)
 		if True:
 			# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
-			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_en.txt'
+			image_label_info_filepath = data_base_dir_path + '/text/scene_text/icdar_mlt_2019/char_images_en.txt'
 			is_preloaded_image_used = True
 			dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used)
 
@@ -675,7 +675,7 @@ def create_mixed_char_datasets(label_converter, charset, num_simple_char_example
 		test_datasets.append(MySubsetDataset(test_subset, transform=test_transform))
 	if True:
 		# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_kr.txt'
+		image_label_info_filepath = data_base_dir_path + '/text/scene_text/e2e_mlt/char_images_kr.txt'
 		is_preloaded_image_used = True
 		dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used)
 
@@ -686,7 +686,7 @@ def create_mixed_char_datasets(label_converter, charset, num_simple_char_example
 		test_datasets.append( MySubsetDataset(test_subset, transform=test_transform))
 	if True:
 		# REF [function] >> generate_chars_from_e2e_mlt_data() in e2e_mlt_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/char_images_en.txt'
+		image_label_info_filepath = data_base_dir_path + '/text/scene_text/e2e_mlt/char_images_en.txt'
 		is_preloaded_image_used = True
 		dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used)
 
@@ -697,7 +697,7 @@ def create_mixed_char_datasets(label_converter, charset, num_simple_char_example
 		test_datasets.append(MySubsetDataset(test_subset, transform=test_transform))
 	if True:
 		# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_kr.txt'
+		image_label_info_filepath = data_base_dir_path + '/text/scene_text/icdar_mlt_2019/char_images_kr.txt'
 		is_preloaded_image_used = True
 		dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used)
 
@@ -708,7 +708,7 @@ def create_mixed_char_datasets(label_converter, charset, num_simple_char_example
 		test_datasets.append(MySubsetDataset(test_subset, transform=test_transform))
 	if True:
 		# REF [function] >> generate_chars_from_rrc_mlt_2019_data() in icdar_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/char_images_en.txt'
+		image_label_info_filepath = data_base_dir_path + '/text/scene_text/icdar_mlt_2019/char_images_en.txt'
 		is_preloaded_image_used = True
 		dataset = text_data.FileBasedCharacterDataset(label_converter, image_label_info_filepath, image_channel, is_preloaded_image_used=is_preloaded_image_used)
 
@@ -821,7 +821,7 @@ def create_word_datasets(word_type, label_converter, wordset, chars, num_train_e
 		if True:
 			# E2E-MLT Korean dataset.
 			# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
-			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
+			image_label_info_filepath = data_base_dir_path + '/text/scene_text/e2e_mlt/word_images_kr.txt'
 			is_preloaded_image_used = False
 			dataset = text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used)
 
@@ -833,7 +833,7 @@ def create_word_datasets(word_type, label_converter, wordset, chars, num_train_e
 		if True:
 			# E2E-MLT English dataset.
 			# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
-			image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_en.txt'
+			image_label_info_filepath = data_base_dir_path + '/text/scene_text/e2e_mlt/word_images_en.txt'
 			is_preloaded_image_used = False
 			dataset = text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used)
 
@@ -845,7 +845,7 @@ def create_word_datasets(word_type, label_converter, wordset, chars, num_train_e
 		if True:
 			# ICDAR RRC-MLT 2019 Korean dataset.
 			# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
-			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
+			image_label_info_filepath = data_base_dir_path + '/text/scene_text/icdar_mlt_2019/word_images_kr.txt'
 			is_preloaded_image_used = True
 			dataset = text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used)
 
@@ -857,7 +857,7 @@ def create_word_datasets(word_type, label_converter, wordset, chars, num_train_e
 		if True:
 			# ICDAR RRC-MLT 2019 English dataset.
 			# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
-			image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_en.txt'
+			image_label_info_filepath = data_base_dir_path + '/text/scene_text/icdar_mlt_2019/word_images_en.txt'
 			is_preloaded_image_used = True
 			dataset = text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used)
 
@@ -976,7 +976,7 @@ def create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examp
 	if True:
 		# E2E-MLT Korean dataset.
 		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
+		image_label_info_filepath = data_base_dir_path + '/text/scene_text/e2e_mlt/word_images_kr.txt'
 		is_preloaded_image_used = False
 		dataset = text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used)
 
@@ -988,7 +988,7 @@ def create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examp
 	if True:
 		# E2E-MLT English dataset.
 		# REF [function] >> generate_words_from_e2e_mlt_data() in e2e_mlt_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_en.txt'
+		image_label_info_filepath = data_base_dir_path + '/text/scene_text/e2e_mlt/word_images_en.txt'
 		is_preloaded_image_used = False
 		dataset = text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used)
 
@@ -1000,7 +1000,7 @@ def create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examp
 	if True:
 		# ICDAR RRC-MLT 2019 Korean dataset.
 		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
+		image_label_info_filepath = data_base_dir_path + '/text/scene_text/icdar_mlt_2019/word_images_kr.txt'
 		is_preloaded_image_used = True
 		dataset = text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used)
 
@@ -1012,7 +1012,7 @@ def create_mixed_word_datasets(label_converter, wordset, chars, num_simple_examp
 	if True:
 		# ICDAR RRC-MLT 2019 English dataset.
 		# REF [function] >> generate_words_from_rrc_mlt_2019_data() in icdar_data_test.py
-		image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_en.txt'
+		image_label_info_filepath = data_base_dir_path + '/text/scene_text/icdar_mlt_2019/word_images_en.txt'
 		is_preloaded_image_used = True
 		dataset = text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_word_len, is_preloaded_image_used=is_preloaded_image_used)
 
@@ -3940,8 +3940,8 @@ def create_text_dataset(label_converter, image_shape, target_type, max_label_len
 	datasets = list()
 	if target_type == 'word':
 		# When using a dataset with an image-label info file.
-		image_label_info_filepath = data_base_dir_path + '/text/e2e_mlt/word_images_kr.txt'
-		#image_label_info_filepath = data_base_dir_path + '/text/icdar_mlt_2019/word_images_kr.txt'
+		image_label_info_filepath = data_base_dir_path + '/text/scene_text/e2e_mlt/word_images_kr.txt'
+		#image_label_info_filepath = data_base_dir_path + '/text/scene_text/icdar_mlt_2019/word_images_kr.txt'
 		datasets.append(text_data.InfoFileBasedWordDataset(label_converter, image_label_info_filepath, image_channel, max_label_len, is_preloaded_image_used, transform=transform, target_transform=target_transform))
 	elif target_type == 'textline':
 		# When using a dataset with image-label files.

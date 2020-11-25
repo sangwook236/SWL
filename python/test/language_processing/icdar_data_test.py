@@ -249,7 +249,7 @@ def rrc_mlt_2019_test():
 		data_base_dir_path = '/home/sangwook/work/dataset'
 	else:
 		data_base_dir_path = 'D:/work/dataset'
-	rrc_mlt_2019_dir_path = data_base_dir_path + '/text/icdar_mlt_2019'
+	rrc_mlt_2019_dir_path = data_base_dir_path + '/text/scene_text/icdar_mlt_2019'
 
 	if False:
 		# Arabic: 00001 ~ 01000.
@@ -460,7 +460,7 @@ def generate_chars_from_rrc_mlt_2019_data():
 		data_base_dir_path = '/home/sangwook/work/dataset'
 	else:
 		data_base_dir_path = 'D:/work/dataset'
-	rrc_mlt_2019_dir_path = data_base_dir_path + '/text/icdar_mlt_2019'
+	rrc_mlt_2019_dir_path = data_base_dir_path + '/text/scene_text/icdar_mlt_2019'
 
 	#acceptable_types = ['Korean', 'Latin', 'Chinese', 'Japanese', 'Symbols', 'Mixed', 'None']
 	acceptable_types = ['Korean', 'Latin', 'Symbols', 'Mixed', 'None']
@@ -568,7 +568,7 @@ def generate_words_from_rrc_mlt_2019_data():
 		data_base_dir_path = '/home/sangwook/work/dataset'
 	else:
 		data_base_dir_path = 'D:/work/dataset'
-	rrc_mlt_2019_dir_path = data_base_dir_path + '/text/icdar_mlt_2019'
+	rrc_mlt_2019_dir_path = data_base_dir_path + '/text/scene_text/icdar_mlt_2019'
 
 	#acceptable_types = ['Korean', 'Latin', 'Chinese', 'Japanese', 'Symbols', 'Mixed', 'None']
 	acceptable_types = ['Korean', 'Latin', 'Symbols', 'Mixed', 'None']
