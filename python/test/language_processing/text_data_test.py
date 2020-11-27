@@ -390,7 +390,7 @@ def visualize_data(dataloader, label_converter, num_data=10):
 
 def visualize_data_with_length(dataloader, label_converter, num_data=None):
 	data_iter = iter(dataloader)
-	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = data_iter.next()  # torch.Tensor, torch.Tensor, & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	images = images.transpose(0, 2, 3, 1)
 	for idx, (img, lbl, l) in enumerate(zip(images, labels, label_lens)):
@@ -743,14 +743,14 @@ def SimpleWordDataset_test():
 	#--------------------
 	# Show data info.
 	data_iter = iter(train_dataloader)
-	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = data_iter.next()  # torch.Tensor, torch.Tensor, & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
 	print('Train label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	data_iter = iter(test_dataloader)
-	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = data_iter.next()  # torch.Tensor, torch.Tensor, & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
@@ -829,14 +829,14 @@ def RandomWordDataset_test():
 	#--------------------
 	# Show data info.
 	data_iter = iter(train_dataloader)
-	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = data_iter.next()  # torch.Tensor, torch.Tensor, & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
 	print('Train label: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	data_iter = iter(test_dataloader)
-	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = data_iter.next()  # torch.Tensor, torch.Tensor, & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
@@ -942,14 +942,14 @@ def FileBasedWordDataset_test():
 	#--------------------
 	# Show data info.
 	data_iter = iter(train_dataloader)
-	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = data_iter.next()  # torch.Tensor, torch.Tensor, & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
 	print('Train label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	data_iter = iter(test_dataloader)
-	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = data_iter.next()  # torch.Tensor, torch.Tensor, & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
@@ -1029,14 +1029,14 @@ def SimpleTextLineDataset_test():
 	#--------------------
 	# Show data info.
 	data_iter = iter(train_dataloader)
-	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = data_iter.next()  # torch.Tensor, torch.Tensor, & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
 	print('Train label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	data_iter = iter(test_dataloader)
-	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = data_iter.next()  # torch.Tensor, torch.Tensor, & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
@@ -1118,14 +1118,14 @@ def RandomTextLineDataset_test():
 	#--------------------
 	# Show data info.
 	data_iter = iter(train_dataloader)
-	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = data_iter.next()  # torch.Tensor, torch.Tensor, & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
 	print('Train label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	data_iter = iter(test_dataloader)
-	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = data_iter.next()  # torch.Tensor, torch.Tensor, & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
@@ -1245,14 +1245,14 @@ def TextRecognitionDataGeneratorTextLineDataset_test():
 	#--------------------
 	# Show data info.
 	data_iter = iter(train_dataloader)
-	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = data_iter.next()  # torch.Tensor, torch.Tensor, & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
 	print('Train label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	data_iter = iter(test_dataloader)
-	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = data_iter.next()  # torch.Tensor, torch.Tensor, & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
@@ -1356,14 +1356,14 @@ def FileBasedTextLineDataset_test():
 	#--------------------
 	# Show data info.
 	data_iter = iter(train_dataloader)
-	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = data_iter.next()  # torch.Tensor, torch.Tensor, & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Train image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Train label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
 	print('Train label length: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(label_lens.shape, label_lens.dtype, np.min(label_lens), np.max(label_lens)))
 
 	data_iter = iter(test_dataloader)
-	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
+	images, labels, label_lens = data_iter.next()  # torch.Tensor, torch.Tensor, & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	print('Test image: Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 	print('Test label: Shape = {}, dtype = {}.'.format(labels.shape, labels.dtype))
