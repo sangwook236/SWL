@@ -192,11 +192,12 @@ def visualize_data_with_length(dataloader, label_converter, num_data=None):
 	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	images = images.transpose(0, 2, 3, 1)
-	for idx, (img, lbl, l) in enumerate(zip(images, labels, label_lens)):
+
+	num_data = min(num_data, len(images), len(labels), len(label_lens)) if num_data else min(len(images), len(labels), len(label_lens))
+	for img, lbl, l in random.sample(list(zip(images, labels, label_lens)), num_data):
 		print('Label (len={}): {} (int), {} (str).'.format(l, [ll for ll in lbl if ll != label_converter.pad_id], label_converter.decode(lbl)))
 		cv2.imshow('Image', img)
 		cv2.waitKey(0)
-		if num_data and idx >= (num_data - 1): break
 	cv2.destroyAllWindows()
 
 def coco_text_json_loading_test():
@@ -389,7 +390,7 @@ def coco_text_pickle_loading_test():
 			flag = cv2.IMREAD_UNCHANGED
 
 		num_data_to_visualize = 20
-		for idx, dat in enumerate(data_dicts):
+		for dat in random.sample(data_dicts, min(num_data_to_visualize, len(data_dicts))):
 			img_fpath = dat['file_name']
 			#image_height, image_width = dat['height'], dat['width']
 			#image_id = dat['image_id']
@@ -412,7 +413,7 @@ def coco_text_pickle_loading_test():
 				#legibility = annotation['legibility']
 
 				left, top, right, bottom = bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3]
-				#assert left >= 0 and top >= 0 and right <= img.shape[1] and bottom <= img.shape[0], ((left, top, right, bottom), (img.shape))
+				#assert left >= 0 and top >= 0 and right <= img.shape[1] and bottom <= img.shape[0], ((left, top, right, bottom), img.shape, img_fpath)
 				left, top, right, bottom = max(math.floor(left), 0), max(math.floor(top), 0), min(math.ceil(right), img.shape[1] - 1), min(math.ceil(bottom), img.shape[0] - 1)
 				cv2.rectangle(img, (left, top), (right, bottom), (0, 0, 255), 2, cv2.LINE_8)
 				mask = np.expand_dims(np.round(np.array(list(mask[si:si + 2] for si in range(0, len(mask), 2)))).astype(np.int), axis=1)
@@ -427,7 +428,6 @@ def coco_text_pickle_loading_test():
 				"""
 			cv2.imshow('Image', img)
 			cv2.waitKey(0)
-			if num_data_to_visualize and idx >= (num_data_to_visualize - 1): break
 		cv2.destroyAllWindows()
 
 # REF [function] >> FigureDetectronDataset_test() in ${SWL_PYTHON_HOME}/test/language_processing/figure_data_test.py

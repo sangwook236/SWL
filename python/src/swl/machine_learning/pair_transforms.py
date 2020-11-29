@@ -5,15 +5,6 @@ import torchvision
 
 # REF [site] >> https://github.com/pytorch/vision/blob/master/references/detection/transforms.py
 
-def _flip_coco_person_keypoints(kps, width):
-	flip_inds = [0, 2, 1, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15]
-	flipped_data = kps[:, flip_inds]
-	flipped_data[..., 0] = width - flipped_data[..., 0]
-	# Maintain COCO convention that if visibility == 0, then x, y = 0
-	inds = flipped_data[..., 2] == 0
-	flipped_data[inds] = 0
-	return flipped_data
-
 class Compose(object):
 	def __init__(self, transforms):
 		self.transforms = transforms
@@ -24,7 +15,7 @@ class Compose(object):
 		return input, target
 
 class ToTensor(object):
-	def __call__(self, input, target):
+	def __call__(self, input, target=None):
 		input = torchvision.transforms.functional.to_tensor(input)
 		return input, target
 
@@ -32,7 +23,7 @@ class Normalize(object):
 	def __init__(self, mean, std, inplace=False):
 		self.normalize = torchvision.transforms.Normalize(mean, std, inplace)
 
-	def __call__(self, input, target):
+	def __call__(self, input, target=None):
 		input = self.normalize(input)
 		return input, target
 
@@ -40,13 +31,14 @@ class ConvertPILMode(object):
 	def __init__(self, mode='RGB'):
 		self.mode = mode
 
-	def __call__(self, input, target):
+	def __call__(self, input, target=None):
 		return input.convert(self.mode), target
 
 #--------------------------------------------------------------------
 # For object detection.
 
-class ResizeToFixedSize(object):
+# REF [site] >> https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html
+class ResizeToFixedSizeForTorchVisionDetection(object):
 	def __init__(self, height, width, warn_about_small_image=False, is_pil=True, logger=None):
 		self.height, self.width = height, width
 		self.resize_functor = self._resize_by_pil if is_pil else self._resize_by_opencv
@@ -112,12 +104,12 @@ class ResizeToFixedSize(object):
 
 		h_scale_factor, w_scale_factor = tgt_height / image_height, tgt_width / image_width
 		if 'boxes' in target:
-			target['boxes'] = target['boxes'] * [w_scale_factor, h_scale_factor, w_scale_factor, h_scale_factor]
+			target['boxes'] = target['boxes'] * torch.tensor([w_scale_factor, h_scale_factor, w_scale_factor, h_scale_factor])
 		if 'area' in target:
 			# TODO [check] >>
 			target['area'] = target['area'] * h_scale_factor * w_scale_factor
 		if 'keypoints' in target:
-			target['keypoints'] = target['keypoints'] * [w_scale_factor, h_scale_factor, 1]
+			target['keypoints'] = target['keypoints'] * torch.tensor([w_scale_factor, h_scale_factor, 1])
 
 		import PIL.Image
 		zeropadded = PIL.Image.new(image.mode, (canvas_width, canvas_height), color=0)
@@ -130,7 +122,61 @@ class ResizeToFixedSize(object):
 		#if width < self.min_width_threshold:
 		#	if self.logger: self.logger.warning('Too small image: The image width {} should be larger than or equal to {}.'.format(width, self.min_width_threshold))
 
-class RandomHorizontalFlip(object):
+# REF [site] >> https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html
+class AugmentByImgaugForTorchVisionDetection(object):
+	def __init__(self, augmenter, num_keypoints, is_pil=True):
+		self.augmenter = augmenter
+		self.num_keypoints = num_keypoints
+		self.is_pil = is_pil
+
+	def __call__(self, input, target):
+		if self.is_pil: input = np.array(input)
+		if 'boxes' in target:
+			boxes = target['boxes'].numpy()
+			#boxes = target['boxes']
+			boxes = np.expand_dims(boxes, axis=0)
+		else: boxes = None
+		if 'masks' in target:
+			"""
+			masks = target['masks'].numpy()
+			#masks = target['masks']
+			masks = np.expand_dims(masks, axis=0)
+			"""
+			raise RuntimeWarning("Unsupported key, 'masks'")
+		else: masks = None
+		if 'keypoints' in target:
+			keypoints0 = target['keypoints'].numpy()
+			#keypoints0 = target['keypoints']
+			keypoints = keypoints0.reshape(-1, keypoints0.shape[-1])
+			keypoints = np.expand_dims(keypoints[...,:2], axis=0)
+		else: keypoints = None
+
+		input, boxes, keypoints = self.augmenter(image=input, bounding_boxes=boxes, keypoints=keypoints, return_batch=False)
+		#input, boxes, keypoints = self.augmenter(image=input, bounding_boxes=boxes, keypoints=keypoints, return_batch=True)
+		#input, boxes, keypoints = self.augmenter(image=input, bounding_boxes=boxes, keypoints=keypoints, segmentation_masks=masks, return_batch=False)
+
+		if self.is_pil:
+			import PIL.Image
+			input = PIL.Image.fromarray(input)
+		if 'boxes' in target:
+			target['boxes'] = torch.tensor(np.squeeze(boxes, axis=0))
+		if 'masks' in target:
+			target['masks'] = torch.tensor(np.squeeze(masks, axis=0))
+		if 'keypoints' in target:
+			keypoints0[...,:2] = np.squeeze(keypoints, axis=0).reshape(-1, self.num_keypoints, keypoints.shape[-1])
+			target['keypoints'] = torch.tensor(keypoints0)
+		return input, target
+
+def _flip_coco_person_keypoints(kps, width):
+	flip_inds = [0, 2, 1, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15]
+	flipped_data = kps[:, flip_inds]
+	flipped_data[..., 0] = width - flipped_data[..., 0]
+	# Maintain COCO convention that if visibility == 0, then x, y = 0.
+	inds = flipped_data[..., 2] == 0
+	flipped_data[inds] = 0
+	return flipped_data
+
+class RandomHorizontalFlipForCoco(object):
 	def __init__(self, prob):
 		self.prob = prob
 
@@ -147,36 +193,4 @@ class RandomHorizontalFlip(object):
 				keypoints = target['keypoints']
 				keypoints = _flip_coco_person_keypoints(keypoints, width)
 				target['keypoints'] = keypoints
-		return input, target
-
-class AugmentByImgaug(object):
-	def __init__(self, augmenter, is_pil=True):
-		self.augmenter = augmenter
-		self.is_pil = is_pil
-
-	def __call__(self, input, target):
-		if self.is_pil: input = np.array(input)
-		if 'boxes' in target:
-			boxes = target['boxes']
-			boxes = np.expand_dims(boxes, axis=0)
-		else: boxes = None
-		if 'keypoints' in target:
-			#keypoints0 = target['keypoints'].numpy()
-			keypoints0 = target['keypoints']
-			keypoints = keypoints0.reshape(-1, keypoints0.shape[-1])
-			keypoints = np.expand_dims(keypoints[...,:2], axis=0)
-		else: keypoints = None
-
-		input, boxes, keypoints = self.augmenter(image=input, bounding_boxes=boxes, keypoints=keypoints, return_batch=False)
-		#input, boxes, keypoints = self.augmenter(images=images, bounding_boxes=boxes, keypoints=keypoints, return_batch=True)
-
-		if self.is_pil:
-			import PIL.Image
-			input = PIL.Image.fromarray(input)
-		if 'boxes' in target:
-			target['boxes'] = np.squeeze(boxes, axis=0)
-		if 'keypoints' in target:
-			# FIXME [modify] >> 4 means 4 keypoints. Actually keypoints can be a arbitrary number.
-			keypoints0[...,:2] = np.squeeze(keypoints, axis=0).reshape(-1, 4, keypoints.shape[-1])
-			target['keypoints'] = keypoints0
 		return input, target

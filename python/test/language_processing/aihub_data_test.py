@@ -5,7 +5,7 @@ import sys
 sys.path.append('../../src')
 sys.path.append('./src')
 
-import os, time
+import os, random, time
 import numpy as np
 import torch, torchvision
 import cv2
@@ -116,11 +116,12 @@ def visualize_data_with_length(dataloader, label_converter, num_data=10):
 	images, labels, label_lens = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	images = images.transpose(0, 2, 3, 1)
-	for idx, (img, lbl, l) in enumerate(zip(images, labels, label_lens)):
+
+	num_data = min(num_data, len(images), len(labels), len(label_lens)) if num_data else min(len(images), len(labels), len(label_lens))
+	for img, lbl, l in random.sample(list(zip(images, labels, label_lens)), num_data):
 		print('Label (len={}): {} (int), {} (str).'.format(l, [ll for ll in lbl if ll != label_converter.pad_id], label_converter.decode(lbl)))
 		cv2.imshow('Image', img)
 		cv2.waitKey(0)
-		if idx >= (num_data - 1): break
 	cv2.destroyAllWindows()
 
 # REF [class] >> ResizeImageToFixedSizeWithPadding in text_data_test.py.

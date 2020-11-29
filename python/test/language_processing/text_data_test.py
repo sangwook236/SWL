@@ -376,16 +376,17 @@ class MySubsetDataset(torch.utils.data.Dataset):
 	def __len__(self):
 		return len(self.subset)
 
-def visualize_data(dataloader, label_converter, num_data=10):
+def visualize_data(dataloader, label_converter, num_data=None):
 	data_iter = iter(dataloader)
 	images, labels = data_iter.next()  # torch.Tensor & torch.Tensor.
 	images, labels = images.numpy(), labels.numpy()
 	images = images.transpose(0, 2, 3, 1)
-	for idx, (img, lbl) in enumerate(zip(images, labels)):
+
+	num_data = min(num_data, len(images), len(labels)) if num_data else min(len(images), len(labels))
+	for img, lbl in random.sample(list(zip(images, labels)), num_data):
 		print('Label: {} (int), {} (str).'.format(lbl, label_converter.decode([lbl])[0]))
 		cv2.imshow('Image', img)
 		cv2.waitKey(0)
-		if idx >= (num_data - 1): break
 	cv2.destroyAllWindows()
 
 def visualize_data_with_length(dataloader, label_converter, num_data=None):
@@ -393,11 +394,12 @@ def visualize_data_with_length(dataloader, label_converter, num_data=None):
 	images, labels, label_lens = data_iter.next()  # torch.Tensor, torch.Tensor, & torch.Tensor.
 	images, labels, label_lens = images.numpy(), labels.numpy(), label_lens.numpy()
 	images = images.transpose(0, 2, 3, 1)
-	for idx, (img, lbl, l) in enumerate(zip(images, labels, label_lens)):
+
+	num_data = min(num_data, len(images), len(labels), len(label_lens)) if num_data else min(len(images), len(labels), len(label_lens))
+	for img, lbl, l in random.sample(list(zip(images, labels, label_lens)), num_data):
 		print('Label (len={}): {} (int), {} (str).'.format(l, [ll for ll in lbl if ll != label_converter.pad_id], label_converter.decode(lbl)))
 		cv2.imshow('Image', img)
 		cv2.waitKey(0)
-		if num_data and idx >= (num_data - 1): break
 	cv2.destroyAllWindows()
 
 def SimpleCharacterDataset_test():
