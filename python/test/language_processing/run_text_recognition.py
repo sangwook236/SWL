@@ -3904,8 +3904,10 @@ def create_datasets_for_training(charset, wordset, font_list, target_type, image
 
 		# File-based text lines: 55,835.
 		if is_mixed_text_used:
-			num_simple_examples, num_random_examples, num_trdg_examples = int(5e4), int(5e4), int(5e4)  # For mixed text lines.
-			train_dataset, test_dataset = create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, logger)
+			# TODO [decide] >> Which one is better?
+			#num_simple_examples, num_random_examples, num_trdg_examples = int(5e4), int(5e4), int(5e4)  # For mixed text lines.
+			num_simple_examples, num_random_examples, num_trdg_examples = int(5e4), int(5e4), int(5e4) * 2  # For mixed text lines.
+			train_dataset, test_dataset = create_mixed_textline_datasets(label_converter, wordset, chars, num_simple_examples, num_random_examples, num_trdg_examples, train_test_ratio, image_height, image_width, image_channel, image_height_before_crop, image_width_before_crop, max_label_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, is_pil, logger)
 		else:
 			textline_type = 'simple_textline'  # {'simple_textline', 'random_textline', 'trdg_textline', 'aihub_textline', 'file_based_textline'}.
 			num_train_examples, num_test_examples = int(2e5), int(2e3)  # For simple, random, and TRDG text lines.
@@ -4833,7 +4835,7 @@ def main():
 				elif False:
 					# When extracting cells in a table.
 					# Table information:
-					#	REF [file] >> ${DataAnalysis_HOME}/app/document_image_processing/recognize_table_structure.py
+					#	REF [file] >> ${DataAnalysis_HOME}/app/document_image/recognize_table_structure.py
 					table_info_filepath = '/path/to/table_info.pkl'
 					assert os.path.exists(table_info_filepath)
 

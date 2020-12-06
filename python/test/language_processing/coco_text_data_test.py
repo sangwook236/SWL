@@ -486,7 +486,6 @@ def CocoTextDataset_test():
 	])
 	test_target_transform = torch.IntTensor
 
-	#--------------------
 	print('Start creating COCO-Text datasets...')
 	start_time = time.time()
 	if True:

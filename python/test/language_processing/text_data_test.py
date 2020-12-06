@@ -445,8 +445,7 @@ def SimpleCharacterDataset_test():
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
 
-	#--------------------
-	print('Start creating datasets...')
+	print('Start creating simple char datasets...')
 	start_time = time.time()
 	chars = list(charset * num_train_examples_per_class)
 	random.shuffle(chars)
@@ -454,7 +453,7 @@ def SimpleCharacterDataset_test():
 	chars = list(charset * num_test_examples_per_class)
 	random.shuffle(chars)
 	test_dataset = text_data.SimpleCharacterDataset(label_converter, chars, image_channel, font_list, font_size_interval, color_functor=color_functor, transform=test_transform)
-	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+	print('End creating simple char datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
 	#--------------------
@@ -528,8 +527,7 @@ def NoisyCharacterDataset_test():
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
 
-	#--------------------
-	print('Start creating datasets...')
+	print('Start creating noisy char datasets...')
 	start_time = time.time()
 	chars = list(charset * num_train_examples_per_class)
 	random.shuffle(chars)
@@ -537,7 +535,7 @@ def NoisyCharacterDataset_test():
 	chars = list(charset * num_test_examples_per_class)
 	random.shuffle(chars)
 	test_dataset = text_data.NoisyCharacterDataset(label_converter, chars, image_channel, char_clipping_ratio_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform)
-	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+	print('End creating noisy char datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
 	#--------------------
@@ -611,8 +609,7 @@ def FileBasedCharacterDataset_test():
 		#torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 	])
 
-	#--------------------
-	print('Start creating datasets...')
+	print('Start creating file-based char datasets...')
 	start_time = time.time()
 	datasets = list()
 	if True:
@@ -649,7 +646,7 @@ def FileBasedCharacterDataset_test():
 	train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
 	train_dataset = MySubsetDataset(train_subset, transform=train_transform)
 	test_dataset = MySubsetDataset(test_subset, transform=test_transform)
-	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+	print('End creating file-based char datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
 	#--------------------
@@ -726,12 +723,11 @@ def SimpleWordDataset_test():
 	])
 	test_target_transform = torch.IntTensor
 
-	#--------------------
-	print('Start creating datasets...')
+	print('Start creating simple word datasets...')
 	start_time = time.time()
 	train_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_train_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
 	test_dataset = text_data.SimpleWordDataset(label_converter, wordset, num_test_examples, image_channel, max_word_len, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
-	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+	print('End creating simple word datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
 	#--------------------
@@ -811,13 +807,12 @@ def RandomWordDataset_test():
 	])
 	test_target_transform = torch.IntTensor
 
-	#--------------------
-	print('Start creating datasets...')
+	print('Start creating random word datasets...')
 	start_time = time.time()
 	chars = charset  # Can make the number of each character different.
 	train_dataset = text_data.RandomWordDataset(label_converter, chars, num_train_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=train_transform, target_transform=train_target_transform)
 	test_dataset = text_data.RandomWordDataset(label_converter, chars, num_test_examples, image_channel, max_word_len, word_len_interval, font_list, font_size_interval, color_functor=color_functor, transform=test_transform, target_transform=test_target_transform)
-	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+	print('End creating random word datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
 	#--------------------
@@ -897,8 +892,7 @@ def FileBasedWordDataset_test():
 	])
 	test_target_transform = torch.IntTensor
 
-	#--------------------
-	print('Start creating datasets...')
+	print('Start creating file-based word datasets...')
 	start_time = time.time()
 	datasets = list()
 	if True:
@@ -930,7 +924,7 @@ def FileBasedWordDataset_test():
 	train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
 	train_dataset = MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform)
 	test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
-	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+	print('End creating file-based word datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
 	#--------------------
@@ -1012,12 +1006,11 @@ def SimpleTextLineDataset_test():
 	])
 	test_target_transform = torch.IntTensor
 
-	#--------------------
-	print('Start creating datasets...')
+	print('Start creating simple text line datasets...')
 	start_time = time.time()
 	train_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_train_examples, image_channel, max_textline_len, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, transform=train_transform, target_transform=train_target_transform)
 	test_dataset = text_data.SimpleTextLineDataset(label_converter, wordset, num_test_examples, image_channel, max_textline_len, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, transform=test_transform, target_transform=test_target_transform)
-	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+	print('End creating simple text line datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
 	#--------------------
@@ -1100,13 +1093,12 @@ def RandomTextLineDataset_test():
 	])
 	test_target_transform = torch.IntTensor
 
-	#--------------------
-	print('Start creating datasets...')
+	print('Start creating random text line datasets...')
 	start_time = time.time()
 	charset_without_space = charset.replace(' ', '')  # Remove the blank space. Can make the number of each character different.
 	train_dataset = text_data.RandomTextLineDataset(label_converter, charset_without_space, num_train_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, transform=train_transform, target_transform=train_target_transform)
 	test_dataset = text_data.RandomTextLineDataset(label_converter, charset_without_space, num_test_examples, image_channel, max_textline_len, word_len_interval, word_count_interval, space_count_interval, char_space_ratio_interval, font_list, font_size_interval, color_functor, transform=test_transform, target_transform=test_target_transform)
-	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+	print('End creating random text line datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
 	#--------------------
@@ -1216,8 +1208,7 @@ def TextRecognitionDataGeneratorTextLineDataset_test():
 	])
 	test_target_transform = torch.IntTensor
 
-	#--------------------
-	print('Start creating datasets...')
+	print('Start creating TRDG text line datasets...')
 	start_time = time.time()
 	train_datasets, test_datasets = list(), list()
 	# distorsion_type = 0 (no distortion), 1 (sin), 2 (cos), 3 (random).
@@ -1233,7 +1224,7 @@ def TextRecognitionDataGeneratorTextLineDataset_test():
 				test_datasets.append(text_data.TextRecognitionDataGeneratorTextLineDataset(label_converter, lang, num_test_examples // divisor, image_channel, max_textline_len, font_filepaths, font_size, num_words, is_variable_length, is_randomly_generated, transform=test_transform, target_transform=test_target_transform, **generator_kwargs))
 	train_dataset = torch.utils.data.ConcatDataset(train_datasets)
 	test_dataset = torch.utils.data.ConcatDataset(test_datasets)
-	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+	print('End creating TRDG text line datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
 	#--------------------
@@ -1313,8 +1304,7 @@ def FileBasedTextLineDataset_test():
 	])
 	test_target_transform = torch.IntTensor
 
-	#--------------------
-	print('Start creating datasets...')
+	print('Start creating file-based text line datasets...')
 	start_time = time.time()
 	datasets = list()
 	if True:
@@ -1344,7 +1334,7 @@ def FileBasedTextLineDataset_test():
 	train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
 	train_dataset = MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform)
 	test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
-	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+	print('End creating file-based text line datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
 	#--------------------

@@ -248,8 +248,7 @@ def AiHubPrintedTextDataset_test():
 	])
 	test_target_transform = ToIntTensor()
 
-	#--------------------
-	print('Start creating datasets...')
+	print('Start creating AI-Hub printed text datasets...')
 	start_time = time.time()
 	dataset = aihub_data.AiHubPrintedTextDataset(label_converter, aihub_data_json_filepath, aihub_data_dir_path, image_types_to_load, image_height, image_width, image_channel, max_label_len, is_preloaded_image_used)
 
@@ -259,7 +258,7 @@ def AiHubPrintedTextDataset_test():
 	train_subset, test_subset = torch.utils.data.random_split(dataset, [num_train_examples, num_examples - num_train_examples])
 	train_dataset = MySubsetDataset(train_subset, transform=train_transform, target_transform=train_target_transform)
 	test_dataset = MySubsetDataset(test_subset, transform=test_transform, target_transform=test_target_transform)
-	print('End creating datasets: {} secs.'.format(time.time() - start_time))
+	print('End creating AI-Hub printed text datasets: {} secs.'.format(time.time() - start_time))
 	print('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
 	#--------------------

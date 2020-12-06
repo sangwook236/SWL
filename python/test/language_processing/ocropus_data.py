@@ -1,9 +1,9 @@
-import os, random, functools, time, glob
+import time, glob
 import numpy as np
 import cv2
 #import sklearn
 #import swl.machine_learning.util as swl_ml_util
-import hangeul_util as hg_util
+#import hangeul_util as hg_util
 import text_line_data
 
 # REF [site] >> https://github.com/tmbdev/ocropy

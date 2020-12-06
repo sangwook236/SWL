@@ -1,5 +1,5 @@
 import os
-import numpy as np
+#import numpy as np
 import torch
 from PIL import Image
 
@@ -7,7 +7,7 @@ from PIL import Image
 
 # REF [site] >> https://bgshih.github.io/cocotext/
 #	images = 53686, annotations = 201126.
-# REF [class] >> PubLayNetDetectronDataset in ${DataAnalysis_HOME}/app/document_image_processing/pubtabnet_data.py
+# REF [class] >> PubLayNetDetectronDataset in ${DataAnalysis_HOME}/app/document_image/pubtabnet_data.py
 """
 class CocoTextDataset(torch.utils.data.Dataset):
 	def __init__(self, tag, pickle_filepath, data_dir_path, label_converter, image_channel, max_text_len, transform=None, target_transform=None):
