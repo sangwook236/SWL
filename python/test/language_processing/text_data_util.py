@@ -49,7 +49,7 @@ def load_data_from_image_label_info(label_converter, image_label_info_filepath, 
 			print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
 			continue
 		if label_str != label_converter.decode(label_int):
-			print('[SWL] Error: Mismatched original and decoded labels: {} != {}.'.format(label_str, label_converter.decode(label_int)))
+			print('[SWL] Warning: Mismatched original and decoded labels: {} != {}.'.format(label_str, label_converter.decode(label_int)))
 			# TODO [check] >> I think such data should be used to deal with unknown characters (as negative data) in real data.
 			#continue
 
@@ -111,7 +111,7 @@ def load_data_from_image_and_label_files(label_converter, image_filepaths, label
 			print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
 			continue
 		if label_str != label_converter.decode(label_int):
-			print('[SWL] Error: Mismatched original and decoded labels: {} != {}.'.format(label_str, label_converter.decode(label_int)))
+			print('[SWL] Warning: Mismatched original and decoded labels: {} != {}.'.format(label_str, label_converter.decode(label_int)))
 			# TODO [check] >> I think such data should be used to deal with unknown characters (as negative data) in real data.
 			#continue
 

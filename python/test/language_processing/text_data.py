@@ -69,7 +69,7 @@ class FileBasedTextDatasetBase(TextDatasetBase):
 				print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
 				continue
 			if label_str != self.label_converter.decode(label_int):
-				print('[SWL] Error: Mismatched original and decoded labels: {} != {}.'.format(label_str, self.label_converter.decode(label_int)))
+				print('[SWL] Warning: Mismatched original and decoded labels: {} != {}.'.format(label_str, self.label_converter.decode(label_int)))
 				# TODO [check] >> I think such data should be used to deal with unknown characters (as negative data) in real data.
 				#continue
 
@@ -131,7 +131,7 @@ class FileBasedTextDatasetBase(TextDatasetBase):
 				print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
 				continue
 			if label_str != self.label_converter.decode(label_int):
-				print('[SWL] Error: Mismatched original and decoded labels: {} != {}.'.format(label_str, self.label_converter.decode(label_int)))
+				print('[SWL] Warning: Mismatched original and decoded labels: {} != {}.'.format(label_str, self.label_converter.decode(label_int)))
 				# TODO [check] >> I think such data should be used to deal with unknown characters (as negative data) in real data.
 				#continue
 
