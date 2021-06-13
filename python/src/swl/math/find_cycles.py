@@ -1,9 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: UTF-8 -*-
-
-import time
-
-# Counts cycles of length N in an undirected and connected graph.
+# Counts cycles of length N (N-cycles) in a connected undirected graph graph.
 #	REF [site] >> https://www.geeksforgeeks.org/cycles-of-length-n-in-an-undirected-and-connected-graph/
 def count_cycles(graph, n):
 	# Number of vertices.
@@ -48,7 +43,7 @@ def count_cycles(graph, n):
 	
 	return count // 2
 
-# Finds cycles of length N in an undirected and connected graph.
+# Finds cycles of length N (N-cycles) in a connected undirected graph graph.
 #	REF [site] >> https://www.geeksforgeeks.org/cycles-of-length-n-in-an-undirected-and-connected-graph/
 def find_cycles(graph, n):
 	# Number of vertices.
@@ -95,9 +90,9 @@ def find_cycles(graph, n):
 	
 	return cycles
 
-# Finds cycles of length N in an undirected and connected graph.
+# Finds cycles of length N (N-cycles) in a connected undirected graph with collinear vertices.
 #	REF [site] >> https://www.geeksforgeeks.org/cycles-of-length-n-in-an-undirected-and-connected-graph/
-def find_cycles_in_graph_with_collinear_vertices(graph, n, collinear_vertex_sets):
+def find_cycles_in_graph_with_collinear_vertices(graph, collinear_vertex_sets, n):
 	# Number of vertices.
 	V = len(graph)
 
@@ -113,7 +108,7 @@ def find_cycles_in_graph_with_collinear_vertices(graph, n, collinear_vertex_sets
 			# Check if vertex vert can end with vertex start.
 			if graph[vert][start] == 1:
 				if len(collinear_flags) > n:  # Collinear vertices exist in the cycle.
-					new_cycle = list(vtx for flag, vtx in zip(collinear_flags[1:], curr_path) if not flag) + [curr_path[-1]]
+					new_cycle = list(vtx for flag, vtx in zip(collinear_flags[1:], curr_path) if not flag) + [curr_path[-1]]  # Removes collinear vertices.
 					if [new_cycle[0]] + new_cycle[1:][::-1] not in cycles:  # Check if the reversed current path exists in the set of cycles or not.
 						cycles.append(new_cycle)
 				else:
@@ -129,12 +124,15 @@ def find_cycles_in_graph_with_collinear_vertices(graph, n, collinear_vertex_sets
 				if len(curr_path) == 3:
 					vertex_set = set(curr_path)
 					for collinear_vertex_set in collinear_vertex_sets:
-						if vertex_set.issubset(collinear_vertex_set):
+						if vertex_set.issubset(collinear_vertex_set):  # It is sensitive to the order of vertices in curr_path.
 							is_collinear = True
 							break
 				elif len(curr_path) > 3:
-					for vertex_set in [set(curr_path[-3:]), set(curr_path[-2:] + [curr_path[0]])]:
-						for collinear_vertex_set in collinear_vertex_sets:
+					vertex_sets = [set(curr_path[-3:]), set(curr_path[-2:] + [curr_path[0]]), set([curr_path[-1]] + curr_path[:2])]
+					for collinear_vertex_set in collinear_vertex_sets:
+						for vertex_set in vertex_sets:
+					#for vertex_set in [set(curr_path[-3:]), set(curr_path[-2:] + [curr_path[0]]), set([curr_path[-1]] + curr_path[:2])]:
+					#	for collinear_vertex_set in collinear_vertex_sets:
 							if vertex_set.issubset(collinear_vertex_set):  # It is sensitive to the order of vertices in curr_path.
 						#for collinear_vertex_set in collinear_vertex_sets:
 						#	if len(collinear_vertex_set.intersection(vertex_set)) > 2:  # Error.
@@ -164,114 +162,3 @@ def find_cycles_in_graph_with_collinear_vertices(graph, n, collinear_vertex_sets
 		marked[i] = True
 	
 	return cycles
-
-def main():
-	# NOTE [info] >> Find n-cycles in a graph ==> Polygon and quadrilateral detection.
-	#	(1) Find polygons from a set of line segments.
-	#		Find cycles in a graph.
-	#			Build graph with line segment ends and intersection points as vertices and line segments as edges, then find cycles using DFS.
-	#			https://stackoverflow.com/questions/41245408/how-to-find-polygons-in-a-given-set-of-points-and-edges
-	#			"Finding and Counting Given Length Cycles", Algorithmica 1997.
-	#			https://www.geeksforgeeks.org/cycles-of-length-n-in-an-undirected-and-connected-graph/
-	#	(2) Finds polygons from a set of infinite lines (a simplified version of (1)).
-	#		Find all possible combinations of adjacent atomic polygons constructed by the infinite lines
-	#	(3) Find quadilaterals from a set of line segments (a simplified version of (1)).
-	#		Find cycles with four edges (4-cycles) in a graph.
-	#	(4) Find quadilaterals from a set of infinite lines (a simplified version of (2) & (3)).
-	#		https://stackoverflow.com/questions/45248205/finding-all-quadrilaterals-in-a-set-of-intersections
-
-	if False:
-		# Adjacency matrix.
-		graph = [
-			[0, 1, 0, 1, 0],
-			[1, 0, 1, 0, 1],
-			[0, 1, 0, 1, 0],
-			[1, 0, 1, 0, 1],
-			[0, 1, 0, 1, 0]
-		]
-		collinear_vertex_sets = None
-	elif False:
-		# Adjacency matrix.
-		graph = [
-			[0, 1, 0, 1, 0, 0],
-			[1, 0, 1, 0, 1, 1],
-			[0, 1, 0, 1, 0, 0],
-			[1, 0, 1, 0, 1, 1],
-			[0, 1, 0, 1, 0, 0],
-			[0, 1, 0, 1, 0, 0]
-		]
-		collinear_vertex_sets = [
-			{0, 1, 5}
-		]
-	elif False:
-		# Adjacency matrix.
-		graph = [
-			[0, 1, 0, 1, 0, 0, 0],
-			[1, 0, 1, 0, 1, 1, 0],
-			[0, 1, 0, 1, 0, 0, 0],
-			[1, 0, 1, 0, 1, 1, 1],
-			[0, 1, 0, 1, 0, 0, 0],
-			[0, 1, 0, 1, 0, 0, 1],
-			[0, 0, 0, 1, 0, 1, 0]
-		]
-		collinear_vertex_sets = [
-			{0, 1, 5},
-			{3, 4, 6}
-		]
-	elif False:
-		# Adjacency matrix.
-		graph = [
-			[0, 1, 0, 1, 0, 0, 0],
-			[1, 0, 1, 0, 1, 1, 1],
-			[0, 1, 0, 1, 0, 0, 0],
-			[1, 0, 1, 0, 1, 0, 1],
-			[0, 1, 0, 1, 0, 0, 0],
-			[0, 1, 0, 0, 0, 0, 1],
-			[0, 1, 0, 1, 0, 1, 0]
-		]
-		collinear_vertex_sets = [
-			{0, 1, 5},
-			{3, 4, 6}
-		]
-	elif True:
-		# Adjacency matrix.
-		graph = [
-			[0, 1, 0, 1, 0, 0, 0, 0],
-			[1, 0, 1, 0, 1, 1, 1, 0],
-			[0, 1, 0, 1, 0, 0, 0, 0],
-			[1, 0, 1, 0, 1, 0, 1, 0],
-			[0, 1, 0, 1, 0, 0, 0, 0],
-			[0, 1, 0, 0, 0, 0, 1, 1],
-			[0, 1, 0, 1, 0, 1, 0, 1],
-			[0, 0, 0, 0, 0, 1, 1, 0]
-		]
-		collinear_vertex_sets = [
-			{0, 1, 5},
-			{3, 4, 6, 7}
-		]
-
-	n = 4  # n-cycle.
-
-	print('Start counting n-cycles in a graph...')
-	start_time = time.time()
-	num_cycles = count_cycles(graph, n)
-	print('End counting n-cycles in a graph: {} secs.'.format(time.time() - start_time))
-	print("#cycles of length {} = {}.".format(n, num_cycles))
-
-	print('Start finding n-cycles in a graph...')
-	start_time = time.time()
-	cycles = find_cycles(graph, n)
-	print('End finding n-cycles in a graph: {} secs.'.format(time.time() - start_time))
-	print("Cycles of length {} = {}.".format(n, cycles))
-
-	if collinear_vertex_sets:
-		print('Start finding n-cycles in a graph with collinear vertices...')
-		start_time = time.time()
-		cycles = find_cycles_in_graph_with_collinear_vertices(graph, n, collinear_vertex_sets)
-		print('End finding n-cycles in a graph with collinear vertices: {} secs.'.format(time.time() - start_time))
-		print("Cycles of length {} = {}.".format(n, cycles))
-
-#--------------------------------------------------------------------
-
-if '__main__' == __name__:
-	main()
