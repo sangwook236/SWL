@@ -1,7 +1,7 @@
 import math
 
 # REF [site] >> https://www.geeksforgeeks.org/program-for-point-of-intersection-of-two-lines/
-def intersection_of_two_line_segments(pt1, pt2, pt3, pt4, eps=None):
+def intersection_of_two_line_segments(pt1, pt2, pt3, pt4, tol=None):
 	"""
 	line segment 1: pt1 -- pt2.
 	line segment 2: pt3 -- pt4.
@@ -27,14 +27,21 @@ def intersection_of_two_line_segments(pt1, pt2, pt3, pt4, eps=None):
 		x = (b2 * c1 - b1 * c2) / determinant
 		y = (a1 * c2 - a2 * c1) / determinant
 
-		if eps:
-			is_valid =  min(pt1[0], pt2[0]) - eps <= x <= max(pt1[0], pt2[0]) + eps and \
-				min(pt1[1], pt2[1]) - eps <= y <= max(pt1[1], pt2[1]) + eps and \
-				min(pt3[0], pt4[0]) - eps <= x <= max(pt3[0], pt4[0]) + eps and \
-				min(pt3[1], pt4[1]) - eps <= y <= max(pt3[1], pt4[1]) + eps
+		if tol:
+			is_valid =  min(pt1[0], pt2[0]) - tol <= x <= max(pt1[0], pt2[0]) + tol and \
+				min(pt1[1], pt2[1]) - tol <= y <= max(pt1[1], pt2[1]) + tol and \
+				min(pt3[0], pt4[0]) - tol <= x <= max(pt3[0], pt4[0]) + tol and \
+				min(pt3[1], pt4[1]) - tol <= y <= max(pt3[1], pt4[1]) + tol
 		else:
 			is_valid =  min(pt1[0], pt2[0]) <= x <= max(pt1[0], pt2[0]) and \
 				min(pt1[1], pt2[1]) <= y <= max(pt1[1], pt2[1]) and \
 				min(pt3[0], pt4[0]) <= x <= max(pt3[0], pt4[0]) and \
 				min(pt3[1], pt4[1]) <= y <= max(pt3[1], pt4[1])
 		return (x, y), is_valid
+
+def sort_points_along_vector(points, u):
+	def inner_product(u, v):
+		"""u * v."""
+		return sum(ui * vi for ui, vi in zip(u, v))
+
+	return sorted(points, key=lambda pt: inner_product((p2 - p1 for p1, p2 in zip(points[0], pt)), u))

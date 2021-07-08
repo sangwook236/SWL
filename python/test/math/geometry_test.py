@@ -40,8 +40,55 @@ def intersection_of_two_line_segments_test():
 	else:
 		print("No valid intersection point, {}.".format(int_pt))
 
+def sort_points_along_vector_test():
+	from swl.math.geometry import sort_points_along_vector
+
+	points = [(0, 0), (1, 1), (-1, 3), (-11, 0), (5, 3), (3, 5), (0, 13), (-3, 20), (4, 4), (-3, -2), (15, 0), (100, 1), (-7, -7), (-2, 0.1), (0, -2), (2, -50), (23, -23), (-3.7, 3.7)]
+	#points = [(4, 5), (1, 1), (-1, 3), (-11, 0), (5, 3), (3, 5), (0, 13), (-3, 20), (4, 4), (-3, -2), (15, 0), (100, 1), (-7, -7), (-2, 0.1), (0, -2), (2, -50), (23, -23), (-3.7, 3.7)]
+
+	u = (1, 0)
+	points_sorted = sort_points_along_vector(points, u)
+	print('Points sorted along {} = {}.'.format(u, points_sorted))
+
+	u = (123, 0)
+	points_sorted = sort_points_along_vector(points, u)
+	print('Points sorted along {} = {}.'.format(u, points_sorted))
+
+	u = (-1, 0)
+	points_sorted = sort_points_along_vector(points, u)
+	print('Points sorted along {} = {}.'.format(u, points_sorted))
+
+	u = (0, 1)
+	points_sorted = sort_points_along_vector(points, u)
+	print('Points sorted along {} = {}.'.format(u, points_sorted))
+
+	u = (0, 123)
+	points_sorted = sort_points_along_vector(points, u)
+	print('Points sorted along {} = {}.'.format(u, points_sorted))
+
+	u = (0, -1)
+	points_sorted = sort_points_along_vector(points, u)
+	print('Points sorted along {} = {}.'.format(u, points_sorted))
+
+	u = (1, 1)
+	points_sorted = sort_points_along_vector(points, u)
+	print('Points sorted along {} = {}.'.format(u, points_sorted))
+
+	u = (-1, -1)
+	points_sorted = sort_points_along_vector(points, u)
+	print('Points sorted along {} = {}.'.format(u, points_sorted))
+
+	u = (1, -1)
+	points_sorted = sort_points_along_vector(points, u)
+	print('Points sorted along {} = {}.'.format(u, points_sorted))
+
+	u = (-1, 1)
+	points_sorted = sort_points_along_vector(points, u)
+	print('Points sorted along {} = {}.'.format(u, points_sorted))
+
 def main():
-	intersection_of_two_line_segments_test()
+	#intersection_of_two_line_segments_test()
+	sort_points_along_vector_test()
 
 #--------------------------------------------------------------------
 
