@@ -17,22 +17,22 @@
 
 import setuptools
 
-with open('README.md', 'r') as fh:
-	long_description = fh.read()
+with open('README.md', 'r') as fd:
+	long_description = fd.read()
 
 setuptools.setup(
 	name='swl_python',
 	version='1.1.0',
-	author='Example Author',
+	author='Sang-Wook Lee',
 	author_email='sangwook236@gmail.com',
-	description="Sang-Wook's Library for Python",
+	description="Sang-Wook's Library for Python (SWL-Python)",
 	long_description=long_description,
 	long_description_content_type='text/markdown',
 	url='https://github.com/sangwook236/SWL',
 	packages=setuptools.find_packages(),
 	classifiers=(
 		'Programming Language :: Python :: 3',
-		'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
+		'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
 		'Operating System :: OS Independent',
 	),
 )
