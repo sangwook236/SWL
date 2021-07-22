@@ -327,3 +327,11 @@ def shuffle_data_in_npy_files(input_filepaths, output_filepaths, num_files_loade
 					start_file_index += num_files_loaded_at_a_time
 		input_filepaths, output_filepaths, _ = load_filepaths_from_npy_file_info(os.path.join(save_dir_path, shuffle_info_csv_filename))
 		input_filepaths, output_filepaths = np.array(input_filepaths), np.array(output_filepaths)
+
+#--------------------------------------------------------------------
+
+def convert_currency_to_float(currency, currency_symbols):
+	import string, locale
+	#currency = currency.strip(currency_symbols + string.whitespace)
+	currency = currency.strip(currency_symbols + string.whitespace).replace(' ', '')
+	return locale.atof(currency)

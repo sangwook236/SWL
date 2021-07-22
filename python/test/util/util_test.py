@@ -152,6 +152,45 @@ def load_data_from_npz_file_test():
 		except ValueError as ex:
 			print('Failed to loaded an npz file:', npz_filepath)
 
+def convert_currency_to_float_test():
+	import locale
+
+	try:
+		locale.setlocale(locale.LC_ALL, 'ko_KR.UTF8')
+		conv = locale.localeconv()
+		currency_symbols = conv['currency_symbol']
+		currency = '₩3,285,192'
+		swl_util.convert_currency_to_float(currency, currency_symbols)
+	except locale.Error as ex:
+		print('Locale error, {}: {}.'.format(currency, ex))
+	except ValueError as ex:
+		print('ValueError, {}: {}.'.format(currency, ex))
+
+	try:
+		locale.setlocale(locale.LC_ALL, 'en_US.UTF8')
+		conv = locale.localeconv()
+		currency_symbols = conv['currency_symbol']
+		currency = '$6,150,593.22'
+		swl_util.convert_currency_to_float(currency, currency_symbols)
+	except locale.Error as ex:
+		print('Locale error, {}: {}.'.format(currency, ex))
+	except ValueError as ex:
+		print('ValueError, {}: {}.'.format(currency, ex))
+
+	try:
+		locale.setlocale(locale.LC_ALL, 'fr_FR.UTF8')
+		conv = locale.localeconv()
+		currency_symbols = conv['currency_symbol']
+		currency = '17,30 €'
+		swl_util.convert_currency_to_float(currency, currency_symbols)
+	except locale.Error as ex:
+		print('Locale error, {}: {}.'.format(currency, ex))
+	except ValueError as ex:
+		print('ValueError, {}: {}.'.format(currency, ex))
+
+	# Sets the locale for all categories to the user's default setting.
+	locale.setlocale(locale.LC_ALL, '')
+
 def main():
 	#download_test()
 
@@ -160,6 +199,8 @@ def main():
 	#shuffle_data_in_npy_files_test()
 
 	#load_data_from_npz_file_test()
+
+	convert_currency_to_float_test()
 
 #--------------------------------------------------------------------
 
