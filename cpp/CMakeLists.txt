@@ -1,5 +1,5 @@
-project(SWL_CPP)
 cmake_minimum_required(VERSION 3.4)
+project(SWL_CPP VERSION 1.0.0)
 
 ##
 ## Add path for custom modules.
