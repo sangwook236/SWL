@@ -144,10 +144,8 @@ set(USE_EIGEN ON)
 
 #option(USE_GSL "GNU Scientific Library (GSL)" ON)
 set(USE_GSL ON)
-#option(USE_OPENCV "Open Source Computer Vision (OpenCV)" OFF)
-#set(USE_OPENCV OFF)
-#option(USE_OPENCV2 "Open Source Computer Vision (OpenCV) ver 2" ON)
-set(USE_OPENCV2 ON)
+option(USE_OPENCV "Open Source Computer Vision (OpenCV)" OFF)
+set(USE_OPENCV ON)
 
 #option(USE_FFTW "Fastest Fourier Transform in the West (FFTW)" OFF)
 set(USE_FFTW OFF)
@@ -291,20 +289,14 @@ if(USE_GSL)
 	include_directories(${GSL_INCLUDE_DIRS})
 endif(USE_GSL)
 if(USE_OPENCV)
-	# ${SWL_CPP_HOME}/cmake/FindOpenCVcmake
-	# Variables: OpenCV_FOUND, OpenCV_VERSION_MAJOR, OpenCV_VERSION_MINOR, OpenCV_VERSION_PATCH, OpenCV_INCLUDE_DIRS, OpenCV_LIBS, OpenCV_LIB_DIR
-	find_package(OpenCV REQUIRED)
+	# Hints: OpenCV_DIR
+	#set(OpenCV_DIR "/usr/lib/x86_64-linux-gnu/cmake/opencv4")
+	# Variables: OpenCV_FOUND, OpenCV_INCLUDE_DIRS, OpenCV_LIBRARIES
+	find_package(OpenCV 4.2.0 REQUIRED)
 	include_directories(${OpenCV_INCLUDE_DIRS})
-endif(USE_OPENCV)
-if(USE_OPENCV2)
-	# ${SWL_CPP_HOME}/cmake/FindOpenCV2cmake
-	# Hints: OpenCV2_ROOT_DIR
-	# Variables: OpenCV2_FOUND, OpenCV2_INCLUDE_DIRS, OpenCV2_LIBRARIES
-	find_package(OpenCV2 3.2.0 REQUIRED)
-	include_directories(${OpenCV2_INCLUDE_DIRS})
 
-#	message(STATUS "[-- SWL-C++ --] OpenCV: ${OpenCV2_LIBRARIES}")
-endif(USE_OPENCV2)
+#	message(STATUS "[-- SWL-C++ --] OpenCV: ${OpenCV_LIBRARIES}")
+endif(USE_OPENCV)
 
 if(USE_FFTW)
 	# ${SWL_CPP_HOME}/cmake/FindFFTW.cmake

@@ -7,7 +7,7 @@ set(LIBS
 	swl_machine_vision
 	swl_machine_learning
 	swl_rnd_util
-	${OpenCV2_LIBRARIES}
+	${OpenCV_LIBRARIES}
 )
 
 add_executable(${TARGET} ${SRCS})

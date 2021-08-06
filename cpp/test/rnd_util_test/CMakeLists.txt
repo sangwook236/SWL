@@ -33,7 +33,7 @@ set(LIBS
 	swl_rnd_util
 	swl_math
 	swl_base
-	${OpenCV2_LIBRARIES}
+	${OpenCV_LIBRARIES}
 	${GSL_LIBRARIES}
 	${LAPACK_LIBRARIES}
 	${Boost_TIMER_LIBRARY}

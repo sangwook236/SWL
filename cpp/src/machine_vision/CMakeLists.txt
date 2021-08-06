@@ -15,7 +15,7 @@ set(LIBS
 	swl_rnd_util
 	swl_math
 	swl_base
-	${OpenCV2_LIBRARIES}
+	${OpenCV_LIBRARIES}
 )
 
 add_definitions(-DSWL_MACHINE_VISION_EXPORT;)

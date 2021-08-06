@@ -9,7 +9,7 @@ set(SRCS
 set(LIBS
 	swl_rnd_util
 	swl_base
-	${OpenCV2_LIBRARIES}
+	${OpenCV_LIBRARIES}
 )
 
 add_definitions(-DSWL_PATTERN_RECOGNITION_EXPORT)

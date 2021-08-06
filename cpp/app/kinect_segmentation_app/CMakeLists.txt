@@ -34,7 +34,7 @@ set(LIBS
 	external-library-maxflow-ibfs
 	external-library-qpbo
 	external-library-trws
-	${OpenCV2_LIBRARIES}
+	${OpenCV_LIBRARIES}
 	${CUDA_LIBRARIES}
 )
 

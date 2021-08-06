@@ -10,7 +10,7 @@ set(LIBS
 	swl_pattern_recognition
 	swl_rnd_util
 	swl_base
-	${OpenCV2_LIBRARIES}
+	${OpenCV_LIBRARIES}
 )
 
 add_executable(${TARGET} ${SRCS})
