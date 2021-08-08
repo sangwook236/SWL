@@ -1,10 +1,22 @@
-cmake_minimum_required(VERSION 3.4)
+# Usage:
+#	Configure and generate:
+#		mkdir build
+#		cd build
+#		cmake -DCMAKE_PREFIX_PATH=/path/to/lib ..
+#	Build:
+#		cd ..
+#		cmake --build ./build --config Release --target all -j 14 --
+#	Run:
+#		./bin/<executable>
+
+cmake_minimum_required(VERSION 3.4 FATAL_ERROR)
 project(SWL_CPP VERSION 1.0.0)
 
 ##
 ## Add path for custom modules.
 ##
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules")
+#set(CMAKE_PREFIX_PATH "/path/to/lib")
 
 ##
 ## Set package information.
