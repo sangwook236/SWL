@@ -8,7 +8,8 @@ import pytorch_lightning as pl
 class ByolModule(pl.LightningModule):
 	def __init__(self, model, projector, predictor, moving_average_decay, use_momentum, augmenter1, augmenter2, is_model_initialized=False, is_all_model_params_optimized=True, logger=None):
 		super().__init__()
-		self.save_hyperparameters()
+		#self.save_hyperparameters()  # UserWarning: Attribute 'model' is an instance of 'nn.Module' and is already saved during checkpointing.
+		self.save_hyperparameters(ignore=['model', 'projector', 'predictor' , 'augmenter1', 'augmenter2'])
 
 		self.online_encoder = torch.nn.Sequential(model, projector)
 		self.online_predictor = predictor

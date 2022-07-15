@@ -16,9 +16,9 @@ def get_logger(name, log_level=None, log_dir_path=None, is_rotating=True):
 		file_handler = logging.FileHandler(log_filepath)
 	stream_handler = logging.StreamHandler()
 
-	#formatter = logging.Formatter("[%(levelname)s][%(process)d][%(filename)s:%(lineno)s][%(asctime)s] [iNisys] %(message)s")
-	formatter = logging.Formatter("[%(levelname)s][%(process)d][%(filename)s:%(lineno)s][%(asctime)s] [iNisys] %(message)s", datefmt="%Y-%m-%dT%H:%M:%S")
-	#formatter = logging.Formatter("[%(levelname)s][%(process)d][%(asctime)s] [iNisys] %(message)s")
+	#formatter = logging.Formatter("[%(levelname)s][%(process)d][%(filename)s:%(lineno)s][%(asctime)s] [SWL] %(message)s")
+	formatter = logging.Formatter("[%(levelname)s][%(process)d][%(filename)s:%(lineno)s][%(asctime)s] [SWL] %(message)s", datefmt="%Y-%m-%dT%H:%M:%S")
+	#formatter = logging.Formatter("[%(levelname)s][%(process)d][%(asctime)s] [SWL] %(message)s")
 	file_handler.setFormatter(formatter)
 	stream_handler.setFormatter(formatter)
 
@@ -153,22 +153,27 @@ def create_imagenet_datasets(logger=None):
 	train_transform = torchvision.transforms.Compose([
 		#torchvision.transforms.Resize(256),
 		#torchvision.transforms.CenterCrop(224),
-		torchvision.transforms.RandomSizedCrop(224),
+		torchvision.transforms.RandomResizedCrop(224),
 		torchvision.transforms.RandomHorizontalFlip(),
 		torchvision.transforms.ToTensor(),
 		torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 	])
 	test_transform = torchvision.transforms.Compose([
-		torchvision.transforms.Scale(256),
+		torchvision.transforms.Resize(256),
 		torchvision.transforms.CenterCrop(224),
 		torchvision.transforms.ToTensor(),
 		torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 	])
 
+	if 'posix' == os.name:
+		imagenet_dir_path = '/home/sangwook/work/dataset/imagenet'
+	else:
+		imagenet_dir_path = 'D:/work/dataset/imagenet'
+
 	if logger: logger.info('Creating datasets...')
 	start_time = time.time()
-	train_dataset = torchvision.datasets.ImageNet('.', split='train', transform=train_transform, target_transform=None)
-	test_dataset = torchvision.datasets.ImageNet('.', split='val', transform=test_transform, target_transform=None)
+	train_dataset = torchvision.datasets.ImageNet(imagenet_dir_path, split='train', transform=train_transform, target_transform=None)
+	test_dataset = torchvision.datasets.ImageNet(imagenet_dir_path, split='val', transform=test_transform, target_transform=None)
 	if logger: logger.info('Datasets created: {} secs.'.format(time.time() - start_time))
 	if logger: logger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
@@ -276,8 +281,8 @@ class ModelWrapper(torch.nn.Module):
 		for name, module in self.submodule._modules.items():
 			x = module(x)
 			if name is self.name:
-				return x
-				#return self.linear(x.view(x.size(0), x.size(1), -1).permute(0, 2, 1))
+				return x.view(x.size(0), -1)
+				#return self.linear(x.view(x.size(0), -1))
 		return None
 
 # REF [site] >> https://github.com/lucidrains/byol-pytorch/blob/master/byol_pytorch/byol_pytorch.py
@@ -286,9 +291,9 @@ class MLP(torch.nn.Module):
 	def __init__(self, input_dim, output_dim, hidden_dim=4096):
 		super().__init__()
 
-		self.linear1 = torch.nn.Linear(input_dim, hidden_dim),
-		self.batchnorm1 = torch.nn.BatchNorm1d(hidden_dim),
-		self.relu1 = torch.nn.ReLU(inplace=True),
+		self.linear1 = torch.nn.Linear(input_dim, hidden_dim)
+		self.batchnorm1 = torch.nn.BatchNorm1d(hidden_dim)
+		self.relu1 = torch.nn.ReLU(inplace=True)
 		self.linear2 = torch.nn.Linear(hidden_dim, output_dim)
 
 	def forward(self, x):
@@ -303,13 +308,13 @@ class SimSiamMLP(torch.nn.Module):
 	def __init__(self, input_dim, output_dim, hidden_dim=4096):
 		super().__init__()
 
-		self.linear1 = torch.nn.Linear(input_dim, hidden_dim, bias=False),
-		self.batchnorm1 = torch.nn.BatchNorm1d(hidden_dim),
-		self.relu1 = torch.nn.ReLU(inplace=True),
-		self.linear2 = torch.nn.Linear(hidden_dim, hidden_dim, bias=False),
-		self.batchnorm2 = torch.nn.BatchNorm1d(hidden_dim),
-		self.relu2 = torch.nn.ReLU(inplace=True),
-		self.linear3 = torch.nn.Linear(hidden_dim, output_dim, bias=False),
+		self.linear1 = torch.nn.Linear(input_dim, hidden_dim, bias=False)
+		self.batchnorm1 = torch.nn.BatchNorm1d(hidden_dim)
+		self.relu1 = torch.nn.ReLU(inplace=True)
+		self.linear2 = torch.nn.Linear(hidden_dim, hidden_dim, bias=False)
+		self.batchnorm2 = torch.nn.BatchNorm1d(hidden_dim)
+		self.relu2 = torch.nn.ReLU(inplace=True)
+		self.linear3 = torch.nn.Linear(hidden_dim, output_dim, bias=False)
 		self.batchnorm3 = torch.nn.BatchNorm1d(output_dim, affine=False)
 
 	def forward(self, x):

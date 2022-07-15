@@ -63,8 +63,8 @@ def train(model, train_dataloader, test_dataloader, max_gradient_norm, num_epoch
 
 def prepare_data(image_shape, is_image_preloaded, batch_size, num_workers, logger=None):
 	# Create datasets.
-	train_dataset, test_dataset = utils.create_imagenet_datasets(logger)
-	#train_dataset, test_dataset, class_names = utils.create_cifar10_datasets(logger)
+	train_dataset, test_dataset = utils.create_imagenet_datasets(logger)  # For ImageNet.
+	#train_dataset, test_dataset, class_names = utils.create_cifar10_datasets(logger)  # For CIFAR-10.
 
 	# Create data loaders.
 	if logger: logger.info('Creating data loaders...')
@@ -107,21 +107,22 @@ def main():
 	logger.info('Logger: name = {}, level = {}.'.format(logger.name, logger.level))
 	logger.info('Command-line arguments: {}.'.format(sys.argv))
 	logger.info('Command-line options: {}.'.format(vars(args)))
-	logger.info('Python (version: {}).'.format(sys.version.replace('\n', ' ')))
-	logger.info('Torch (version: {}): distributed = {} & {}.'.format(torch.__version__, 'available' if torch.distributed.is_available() else 'unavailable', 'initialized' if torch.distributed.is_initialized() else 'uninitialized'))
-	logger.info('PyTorch Lightning (version: {}): distributed = {}.'.format(pl.__version__, 'available' if pl.utilities.distributed.distributed_available() else 'unavailable'))
-	logger.info('CUDA (version: {}): {}.'.format(torch.version.cuda, 'available' if torch.cuda.is_available() else 'unavailable'))
-	logger.info('cuDNN (version: {}).'.format(torch.backends.cudnn.version()))
+	logger.info('Python: version = {}.'.format(sys.version.replace('\n', ' ')))
+	logger.info('Torch: version = {}, distributed = {} & {}.'.format(torch.__version__, 'available' if torch.distributed.is_available() else 'unavailable', 'initialized' if torch.distributed.is_initialized() else 'uninitialized'))
+	logger.info('PyTorch Lightning: version = {}, distributed = {}.'.format(pl.__version__, 'available' if pl.utilities.distributed.distributed_available() else 'unavailable'))
+	logger.info('CUDA: version = {}, {}.'.format(torch.version.cuda, 'available' if torch.cuda.is_available() else 'unavailable'))
+	logger.info('cuDNN: version = {}.'.format(torch.backends.cudnn.version()))
 
 	#--------------------
 	model_type = 'byol'
-	image_shape = [224, 224, 3]
+	image_shape = [224, 224, 3]  # For ImageNet.
+	#image_shape = [32, 32, 3]  # For CIFAR-10.
 
-	model_output_dim = 1000  # For ImageNet.
-	projector_output_dim, projector_hidden_dim = 256, 4096
-	predictor_output_dim, predictor_hidden_dim = 256, 4096
+	model_output_dim = 2048  # For ImageNet.
+	projector_output_dim, projector_hidden_dim = 256, 4096  # projector_input_dim = model_output_dim.
+	predictor_output_dim, predictor_hidden_dim = 256, 4096  # predictor_input_dim = projector_output_dim.
 	moving_average_decay = 0.99
-	use_momentum = True
+	is_momentum_encoder_used = True
 	augmenter = utils.create_simclr_augmenter(*image_shape[:2])
 
 	is_model_initialized = False
@@ -161,12 +162,12 @@ def main():
 		logger.info('Building a model...')
 		start_time = time.time()
 		base_model = utils.ModelWrapper(torchvision.models.resnet50(pretrained=True), layer_name='avgpool')
-		if use_momentum:
+		if is_momentum_encoder_used:
 			projector = utils.MLP(model_output_dim, projector_output_dim, projector_hidden_dim)
 		else:
 			projector = utils.SimSiamMLP(model_output_dim, projector_output_dim, projector_hidden_dim)
 		predictor = utils.MLP(projector_output_dim, predictor_output_dim, predictor_hidden_dim)
-		model = model_byol.ByolModule(base_model, projector, predictor, moving_average_decay, use_momentum, augmenter, augmenter, is_model_initialized, is_all_model_params_optimized, logger)
+		model = model_byol.ByolModule(base_model, projector, predictor, moving_average_decay, is_momentum_encoder_used, augmenter, augmenter, is_model_initialized, is_all_model_params_optimized, logger)
 		logger.info('A model built: {} secs.'.format(time.time() - start_time))
 
 		# Train the model.
