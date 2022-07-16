@@ -30,14 +30,30 @@ def get_logger(name, log_level=None, log_dir_path=None, is_rotating=True):
 	return logger
 
 def parse_train_command_line_options():
-	parser = argparse.ArgumentParser(description="Trainer for text recognition models.")
+	parser = argparse.ArgumentParser(description="Training options for self-supervised learning.")
 
+	parser.add_argument(
+		"-st",
+		"--ssl_type",
+		choices={"byol", "relic"},
+		help="The SSL type to train a model",
+		#required=True,
+		default="byol"
+	)
+	parser.add_argument(
+		"-dt",
+		"--dataset_type",
+		choices={"imagenet", "cifar10", "mnist"},
+		help="The dataset type for training",
+		#required=True,
+		default="cifar10"
+	)
 	parser.add_argument(
 		"-mf",
 		"--model_file",
 		type=str,
 		#nargs="?",
-		help="The model file path to load a pretrained model",
+		help="The file path to load a pretrained model",
 		#required=True,
 		default=None
 	)
@@ -89,14 +105,14 @@ def parse_train_command_line_options():
 	return parser.parse_args()
 
 def parse_command_line_options():
-	parser = argparse.ArgumentParser(description="Inferrer for text recognition models.")
+	parser = argparse.ArgumentParser(description="Options for self-supervised learning.")
 
 	parser.add_argument(
 		"-mf",
 		"--model_file",
 		type=str,
 		#nargs="?",
-		help="The model file path to load a pretrained model",
+		help="The file path to load a pretrained model",
 		required=True,
 		default=None
 	)
@@ -105,7 +121,7 @@ def parse_command_line_options():
 		"--data_dir",
 		type=str,
 		#nargs="?",
-		help="The data directory path for inference",
+		help="The directory path to load data",
 		required=True,
 		default=None
 	)
@@ -149,7 +165,22 @@ def parse_command_line_options():
 
 	return parser.parse_args()
 
-def create_imagenet_datasets(logger=None):
+def visualize_data(dataloader, num_data=10, class_names=None):
+	data_iter = iter(dataloader)
+	srcs, tgts = data_iter.next()  # torch.Tensor & torch.Tensor.
+	srcs, tgts = srcs.numpy(), tgts.numpy()
+	srcs = srcs.transpose(0, 2, 3, 1).squeeze(axis=-1)
+
+	num_data = min(num_data, len(srcs), len(tgts)) if num_data else min(len(srcs), len(tgts))
+	for src, tgt in random.sample(list(zip(srcs, tgts)), num_data):
+		print('Label = {}.'.format(class_names[tgt] if class_names else tgt))
+		plt.imshow(src)
+		#plt.title('Image')
+		plt.axis('off')
+		plt.tight_layout()
+		plt.show()
+
+def create_imagenet_datasets(imagenet_dir_path, logger=None):
 	train_transform = torchvision.transforms.Compose([
 		#torchvision.transforms.Resize(256),
 		#torchvision.transforms.CenterCrop(224),
@@ -165,16 +196,11 @@ def create_imagenet_datasets(logger=None):
 		torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 	])
 
-	if 'posix' == os.name:
-		imagenet_dir_path = '/home/sangwook/work/dataset/imagenet'
-	else:
-		imagenet_dir_path = 'D:/work/dataset/imagenet'
-
-	if logger: logger.info('Creating datasets...')
+	if logger: logger.info('Creating ImageNet datasets...')
 	start_time = time.time()
 	train_dataset = torchvision.datasets.ImageNet(imagenet_dir_path, split='train', transform=train_transform, target_transform=None)
 	test_dataset = torchvision.datasets.ImageNet(imagenet_dir_path, split='val', transform=test_transform, target_transform=None)
-	if logger: logger.info('Datasets created: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('ImageNet datasets created: {} secs.'.format(time.time() - start_time))
 	if logger: logger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
 	return train_dataset, test_dataset
@@ -202,42 +228,47 @@ def create_cifar10_datasets(logger=None):
 		])
 	classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
-	if logger: logger.info('Creating datasets...')
+	if logger: logger.info('Creating CIFAR-10 datasets...')
 	start_time = time.time()
 	train_dataset = torchvision.datasets.CIFAR10('.', train=True, download=True, transform=train_transform, target_transform=None)
 	test_dataset = torchvision.datasets.CIFAR10('.', train=False, download=True, transform=test_transform, target_transform=None)
-	if logger: logger.info('Datasets created: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('CIFAR-10 datasets created: {} secs.'.format(time.time() - start_time))
 	if logger: logger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
 	return train_dataset, test_dataset, classes
 
-def visualize_data(dataloader, num_data=10):
-	data_iter = iter(dataloader)
-	srcs, tgts = data_iter.next()  # torch.Tensor & torch.Tensor.
-	srcs, tgts = srcs.numpy(), tgts.numpy()
-	srcs = srcs.transpose(0, 2, 3, 1).squeeze(axis=-1)
+def create_mnist_datasets(logger=None):
+	if True:
+		train_transform = torchvision.transforms.Compose([
+			torchvision.transforms.ToTensor(),
+			torchvision.transforms.Normalize(mean=[0.5], std=[0.5])
+		])
+		test_transform = torchvision.transforms.Compose([
+			torchvision.transforms.ToTensor(),
+			torchvision.transforms.Normalize(mean=[0.5], std=[0.5])
+		])
+	else:
+		train_transform = torchvision.transforms.Compose([
+			torchvision.transforms.RandomCrop(28, padding=4),
+			torchvision.transforms.RandomHorizontalFlip(),
+			torchvision.transforms.ToTensor(),
+			torchvision.transforms.Normalize(mean=[0.1307], std=[0.3081])
+		])
+		test_transform = torchvision.transforms.Compose([
+			torchvision.transforms.ToTensor(),
+			torchvision.transforms.Normalize(mean=[0.1307], std=[0.3081])
+		])
 
-	num_data = min(num_data, len(srcs), len(tgts)) if num_data else min(len(srcs), len(tgts))
-	for src, tgt in random.sample(list(zip(srcs, tgts)), num_data):
-		print("Label = {}.".format(tgt))
-		if False:
-			row, col = src.shape[:2]
-			X, Y = np.meshgrid(range(col), range(row))
-			plt.pcolormesh(X, Y, src, shading="auto", cmap="viridis")
-			#plt.pcolormesh(X, Y, data, shading="auto", cmap="gray")
-			#plt.imshow(data[::-1])
-			#plt.imshow(data[::-1], cmap="gray")
-		else:
-			librosa.display.specshow(src, cmap="coolwarm")
-		#plt.colorbar(format="%+2.0f dB")
-		plt.colorbar()
-		plt.title("Order Spectrogram")
-		plt.xlabel("Order")
-		plt.ylabel("RPM")
-		plt.tight_layout()
-		plt.show()
+	if logger: logger.info('Creating MNIST datasets...')
+	start_time = time.time()
+	train_dataset = torchvision.datasets.MNIST(root='.', train=True, download=True, transform=train_transform, target_transform=None)
+	test_dataset = torchvision.datasets.MNIST(root='.', train=False, download=True, transform=test_transform, target_transform=None)
+	if logger: logger.info('MNIST datasets created: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('#train examples = {}, #test examples = {}.'.format(len(train_dataset), len(test_dataset)))
 
-def create_simclr_augmenter(image_height, image_width):
+	return train_dataset, test_dataset
+
+def create_simclr_augmenter(image_height, image_width, normalization_mean, normalization_stddev):
 	class RandomApply(torch.nn.Module):
 		def __init__(self, fn, p):
 			super().__init__()
@@ -262,10 +293,7 @@ def create_simclr_augmenter(image_height, image_width):
 			p=0.2
 		),
 		torchvision.transforms.RandomResizedCrop(size=(image_height, image_width), scale=(0.08, 1.0), ratio=(0.75, 4 / 3), interpolation=torchvision.transforms.InterpolationMode.BILINEAR),
-		torchvision.transforms.Normalize(
-			mean=torch.tensor([0.485, 0.456, 0.406]), std=torch.tensor([0.229, 0.224, 0.225])  # For ImageNet.
-			#mean=torch.tensor([0.4914, 0.4822, 0.4465]), std=torch.tensor([0.2470, 0.2435, 0.2616])  # For CIFAR-10.
-		),
+		torchvision.transforms.Normalize(mean=torch.tensor(normalization_mean), std=torch.tensor(normalization_stddev)),
 	)
 
 class ModelWrapper(torch.nn.Module):

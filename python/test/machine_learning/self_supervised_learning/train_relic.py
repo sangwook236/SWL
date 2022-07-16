@@ -61,10 +61,21 @@ def train(model, train_dataloader, test_dataloader, max_gradient_norm, num_epoch
 
 	return best_model_filepath
 
-def prepare_data(image_shape, is_image_preloaded, batch_size, num_workers, logger=None):
+def prepare_data(dataset_type, batch_size, num_workers, logger=None):
 	# Create datasets.
-	train_dataset, test_dataset = utils.create_imagenet_datasets(logger)  # For ImageNet.
-	#train_dataset, test_dataset, class_names = utils.create_cifar10_datasets(logger)  # For CIFAR-10.
+	if dataset_type == 'imagenet':
+		if 'posix' == os.name:
+			imagenet_dir_path = '/home/sangwook/work/dataset/imagenet'
+		else:
+			imagenet_dir_path = 'D:/work/dataset/imagenet'
+
+		train_dataset, test_dataset = utils.create_imagenet_datasets(imagenet_dir_path, logger)
+		class_names = None
+	elif dataset_type == 'cifar10':
+		train_dataset, test_dataset, class_names = utils.create_cifar10_datasets(logger)
+	elif dataset_type == 'mnist':
+		train_dataset, test_dataset = utils.create_mnist_datasets(logger)
+		class_names = None
 
 	# Create data loaders.
 	if logger: logger.info('Creating data loaders...')
@@ -91,9 +102,9 @@ def prepare_data(image_shape, is_image_preloaded, batch_size, num_workers, logge
 	if False:
 		# Visualize data.
 		print('Visualizing training data...')
-		utils.visualize_data(train_dataloader, num_data=10)
+		utils.visualize_data(train_dataloader, num_data=10, class_names=class_names)
 		print('Visualizing test data...')
-		utils.visualize_data(test_dataloader, num_data=10)
+		utils.visualize_data(test_dataloader, num_data=10, class_names=class_names)
 
 	return train_dataloader, test_dataloader
 
@@ -114,23 +125,33 @@ def main():
 	logger.info('cuDNN: version = {}.'.format(torch.backends.cudnn.version()))
 
 	#--------------------
-	model_type = 'relic'
-	image_shape = [224, 224, 3]  # For ImageNet.
-	#image_shape = [32, 32, 3]  # For CIFAR-10.
+	assert args.ssl_type == 'relic', 'Only ReLIC model is supported, but got {}'.format(args.ssl_type)
+	#assert args.dataset_type in ['imagenet', 'cifar10', 'mnist'], 'Invalid dataset type, {}'.format(args.dataset_type)
 
-	model_output_dim = 2048  # For ImageNet.
-	projector_output_dim, projector_hidden_dim = 256, 4096  # projector_input_dim = model_output_dim.
+	if args.dataset_type == 'imagenet':
+		image_shape = [224, 224, 3]
+		normalization_mean, normalization_stddev = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]  # For ImageNet.
+	elif args.dataset_type == 'cifar10':
+		image_shape = [32, 32, 3]
+		#normalization_mean, normalization_stddev = [0.4914, 0.4822, 0.4465], [0.2470, 0.2435, 0.2616]  # For CIFAR-10.
+		normalization_mean, normalization_stddev = [0.5, 0.5, 0.5], [0.5, 0.5, 0.5]  # For RGB images.
+	elif args.dataset_type == 'mnist':
+		image_shape = [28, 28, 1]
+		#normalization_mean, normalization_stddev = [0.1307], [0.3081]  # For MNIST.
+		normalization_mean, normalization_stddev = [0.5], [0.5]  # For grayscale images.
+	augmenter = utils.create_simclr_augmenter(*image_shape[:2], normalization_mean, normalization_stddev)
+
+	feature_dim = 2048  # For ResNet50 or higher.
+	projector_output_dim, projector_hidden_dim = 256, 4096  # projector_input_dim = feature_dim.
 	predictor_output_dim, predictor_hidden_dim = 256, 4096  # predictor_input_dim = projector_output_dim.
 	moving_average_decay = 0.996
 	is_momentum_encoder_used = True
-	augmenter = utils.create_simclr_augmenter(*image_shape[:2])
 
 	is_model_initialized = False
 	is_all_model_params_optimized = True
 	#max_gradient_norm = 20.0  # Gradient clipping value.
 	max_gradient_norm = None
 	swa = False
-	is_image_preloaded = False
 	num_workers = 8
 
 	#is_resumed = args.model_file is not None
@@ -144,7 +165,7 @@ def main():
 		#	output_dir_path = os.path.dirname(model_filepath_to_load)
 		if not output_dir_path:
 			timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-			output_dir_path = os.path.join('.', '{}_train_outputs_{}'.format(model_type, timestamp))
+			output_dir_path = os.path.join('.', '{}_train_outputs_{}'.format(args.ssl_type, timestamp))
 		if output_dir_path and output_dir_path.strip() and not os.path.isdir(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
@@ -156,30 +177,30 @@ def main():
 	#--------------------
 	try:
 		# Prepare data.
-		train_dataloader, test_dataloader = prepare_data(image_shape, is_image_preloaded, args.batch, num_workers, logger)
+		train_dataloader, test_dataloader = prepare_data(args.dataset_type, args.batch, num_workers, logger)
 
 		# Build a model.
-		logger.info('Building a model...')
+		logger.info('Building a ReLIC model...')
 		start_time = time.time()
-		base_model = utils.ModelWrapper(torchvision.models.resnet50(pretrained=True), layer_name='avgpool')
+		encoder = utils.ModelWrapper(torchvision.models.resnet50(pretrained=True), layer_name='avgpool')
 		if is_momentum_encoder_used:
-			projector = utils.MLP(model_output_dim, projector_output_dim, projector_hidden_dim)
+			projector = utils.MLP(feature_dim, projector_output_dim, projector_hidden_dim)
 		else:
-			projector = utils.SimSiamMLP(model_output_dim, projector_output_dim, projector_hidden_dim)
+			projector = utils.SimSiamMLP(feature_dim, projector_output_dim, projector_hidden_dim)
 		predictor = utils.MLP(projector_output_dim, predictor_output_dim, predictor_hidden_dim)
-		model = model_relic.RelicModule(base_model, projector, predictor, moving_average_decay, is_momentum_encoder_used, augmenter, augmenter, is_model_initialized, is_all_model_params_optimized, logger)
-		logger.info('A model built: {} secs.'.format(time.time() - start_time))
+		ssl_model = model_relic.RelicModule(encoder, projector, predictor, moving_average_decay, is_momentum_encoder_used, augmenter, augmenter, is_model_initialized, is_all_model_params_optimized, logger)
+		logger.info('A ReLIC model built: {} secs.'.format(time.time() - start_time))
 
 		# Train the model.
-		best_model_filepath = train(model, train_dataloader, test_dataloader, max_gradient_norm, args.epoch, output_dir_path, model_filepath_to_load, swa, logger)
+		best_model_filepath = train(ssl_model, train_dataloader, test_dataloader, max_gradient_norm, args.epoch, output_dir_path, model_filepath_to_load, swa, logger)
 
 		if True:
 			# Load a model.
-			logger.info('Loading a model from {}...'.format(best_model_filepath))
+			logger.info('Loading a ReLIC model from {}...'.format(best_model_filepath))
 			start_time = time.time()
-			model_loaded = model_relic.RelicModule.load_from_checkpoint(best_model_filepath)
-			#model_loaded = model_relic.RelicModule.load_from_checkpoint(best_model_filepath, map_location={'cuda:1': 'cuda:0'})
-			logger.info('A model loaded: {} secs.'.format(time.time() - start_time))
+			ssl_model_loaded = model_relic.RelicModule.load_from_checkpoint(best_model_filepath)
+			#ssl_model_loaded = model_relic.RelicModule.load_from_checkpoint(best_model_filepath, map_location={'cuda:1': 'cuda:0'})
+			logger.info('A ReLIC model loaded: {} secs.'.format(time.time() - start_time))
 	except Exception as ex:
 		#logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
 		logger.exception(ex)

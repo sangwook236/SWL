@@ -3,7 +3,6 @@ import numpy as np
 import torch
 import pytorch_lightning as pl
 
-
 # REF [site] >> https://github.com/NightShade99/Self-Supervised-Vision/blob/main/utils/losses.py
 class RelicLoss(torch.nn.Module):
 	def __init__(self, normalize=True, temperature=1.0, alpha=0.5):
@@ -13,10 +12,10 @@ class RelicLoss(torch.nn.Module):
 		self.temperature = temperature
 		self.alpha = alpha
 
-	def forward(self, zi, zj, z_orig):
+	def forward(self, zi, zj, z_orig, device):
 		bs = zi.shape[0]
-		labels = torch.zeros((2 * bs,)).long()
-		mask = torch.ones((bs, bs), dtype=bool).fill_diagonal_(0)
+		labels = torch.zeros((2 * bs,), dtype=torch.long, device=device)
+		mask = torch.ones((bs, bs), dtype=torch.bool).fill_diagonal_(0)
 
 		if self.normalize:
 			zi_norm = torch.nn.functional.normalize(zi, p=2, dim=-1)
@@ -55,16 +54,16 @@ class RelicLoss(torch.nn.Module):
 		return contrastive_loss + self.alpha * kl_div_loss
 
 class RelicModule(pl.LightningModule):
-	def __init__(self, model, projector, predictor, moving_average_decay, use_momentum, augmenter1, augmenter2, is_model_initialized=False, is_all_model_params_optimized=True, logger=None):
+	def __init__(self, encoder, projector, predictor, moving_average_decay, is_momentum_encoder_used, augmenter1, augmenter2, is_model_initialized=False, is_all_model_params_optimized=True, logger=None):
 		super().__init__()
-		#self.save_hyperparameters()  # UserWarning: Attribute 'model' is an instance of 'nn.Module' and is already saved during checkpointing.
-		self.save_hyperparameters(ignore=['model', 'projector', 'predictor' , 'augmenter1', 'augmenter2'])
+		#self.save_hyperparameters()  # UserWarning: Attribute 'encoder' is an instance of 'nn.Module' and is already saved during checkpointing.
+		self.save_hyperparameters(ignore=['encoder', 'projector', 'predictor' , 'augmenter1', 'augmenter2'])
 
-		self.online_encoder = torch.nn.Sequential(model, projector)
+		self.online_model = torch.nn.Sequential(encoder, projector)
 		self.online_predictor = predictor
-		self.target_encoder = None
+		self.target_model = None
 		self.moving_average_decay = moving_average_decay
-		self.use_momentum = use_momentum
+		self.is_momentum_encoder_used = is_momentum_encoder_used
 
 		self.augmenter1 = augmenter1
 		self.augmenter2 = augmenter2
@@ -76,7 +75,7 @@ class RelicModule(pl.LightningModule):
 
 		if is_model_initialized:
 			# Initialize model weights.
-			for name, param in self.online_encoder.named_parameters():
+			for name, param in self.online_model.named_parameters():
 				try:
 					if 'bias' in name:
 						torch.nn.init.constant_(param, 0.0)
@@ -112,8 +111,8 @@ class RelicModule(pl.LightningModule):
 		else:
 			return optimizer
 
-	def forward(self, x, use_projector=False, use_predictor=False):
-		x = self.online_encoder(x) if use_projector else self.online_encoder[0](x)
+	def forward(self, x, use_projector=False, use_predictor=False, *args, **kwargs):
+		x = self.online_model(x) if use_projector else self.online_model[0](x)
 		if use_predictor:
 			x = self.online_predictor(x)
 		return x
@@ -123,9 +122,9 @@ class RelicModule(pl.LightningModule):
 		loss = self._shared_step(batch, batch_idx)
 		step_time = time.time() - start_time
 
-		if self.use_momentum and self.target_encoder is not None:
+		if self.is_momentum_encoder_used and self.target_model is not None:
 			#tau = self._update_tau(step, max_steps, tau_lower=self.moving_average_decay, tau_upper=1.0)  # TODO [check] >>
-			self._update_target_encoder(tau=self.moving_average_decay)
+			self._update_target_model(tau=self.moving_average_decay)
 
 		self.log_dict(
 			{'train_loss': loss, 'train_time': step_time},
@@ -167,42 +166,42 @@ class RelicModule(pl.LightningModule):
 
 		x1, x2 = self.augmenter1(x), self.augmenter2(x)
 
-		z = self.online_encoder(x)
-		z1_online = self.online_encoder(x1)
-		z2_online = self.online_encoder(x2)
+		z = self.online_model(x)
+		z1_online = self.online_model(x1)
+		z2_online = self.online_model(x2)
 		z1_online = self.online_predictor(z1_online)
 		z2_online = self.online_predictor(z2_online)
 
 		with torch.no_grad():
-			target_encoder = self._get_target_encoder() if self.use_momentum else self.online_encoder
-			z1_target = target_encoder(x1)
-			z2_target = target_encoder(x2)
+			target_model = self._get_target_model() if self.is_momentum_encoder_used else self.online_model
+			z1_target = target_model(x1)
+			z2_target = target_model(x2)
 			z1_target.detach_()
 			z2_target.detach_()
 
 		# TODO [check] >> Are z1_target.detach() & z2_target.detach() required?
-		loss1 = self._loss_fn(z1_online, z2_target.detach(), z)
-		loss2 = self._loss_fn(z2_online, z1_target.detach(), z)
+		loss1 = self._loss_fn(z1_online, z2_target.detach(), z, self.device)
+		loss2 = self._loss_fn(z2_online, z1_target.detach(), z, self.device)
 
 		loss = loss1 + loss2
 
 		return loss.mean()
 
 	@torch.no_grad()
-	def _update_target_encoder(self, tau):
-		for current_params, ma_params in zip(self.online_encoder.parameters(), self.target_encoder.parameters()):
+	def _update_target_model(self, tau):
+		for current_params, ma_params in zip(self.online_model.parameters(), self.target_model.parameters()):
 			# Exponential moving average.
 			ma_params.data = current_params.data if ma_params.data is None else (tau * ma_params.data + (1 - tau) * current_params.data)
 
-	def _get_target_encoder(self):
-		if self.target_encoder is None:
-			self.target_encoder = copy.deepcopy(self.online_encoder)
-			self._set_requires_grad(self.target_encoder, False)
-		return self.target_encoder
+	def _get_target_model(self):
+		if self.target_model is None:
+			self.target_model = copy.deepcopy(self.online_model)
+			self._set_requires_grad(self.target_model, False)
+		return self.target_model
 
 	def _reset_moving_average(self):
-		del self.target_encoder
-		self.target_encoder = None
+		del self.target_model
+		self.target_model = None
 
 	@staticmethod
 	def _set_requires_grad(model, val):
