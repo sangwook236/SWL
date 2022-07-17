@@ -109,7 +109,7 @@ class ByolModule(pl.LightningModule):
 				self._logger.info('Epoch {}/{}.'.format(self.current_epoch, self.trainer.max_epochs))
 
 	def on_train_epoch_end(self):
-		if self.trainer.is_global_zero and self._logger: self._logger.info('Epoch {}/{} done.'.format(self.current_epoch, self.trainer and self.trainer.max_epochs))
+		if self.trainer and self.trainer.is_global_zero and self._logger: self._logger.info('Epoch {}/{} done.'.format(self.current_epoch, self.trainer.max_epochs))
 
 	def _shared_step(self, batch, batch_idx):
 		x, _ = batch

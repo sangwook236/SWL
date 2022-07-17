@@ -1,6 +1,7 @@
 import os, random, argparse, logging, logging.handlers, time
 import numpy as np
 import torch, torchvision
+import pytorch_lightning as pl
 import matplotlib.pyplot as plt
 
 def get_logger(name, log_level=None, log_dir_path=None, is_rotating=True):
@@ -29,22 +30,23 @@ def get_logger(name, log_level=None, log_dir_path=None, is_rotating=True):
 
 	return logger
 
-def parse_train_command_line_options():
+def parse_train_command_line_options(use_ssl_type=True):
 	parser = argparse.ArgumentParser(description="Training options for self-supervised learning.")
 
+	if use_ssl_type:
+		parser.add_argument(
+			"-s",
+			"--ssl",
+			choices={"simclr", "byol", "relic"},
+			help="A SSL model to train",
+			#required=True,
+			default="simclr"
+		)
 	parser.add_argument(
-		"-st",
-		"--ssl_type",
-		choices={"byol", "relic"},
-		help="The SSL type to train a model",
-		#required=True,
-		default="byol"
-	)
-	parser.add_argument(
-		"-dt",
-		"--dataset_type",
+		"-d",
+		"--dataset",
 		choices={"imagenet", "cifar10", "mnist"},
-		help="The dataset type for training",
+		help="A dataset for training",
 		#required=True,
 		default="cifar10"
 	)
@@ -53,7 +55,7 @@ def parse_train_command_line_options():
 		"--model_file",
 		type=str,
 		#nargs="?",
-		help="The file path to load a pretrained model",
+		help="A model file path to resume training",
 		#required=True,
 		default=None
 	)
@@ -62,7 +64,7 @@ def parse_train_command_line_options():
 		"--out_dir",
 		type=str,
 		#nargs="?",
-		help="The output directory path to save results such as images and log",
+		help="An output directory path to save results such as images and log",
 		#required=True,
 		default=None
 	)
@@ -98,7 +100,7 @@ def parse_train_command_line_options():
 		"-ld",
 		"--log_dir",
 		type=str,
-		help="The directory path to log",
+		help="A directory path to log",
 		default=None
 	)
 
@@ -112,25 +114,23 @@ def parse_command_line_options():
 		"--model_file",
 		type=str,
 		#nargs="?",
-		help="The file path to load a pretrained model",
+		help="A file path to load a pretrained model",
 		required=True,
-		default=None
 	)
 	parser.add_argument(
 		"-d",
 		"--data_dir",
 		type=str,
 		#nargs="?",
-		help="The directory path to load data",
+		help="A directory path to load data",
 		required=True,
-		default=None
 	)
 	parser.add_argument(
 		"-o",
 		"--out_dir",
 		type=str,
 		#nargs="?",
-		help="The output directory path to save results such as images and log",
+		help="An output directory path to save results such as images and log",
 		#required=True,
 		default=None
 	)
@@ -159,7 +159,7 @@ def parse_command_line_options():
 		"-ld",
 		"--log_dir",
 		type=str,
-		help="The directory path to log",
+		help="A directory path to log",
 		default=None
 	)
 
@@ -268,6 +268,53 @@ def create_mnist_datasets(logger=None):
 
 	return train_dataset, test_dataset
 
+def prepare_open_data(dataset_type, batch_size, num_workers, show_info=True, show_data=False, logger=None):
+	# Create datasets.
+	if dataset_type == 'imagenet':
+		if 'posix' == os.name:
+			imagenet_dir_path = '/home/sangwook/work/dataset/imagenet'
+		else:
+			imagenet_dir_path = 'D:/work/dataset/imagenet'
+
+		train_dataset, test_dataset = create_imagenet_datasets(imagenet_dir_path, logger)
+		class_names = None
+	elif dataset_type == 'cifar10':
+		train_dataset, test_dataset, class_names = create_cifar10_datasets(logger)
+	elif dataset_type == 'mnist':
+		train_dataset, test_dataset = create_mnist_datasets(logger)
+		class_names = None
+
+	# Create data loaders.
+	if logger: logger.info('Creating data loaders...')
+	start_time = time.time()
+	train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, persistent_workers=False)
+	test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, persistent_workers=False)
+	if logger: logger.info('Data loaders created: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('#train steps per epoch = {}, #test steps per epoch = {}.'.format(len(train_dataloader), len(test_dataloader)))
+
+	if show_info:
+		# Show data info.
+		data_iter = iter(train_dataloader)
+		srcs, tgts = data_iter.next()
+		srcs, tgts = srcs.numpy(), tgts.numpy()
+		if logger: logger.info('Train source (batch): Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(srcs.shape, srcs.dtype, np.min(srcs), np.max(srcs)))
+		if logger: logger.info('Train target (batch): Shape = {}, dtype = {}, classes = {}.'.format(tgts.shape, tgts.dtype, np.unique(tgts)))
+
+		data_iter = iter(test_dataloader)
+		srcs, tgts = data_iter.next()
+		srcs, tgts = srcs.numpy(), tgts.numpy()
+		if logger: logger.info('Test source (batch): Shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(srcs.shape, srcs.dtype, np.min(srcs), np.max(srcs)))
+		if logger: logger.info('Test target (batch): Shape = {}, dtype = {}, classes = {}.'.format(tgts.shape, tgts.dtype, np.unique(tgts)))
+
+	if show_data:
+		# Visualize data.
+		print('Visualizing training data...')
+		visualize_data(train_dataloader, num_data=10, class_names=class_names)
+		print('Visualizing test data...')
+		visualize_data(test_dataloader, num_data=10, class_names=class_names)
+
+	return train_dataloader, test_dataloader
+
 def create_simclr_augmenter(image_height, image_width, normalization_mean, normalization_stddev):
 	class RandomApply(torch.nn.Module):
 		def __init__(self, fn, p):
@@ -355,3 +402,56 @@ class SimSiamMLP(torch.nn.Module):
 		x = self.linear3(x)
 		x = self.batchnorm3(x)
 		return x
+
+# REF [function] >> train_text_recognizer() in ${SWLP_HOME}/app/text/run_text_recognition_pl.py
+def train(model, train_dataloader, test_dataloader, max_gradient_norm, num_epochs, output_dir_path, model_filepath_to_load, swa=False, logger=None):
+	checkpoint_callback = pl.callbacks.ModelCheckpoint(
+		dirpath=(output_dir_path + '/checkpoints') if output_dir_path else './checkpoints',
+		filename='model-{epoch:03d}-{step:05d}-{val_acc:.5f}-{val_loss:.5f}',
+		monitor='val_loss',
+		mode='min',
+		save_top_k=-1,
+	)
+	if swa:
+		swa_callback = pl.callbacks.StochasticWeightAveraging(swa_epoch_start=0.8, swa_lrs=None, annealing_epochs=2, annealing_strategy='cos', avg_fn=None)
+		pl_callbacks = [checkpoint_callback, swa_callback]
+	else:
+		pl_callbacks = [checkpoint_callback]
+	tensorboard_logger = pl.loggers.TensorBoardLogger(save_dir=(output_dir_path + '/lightning_logs') if output_dir_path else './lightning_logs', name='', version=None)
+	pl_logger = [tensorboard_logger]
+
+	if max_gradient_norm:
+		gradient_clip_val = max_gradient_norm
+		gradient_clip_algorithm = 'norm'  # {'norm', 'value'}.
+	else:
+		gradient_clip_val = None
+		gradient_clip_algorithm = None
+	#trainer = pl.Trainer(devices=-1, accelerator='gpu', strategy='ddp', auto_select_gpus=True, max_epochs=num_epochs, callbacks=pl_callbacks, enable_checkpointing=True, gradient_clip_val=gradient_clip_val, gradient_clip_algorithm=gradient_clip_algorithm, default_root_dir=output_dir_path)  # When using the default logger.
+	trainer = pl.Trainer(devices=-1, accelerator='gpu', strategy='ddp', auto_select_gpus=True, max_epochs=num_epochs, callbacks=pl_callbacks, logger=pl_logger, enable_checkpointing=True, gradient_clip_val=gradient_clip_val, gradient_clip_algorithm=gradient_clip_algorithm, default_root_dir=None)
+
+	# Train the model.
+	if logger: logger.info('Training the model...')
+	start_time = time.time()
+	trainer.fit(model, train_dataloaders=train_dataloader, val_dataloaders=test_dataloader, ckpt_path=model_filepath_to_load if model_filepath_to_load else None)
+	if logger: logger.info('The model trained: {} secs.'.format(time.time() - start_time))
+
+	#--------------------
+	if False:
+		# Validate the trained model.
+		if logger: logger.info('Validating the model...')
+		start_time = time.time()
+		#model.eval()
+		trainer.validate(model, dataloaders=test_dataloader, ckpt_path=None, verbose=True)
+		if logger: logger.info('The model validated: {} secs.'.format(time.time() - start_time))
+
+	#--------------------
+	#best_model_filepath = trainer.checkpoint_callback.best_model_path
+	best_model_filepath = checkpoint_callback.best_model_path
+	if logger: logger.info('The best trained model saved to {}.'.format(best_model_filepath))
+	if False:
+		# Save the final model.
+		final_model_filepath = (output_dir_path + '/final_model.ckpt') if output_dir_path else './final_model.ckpt'
+		trainer.save_checkpoint(final_model_filepath, weights_only=False)
+		if logger: logger.info('The final trained model saved to {}.'.format(final_model_filepath))
+
+	return best_model_filepath
