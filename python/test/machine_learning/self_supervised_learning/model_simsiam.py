@@ -3,63 +3,21 @@ import numpy as np
 import torch
 import pytorch_lightning as pl
 
-# REF [site] >> https://github.com/NightShade99/Self-Supervised-Vision/blob/88f221d2bcba846f99f47d7b7b407af5c3bbbb7c/utils/losses.py
-# NOTE [caution] >> This loss is different from the one in the original paper, "A Simple Framework for Contrastive Learning of Visual Representations"
-class SimclrLoss(torch.nn.Module):
-	def __init__(self, normalize=False, temperature=1.0):
-		super().__init__()
-
-		self.normalize = normalize
-		self.temperature = temperature
-
-	def forward(self, zi, zj, device):
-		bs = zi.shape[0]
-		labels = torch.zeros((2 * bs,), dtype=torch.long, device=device)
-		mask = torch.ones((bs, bs), dtype=torch.bool).fill_diagonal_(0)
-
-		if self.normalize:
-			zi_norm = torch.nn.functional.normalize(zi, p=2, dim=-1)
-			zj_norm = torch.nn.functional.normalize(zj, p=2, dim=-1)
-		else:
-			zi_norm = zi
-			zj_norm = zj
-
-		logits_ii = torch.mm(zi_norm, zi_norm.t()) / self.temperature
-		logits_ij = torch.mm(zi_norm, zj_norm.t()) / self.temperature
-		logits_ji = torch.mm(zj_norm, zi_norm.t()) / self.temperature
-		logits_jj = torch.mm(zj_norm, zj_norm.t()) / self.temperature
-
-		logits_ij_pos = logits_ij[torch.logical_not(mask)]  # Shape (N,).
-		logits_ji_pos = logits_ji[torch.logical_not(mask)]  # Shape (N,).
-		logits_ii_neg = logits_ii[mask].reshape(bs, -1)  # Shape (N, N - 1).
-		logits_ij_neg = logits_ij[mask].reshape(bs, -1)  # Shape (N, N - 1).
-		logits_ji_neg = logits_ji[mask].reshape(bs, -1)  # Shape (N, N - 1).
-		logits_jj_neg = logits_jj[mask].reshape(bs, -1)  # Shape (N, N - 1).
-
-		pos = torch.cat((logits_ij_pos, logits_ji_pos), dim=0).unsqueeze(1)  # Shape (2N, 1).
-		neg_i = torch.cat((logits_ii_neg, logits_ij_neg), dim=1)  # Shape (N, 2N - 2).
-		neg_j = torch.cat((logits_ji_neg, logits_jj_neg), dim=1)  # Shape (N, 2N - 2).
-		neg = torch.cat((neg_i, neg_j), dim=0)  # Shape (2N, 2N - 2).
-
-		logits = torch.cat((pos, neg), dim=1)  # Shape (2N, 2N - 1).
-		loss = torch.nn.functional.cross_entropy(logits, labels)
-		return loss
-
-class SimclrModule(pl.LightningModule):
-	def __init__(self, encoder, projector, augmenter1, augmenter2, is_model_initialized=False, is_all_model_params_optimized=True, logger=None):
+# REF [site] >> https://github.com/lucidrains/byol-pytorch/blob/master/byol_pytorch/byol_pytorch.py
+class SimSiamModule(pl.LightningModule):
+	def __init__(self, encoder, projector, predictor, augmenter1, augmenter2, is_model_initialized=False, is_all_model_params_optimized=True, logger=None):
 		super().__init__()
 		#self.save_hyperparameters()  # UserWarning: Attribute 'encoder' is an instance of 'nn.Module' and is already saved during checkpointing.
-		self.save_hyperparameters(ignore=['encoder', 'projector', 'augmenter1', 'augmenter2'])
+		self.save_hyperparameters(ignore=['encoder', 'projector', 'predictor' , 'augmenter1', 'augmenter2'])
 
 		self.model = torch.nn.Sequential(encoder, projector)
+		self.predictor = predictor
 
 		self.augmenter1 = augmenter1
 		self.augmenter2 = augmenter2
 
 		self.is_all_model_params_optimized = is_all_model_params_optimized
 		self._logger = logger
-
-		self.criterion = SimclrLoss(normalize=True, temperature=0.5)
 
 		if is_model_initialized:
 			# Initialize model weights.
@@ -79,12 +37,14 @@ class SimclrModule(pl.LightningModule):
 		model_dict = torch.load(model_filepath)
 
 		self.model.load_state_dict(model_dict['model_state_dict'])
+		self.predictor.load_state_dict(model_dict['predictor_state_dict'])
 		#self.augmenter1 = model_dict['augmenter1']
 		#self.augmenter2 = model_dict['augmenter2']
 
 	def save_model(self, model_filepath):
 		torch.save({
 			'model_state_dict': self.model.state_dict(),
+			'predictor_state_dict': self.predictor.state_dict(),
 			#'augmenter1': self.augmenter1,
 			#'augmenter2': self.augmenter2,
 		}, model_filepath)
@@ -92,11 +52,13 @@ class SimclrModule(pl.LightningModule):
 
 	def on_load_checkpoint(self, checkpoint: typing.Dict[str, typing.Any]) -> None:
 		self.model = checkpoint['model']
+		self.predictor = checkpoint['predictor']
 		#self.augmenter1 = checkpoint['augmenter1']
 		#self.augmenter2 = checkpoint['augmenter2']
 
 	def on_save_checkpoint(self, checkpoint: typing.Dict[str, typing.Any]) -> None:
 		checkpoint['model'] = self.model
+		checkpoint['predictor'] = self.predictor
 		#checkpoint['augmenter1'] = self.augmenter1
 		#checkpoint['augmenter2'] = self.augmenter2
 
@@ -126,8 +88,10 @@ class SimclrModule(pl.LightningModule):
 		else:
 			return optimizer
 
-	def forward(self, x, use_projector=False, *args, **kwargs):
+	def forward(self, x, use_projector=False, use_predictor=False, *args, **kwargs):
 		x = self.model(x) if use_projector else self.model[0](x)
+		if use_predictor:
+			x = self.predictor(x)
 		return x
 
 	def training_step(self, batch, batch_idx):
@@ -177,7 +141,19 @@ class SimclrModule(pl.LightningModule):
 
 		z1 = self.model(x1)
 		z2 = self.model(x2)
+		p1 = self.predictor(z1)
+		p2 = self.predictor(z2)
 
-		loss = self.criterion(z1, z2, self.device)
+		# TODO [check] >> Are z1.detach() & z2.detach() enough?
+		loss1 = self._compute_loss(p1, z2.detach())  # Stop gradient.
+		loss2 = self._compute_loss(p2, z1.detach())  # Stop gradient.
 
-		return loss.mean()
+		loss = 0.5 * loss1 + 0.5 * loss2
+
+		return loss
+
+	@staticmethod
+	def _compute_loss(x1, x2):
+		x1 = torch.nn.functional.normalize(x1, dim=-1, p=2)
+		x2 = torch.nn.functional.normalize(x2, dim=-1, p=2)
+		return - (x1 * x2).sum(dim=-1).mean()

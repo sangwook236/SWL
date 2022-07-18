@@ -1,4 +1,4 @@
-import math, collections, copy, time
+import typing, math, collections, copy, time
 import numpy as np
 import torch
 import pytorch_lightning as pl
@@ -54,7 +54,7 @@ class RelicLoss(torch.nn.Module):
 		return contrastive_loss + self.alpha * kl_div_loss
 
 class RelicModule(pl.LightningModule):
-	def __init__(self, encoder, projector, predictor, moving_average_decay, is_momentum_encoder_used, augmenter1, augmenter2, is_model_initialized=False, is_all_model_params_optimized=True, logger=None):
+	def __init__(self, encoder, projector, predictor, augmenter1, augmenter2, moving_average_decay, is_momentum_encoder_used, is_model_initialized=False, is_all_model_params_optimized=True, logger=None):
 		super().__init__()
 		#self.save_hyperparameters()  # UserWarning: Attribute 'encoder' is an instance of 'nn.Module' and is already saved during checkpointing.
 		self.save_hyperparameters(ignore=['encoder', 'projector', 'predictor' , 'augmenter1', 'augmenter2'])
@@ -85,6 +85,40 @@ class RelicModule(pl.LightningModule):
 					if 'weight' in name:
 						param.data.fill_(1)
 					continue
+
+	"""
+	def load_model(self, model_filepath):
+		model_dict = torch.load(model_filepath)
+
+		self.online_model.load_state_dict(model_dict['model_state_dict'])
+		self.online_predictor.load_state_dict(model_dict['predictor_state_dict'])
+		self.target_model.load_state_dict(model_dict['target_model_state_dict'])
+		#self.augmenter1 = model_dict['augmenter1']
+		#self.augmenter2 = model_dict['augmenter2']
+
+	def save_model(self, model_filepath):
+		torch.save({
+			'model_state_dict': self.online_model.state_dict(),
+			'predictor_state_dict': self.online_predictor.state_dict(),
+			'target_model_state_dict': self.target_model.state_dict(),
+			#'augmenter1': self.augmenter1,
+			#'augmenter2': self.augmenter2,
+		}, model_filepath)
+	"""
+
+	def on_load_checkpoint(self, checkpoint: typing.Dict[str, typing.Any]) -> None:
+		self.online_model = checkpoint['model']
+		self.online_predictor = checkpoint['predictor']
+		self.target_model = checkpoint['target_model']
+		#self.augmenter1 = checkpoint['augmenter1']
+		#self.augmenter2 = checkpoint['augmenter2']
+
+	def on_save_checkpoint(self, checkpoint: typing.Dict[str, typing.Any]) -> None:
+		checkpoint['model'] = self.online_model
+		checkpoint['predictor'] = self.online_predictor
+		checkpoint['target_model'] = self.target_model
+		#checkpoint['augmenter1'] = self.augmenter1
+		#checkpoint['augmenter2'] = self.augmenter2
 
 	def configure_optimizers(self):
 		if self.is_all_model_params_optimized:
@@ -180,8 +214,8 @@ class RelicModule(pl.LightningModule):
 			z2_target.detach_()
 
 		# TODO [check] >> Are z1_target.detach() & z2_target.detach() required?
-		loss1 = self.criterion(z1_online, z2_target.detach(), z, self.device)
-		loss2 = self.criterion(z2_online, z1_target.detach(), z, self.device)
+		loss1 = self.criterion(z1_online, z2_target.detach(), z, self.device)  # Stop gradient.
+		loss2 = self.criterion(z2_online, z1_target.detach(), z, self.device)  # Stop gradient.
 
 		loss = loss1 + loss2
 

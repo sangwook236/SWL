@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-import sys, os, logging, datetime, time
+import sys
+sys.path.append('../../../src')
+sys.path.append('./src')
+
+import os, logging, datetime, time
 import torch, torchvision
 import pytorch_lightning as pl
 import model_relic
@@ -23,7 +27,7 @@ def main():
 
 	#--------------------
 	#assert args.ssl == 'relic', 'Only ReLIC model is supported, but got {}'.format(args.ssl)
-	#assert args.dataset in ['imagenet', 'cifar10', 'mnist'], 'Invalid dataset type, {}'.format(args.dataset)
+	#assert args.dataset in ['imagenet', 'cifar10', 'mnist'], 'Invalid dataset, {}'.format(args.dataset)
 
 	ssl_type = 'relic'
 	if args.dataset == 'imagenet':
@@ -75,7 +79,14 @@ def main():
 	#--------------------
 	try:
 		# Prepare data.
-		train_dataloader, test_dataloader = utils.prepare_open_data(args.dataset, args.batch, num_workers, show_info=True, show_data=False, logger=logger)
+		if args.dataset == 'imagenet':
+			if 'posix' == os.name:
+				dataset_root_dir_path = '/home/sangwook/work/dataset/imagenet'
+			else:
+				dataset_root_dir_path = 'D:/work/dataset/imagenet'
+		else:
+			dataset_root_dir_path = None
+		train_dataloader, test_dataloader = utils.prepare_open_data(args.dataset, args.batch, num_workers, dataset_root_dir_path, show_info=True, show_data=False, logger=logger)
 
 		# Build a model.
 		logger.info('Building a ReLIC model...')
@@ -86,7 +97,7 @@ def main():
 		else:
 			projector = utils.SimSiamMLP(feature_dim, projector_output_dim, projector_hidden_dim)
 		predictor = utils.MLP(projector_output_dim, predictor_output_dim, predictor_hidden_dim)
-		ssl_model = model_relic.RelicModule(encoder, projector, predictor, moving_average_decay, is_momentum_encoder_used, augmenter, augmenter, is_model_initialized, is_all_model_params_optimized, logger)
+		ssl_model = model_relic.RelicModule(encoder, projector, predictor, augmenter, augmenter, moving_average_decay, is_momentum_encoder_used, is_model_initialized, is_all_model_params_optimized, logger)
 		logger.info('A ReLIC model built: {} secs.'.format(time.time() - start_time))
 
 		# Train the model.
@@ -96,8 +107,9 @@ def main():
 			# Load a model.
 			logger.info('Loading a ReLIC model from {}...'.format(best_model_filepath))
 			start_time = time.time()
-			ssl_model_loaded = model_relic.RelicModule.load_from_checkpoint(best_model_filepath)
+			#ssl_model_loaded = model_relic.RelicModule.load_from_checkpoint(best_model_filepath)
 			#ssl_model_loaded = model_relic.RelicModule.load_from_checkpoint(best_model_filepath, map_location={'cuda:1': 'cuda:0'})
+			ssl_model_loaded = model_relic.RelicModule.load_from_checkpoint(best_model_filepath, encoder=None, projector=None, predictor=None, augmenter1=None, augmenter2=None)
 			logger.info('A ReLIC model loaded: {} secs.'.format(time.time() - start_time))
 	except Exception as ex:
 		#logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
@@ -108,8 +120,8 @@ def main():
 
 # Usage:
 #	python train_relic.py --dataset imagenet --epoch 40 --batch 64 --out_dir ./relic_train_outputs
-#	python train_relic.py --dataset cifar10 --epoch 20 --batch 32 --model_file ./relic_models/model.ckpt --out_dir ./relic_train_outputs
-#	python train_relic.py --dataset mnist --epoch 10 --batch 64 --out_dir ./relic_train_outputs --log relic_log --log_dir ./log
+#	python train_relic.py --dataset cifar10 --epoch 20 --batch 32 --out_dir ./relic_train_outputs --log relic_log --log_dir ./log
+#	python train_relic.py --dataset mnist --epoch 10 --batch 48 --model_file ./relic_models/model.ckpt --out_dir ./relic_train_outputs
 
 if '__main__' == __name__:
 	main()

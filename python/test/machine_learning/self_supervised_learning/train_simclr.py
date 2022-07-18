@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-import sys, os, logging, datetime, time
+import sys
+sys.path.append('../../../src')
+sys.path.append('./src')
+
+import os, logging, datetime, time
 import torch, torchvision
 import pytorch_lightning as pl
 import model_simclr
@@ -23,7 +27,7 @@ def main():
 
 	#--------------------
 	#assert args.ssl == 'simclr', 'Only SimCLR model is supported, but got {}'.format(args.ssl)
-	#assert args.dataset in ['imagenet', 'cifar10', 'mnist'], 'Invalid dataset type, {}'.format(args.dataset)
+	#assert args.dataset in ['imagenet', 'cifar10', 'mnist'], 'Invalid dataset, {}'.format(args.dataset)
 
 	ssl_type = 'simclr'
 	if args.dataset == 'imagenet':
@@ -72,7 +76,14 @@ def main():
 	#--------------------
 	try:
 		# Prepare data.
-		train_dataloader, test_dataloader = utils.prepare_open_data(args.dataset, args.batch, num_workers, show_info=True, show_data=False, logger=logger)
+		if args.dataset == 'imagenet':
+			if 'posix' == os.name:
+				dataset_root_dir_path = '/home/sangwook/work/dataset/imagenet'
+			else:
+				dataset_root_dir_path = 'D:/work/dataset/imagenet'
+		else:
+			dataset_root_dir_path = None
+		train_dataloader, test_dataloader = utils.prepare_open_data(args.dataset, args.batch, num_workers, dataset_root_dir_path, show_info=True, show_data=False, logger=logger)
 
 		# Build a model.
 		logger.info('Building a SimCLR model...')
@@ -92,8 +103,9 @@ def main():
 			# Load a model.
 			logger.info('Loading a SimCLR model from {}...'.format(best_model_filepath))
 			start_time = time.time()
-			ssl_model_loaded = model_simclr.SimclrModule.load_from_checkpoint(best_model_filepath)
+			#ssl_model_loaded = model_simclr.SimclrModule.load_from_checkpoint(best_model_filepath)
 			#ssl_model_loaded = model_simclr.SimclrModule.load_from_checkpoint(best_model_filepath, map_location={'cuda:1': 'cuda:0'})
+			ssl_model_loaded = model_simclr.SimclrModule.load_from_checkpoint(best_model_filepath, encoder=None, projector=None, augmenter1=None, augmenter2=None)
 			logger.info('A SimCLR model loaded: {} secs.'.format(time.time() - start_time))
 	except Exception as ex:
 		#logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
@@ -104,8 +116,8 @@ def main():
 
 # Usage:
 #	python train_simclr.py --dataset imagenet --epoch 40 --batch 64 --out_dir ./simclr_train_outputs
-#	python train_simclr.py --dataset cifar10 --epoch 20 --batch 32 --model_file ./simclr_models/model.ckpt --out_dir ./simclr_train_outputs
-#	python train_simclr.py --dataset mnist --epoch 10 --batch 64 --out_dir ./simclr_train_outputs --log simclr_log --log_dir ./log
+#	python train_simclr.py --dataset cifar10 --epoch 20 --batch 32 --out_dir ./simclr_train_outputs --log simclr_log --log_dir ./log
+#	python train_simclr.py --dataset mnist --epoch 10 --batch 48 --model_file ./simclr_models/model.ckpt --out_dir ./simclr_train_outputs
 
 if '__main__' == __name__:
 	main()

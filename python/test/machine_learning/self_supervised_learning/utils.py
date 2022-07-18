@@ -37,7 +37,7 @@ def parse_train_command_line_options(use_ssl_type=True):
 		parser.add_argument(
 			"-s",
 			"--ssl",
-			choices={"simclr", "byol", "relic"},
+			choices={"simclr", "byol", "relic", "simsiam"},
 			help="A SSL model to train",
 			#required=True,
 			default="simclr"
@@ -106,9 +106,18 @@ def parse_train_command_line_options(use_ssl_type=True):
 
 	return parser.parse_args()
 
-def parse_command_line_options():
+def parse_command_line_options(use_ssl_type=True, use_dataset_type=True):
 	parser = argparse.ArgumentParser(description="Options for self-supervised learning.")
 
+	if use_ssl_type:
+		parser.add_argument(
+			"-s",
+			"--ssl",
+			choices={"simclr", "byol", "relic", "simsiam"},
+			help="A SSL model to train",
+			#required=True,
+			default="simclr"
+		)
 	parser.add_argument(
 		"-mf",
 		"--model_file",
@@ -117,14 +126,24 @@ def parse_command_line_options():
 		help="A file path to load a pretrained model",
 		required=True,
 	)
-	parser.add_argument(
-		"-d",
-		"--data_dir",
-		type=str,
-		#nargs="?",
-		help="A directory path to load data",
-		required=True,
-	)
+	if use_dataset_type:
+		parser.add_argument(
+			"-d",
+			"--dataset",
+			choices={"imagenet", "cifar10", "mnist"},
+			help="A dataset for training",
+			#required=True,
+			default="cifar10"
+		)
+	else:
+		parser.add_argument(
+			"-d",
+			"--data_dir",
+			type=str,
+			#nargs="?",
+			help="A directory path to load data",
+			required=True,
+		)
 	parser.add_argument(
 		"-o",
 		"--out_dir",
@@ -268,15 +287,10 @@ def create_mnist_datasets(logger=None):
 
 	return train_dataset, test_dataset
 
-def prepare_open_data(dataset_type, batch_size, num_workers, show_info=True, show_data=False, logger=None):
+def prepare_open_data(dataset_type, batch_size, num_workers, dataset_root_dir_path=None, show_info=True, show_data=False, logger=None):
 	# Create datasets.
 	if dataset_type == 'imagenet':
-		if 'posix' == os.name:
-			imagenet_dir_path = '/home/sangwook/work/dataset/imagenet'
-		else:
-			imagenet_dir_path = 'D:/work/dataset/imagenet'
-
-		train_dataset, test_dataset = create_imagenet_datasets(imagenet_dir_path, logger)
+		train_dataset, test_dataset = create_imagenet_datasets(dataset_root_dir_path, logger)
 		class_names = None
 	elif dataset_type == 'cifar10':
 		train_dataset, test_dataset, class_names = create_cifar10_datasets(logger)
