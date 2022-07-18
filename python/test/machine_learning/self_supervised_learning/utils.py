@@ -472,3 +472,21 @@ def train(model, train_dataloader, test_dataloader, max_gradient_norm, num_epoch
 		if logger: logger.info('The final trained model saved to {}.'.format(final_model_filepath))
 
 	return best_model_filepath
+
+def infer(model, data_iter, use_projector=False, use_predictor=False, logger=None, device='cuda'):
+	model = model.to(device)
+
+	if logger: logger.info('Inferring...')
+	start_time = time.time()
+	model.eval()
+	model.freeze()
+	with torch.no_grad():
+		predictions = list()
+		for inputs in data_iter:
+			predictions.append(model(inputs.to(device), use_projector, use_predictor).cpu().numpy())
+		predictions = np.vstack(predictions)
+	if logger: logger.info('Inferred: {} secs.'.format(time.time() - start_time))
+	#if logger: logger.info('Prediction: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(predictions.shape, predictions.dtype, np.min(predictions), np.max(predictions)))
+	if logger: logger.info('Prediction: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(predictions.shape, predictions.dtype, np.min(np.abs(predictions)), np.max(np.abs(predictions))))
+
+	return predictions
