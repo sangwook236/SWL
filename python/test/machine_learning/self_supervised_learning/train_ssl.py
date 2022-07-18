@@ -6,6 +6,19 @@ import torch, torchvision
 import pytorch_lightning as pl
 import utils
 
+def build_simclr(feature_dim, projector_hidden_dim, projector_output_dim, augmenter1, augmenter2, is_model_initialized, is_all_model_params_optimized, logger=None):
+	import model_simclr
+
+	encoder = utils.ModelWrapper(torchvision.models.resnet50(pretrained=True), layer_name='avgpool')
+	#feature_dim = encoder(torch.randn(1, *input_shape).permute(0, 3, 1, 2)).shape[-1]  # FIXME [check] >>
+	if True:
+		projector = utils.MLP(feature_dim, projector_output_dim, projector_hidden_dim)
+	else:
+		projector = utils.SimSiamMLP(feature_dim, projector_output_dim, projector_hidden_dim)
+	ssl_model = model_simclr.SimclrModule(encoder, projector, augmenter1, augmenter2, is_model_initialized, is_all_model_params_optimized, logger)
+
+	return ssl_model
+
 def build_byol(feature_dim, projector_hidden_dim, projector_output_dim, predictor_hidden_dim, predictor_output_dim, moving_average_decay, is_momentum_encoder_used, augmenter1, augmenter2, is_model_initialized, is_all_model_params_optimized, logger=None):
 	import model_byol
 
@@ -35,13 +48,18 @@ def build_relic(feature_dim, projector_hidden_dim, projector_output_dim, predict
 	return ssl_model
 
 def build_ssl(ssl_type, feature_dim, projector_hidden_dim, projector_output_dim, predictor_hidden_dim, predictor_output_dim, moving_average_decay, is_momentum_encoder_used, augmenter1, augmenter2, is_model_initialized, is_all_model_params_optimized, logger=None):
-	if ssl_type == 'byol':
+	if ssl_type == 'simclr':
+		return build_simclr(feature_dim, projector_hidden_dim, projector_output_dim, augmenter1, augmenter2, is_model_initialized, is_all_model_params_optimized, logger)
+	elif ssl_type == 'byol':
 		return build_byol(feature_dim, projector_hidden_dim, projector_output_dim, predictor_hidden_dim, predictor_output_dim, moving_average_decay, is_momentum_encoder_used, augmenter1, augmenter2, is_model_initialized, is_all_model_params_optimized, logger)
 	elif ssl_type == 'relic':
 		return build_relic(feature_dim, projector_hidden_dim, projector_output_dim, predictor_hidden_dim, predictor_output_dim, moving_average_decay, is_momentum_encoder_used, augmenter1, augmenter2, is_model_initialized, is_all_model_params_optimized, logger)
 
 def load_ssl(ssl_type, model_filepath):
-	if ssl_type == 'byol':
+	if ssl_type == 'simclr':
+		import model_simclr
+		SslModule = getattr(model_simclr, 'SimclrModule')
+	elif ssl_type == 'byol':
 		import model_byol
 		SslModule = getattr(model_byol, 'ByolModule')
 	elif ssl_type == 'relic':
@@ -70,7 +88,7 @@ def main():
 	logger.info('cuDNN: version = {}.'.format(torch.backends.cudnn.version()))
 
 	#--------------------
-	#assert args.ssl in ['byol', 'relic'], 'Invalid SSL model, {}'.format(args.ssl)
+	#assert args.ssl in ['simclr', 'byol', 'relic'], 'Invalid SSL model, {}'.format(args.ssl)
 	#assert args.dataset in ['imagenet', 'cifar10', 'mnist'], 'Invalid dataset type, {}'.format(args.dataset)
 
 	if args.dataset == 'imagenet':
@@ -147,7 +165,7 @@ def main():
 #--------------------------------------------------------------------
 
 # Usage:
-#	python train_ssl.py --ssl byol --dataset imagenet --epoch 40 --batch 64 --out_dir ./ssl_train_outputs
+#	python train_ssl.py --ssl simclr --dataset imagenet --epoch 40 --batch 64 --out_dir ./ssl_train_outputs
 #	python train_ssl.py --ssl byol --dataset cifar10 --epoch 20 --batch 32 --model_file ./ssl_models/model.ckpt --out_dir ./ssl_train_outputs
 #	python train_ssl.py --ssl relic --dataset mnist --epoch 10 --batch 64 --out_dir ./ssl_train_outputs --log ssl_log --log_dir ./log
 

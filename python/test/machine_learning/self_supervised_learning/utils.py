@@ -328,18 +328,21 @@ def create_simclr_augmenter(image_height, image_width, normalization_mean, norma
 				return x
 			return self.fn(x)
 
+	s = 1.0  # The strength of color distortion.
 	return torch.nn.Sequential(
-		RandomApply(
-			torchvision.transforms.ColorJitter(brightness=0.8, contrast=0.8, saturation=0.8, hue=0.2),
-			p=0.3
-		),
-		torchvision.transforms.RandomGrayscale(p=0.2),
+		torchvision.transforms.RandomResizedCrop(size=(image_height, image_width), scale=(0.08, 1.0), ratio=(3 / 4, 4 / 3), interpolation=torchvision.transforms.InterpolationMode.BILINEAR),
+		#torchvision.transforms.RandomResizedCrop(size=(image_height, image_width), scale=(0.2, 1.0), ratio=(3 / 4, 4 / 3), interpolation=torchvision.transforms.InterpolationMode.BILINEAR),
 		torchvision.transforms.RandomHorizontalFlip(p=0.5),
 		RandomApply(
-			torchvision.transforms.GaussianBlur(kernel_size=(3, 3), sigma=(1.0, 2.0)),
-			p=0.2
+			torchvision.transforms.ColorJitter(brightness=0.8 * s, contrast=0.8 * s, saturation=0.8 * s, hue=0.2 * s),
+			#torchvision.transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
+			p=0.8
 		),
-		torchvision.transforms.RandomResizedCrop(size=(image_height, image_width), scale=(0.08, 1.0), ratio=(0.75, 4 / 3), interpolation=torchvision.transforms.InterpolationMode.BILINEAR),
+		torchvision.transforms.RandomGrayscale(p=0.2),
+		RandomApply(
+			torchvision.transforms.GaussianBlur(kernel_size=(max(round(image_height * 0.1), 3), max(round(image_width * 0.1), 3)), sigma=(0.1, 2.0)),
+			p=0.5
+		),
 		torchvision.transforms.Normalize(mean=torch.tensor(normalization_mean), std=torch.tensor(normalization_stddev)),
 	)
 

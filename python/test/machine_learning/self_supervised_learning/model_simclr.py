@@ -1,18 +1,18 @@
-import math, collections, copy, time
+import collections, time
 import numpy as np
 import torch
 import pytorch_lightning as pl
 
-# REF [site] >> https://github.com/NightShade99/Self-Supervised-Vision/blob/main/utils/losses.py
-class RelicLoss(torch.nn.Module):
-	def __init__(self, normalize=True, temperature=1.0, alpha=0.5):
+# REF [site] >> https://github.com/NightShade99/Self-Supervised-Vision/blob/88f221d2bcba846f99f47d7b7b407af5c3bbbb7c/utils/losses.py
+# NOTE [caution] >> This loss is different from the one in the original paper, "A Simple Framework for Contrastive Learning of Visual Representations"
+class SimclrLoss(torch.nn.Module):
+	def __init__(self, normalize=False, temperature=1.0):
 		super().__init__()
 
 		self.normalize = normalize
 		self.temperature = temperature
-		self.alpha = alpha
 
-	def forward(self, zi, zj, z_orig, device):
+	def forward(self, zi, zj, device):
 		bs = zi.shape[0]
 		labels = torch.zeros((2 * bs,), dtype=torch.long, device=device)
 		mask = torch.ones((bs, bs), dtype=torch.bool).fill_diagonal_(0)
@@ -20,11 +20,9 @@ class RelicLoss(torch.nn.Module):
 		if self.normalize:
 			zi_norm = torch.nn.functional.normalize(zi, p=2, dim=-1)
 			zj_norm = torch.nn.functional.normalize(zj, p=2, dim=-1)
-			zo_norm = torch.nn.functional.normalize(z_orig, p=2, dim=-1)
 		else:
 			zi_norm = zi
 			zj_norm = zj
-			zo_norm = z_orig
 
 		logits_ii = torch.mm(zi_norm, zi_norm.t()) / self.temperature
 		logits_ij = torch.mm(zi_norm, zj_norm.t()) / self.temperature
@@ -44,26 +42,16 @@ class RelicLoss(torch.nn.Module):
 		neg = torch.cat((neg_i, neg_j), dim=0)  # Shape (2N, 2N - 2).
 
 		logits = torch.cat((pos, neg), dim=1)  # Shape (2N, 2N - 1).
-		contrastive_loss = torch.nn.functional.cross_entropy(logits, labels)
+		loss = torch.nn.functional.cross_entropy(logits, labels)
+		return loss
 
-		logits_io = torch.mm(zi_norm, zo_norm.t()) / self.temperature
-		logits_jo = torch.mm(zj_norm, zo_norm.t()) / self.temperature
-		probs_io = torch.nn.functional.softmax(logits_io[torch.logical_not(mask)], -1)
-		probs_jo = torch.nn.functional.log_softmax(logits_jo[torch.logical_not(mask)], -1)
-		kl_div_loss = torch.nn.functional.kl_div(probs_io, probs_jo, log_target=True, reduction='sum')
-		return contrastive_loss + self.alpha * kl_div_loss
-
-class RelicModule(pl.LightningModule):
-	def __init__(self, encoder, projector, predictor, moving_average_decay, is_momentum_encoder_used, augmenter1, augmenter2, is_model_initialized=False, is_all_model_params_optimized=True, logger=None):
+class SimclrModule(pl.LightningModule):
+	def __init__(self, encoder, projector, augmenter1, augmenter2, is_model_initialized=False, is_all_model_params_optimized=True, logger=None):
 		super().__init__()
 		#self.save_hyperparameters()  # UserWarning: Attribute 'encoder' is an instance of 'nn.Module' and is already saved during checkpointing.
-		self.save_hyperparameters(ignore=['encoder', 'projector', 'predictor' , 'augmenter1', 'augmenter2'])
+		self.save_hyperparameters(ignore=['encoder', 'projector', 'augmenter1', 'augmenter2'])
 
-		self.online_model = torch.nn.Sequential(encoder, projector)
-		self.online_predictor = predictor
-		self.target_model = None
-		self.moving_average_decay = moving_average_decay
-		self.is_momentum_encoder_used = is_momentum_encoder_used
+		self.model = torch.nn.Sequential(encoder, projector)
 
 		self.augmenter1 = augmenter1
 		self.augmenter2 = augmenter2
@@ -71,11 +59,11 @@ class RelicModule(pl.LightningModule):
 		self.is_all_model_params_optimized = is_all_model_params_optimized
 		self._logger = logger
 
-		self.criterion = RelicLoss(normalize=True, temperature=1.0, alpha=0.5)
+		self.criterion = SimclrLoss(normalize=True, temperature=0.5)
 
 		if is_model_initialized:
 			# Initialize model weights.
-			for name, param in self.online_model.named_parameters():
+			for name, param in self.model.named_parameters():
 				try:
 					if 'bias' in name:
 						torch.nn.init.constant_(param, 0.0)
@@ -100,31 +88,26 @@ class RelicModule(pl.LightningModule):
 			#if self.trainer and self.trainer.is_global_zero and self._logger: self._logger.info('Trainable model parameters:')
 			#if self.trainer and self.trainer.is_global_zero and self._logger: [self._logger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, self.named_parameters())]
 
-		optimizer = torch.optim.SGD(model_params, lr=0.2, momentum=0.9, dampening=0, weight_decay=1e-4, nesterov=True)
-		#optimizer = torch.optim.Adam(model_params, lr=0.2, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		#optimizer = torch.optim.SGD(model_params, lr=3e-4, momentum=0.9, dampening=0, weight_decay=0, nesterov=True)
+		optimizer = torch.optim.Adam(model_params, lr=3e-4, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
 
 		#scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones, gamma=0, last_epoch=-1)
 		scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.trainer.max_epochs, eta_min=0, last_epoch=-1)
+		#scheduler = None
 
 		if scheduler:
 			return [optimizer], [{'scheduler': scheduler, 'interval': 'epoch'}]
 		else:
 			return optimizer
 
-	def forward(self, x, use_projector=False, use_predictor=False, *args, **kwargs):
-		x = self.online_model(x) if use_projector else self.online_model[0](x)
-		if use_predictor:
-			x = self.online_predictor(x)
+	def forward(self, x, use_projector=False, *args, **kwargs):
+		x = self.model(x) if use_projector else self.model[0](x)
 		return x
 
 	def training_step(self, batch, batch_idx):
 		start_time = time.time()
 		loss = self._shared_step(batch, batch_idx)
 		step_time = time.time() - start_time
-
-		if self.is_momentum_encoder_used and self.target_model is not None:
-			#tau = self._update_tau(step, max_steps, tau_lower=self.moving_average_decay, tau_upper=1.0)  # TODO [check] >>
-			self._update_target_model(tau=self.moving_average_decay)
 
 		self.log_dict(
 			{'train_loss': loss, 'train_time': step_time},
@@ -166,48 +149,9 @@ class RelicModule(pl.LightningModule):
 
 		x1, x2 = self.augmenter1(x), self.augmenter2(x)
 
-		z = self.online_model(x)
-		z1_online = self.online_model(x1)
-		z2_online = self.online_model(x2)
-		z1_online = self.online_predictor(z1_online)
-		z2_online = self.online_predictor(z2_online)
+		z1 = self.model(x1)
+		z2 = self.model(x2)
 
-		with torch.no_grad():
-			target_model = self._get_target_model() if self.is_momentum_encoder_used else self.online_model
-			z1_target = target_model(x1)
-			z2_target = target_model(x2)
-			z1_target.detach_()
-			z2_target.detach_()
-
-		# TODO [check] >> Are z1_target.detach() & z2_target.detach() required?
-		loss1 = self.criterion(z1_online, z2_target.detach(), z, self.device)
-		loss2 = self.criterion(z2_online, z1_target.detach(), z, self.device)
-
-		loss = loss1 + loss2
+		loss = self.criterion(z1, z2, self.device)
 
 		return loss.mean()
-
-	@torch.no_grad()
-	def _update_target_model(self, tau):
-		for current_params, ma_params in zip(self.online_model.parameters(), self.target_model.parameters()):
-			# Exponential moving average.
-			ma_params.data = current_params.data if ma_params.data is None else (tau * ma_params.data + (1 - tau) * current_params.data)
-
-	def _get_target_model(self):
-		if self.target_model is None:
-			self.target_model = copy.deepcopy(self.online_model)
-			self._set_requires_grad(self.target_model, False)
-		return self.target_model
-
-	def _reset_moving_average(self):
-		del self.target_model
-		self.target_model = None
-
-	@staticmethod
-	def _set_requires_grad(model, val):
-		for p in model.parameters():
-			p.requires_grad = val
-
-	@staticmethod
-	def _update_tau(step, max_steps, tau_lower=0.996, tau_upper=1.0):
-		return tau_upper - (tau_upper - tau_lower) * (math.cos(math.pi * step / max_steps) + 1) / 2
