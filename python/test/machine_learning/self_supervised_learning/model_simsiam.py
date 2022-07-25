@@ -27,6 +27,8 @@ class SimSiamModule(pl.LightningModule):
 						torch.nn.init.constant_(param, 0.0)
 					elif 'weight' in name:
 						torch.nn.init.kaiming_normal_(param)
+					#if param.dim() > 1:
+					#	torch.nn.init.xavier_uniform_(param)  # Initialize parameters with Glorot / fan_avg.
 				except Exception as ex:  # For batch normalization.
 					if 'weight' in name:
 						param.data.fill_(1)
@@ -72,9 +74,9 @@ class SimSiamModule(pl.LightningModule):
 			for p in filter(lambda p: p.requires_grad, self.parameters()):
 				model_params.append(p)
 				num_model_params += np.prod(p.size())
-			if self.trainer and self.trainer.is_global_zero and self._logger: self._logger.info('#trainable model parameters = {}.'.format(num_model_params))
-			#if self.trainer and self.trainer.is_global_zero and self._logger: self._logger.info('Trainable model parameters:')
-			#if self.trainer and self.trainer.is_global_zero and self._logger: [self._logger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, self.named_parameters())]
+			if self.trainer and self.trainer.is_global_zero and self._logger:
+				self._logger.info('#trainable model parameters = {}.'.format(num_model_params))
+				#self._logger.info('Trainable model parameters: {}.'.format([(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, self.named_parameters())]))
 
 		#optimizer = torch.optim.SGD(model_params, lr=3e-4, momentum=0.9, dampening=0, weight_decay=0, nesterov=True)
 		optimizer = torch.optim.Adam(model_params, lr=3e-4, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)

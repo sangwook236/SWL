@@ -4,7 +4,6 @@ import torch
 import pytorch_lightning as pl
 
 # REF [site] >> https://github.com/NightShade99/Self-Supervised-Vision/blob/88f221d2bcba846f99f47d7b7b407af5c3bbbb7c/utils/losses.py
-# NOTE [caution] >> This loss is different from the one in the original paper, "A Simple Framework for Contrastive Learning of Visual Representations"
 class SimclrLoss(torch.nn.Module):
 	def __init__(self, normalize=False, temperature=1.0):
 		super().__init__()
@@ -13,6 +12,8 @@ class SimclrLoss(torch.nn.Module):
 		self.temperature = temperature
 
 	def forward(self, zi, zj, device):
+		# NOTE [caution] >> This loss is different from the one in the original paper, "A Simple Framework for Contrastive Learning of Visual Representations"
+
 		bs = zi.shape[0]
 		labels = torch.zeros((2 * bs,), dtype=torch.long, device=device)
 		mask = torch.ones((bs, bs), dtype=torch.bool).fill_diagonal_(0)
@@ -69,6 +70,8 @@ class SimclrModule(pl.LightningModule):
 						torch.nn.init.constant_(param, 0.0)
 					elif 'weight' in name:
 						torch.nn.init.kaiming_normal_(param)
+					#if param.dim() > 1:
+					#	torch.nn.init.xavier_uniform_(param)  # Initialize parameters with Glorot / fan_avg.
 				except Exception as ex:  # For batch normalization.
 					if 'weight' in name:
 						param.data.fill_(1)
@@ -110,9 +113,9 @@ class SimclrModule(pl.LightningModule):
 			for p in filter(lambda p: p.requires_grad, self.parameters()):
 				model_params.append(p)
 				num_model_params += np.prod(p.size())
-			if self.trainer and self.trainer.is_global_zero and self._logger: self._logger.info('#trainable model parameters = {}.'.format(num_model_params))
-			#if self.trainer and self.trainer.is_global_zero and self._logger: self._logger.info('Trainable model parameters:')
-			#if self.trainer and self.trainer.is_global_zero and self._logger: [self._logger.info(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, self.named_parameters())]
+			if self.trainer and self.trainer.is_global_zero and self._logger:
+				self._logger.info('#trainable model parameters = {}.'.format(num_model_params))
+				#self._logger.info('Trainable model parameters: {}.'.format([(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, self.named_parameters())]))
 
 		#optimizer = torch.optim.SGD(model_params, lr=3e-4, momentum=0.9, dampening=0, weight_decay=0, nesterov=True)
 		optimizer = torch.optim.Adam(model_params, lr=3e-4, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
