@@ -126,20 +126,20 @@ def main():
 		image_shape = [28, 28, 1]
 		#normalization_mean, normalization_stddev = [0.1307], [0.3081]  # For MNIST.
 		normalization_mean, normalization_stddev = [0.5], [0.5]  # For grayscale images.
-	augmenter = utils.create_simclr_augmenter(*image_shape[:2], normalization_mean, normalization_stddev)
+	num_workers = 8
+	ssl_augmenter = utils.create_simclr_augmenter(*image_shape[:2], normalization_mean, normalization_stddev)
 
 	feature_dim = 2048  # For ResNet50 or higher.
 	projector_output_dim, projector_hidden_dim = 256, 4096  # projector_input_dim = feature_dim.
 	predictor_output_dim, predictor_hidden_dim = 256, 4096  # predictor_input_dim = projector_output_dim.
 	moving_average_decay = 0.99
 	is_momentum_encoder_used = True
-
 	is_model_initialized = False
 	is_all_model_params_optimized = True
+
 	#max_gradient_norm = 20.0  # Gradient clipping value.
 	max_gradient_norm = None
 	swa = False
-	num_workers = 8
 
 	#is_resumed = args.model_file is not None
 
@@ -176,11 +176,39 @@ def main():
 		# Build a SSL model.
 		logger.info('Building a SSL model...')
 		start_time = time.time()
-		ssl_model = build_ssl(args.ssl, feature_dim, projector_hidden_dim, projector_output_dim, predictor_hidden_dim, predictor_output_dim, moving_average_decay, is_momentum_encoder_used, augmenter, augmenter, is_model_initialized, is_all_model_params_optimized, logger)
+		ssl_model = build_ssl(args.ssl, feature_dim, projector_hidden_dim, projector_output_dim, predictor_hidden_dim, predictor_output_dim, moving_average_decay, is_momentum_encoder_used, ssl_augmenter, ssl_augmenter, is_model_initialized, is_all_model_params_optimized, logger)
 		logger.info('A SSL model built: {} secs.'.format(time.time() - start_time))
 
 		# Train the model.
 		best_model_filepath = utils.train(ssl_model, train_dataloader, test_dataloader, max_gradient_norm, args.epoch, output_dir_path, model_filepath_to_load, swa, logger)
+
+		if True:
+			# For production.
+			# REF [site] >> https://pytorch-lightning.readthedocs.io/en/stable/common/production_inference.html
+
+			# TorchScript.
+			try:
+				torchscript_filepath = os.path.join(output_dir_path, '{}_ts.pth'.format(args.ssl))
+				if True:
+					script = ssl_model.to_torchscript(file_path=torchscript_filepath, method='script')
+				elif False:
+					dummy_inputs = torch.randn((1, image_shape[2], image_shape[0], image_shape[1]))
+					script = ssl_model.to_torchscript(file_path=torchscript_filepath, method='trace', example_inputs=dummy_inputs)
+				else:
+					script = ssl_model.to_torchscript(file_path=None, method='script')
+					torch.jit.save(script, torchscript_filepath)
+				logger.info('A TorchScript model saved to {}.'.format(torchscript_filepath))
+			except Exception as ex:
+				logger.error('Failed to save a TorchScript model: {}.'.format(ex))
+
+			# ONNX.
+			try:
+				onnx_filepath = os.path.join(output_dir_path, '{}.onnx'.format(args.ssl))
+				dummy_inputs = torch.randn((1, image_shape[2], image_shape[0], image_shape[1]))
+				ssl_model.to_onnx(onnx_filepath, dummy_inputs, export_params=True)
+				logger.info('An ONNX model saved to {}.'.format(onnx_filepath))
+			except Exception as ex:
+				logger.error('Failed to save an ONNX model: {}.'.format(ex))
 
 		if True:
 			# Load a SSL model.

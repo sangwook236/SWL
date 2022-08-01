@@ -41,17 +41,17 @@ def main():
 		image_shape = [28, 28, 1]
 		#normalization_mean, normalization_stddev = [0.1307], [0.3081]  # For MNIST.
 		normalization_mean, normalization_stddev = [0.5], [0.5]  # For grayscale images.
-	augmenter = utils.create_simclr_augmenter(*image_shape[:2], normalization_mean, normalization_stddev)
+	num_workers = 8
+	ssl_augmenter = utils.create_simclr_augmenter(*image_shape[:2], normalization_mean, normalization_stddev)
 
 	feature_dim = 2048  # For ResNet50 or higher.
 	projector_output_dim, projector_hidden_dim = 256, 4096  # projector_input_dim = feature_dim.
-
 	is_model_initialized = False
 	is_all_model_params_optimized = True
+
 	#max_gradient_norm = 20.0  # Gradient clipping value.
 	max_gradient_norm = None
 	swa = False
-	num_workers = 8
 
 	#is_resumed = args.model_file is not None
 
@@ -93,7 +93,7 @@ def main():
 			projector = utils.MLP(feature_dim, projector_output_dim, projector_hidden_dim)
 		else:
 			projector = utils.SimSiamMLP(feature_dim, projector_output_dim, projector_hidden_dim)
-		ssl_model = model_simclr.SimclrModule(encoder, projector, augmenter, augmenter, is_model_initialized, is_all_model_params_optimized, logger)
+		ssl_model = model_simclr.SimclrModule(encoder, projector, ssl_augmenter, ssl_augmenter, is_model_initialized, is_all_model_params_optimized, logger)
 		logger.info('A SimCLR model built: {} secs.'.format(time.time() - start_time))
 
 		# Train the model.

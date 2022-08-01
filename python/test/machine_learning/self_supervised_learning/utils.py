@@ -1,4 +1,4 @@
-import os, random, argparse, logging, logging.handlers, time
+import os, random, math, argparse, logging, logging.handlers, time
 import numpy as np
 import torch, torchvision
 import pytorch_lightning as pl
@@ -200,20 +200,35 @@ def visualize_data(dataloader, num_data=10, class_names=None):
 		plt.show()
 
 def create_imagenet_datasets(imagenet_dir_path, logger=None):
-	train_transform = torchvision.transforms.Compose([
-		#torchvision.transforms.Resize(256),
-		#torchvision.transforms.CenterCrop(224),
-		torchvision.transforms.RandomResizedCrop(224),
-		torchvision.transforms.RandomHorizontalFlip(),
-		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-	])
-	test_transform = torchvision.transforms.Compose([
-		torchvision.transforms.Resize(256),
-		torchvision.transforms.CenterCrop(224),
-		torchvision.transforms.ToTensor(),
-		torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-	])
+	if True:
+		# No additional augmentation is required for unsupervised pretraining.
+		#	REF [function] >> create_simclr_augmenter().
+
+		# NOTE [info] >> All transformations accept PIL Image, Tensor Image or batch of Tensor Images as input. (torchvision.transforms)
+		train_transform = torchvision.transforms.Compose([
+			torchvision.transforms.ToTensor(),  # (H, W) or (H, W, C) -> (C, H, W).
+			#torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+		])
+		test_transform = torchvision.transforms.Compose([
+			torchvision.transforms.ToTensor(),  # (H, W) or (H, W, C) -> (C, H, W).
+			#torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+		])
+	else:
+		# NOTE [info] >> All transformations accept PIL Image, Tensor Image or batch of Tensor Images as input. (torchvision.transforms)
+		train_transform = torchvision.transforms.Compose([
+			#torchvision.transforms.Resize(256),
+			#torchvision.transforms.CenterCrop(224),
+			torchvision.transforms.RandomResizedCrop(224),
+			torchvision.transforms.RandomHorizontalFlip(),
+			torchvision.transforms.ToTensor(),  # (H, W) or (H, W, C) -> (C, H, W).
+			torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+		])
+		test_transform = torchvision.transforms.Compose([
+			torchvision.transforms.Resize(256),
+			torchvision.transforms.CenterCrop(224),
+			torchvision.transforms.ToTensor(),  # (H, W) or (H, W, C) -> (C, H, W).
+			torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+		])
 
 	if logger: logger.info('Creating ImageNet datasets...')
 	start_time = time.time()
@@ -226,23 +241,28 @@ def create_imagenet_datasets(imagenet_dir_path, logger=None):
 
 def create_cifar10_datasets(logger=None):
 	if True:
+		# No additional augmentation is required for unsupervised pretraining.
+		#	REF [function] >> create_simclr_augmenter().
+
+		# NOTE [info] >> All transformations accept PIL Image, Tensor Image or batch of Tensor Images as input. (torchvision.transforms)
 		train_transform = torchvision.transforms.Compose([
-			torchvision.transforms.ToTensor(),
-			torchvision.transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+			torchvision.transforms.ToTensor(),  # (H, W) or (H, W, C) -> (C, H, W).
+			#torchvision.transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  # [0, 1] -> [-1, 1].
 		])
 		test_transform = torchvision.transforms.Compose([
-			torchvision.transforms.ToTensor(),
-			torchvision.transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+			torchvision.transforms.ToTensor(),  # (H, W) or (H, W, C) -> (C, H, W).
+			#torchvision.transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  # [0, 1] -> [-1, 1].
 		])
 	else:
+		# NOTE [info] >> All transformations accept PIL Image, Tensor Image or batch of Tensor Images as input. (torchvision.transforms)
 		train_transform = torchvision.transforms.Compose([
 			torchvision.transforms.RandomCrop(32, padding=4),
 			torchvision.transforms.RandomHorizontalFlip(),
-			torchvision.transforms.ToTensor(),
+			torchvision.transforms.ToTensor(),  # (H, W) or (H, W, C) -> (C, H, W).
 			torchvision.transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010])
 		])
 		test_transform = torchvision.transforms.Compose([
-			torchvision.transforms.ToTensor(),
+			torchvision.transforms.ToTensor(),  # (H, W) or (H, W, C) -> (C, H, W).
 			torchvision.transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010])
 		])
 	classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
@@ -258,23 +278,28 @@ def create_cifar10_datasets(logger=None):
 
 def create_mnist_datasets(logger=None):
 	if True:
+		# No additional augmentation is required for unsupervised pretraining.
+		#	REF [function] >> create_simclr_augmenter().
+
+		# NOTE [info] >> All transformations accept PIL Image, Tensor Image or batch of Tensor Images as input. (torchvision.transforms)
 		train_transform = torchvision.transforms.Compose([
-			torchvision.transforms.ToTensor(),
-			torchvision.transforms.Normalize(mean=[0.5], std=[0.5])
+			torchvision.transforms.ToTensor(),  # (H, W) or (H, W, C) -> (C, H, W).
+			#torchvision.transforms.Normalize(mean=[0.5], std=[0.5])  # [0, 1] -> [-1, 1].
 		])
 		test_transform = torchvision.transforms.Compose([
-			torchvision.transforms.ToTensor(),
-			torchvision.transforms.Normalize(mean=[0.5], std=[0.5])
+			torchvision.transforms.ToTensor(),  # (H, W) or (H, W, C) -> (C, H, W).
+			#torchvision.transforms.Normalize(mean=[0.5], std=[0.5])  # [0, 1] -> [-1, 1].
 		])
 	else:
+		# NOTE [info] >> All transformations accept PIL Image, Tensor Image or batch of Tensor Images as input. (torchvision.transforms)
 		train_transform = torchvision.transforms.Compose([
 			torchvision.transforms.RandomCrop(28, padding=4),
 			torchvision.transforms.RandomHorizontalFlip(),
-			torchvision.transforms.ToTensor(),
+			torchvision.transforms.ToTensor(),  # (H, W) or (H, W, C) -> (C, H, W).
 			torchvision.transforms.Normalize(mean=[0.1307], std=[0.3081])
 		])
 		test_transform = torchvision.transforms.Compose([
-			torchvision.transforms.ToTensor(),
+			torchvision.transforms.ToTensor(),  # (H, W) or (H, W, C) -> (C, H, W).
 			torchvision.transforms.Normalize(mean=[0.1307], std=[0.3081])
 		])
 
@@ -354,7 +379,8 @@ def create_simclr_augmenter(image_height, image_width, normalization_mean, norma
 		),
 		torchvision.transforms.RandomGrayscale(p=0.2),
 		RandomApply(
-			torchvision.transforms.GaussianBlur(kernel_size=(max(round(image_height * 0.1), 3), max(round(image_width * 0.1), 3)), sigma=(0.1, 2.0)),
+			#torchvision.transforms.GaussianBlur(kernel_size=(max(math.floor(image_height * 0.1 * 0.5) * 2 + 1, 3), max(math.floor(image_width * 0.1 * 0.5) * 2 + 1, 3)), sigma=(0.1, 2.0)),
+			torchvision.transforms.GaussianBlur(kernel_size=(max(math.floor(image_height * 0.05) * 2 + 1, 3), max(math.floor(image_width * 0.05) * 2 + 1, 3)), sigma=(0.1, 2.0)),
 			p=0.5
 		),
 		torchvision.transforms.Normalize(mean=torch.tensor(normalization_mean), std=torch.tensor(normalization_stddev)),
