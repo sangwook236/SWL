@@ -90,7 +90,7 @@ class SimSiamModule(pl.LightningModule):
 		else:
 			return optimizer
 
-	def forward(self, x, use_projector=False, use_predictor=False, *args, **kwargs):
+	def forward(self, x, use_projector=False, use_predictor=False):
 		x = self.model(x) if use_projector else self.model[0](x)
 		if use_predictor:
 			x = self.predictor(x)

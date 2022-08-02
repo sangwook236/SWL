@@ -171,7 +171,7 @@ def main():
 				dataset_root_dir_path = 'D:/work/dataset/imagenet'
 		else:
 			dataset_root_dir_path = None
-		train_dataloader, test_dataloader = utils.prepare_open_data(args.dataset, args.batch, num_workers, dataset_root_dir_path, show_info=True, show_data=False, logger=logger)
+		train_dataloader, test_dataloader, _ = utils.prepare_open_data(args.dataset, args.batch, num_workers, dataset_root_dir_path, show_info=True, show_data=False, logger=logger)
 
 		# Build a SSL model.
 		logger.info('Building a SSL model...')
@@ -190,6 +190,7 @@ def main():
 			try:
 				torchscript_filepath = os.path.join(output_dir_path, '{}_ts.pth'.format(args.ssl))
 				if True:
+					# FIXME [error] >> ReferenceError: weakly-referenced object no longer exists.
 					script = ssl_model.to_torchscript(file_path=torchscript_filepath, method='script')
 				elif False:
 					dummy_inputs = torch.randn((1, image_shape[2], image_shape[0], image_shape[1]))
@@ -199,16 +200,19 @@ def main():
 					torch.jit.save(script, torchscript_filepath)
 				logger.info('A TorchScript model saved to {}.'.format(torchscript_filepath))
 			except Exception as ex:
-				logger.error('Failed to save a TorchScript model: {}.'.format(ex))
+				logger.error('Failed to save a TorchScript model:')
+				logger.exception(ex)
 
 			# ONNX.
 			try:
+				# FIXME [error] >> ReferenceError: weakly-referenced object no longer exists.
 				onnx_filepath = os.path.join(output_dir_path, '{}.onnx'.format(args.ssl))
 				dummy_inputs = torch.randn((1, image_shape[2], image_shape[0], image_shape[1]))
 				ssl_model.to_onnx(onnx_filepath, dummy_inputs, export_params=True)
 				logger.info('An ONNX model saved to {}.'.format(onnx_filepath))
 			except Exception as ex:
-				logger.error('Failed to save an ONNX model: {}.'.format(ex))
+				logger.error('Failed to save an ONNX model:')
+				logger.exception(ex)
 
 		if True:
 			# Load a SSL model.

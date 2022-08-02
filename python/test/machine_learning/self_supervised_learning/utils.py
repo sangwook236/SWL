@@ -106,6 +106,91 @@ def parse_train_command_line_options(use_ssl_type=True):
 
 	return parser.parse_args()
 
+def parse_evaluation_command_line_options(use_ssl_type=True, use_dataset_type=True):
+	parser = argparse.ArgumentParser(description="Options for self-supervised learning.")
+
+	if use_ssl_type:
+		parser.add_argument(
+			"-s",
+			"--ssl",
+			choices={"simclr", "byol", "relic", "simsiam"},
+			help="A SSL model to train",
+			#required=True,
+			default="simclr"
+		)
+	parser.add_argument(
+		"-mf",
+		"--model_file",
+		type=str,
+		#nargs="?",
+		help="A file path to load a pretrained model",
+		required=True,
+	)
+	if use_dataset_type:
+		parser.add_argument(
+			"-d",
+			"--dataset",
+			choices={"imagenet", "cifar10", "mnist"},
+			help="A dataset for training",
+			#required=True,
+			default="cifar10"
+		)
+	else:
+		parser.add_argument(
+			"-d",
+			"--data_dir",
+			type=str,
+			#nargs="?",
+			help="A directory path to load data",
+			required=True,
+		)
+	parser.add_argument(
+		"-o",
+		"--out_dir",
+		type=str,
+		#nargs="?",
+		help="An output directory path to save results such as images and log",
+		#required=True,
+		default=None
+	)
+	parser.add_argument(
+		"-e",
+		"--epoch",
+		type=int,
+		help="Number of epochs to train",
+		default=20
+	)
+	parser.add_argument(
+		"-b",
+		"--batch",
+		type=int,
+		help="Batch size",
+		default=64
+	)
+	parser.add_argument(
+		"-l",
+		"--log",
+		type=str,
+		help="The name of logger and log files",
+		default=None
+	)
+	parser.add_argument(
+		"-ll",
+		"--log_level",
+		type=int,
+		help="Log level, [0, 50]",  # {NOTSET=0, DEBUG=10, INFO=20, WARNING=WARN=30, ERROR=40, CRITICAL=FATAL=50}.
+		default=None
+	)
+	parser.add_argument(
+		"-ld",
+		"--log_dir",
+		type=str,
+		help="A directory path to log",
+		default=None
+	)
+
+	return parser.parse_args()
+
 def parse_command_line_options(use_ssl_type=True, use_dataset_type=True):
 	parser = argparse.ArgumentParser(description="Options for self-supervised learning.")
 
@@ -317,11 +402,14 @@ def prepare_open_data(dataset_type, batch_size, num_workers, dataset_root_dir_pa
 	if dataset_type == 'imagenet':
 		train_dataset, test_dataset = create_imagenet_datasets(dataset_root_dir_path, logger)
 		class_names = None
+		num_classes = 1000
 	elif dataset_type == 'cifar10':
 		train_dataset, test_dataset, class_names = create_cifar10_datasets(logger)
+		num_classes = 10
 	elif dataset_type == 'mnist':
 		train_dataset, test_dataset = create_mnist_datasets(logger)
 		class_names = None
+		num_classes = 10
 
 	# Create data loaders.
 	if logger: logger.info('Creating data loaders...')
@@ -352,7 +440,7 @@ def prepare_open_data(dataset_type, batch_size, num_workers, dataset_root_dir_pa
 		print('Visualizing test data...')
 		visualize_data(test_dataloader, num_data=10, class_names=class_names)
 
-	return train_dataloader, test_dataloader
+	return train_dataloader, test_dataloader, num_classes
 
 def create_simclr_augmenter(image_height, image_width, normalization_mean, normalization_stddev):
 	class RandomApply(torch.nn.Module):
@@ -387,18 +475,18 @@ def create_simclr_augmenter(image_height, image_width, normalization_mean, norma
 	)
 
 class ModelWrapper(torch.nn.Module):
-	def __init__(self, module, layer_name):
+	def __init__(self, model, layer_name):
 		super().__init__()
 
-		assert layer_name in module._modules.keys(), 'Layer name, {} not found in module'.format(layer_name)
-		self.submodule = module
-		self.name = layer_name
+		assert layer_name in model._modules.keys(), 'Layer name, {} not found in model'.format(layer_name)
+		self.model = model
+		self.layer_name = layer_name
 		#self.linear = torch.nn.Linear(feature_dim, output_dim)
 
 	def forward(self, x):
-		for name, module in self.submodule._modules.items():
+		for name, module in self.model._modules.items():
 			x = module(x)
-			if name is self.name:
+			if name is self.layer_name:
 				return x.view(x.size(0), -1)
 				#return self.linear(x.view(x.size(0), -1))
 		return None

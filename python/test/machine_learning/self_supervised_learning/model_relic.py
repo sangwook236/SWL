@@ -147,7 +147,7 @@ class RelicModule(pl.LightningModule):
 		else:
 			return optimizer
 
-	def forward(self, x, use_projector=False, use_predictor=False, *args, **kwargs):
+	def forward(self, x, use_projector=False, use_predictor=False):
 		x = self.online_model(x) if use_projector else self.online_model[0](x)
 		if use_predictor:
 			x = self.online_predictor(x)

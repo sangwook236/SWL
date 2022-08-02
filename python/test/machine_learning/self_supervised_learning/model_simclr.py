@@ -129,7 +129,8 @@ class SimclrModule(pl.LightningModule):
 		else:
 			return optimizer
 
-	def forward(self, x, use_projector=False, *args, **kwargs):
+	#def forward(self, x, use_projector=False):
+	def forward(self, x, use_projector=False, use_predictor=False):
 		x = self.model(x) if use_projector else self.model[0](x)
 		return x
 

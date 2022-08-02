@@ -58,6 +58,13 @@ def main():
 
 	#is_resumed = args.model_file is not None
 
+	encoder = utils.ModelWrapper(torchvision.models.resnet50(pretrained=True), layer_name='avgpool')
+	if is_momentum_encoder_used:
+		projector = utils.MLP(feature_dim, projector_output_dim, projector_hidden_dim)
+	else:
+		projector = utils.SimSiamMLP(feature_dim, projector_output_dim, projector_hidden_dim)
+	predictor = utils.MLP(projector_output_dim, predictor_output_dim, predictor_hidden_dim)
+
 	#--------------------
 	model_filepath_to_load, output_dir_path = os.path.normpath(args.model_file) if args.model_file else None, os.path.normpath(args.out_dir) if args.out_dir else None
 	assert model_filepath_to_load is None or os.path.isfile(model_filepath_to_load), 'Model file not found, {}'.format(model_filepath_to_load)
@@ -86,17 +93,11 @@ def main():
 				dataset_root_dir_path = 'D:/work/dataset/imagenet'
 		else:
 			dataset_root_dir_path = None
-		train_dataloader, test_dataloader = utils.prepare_open_data(args.dataset, args.batch, num_workers, dataset_root_dir_path, show_info=True, show_data=False, logger=logger)
+		train_dataloader, test_dataloader, _ = utils.prepare_open_data(args.dataset, args.batch, num_workers, dataset_root_dir_path, show_info=True, show_data=False, logger=logger)
 
 		# Build a model.
 		logger.info('Building a ReLIC model...')
 		start_time = time.time()
-		encoder = utils.ModelWrapper(torchvision.models.resnet50(pretrained=True), layer_name='avgpool')
-		if is_momentum_encoder_used:
-			projector = utils.MLP(feature_dim, projector_output_dim, projector_hidden_dim)
-		else:
-			projector = utils.SimSiamMLP(feature_dim, projector_output_dim, projector_hidden_dim)
-		predictor = utils.MLP(projector_output_dim, predictor_output_dim, predictor_hidden_dim)
 		ssl_model = model_relic.RelicModule(encoder, projector, predictor, ssl_augmenter, ssl_augmenter, moving_average_decay, is_momentum_encoder_used, is_model_initialized, is_all_model_params_optimized, logger)
 		logger.info('A ReLIC model built: {} secs.'.format(time.time() - start_time))
 

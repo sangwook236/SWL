@@ -55,6 +55,12 @@ def main():
 
 	#is_resumed = args.model_file is not None
 
+	encoder = utils.ModelWrapper(torchvision.models.resnet50(pretrained=True), layer_name='avgpool')
+	if True:
+		projector = utils.MLP(feature_dim, projector_output_dim, projector_hidden_dim)
+	else:
+		projector = utils.SimSiamMLP(feature_dim, projector_output_dim, projector_hidden_dim)
+
 	#--------------------
 	model_filepath_to_load, output_dir_path = os.path.normpath(args.model_file) if args.model_file else None, os.path.normpath(args.out_dir) if args.out_dir else None
 	assert model_filepath_to_load is None or os.path.isfile(model_filepath_to_load), 'Model file not found, {}'.format(model_filepath_to_load)
@@ -83,21 +89,48 @@ def main():
 				dataset_root_dir_path = 'D:/work/dataset/imagenet'
 		else:
 			dataset_root_dir_path = None
-		train_dataloader, test_dataloader = utils.prepare_open_data(args.dataset, args.batch, num_workers, dataset_root_dir_path, show_info=True, show_data=False, logger=logger)
+		train_dataloader, test_dataloader, _ = utils.prepare_open_data(args.dataset, args.batch, num_workers, dataset_root_dir_path, show_info=True, show_data=False, logger=logger)
 
 		# Build a model.
 		logger.info('Building a SimCLR model...')
 		start_time = time.time()
-		encoder = utils.ModelWrapper(torchvision.models.resnet50(pretrained=True), layer_name='avgpool')
-		if True:
-			projector = utils.MLP(feature_dim, projector_output_dim, projector_hidden_dim)
-		else:
-			projector = utils.SimSiamMLP(feature_dim, projector_output_dim, projector_hidden_dim)
 		ssl_model = model_simclr.SimclrModule(encoder, projector, ssl_augmenter, ssl_augmenter, is_model_initialized, is_all_model_params_optimized, logger)
 		logger.info('A SimCLR model built: {} secs.'.format(time.time() - start_time))
 
 		# Train the model.
 		best_model_filepath = utils.train(ssl_model, train_dataloader, test_dataloader, max_gradient_norm, args.epoch, output_dir_path, model_filepath_to_load, swa, logger)
+
+		if True:
+			# For production.
+			# REF [site] >> https://pytorch-lightning.readthedocs.io/en/stable/common/production_inference.html
+
+			# TorchScript.
+			try:
+				torchscript_filepath = os.path.join(output_dir_path, '{}_ts.pth'.format(ssl_type))
+				if True:
+					# FIXME [error] >> ReferenceError: weakly-referenced object no longer exists.
+					script = ssl_model.to_torchscript(file_path=torchscript_filepath, method='script')
+				elif False:
+					dummy_inputs = torch.randn((1, image_shape[2], image_shape[0], image_shape[1]))
+					script = ssl_model.to_torchscript(file_path=torchscript_filepath, method='trace', example_inputs=dummy_inputs)
+				else:
+					script = ssl_model.to_torchscript(file_path=None, method='script')
+					torch.jit.save(script, torchscript_filepath)
+				logger.info('A TorchScript model saved to {}.'.format(torchscript_filepath))
+			except Exception as ex:
+				logger.error('Failed to save a TorchScript model:')
+				logger.exception(ex)
+
+			# ONNX.
+			try:
+				onnx_filepath = os.path.join(output_dir_path, '{}.onnx'.format(ssl_type))
+				dummy_inputs = torch.randn((1, image_shape[2], image_shape[0], image_shape[1]))
+				# FIXME [error] >> ReferenceError: weakly-referenced object no longer exists.
+				ssl_model.to_onnx(onnx_filepath, dummy_inputs, export_params=True)
+				logger.info('An ONNX model saved to {}.'.format(onnx_filepath))
+			except Exception as ex:
+				logger.error('Failed to save an ONNX model:')
+				logger.exception(ex)
 
 		if True:
 			# Load a model.
