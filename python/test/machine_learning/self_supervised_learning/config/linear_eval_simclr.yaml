@@ -1,0 +1,67 @@
+# Configuration for SimCLR.
+
+ssl_type: simclr
+#out_dir: ./simclr_eval_outputs
+#log_name: simclr_log
+#log_level: 20
+#log_dir: ./log
+
+data:
+  dataset: cifar10
+  data_dir: data/cifar10
+  image_shape: [32, 32, 3]
+  batch_size: 512
+  num_workers: 8
+
+  train_transforms:
+    random_resized_crop:
+      size: [32, 32]
+      scale: [0.2, 1.0]
+    random_horizontal_flip:
+      p: 0.5
+    to_tensor:
+    normalize:
+      mean: [0.4914, 0.4822, 0.4465]
+      std: [0.2470, 0.2435, 0.2616]
+  test_transforms:
+    #resize:
+    #  size: [36, 36]
+    center_crop:
+      size: [32, 32]
+    to_tensor:
+    normalize:
+      mean: [0.4914, 0.4822, 0.4465]
+      std: [0.2470, 0.2435, 0.2616]
+
+model:
+  encoder:
+    model_type: resnet50
+    pretrained: true
+
+linear_evaluation:
+  batch_size: 256
+  epochs: 100
+
+  optimizer:
+    #sgd:
+    #  lr: 0.1
+    #  momentum: 0.9
+    #  damping: 0.0
+    #  weight_decay: 1.0e-04
+    #  nesterov: true
+    adam:
+      lr: 0.1
+      betas: [0.9, 0.999]
+      eps: 1.0e-08
+      weight_decay: 0.0
+      amsgrad: false
+  scheduler:
+    #multi_step:
+    #  milestones: [200, 400, 600, 800]
+    #  gamma: 0.1
+    #cosine_annealing:
+    #  #T_max: epochs
+    #  eta_min: 0.0
+    cosine_warmup:
+      #T_max: epochs
+      T_warmup: 20

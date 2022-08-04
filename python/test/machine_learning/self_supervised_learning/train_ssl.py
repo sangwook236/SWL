@@ -6,71 +6,83 @@ sys.path.append('../../../src')
 sys.path.append('./src')
 
 import os, logging, datetime, time
-import torch, torchvision
+import torch
 import pytorch_lightning as pl
+import yaml
 import utils
 
-def build_simclr(feature_dim, projector_hidden_dim, projector_output_dim, augmenter1, augmenter2, is_model_initialized, is_all_model_params_optimized, logger=None):
+def build_simclr(config, augmenter1, augmenter2, logger=None):
 	import model_simclr
 
-	encoder = utils.ModelWrapper(torchvision.models.resnet50(pretrained=True), layer_name='avgpool')
-	#feature_dim = encoder(torch.randn(1, *input_shape).permute(0, 3, 1, 2)).shape[-1]  # FIXME [check] >>
+	config_model = config['model']
+	config_training = config['training']
+
+	encoder, feature_dim = utils.construct_encoder(**config_model['encoder'])
 	if True:
-		projector = utils.MLP(feature_dim, projector_output_dim, projector_hidden_dim)
+		projector = utils.MLP(feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
 	else:
-		projector = utils.SimSiamMLP(feature_dim, projector_output_dim, projector_hidden_dim)
-	ssl_model = model_simclr.SimclrModule(encoder, projector, augmenter1, augmenter2, is_model_initialized, is_all_model_params_optimized, logger)
+		projector = utils.SimSiamMLP(feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
+	ssl_model = model_simclr.SimclrModule(config_training, encoder, projector, augmenter1, augmenter2, logger)
 
 	return ssl_model
 
-def build_byol(feature_dim, projector_hidden_dim, projector_output_dim, predictor_hidden_dim, predictor_output_dim, moving_average_decay, is_momentum_encoder_used, augmenter1, augmenter2, is_model_initialized, is_all_model_params_optimized, logger=None):
+def build_byol(config, augmenter1, augmenter2, logger=None):
 	import model_byol
 
-	encoder = utils.ModelWrapper(torchvision.models.resnet50(pretrained=True), layer_name='avgpool')
-	#feature_dim = encoder(torch.randn(1, *input_shape).permute(0, 3, 1, 2)).shape[-1]  # FIXME [check] >>
-	if is_momentum_encoder_used:
-		projector = utils.MLP(feature_dim, projector_output_dim, projector_hidden_dim)
+	config_model = config['model']
+	config_training = config['training']
+
+	encoder, feature_dim = utils.construct_encoder(**config_model['encoder'])
+	if config_training.get('is_momentum_encoder_used', True):
+		projector = utils.MLP(feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
 	else:
-		projector = utils.SimSiamMLP(feature_dim, projector_output_dim, projector_hidden_dim)
-	predictor = utils.MLP(projector_output_dim, predictor_output_dim, predictor_hidden_dim)
-	ssl_model = model_byol.ByolModule(encoder, projector, predictor, augmenter1, augmenter2, moving_average_decay, is_momentum_encoder_used, is_model_initialized, is_all_model_params_optimized, logger)
+		projector = utils.SimSiamMLP(feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
+	predictor = utils.MLP(config_model['projector_output_dim'], config_model['predictor_output_dim'], config_model['predictor_hidden_dim'])
+	ssl_model = model_byol.ByolModule(config_training, encoder, projector, predictor, augmenter1, augmenter2, logger)
 
 	return ssl_model
 
-def build_relic(feature_dim, projector_hidden_dim, projector_output_dim, predictor_hidden_dim, predictor_output_dim, moving_average_decay, is_momentum_encoder_used, augmenter1, augmenter2, is_model_initialized, is_all_model_params_optimized, logger=None):
+def build_relic(config, augmenter1, augmenter2, logger=None):
 	import model_relic
 
-	encoder = utils.ModelWrapper(torchvision.models.resnet50(pretrained=True), layer_name='avgpool')
-	#feature_dim = encoder(torch.randn(1, *input_shape).permute(0, 3, 1, 2)).shape[-1]  # FIXME [check] >>
-	if is_momentum_encoder_used:
-		projector = utils.MLP(feature_dim, projector_output_dim, projector_hidden_dim)
+	config_model = config['model']
+	config_training = config['training']
+
+	encoder, feature_dim = utils.construct_encoder(**config_model['encoder'])
+	if config_training.get('is_momentum_encoder_used', True):
+		projector = utils.MLP(feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
 	else:
-		projector = utils.SimSiamMLP(feature_dim, projector_output_dim, projector_hidden_dim)
-	predictor = utils.MLP(projector_output_dim, predictor_output_dim, predictor_hidden_dim)
-	ssl_model = model_relic.RelicModule(encoder, projector, predictor, augmenter1, augmenter2, moving_average_decay, is_momentum_encoder_used, is_model_initialized, is_all_model_params_optimized, logger)
+		projector = utils.SimSiamMLP(feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
+	predictor = utils.MLP(config_model['projector_output_dim'], config_model['predictor_output_dim'], config_model['predictor_hidden_dim'])
+	ssl_model = model_relic.RelicModule(config_training, encoder, projector, predictor, augmenter1, augmenter2, logger)
 
 	return ssl_model
 
-def build_simsiam(feature_dim, projector_hidden_dim, projector_output_dim, predictor_hidden_dim, predictor_output_dim, augmenter1, augmenter2, is_model_initialized, is_all_model_params_optimized, logger=None):
+def build_simsiam(config, augmenter1, augmenter2, logger=None):
 	import model_simsiam
 
-	encoder = utils.ModelWrapper(torchvision.models.resnet50(pretrained=True), layer_name='avgpool')
-	#feature_dim = encoder(torch.randn(1, *input_shape).permute(0, 3, 1, 2)).shape[-1]  # FIXME [check] >>
-	projector = utils.SimSiamMLP(feature_dim, projector_output_dim, projector_hidden_dim)
-	predictor = utils.MLP(projector_output_dim, predictor_output_dim, predictor_hidden_dim)
-	ssl_model = model_simsiam.SimSiamModule(encoder, projector, predictor, augmenter1, augmenter2, is_model_initialized, is_all_model_params_optimized, logger)
+	config_model = config['model']
+	config_training = config['training']
+
+	encoder, feature_dim = utils.construct_encoder(**config_model['encoder'])
+	projector = utils.SimSiamMLP(feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
+	predictor = utils.MLP(config_model['projector_output_dim'], config_model['predictor_output_dim'], config_model['predictor_hidden_dim'])
+	ssl_model = model_simsiam.SimSiamModule(config_training, encoder, projector, predictor, augmenter1, augmenter2, logger)
 
 	return ssl_model
 
-def build_ssl(ssl_type, feature_dim, projector_hidden_dim, projector_output_dim, predictor_hidden_dim, predictor_output_dim, moving_average_decay, is_momentum_encoder_used, augmenter1, augmenter2, is_model_initialized, is_all_model_params_optimized, logger=None):
+def build_ssl(ssl_type, config, augmenter1, augmenter2, logger=None):
+	return globals().get('build_{}'.format(ssl_type))(config, augmenter1, augmenter2, logger)
+	'''
 	if ssl_type == 'simclr':
-		return build_simclr(feature_dim, projector_hidden_dim, projector_output_dim, augmenter1, augmenter2, is_model_initialized, is_all_model_params_optimized, logger)
+		return build_simclr(config, augmenter1, augmenter2, logger)
 	elif ssl_type == 'byol':
-		return build_byol(feature_dim, projector_hidden_dim, projector_output_dim, predictor_hidden_dim, predictor_output_dim, moving_average_decay, is_momentum_encoder_used, augmenter1, augmenter2, is_model_initialized, is_all_model_params_optimized, logger)
+		return build_byol(config, augmenter1, augmenter2, logger)
 	elif ssl_type == 'relic':
-		return build_relic(feature_dim, projector_hidden_dim, projector_output_dim, predictor_hidden_dim, predictor_output_dim, moving_average_decay, is_momentum_encoder_used, augmenter1, augmenter2, is_model_initialized, is_all_model_params_optimized, logger)
+		return build_relic(config, augmenter1, augmenter2, logger)
 	elif ssl_type == 'simsiam':
-		return build_simsiam(feature_dim, projector_hidden_dim, projector_output_dim, predictor_hidden_dim, predictor_output_dim, augmenter1, augmenter2, is_model_initialized, is_all_model_params_optimized, logger)
+		return build_simsiam(config, augmenter1, augmenter2, logger)
+	'''
 
 def load_ssl(ssl_type, model_filepath):
 	if ssl_type == 'simclr':
@@ -98,9 +110,32 @@ def load_ssl(ssl_type, model_filepath):
 #--------------------------------------------------------------------
 
 def main():
-	args = utils.parse_train_command_line_options()
+	args = utils.parse_config_command_line_options(is_training=True)
+	assert os.path.isfile(args.config), 'Config file not found, {}'.format(args.config)
 
-	logger = utils.get_logger(args.log if args.log else os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, args.log_dir if args.log_dir else args.out_dir, is_rotating=True)
+	try:
+		with open(args.config, encoding='utf-8') as fd:
+			config = yaml.load(fd, Loader=yaml.Loader)
+	except yaml.scanner.ScannerError as ex:
+		print('yaml.scanner.ScannerError in {}.'.format(args.config))
+		logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
+		raise
+	except UnicodeDecodeError as ex:
+		print('Unicode decode error in {}.'.format(args.config))
+		logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
+		raise
+	except FileNotFoundError as ex:
+		print('Config file not found, {}.'.format(args.config))
+		logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
+		raise
+
+	config['out_dir'] = config.get('out_dir', None)
+	config['log_name'] = config.get('log_name', os.path.basename(os.path.normpath(__file__)))
+	config['log_level'] = config.get('log_level', logging.INFO)
+	config['log_dir'] = config.get('log_dir', config['out_dir'])
+
+	#--------------------
+	logger = utils.get_logger(config['log_name'], config['log_level'], config['log_dir'], is_rotating=True)
 	logger.info('----------------------------------------------------------------------')
 	logger.info('Logger: name = {}, level = {}.'.format(logger.name, logger.level))
 	logger.info('Command-line arguments: {}.'.format(sys.argv))
@@ -112,75 +147,51 @@ def main():
 	logger.info('cuDNN: version = {}.'.format(torch.backends.cudnn.version()))
 
 	#--------------------
-	#assert args.ssl in ['simclr', 'byol', 'relic', 'simsiam'], 'Invalid SSL model, {}'.format(args.ssl)
-	#assert args.dataset in ['imagenet', 'cifar10', 'mnist'], 'Invalid dataset, {}'.format(args.dataset)
+	#config['ssl_type'] = config.get('ssl_type', 'simclr')
+	assert config['ssl_type'] in ['byol', 'relic', 'simclr', 'simsiam'], 'Invalid SSL model, {}'.format(config['ssl_type'])
+	assert config['data']['dataset'] in ['cifar10', 'imagenet', 'mnist'], 'Invalid dataset, {}'.format(config['data']['dataset'])
 
-	if args.dataset == 'imagenet':
-		image_shape = [224, 224, 3]
-		normalization_mean, normalization_stddev = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]  # For ImageNet.
-	elif args.dataset == 'cifar10':
-		image_shape = [32, 32, 3]
-		#normalization_mean, normalization_stddev = [0.4914, 0.4822, 0.4465], [0.2470, 0.2435, 0.2616]  # For CIFAR-10.
-		normalization_mean, normalization_stddev = [0.5, 0.5, 0.5], [0.5, 0.5, 0.5]  # For RGB images.
-	elif args.dataset == 'mnist':
-		image_shape = [28, 28, 1]
-		#normalization_mean, normalization_stddev = [0.1307], [0.3081]  # For MNIST.
-		normalization_mean, normalization_stddev = [0.5], [0.5]  # For grayscale images.
-	num_workers = 8
-	ssl_augmenter = utils.create_simclr_augmenter(*image_shape[:2], normalization_mean, normalization_stddev)
-
-	feature_dim = 2048  # For ResNet50 or higher.
-	projector_output_dim, projector_hidden_dim = 256, 4096  # projector_input_dim = feature_dim.
-	predictor_output_dim, predictor_hidden_dim = 256, 4096  # predictor_input_dim = projector_output_dim.
-	moving_average_decay = 0.99
-	is_momentum_encoder_used = True
-	is_model_initialized = False
-	is_all_model_params_optimized = True
-
-	#max_gradient_norm = 20.0  # Gradient clipping value.
-	max_gradient_norm = None
-	swa = False
-
-	#is_resumed = args.model_file is not None
-
-	#--------------------
-	model_filepath_to_load, output_dir_path = os.path.normpath(args.model_file) if args.model_file else None, os.path.normpath(args.out_dir) if args.out_dir else None
+	model_filepath_to_load = os.path.normpath(args.model_file) if args.model_file else None
 	assert model_filepath_to_load is None or os.path.isfile(model_filepath_to_load), 'Model file not found, {}'.format(model_filepath_to_load)
+	#if model_filepath_to_load: logger.info('Model filepath to load: {}.'.format(model_filepath_to_load))
+
 	#if pl.utilities.distributed.rank_zero_only.rank == 0:
 	if True:
+		output_dir_path = os.path.normpath(config['out_dir']) if config['out_dir'] else None
 		#if model_filepath_to_load and not output_dir_path:
 		#	output_dir_path = os.path.dirname(model_filepath_to_load)
 		if not output_dir_path:
 			timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-			output_dir_path = os.path.join('.', '{}_train_outputs_{}'.format(args.ssl, timestamp))
+			output_dir_path = os.path.join('.', '{}_train_outputs_{}'.format(config['ssl_type'], timestamp))
 		if output_dir_path and output_dir_path.strip() and not os.path.isdir(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
 		logger.info('Output directory path: {}.'.format(output_dir_path))
-		#if model_filepath_to_load: logger.info('Model filepath to load: {}.'.format(model_filepath_to_load))
 	else:
 		output_dir_path = None
 
+	#is_resumed = args.model_file is not None
+
 	#--------------------
 	try:
+		config_data = config['data']
+		config_training = config['training']
+
+		image_shape = config_data['image_shape']
+		#ssl_augmenter = utils.create_simclr_augmenter(*image_shape[:2], *config_data['ssl_transforms']['normalize'])
+		ssl_augmenter = utils.construct_transform(config_data['ssl_transforms'])
+
 		# Prepare data.
-		if args.dataset == 'imagenet':
-			if 'posix' == os.name:
-				dataset_root_dir_path = '/home/sangwook/work/dataset/imagenet'
-			else:
-				dataset_root_dir_path = 'D:/work/dataset/imagenet'
-		else:
-			dataset_root_dir_path = None
-		train_dataloader, test_dataloader, _ = utils.prepare_open_data(args.dataset, args.batch, num_workers, dataset_root_dir_path, show_info=True, show_data=False, logger=logger)
+		train_dataloader, test_dataloader, _ = utils.prepare_open_data(config_data, show_info=True, show_data=False, logger=logger)
 
 		# Build a SSL model.
 		logger.info('Building a SSL model...')
 		start_time = time.time()
-		ssl_model = build_ssl(args.ssl, feature_dim, projector_hidden_dim, projector_output_dim, predictor_hidden_dim, predictor_output_dim, moving_average_decay, is_momentum_encoder_used, ssl_augmenter, ssl_augmenter, is_model_initialized, is_all_model_params_optimized, logger)
+		ssl_model = build_ssl(config['ssl_type'], config, ssl_augmenter, ssl_augmenter, logger)
 		logger.info('A SSL model built: {} secs.'.format(time.time() - start_time))
 
 		# Train the model.
-		best_model_filepath = utils.train(ssl_model, train_dataloader, test_dataloader, max_gradient_norm, args.epoch, output_dir_path, model_filepath_to_load, swa, logger)
+		best_model_filepath = utils.train(config_training, ssl_model, train_dataloader, test_dataloader, output_dir_path, model_filepath_to_load, logger)
 
 		if True:
 			# For production.
@@ -188,7 +199,7 @@ def main():
 
 			# TorchScript.
 			try:
-				torchscript_filepath = os.path.join(output_dir_path, '{}_ts.pth'.format(args.ssl))
+				torchscript_filepath = os.path.join(output_dir_path, '{}_ts.pth'.format(config['ssl_type']))
 				if True:
 					# FIXME [error] >> ReferenceError: weakly-referenced object no longer exists.
 					script = ssl_model.to_torchscript(file_path=torchscript_filepath, method='script')
@@ -206,7 +217,7 @@ def main():
 			# ONNX.
 			try:
 				# FIXME [error] >> ReferenceError: weakly-referenced object no longer exists.
-				onnx_filepath = os.path.join(output_dir_path, '{}.onnx'.format(args.ssl))
+				onnx_filepath = os.path.join(output_dir_path, '{}.onnx'.format(config['ssl_type']))
 				dummy_inputs = torch.randn((1, image_shape[2], image_shape[0], image_shape[1]))
 				ssl_model.to_onnx(onnx_filepath, dummy_inputs, export_params=True)
 				logger.info('An ONNX model saved to {}.'.format(onnx_filepath))
@@ -218,7 +229,7 @@ def main():
 			# Load a SSL model.
 			logger.info('Loading a SSL model from {}...'.format(best_model_filepath))
 			start_time = time.time()
-			ssl_model_loaded = load_ssl(args.ssl, best_model_filepath)
+			ssl_model_loaded = load_ssl(config['ssl_type'], best_model_filepath)
 			logger.info('A SSL model loaded: {} secs.'.format(time.time() - start_time))
 	except Exception as ex:
 		#logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
@@ -228,9 +239,14 @@ def main():
 #--------------------------------------------------------------------
 
 # Usage:
-#	python train_ssl.py --ssl simclr --dataset imagenet --epoch 40 --batch 64 --out_dir ./ssl_train_outputs
-#	python train_ssl.py --ssl byol --dataset cifar10 --epoch 20 --batch 32 --out_dir ./ssl_train_outputs --log ssl_log --log_dir ./log
-#	python train_ssl.py --ssl relic --dataset mnist --epoch 10 --batch 48 --model_file ./ssl_models/model.ckpt --out_dir ./ssl_train_outputs
+#	python train_ssl.py --config ./config/train_byol.yaml
+#	python train_ssl.py --config ./config/train_relic.yaml
+#	python train_ssl.py --config ./config/train_simclr.yaml
+#	python train_ssl.py --config ./config/train_simsiam.yaml
+#	python train_ssl.py --config ./config/train_byol.yaml --model_file ./byol_models/model.ckpt
+#	python train_ssl.py --config ./config/train_relic.yaml --model_file ./relic_models/model.ckpt
+#	python train_ssl.py --config ./config/train_simclr.yaml --model_file ./simclr_models/model.ckpt
+#	python train_ssl.py --config ./config/train_simsiam.yaml --model_file ./simsiam_models/model.ckpt
 
 if '__main__' == __name__:
 	main()

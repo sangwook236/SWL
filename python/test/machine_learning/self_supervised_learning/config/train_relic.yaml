@@ -1,0 +1,118 @@
+# Configuration for ReLIC.
+
+ssl_type: relic
+#out_dir: ./relic_train_outputs
+#log_name: relic_log
+#log_level: 20
+#log_dir: ./log
+
+data:
+  dataset: cifar10
+  data_dir: data/cifar10
+  image_shape: [32, 32, 3]
+  batch_size: 512
+  num_workers: 8
+
+  ssl_transforms:
+    # Data augmentation for SimCLR.
+    random_resized_crop:
+      size: [32, 32]
+      scale: [0.08, 1.0]
+      #scale: [0.2, 1.0]
+    random_horizontal_flip:
+      p: 0.5
+    color_jitter:
+      brightness: 0.8
+      contrast: 0.8
+      saturation: 0.8
+      hue: 0.2
+      #brightness: 0.4
+      #contrast: 0.4
+      #saturation: 0.4
+      #hue: 0.1
+      random_apply:
+        p: 0.8
+    random_gray:
+      p: 0.2
+    gaussian_blur:
+      kernel_size: [3, 3]
+      sigma: [0.1, 2.0]
+      random_apply:
+        p: 0.5
+    #to_tensor:
+    normalize:
+      mean: [0.4914, 0.4822, 0.4465]
+      std: [0.2470, 0.2435, 0.2616]
+  train_transforms:
+    #random_resized_crop:
+    #  size: [32, 32]
+    #  scale: [0.2, 1.0]
+    #random_horizontal_flip:
+    #  p: 0.5
+    to_tensor:
+    #normalize:
+    #  mean: [0.4914, 0.4822, 0.4465]
+    #  std: [0.2470, 0.2435, 0.2616]
+  test_transforms:
+    ##resize:
+    ##  size: [36, 36]
+    #center_crop:
+    #  size: [32, 32]
+    to_tensor:
+    #normalize:
+    #  mean: [0.4914, 0.4822, 0.4465]
+    #  std: [0.2470, 0.2435, 0.2616]
+
+model:
+  encoder:
+    model_type: resnet50
+    pretrained: true
+
+  #projector_input_dim: 2048  # projector_input_dim = encoder_feature_dim.
+  projector_hidden_dim: 4096
+  projector_output_dim: 256
+  #predictor_input_dim: 256  # predictor_input_dim = projector_output_dim.
+  predictor_hidden_dim: 4096
+  predictor_output_dim: 256
+
+training:
+  epochs: 1000
+  #eval_every: 10
+
+  is_momentum_encoder_used: true
+  moving_average_decay: 0.996
+  is_model_initialized: false
+  is_all_model_params_optimized: true
+
+  #max_gradient_norm: 20.0
+  max_gradient_norm: null
+  swa: true
+
+  optimizer:
+    #sgd:
+    #  lr: 2.0
+    #  momentum: 0.9
+    #  damping: 0.0
+    #  weight_decay: 1.0e-04
+    #  nesterov: true
+    adam:
+      lr: 2.0
+      betas: [0.9, 0.999]
+      eps: 1.0e-08
+      weight_decay: 0.0
+      amsgrad: false
+  scheduler:
+    #multi_step:
+    #  milestones: [200, 400, 600, 800]
+    #  gamma: 0.1
+    #cosine_annealing:
+    #  #T_max: epochs
+    #  eta_min: 0.0
+    cosine_warmup:
+      #T_max: epochs
+      T_warmup: 20
+
+  loss:
+    normalize: true
+    temperature: 1.0
+    alpha: 0.5

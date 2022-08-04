@@ -9,13 +9,15 @@ import os, logging, datetime, time
 import numpy as np
 import torch
 import pytorch_lightning as pl
+import yaml
 import utils
 
 class ClassificationModule(pl.LightningModule):
-	def __init__(self, input_dim, num_classes, is_model_initialized=False, is_all_model_params_optimized=True, logger=None):
+	def __init__(self, config, input_dim, num_classes, is_model_initialized=False, is_all_model_params_optimized=True, logger=None):
 		super().__init__()
 		self.save_hyperparameters()
 
+		self.config = config
 		self.model = torch.nn.Linear(input_dim, num_classes)
 		'''
 		self.model = torch.nn.Sequential(
@@ -25,7 +27,6 @@ class ClassificationModule(pl.LightningModule):
 			torch.nn.Linear(hidden_dim, num_classes),
 		)
 		'''
-
 		self.is_all_model_params_optimized = is_all_model_params_optimized
 		self._logger = logger
 
@@ -60,19 +61,32 @@ class ClassificationModule(pl.LightningModule):
 				self._logger.info('#trainable model parameters = {}.'.format(num_model_params))
 				#self._logger.info('Trainable model parameters: {}.'.format([(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, self.named_parameters())]))
 
-		optimizer = torch.optim.SGD(model_params, lr=0.1, momentum=0.9, weight_decay=1.0e-04, nesterov=True)
-		#optimizer = torch.optim.Adam(model_params, lr=0.1, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		config_optimizer = self.config['optimizer']
+		if 'sgd' in config_optimizer:
+			optimizer = torch.optim.SGD(model_params, **config_optimizer['sgd'])
+		elif 'adam' in config_optimizer:
+			optimizer = torch.optim.Adam(model_params, **config_optimizer['adam'])
+		else:
+			raise ValueError('Invalid optimizer, {}'.format(config_optimizer))
 
-		#scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones, gamma=0, last_epoch=-1)
-		scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.trainer.max_epochs, eta_min=0, last_epoch=-1)
-		#scheduler = None
+		scheduler = None
+		config_scheduler = self.config.get('scheduler', None)
+		if config_scheduler:
+			if 'multi_step' in config_scheduler:
+				scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, **config_scheduler['multi_step'])
+			elif 'cosine_annealing' in config_scheduler:
+				scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.trainer.max_epochs, **config_scheduler['cosine_annealing'])
+				#scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.config['epochs'], **config_scheduler['cosine_annealing'])
+			elif 'cosine_warmup' in config_scheduler:
+				scheduler = utils.CosineWarmupScheduler(optimizer, T_max=self.trainer.max_epochs, **config_scheduler['cosine_warmup'])
+				#scheduler = utils.CosineWarmupScheduler(optimizer, T_max=self.config['epochs'], **config_scheduler['cosine_warmup'])
 
 		if scheduler:
 			return [optimizer], [{'scheduler': scheduler, 'interval': 'epoch'}]
 		else:
 			return optimizer
 
-	def forward(self, x, *args, **kwargs):
+	def forward(self, x):
 		return self.model(x)
 
 	def training_step(self, batch, batch_idx):
@@ -123,7 +137,7 @@ class ClassificationModule(pl.LightningModule):
 
 		return {'acc': acc}
 
-def prepare_feature_data(ssl_model, train_dataloader, test_dataloader, batch_size, logger=None, device='cuda'):
+def prepare_feature_data(config, ssl_model, train_dataloader, test_dataloader, logger=None, device='cuda'):
 	class FeatureDataset(torch.utils.data.Dataset):
 		def __init__(self, srcs, tgts):
 			super().__init__()
@@ -162,18 +176,18 @@ def prepare_feature_data(ssl_model, train_dataloader, test_dataloader, batch_siz
 	# Create feature data loaders.
 	if logger: logger.info('Creating feature data loaders...')
 	start_time = time.time()
-	train_feature_dataloader = torch.utils.data.DataLoader(train_feature_dataset, batch_size=batch_size, shuffle=True, num_workers=train_dataloader.num_workers, persistent_workers=False)
-	test_feature_dataloader = torch.utils.data.DataLoader(test_feature_dataset, batch_size=batch_size, shuffle=False, num_workers=test_dataloader.num_workers, persistent_workers=False)
+	train_feature_dataloader = torch.utils.data.DataLoader(train_feature_dataset, batch_size=config['batch_size'], shuffle=True, num_workers=train_dataloader.num_workers, persistent_workers=False)
+	test_feature_dataloader = torch.utils.data.DataLoader(test_feature_dataset, batch_size=config['batch_size'], shuffle=False, num_workers=test_dataloader.num_workers, persistent_workers=False)
 	if logger: logger.info('Feature data loaders created: {} secs.'.format(time.time() - start_time))
 	if logger: logger.info('#train steps per epoch = {}, #test steps per epoch = {}.'.format(len(train_feature_dataloader), len(test_feature_dataloader)))
 
 	return train_feature_dataloader, test_feature_dataloader
 
-def run_linear_evaluation(train_feature_dataloader, test_feature_dataloader, input_dim, num_classes, num_epochs, output_dir_path, logger=None):
+def run_linear_evaluation(config, train_feature_dataloader, test_feature_dataloader, input_dim, num_classes, output_dir_path, logger=None):
 	is_model_initialized = True
 	is_all_model_params_optimized = True
 
-	classifier = ClassificationModule(input_dim, num_classes, is_model_initialized, is_all_model_params_optimized, logger)
+	classifier = ClassificationModule(config, input_dim, num_classes, is_model_initialized, is_all_model_params_optimized, logger)
 
 	checkpoint_callback = pl.callbacks.ModelCheckpoint(
 		dirpath=(output_dir_path + '/checkpoints') if output_dir_path else './checkpoints',
@@ -188,8 +202,8 @@ def run_linear_evaluation(train_feature_dataloader, test_feature_dataloader, inp
 
 	gradient_clip_val = None
 	gradient_clip_algorithm = None
-	#trainer = pl.Trainer(devices=-1, accelerator='gpu', strategy='ddp', auto_select_gpus=True, max_epochs=num_epochs, callbacks=pl_callbacks, enable_checkpointing=True, gradient_clip_val=gradient_clip_val, gradient_clip_algorithm=gradient_clip_algorithm, default_root_dir=output_dir_path)  # When using the default logger.
-	trainer = pl.Trainer(devices=-1, accelerator='gpu', strategy='ddp', auto_select_gpus=True, max_epochs=num_epochs, callbacks=pl_callbacks, logger=pl_logger, enable_checkpointing=True, gradient_clip_val=gradient_clip_val, gradient_clip_algorithm=gradient_clip_algorithm, default_root_dir=None)
+	#trainer = pl.Trainer(devices=-1, accelerator='gpu', strategy='ddp', auto_select_gpus=True, max_epochs=config['epochs'], callbacks=pl_callbacks, enable_checkpointing=True, gradient_clip_val=gradient_clip_val, gradient_clip_algorithm=gradient_clip_algorithm, default_root_dir=output_dir_path)  # When using the default logger.
+	trainer = pl.Trainer(devices=-1, accelerator='gpu', strategy='ddp', auto_select_gpus=True, max_epochs=config['epochs'], callbacks=pl_callbacks, logger=pl_logger, enable_checkpointing=True, gradient_clip_val=gradient_clip_val, gradient_clip_algorithm=gradient_clip_algorithm, default_root_dir=None)
 
 	# Train the classifier.
 	if logger: logger.info('Training the classifier...')
@@ -224,9 +238,32 @@ def load_ssl(ssl_type, model_filepath):
 #--------------------------------------------------------------------
 
 def main():
-	args = utils.parse_evaluation_command_line_options(use_ssl_type=True, use_dataset_type=True)
+	args = utils.parse_config_command_line_options(is_training=False)
+	assert os.path.isfile(args.config), 'Config file not found, {}'.format(args.config)
 
-	logger = utils.get_logger(args.log if args.log else os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, args.log_dir if args.log_dir else args.out_dir, is_rotating=True)
+	try:
+		with open(args.config, encoding='utf-8') as fd:
+			config = yaml.load(fd, Loader=yaml.Loader)
+	except yaml.scanner.ScannerError as ex:
+		print('yaml.scanner.ScannerError in {}.'.format(args.config))
+		logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
+		raise
+	except UnicodeDecodeError as ex:
+		print('Unicode decode error in {}.'.format(args.config))
+		logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
+		raise
+	except FileNotFoundError as ex:
+		print('Config file not found, {}.'.format(args.config))
+		logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
+		raise
+
+	config['out_dir'] = config.get('out_dir', None)
+	config['log_name'] = config.get('log_name', os.path.basename(os.path.normpath(__file__)))
+	config['log_level'] = config.get('log_level', logging.INFO)
+	config['log_dir'] = config.get('log_dir', config['out_dir'])
+
+	#--------------------
+	logger = utils.get_logger(config['log_name'], config['log_level'], config['log_dir'], is_rotating=True)
 	logger.info('----------------------------------------------------------------------')
 	logger.info('Logger: name = {}, level = {}.'.format(logger.name, logger.level))
 	logger.info('Command-line arguments: {}.'.format(sys.argv))
@@ -241,21 +278,19 @@ def main():
 	logger.info('Device: {}.'.format(device))
 
 	#--------------------
-	#assert args.ssl in ['simclr', 'byol', 'relic', 'simsiam'], 'Invalid SSL model, {}'.format(args.ssl)
-	#assert args.dataset in ['imagenet', 'cifar10', 'mnist'], 'Invalid dataset, {}'.format(args.dataset)
+	#config['ssl_type'] = config.get('ssl_type', 'simclr')
+	assert config['ssl_type'] in ['byol', 'relic', 'simclr', 'simsiam'], 'Invalid SSL model, {}'.format(config['ssl_type'])
+	assert config['data']['dataset'] in ['cifar10', 'imagenet', 'mnist'], 'Invalid dataset, {}'.format(config['data']['dataset'])
 
-	feature_dim = 2048  # For ResNet50 or higher.
-	use_projector, use_predictor = False, False
-	num_workers = 8
-
-	#--------------------
-	model_filepath_to_load, output_dir_path = os.path.normpath(args.model_file) if args.model_file else None, os.path.normpath(args.out_dir) if args.out_dir else None
+	model_filepath_to_load = os.path.normpath(args.model_file) if args.model_file else None
 	assert model_filepath_to_load is None or os.path.isfile(model_filepath_to_load), 'Model file not found, {}'.format(model_filepath_to_load)
+
+	output_dir_path = os.path.normpath(config['out_dir']) if config['out_dir'] else None
 	#if model_filepath_to_load and not output_dir_path:
 	#	output_dir_path = os.path.dirname(model_filepath_to_load)
 	if not output_dir_path:
 		timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-		output_dir_path = os.path.join('.', '{}_eval_outputs_{}'.format(args.ssl, timestamp))
+		output_dir_path = os.path.join('.', '{}_eval_outputs_{}'.format(config['ssl_type'], timestamp))
 	if output_dir_path and output_dir_path.strip() and not os.path.isdir(output_dir_path):
 		os.makedirs(output_dir_path, exist_ok=True)
 
@@ -263,28 +298,26 @@ def main():
 
 	#--------------------
 	try:
+		config_data = config['data']
+		config_model = config['model']
+		config_linear_eval = config['linear_evaluation']
+
 		# Prepare data.
-		if args.dataset == 'imagenet':
-			if 'posix' == os.name:
-				dataset_root_dir_path = '/home/sangwook/work/dataset/imagenet'
-			else:
-				dataset_root_dir_path = 'D:/work/dataset/imagenet'
-		else:
-			dataset_root_dir_path = None
-		train_dataloader, test_dataloader, num_classes = utils.prepare_open_data(args.dataset, args.batch, num_workers, dataset_root_dir_path, show_info=True, show_data=False, logger=logger)
+		train_dataloader, test_dataloader, num_classes = utils.prepare_open_data(config_data, show_info=True, show_data=False, logger=logger)
 
 		# Load a SSL model.
 		logger.info('Loading a SSL model from {}...'.format(model_filepath_to_load))
 		start_time = time.time()
-		ssl_model = load_ssl(args.ssl, model_filepath_to_load)
+		ssl_model = load_ssl(config['ssl_type'], model_filepath_to_load)
 		logger.info('A SSL model loaded: {} secs.'.format(time.time() - start_time))
 
 		# Prepare feature datasets.
-		train_feature_dataloader, test_feature_dataloader = prepare_feature_data(ssl_model, train_dataloader, test_dataloader, args.batch, logger, device)
+		train_feature_dataloader, test_feature_dataloader = prepare_feature_data(config_linear_eval, ssl_model, train_dataloader, test_dataloader, logger, device)
 		del ssl_model  # Free memory of CPU or GPU.
 
 		# Run a linear evaluation.
-		run_linear_evaluation(train_feature_dataloader, test_feature_dataloader, feature_dim, num_classes, args.epoch, output_dir_path, logger)
+		_, feature_dim = utils.construct_encoder(**config_model['encoder'])
+		run_linear_evaluation(config_linear_eval, train_feature_dataloader, test_feature_dataloader, feature_dim, num_classes, output_dir_path, logger)
 	except Exception as ex:
 		#logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
 		logger.exception(ex)
@@ -293,9 +326,10 @@ def main():
 #--------------------------------------------------------------------
 
 # Usage:
-#	python evaluate_ssl.py --ssl simclr --model_file ./ssl_models/model.ckpt --dataset imagenet --out_dir ./ssl_eval_outputs
-#	python evaluate_ssl.py --ssl byol --model_file ./ssl_models/model.ckpt --dataset cifar10 --batch 64 --out_dir ./ssl_eval_outputs
-#	python evaluate_ssl.py --ssl relic --model_file ./ssl_models/model.ckpt --dataset mnist --batch 32 --out_dir ./ssl_eval_outputs --log ssl_log --log_dir ./log
+#	python evaluate_ssl.py --config ./config/linear_eval_byol.yaml --model_file ./byol_models/model.ckpt
+#	python evaluate_ssl.py --config ./config/linear_eval_relic.yaml --model_file ./relic_models/model.ckpt
+#	python evaluate_ssl.py --config ./config/linear_eval_simclr.yaml --model_file ./simclr_models/model.ckpt
+#	python evaluate_ssl.py --config ./config/linear_eval_simsiam.yaml --model_file ./simsiam_models/model.ckpt
 
 if '__main__' == __name__:
 	main()

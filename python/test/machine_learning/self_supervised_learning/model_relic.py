@@ -2,6 +2,7 @@ import typing, math, collections, copy, time
 import numpy as np
 import torch
 import pytorch_lightning as pl
+import utils
 
 # REF [site] >> https://github.com/NightShade99/Self-Supervised-Vision/blob/main/utils/losses.py
 class RelicLoss(torch.nn.Module):
@@ -54,26 +55,26 @@ class RelicLoss(torch.nn.Module):
 		return contrastive_loss + self.alpha * kl_div_loss
 
 class RelicModule(pl.LightningModule):
-	def __init__(self, encoder, projector, predictor, augmenter1, augmenter2, moving_average_decay, is_momentum_encoder_used, is_model_initialized=False, is_all_model_params_optimized=True, logger=None):
+	def __init__(self, config_training, encoder, projector, predictor, augmenter1, augmenter2, logger=None):
 		super().__init__()
 		#self.save_hyperparameters()  # UserWarning: Attribute 'encoder' is an instance of 'nn.Module' and is already saved during checkpointing.
 		self.save_hyperparameters(ignore=['encoder', 'projector', 'predictor' , 'augmenter1', 'augmenter2'])
 
+		self.config_training = config_training
 		self.online_model = torch.nn.Sequential(encoder, projector)
 		self.online_predictor = predictor
-		self.target_model = None
-		self.moving_average_decay = moving_average_decay
-		self.is_momentum_encoder_used = is_momentum_encoder_used
-
 		self.augmenter1 = augmenter1
 		self.augmenter2 = augmenter2
-
-		self.is_all_model_params_optimized = is_all_model_params_optimized
 		self._logger = logger
 
-		self.criterion = RelicLoss(normalize=True, temperature=1.0, alpha=0.5)
+		self.target_model = None
+		self.is_momentum_encoder_used = config_training.get('is_momentum_encoder_used', False)
+		self.moving_average_decay = config_training.get('moving_average_decay', 0.0)
+		self.is_all_model_params_optimized = config_training.get('is_all_model_params_optimized', True)
 
-		if is_model_initialized:
+		self.criterion = RelicLoss(**config_training['loss'])
+
+		if config_training.get('is_model_initialized', False):
 			# Initialize model weights.
 			for name, param in self.online_model.named_parameters():
 				try:
@@ -136,11 +137,25 @@ class RelicModule(pl.LightningModule):
 				self._logger.info('#trainable model parameters = {}.'.format(num_model_params))
 				#self._logger.info('Trainable model parameters: {}.'.format([(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, self.named_parameters())]))
 
-		optimizer = torch.optim.SGD(model_params, lr=0.2, momentum=0.9, dampening=0, weight_decay=1e-4, nesterov=True)
-		#optimizer = torch.optim.Adam(model_params, lr=0.2, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+		config_optimizer = self.config_training['optimizer']
+		if 'sgd' in config_optimizer:
+			optimizer = torch.optim.SGD(model_params, **config_optimizer['sgd'])
+		elif 'adam' in config_optimizer:
+			optimizer = torch.optim.Adam(model_params, **config_optimizer['adam'])
+		else:
+			raise ValueError('Invalid optimizer, {}'.format(config_optimizer))
 
-		#scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones, gamma=0, last_epoch=-1)
-		scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.trainer.max_epochs, eta_min=0, last_epoch=-1)
+		scheduler = None
+		config_scheduler = self.config_training.get('scheduler', None)
+		if config_scheduler:
+			if 'multi_step' in config_scheduler:
+				scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, **config_scheduler['multi_step'])
+			elif 'cosine_annealing' in config_scheduler:
+				scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.trainer.max_epochs, **config_scheduler['cosine_annealing'])
+				#scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.config_training['epochs'], **config_scheduler['cosine_annealing'])
+			elif 'cosine_warmup' in config_scheduler:
+				scheduler = utils.CosineWarmupScheduler(optimizer, T_max=self.trainer.max_epochs, **config_scheduler['cosine_warmup'])
+				#scheduler = utils.CosineWarmupScheduler(optimizer, T_max=self.config_training['epochs'], **config_scheduler['cosine_warmup'])
 
 		if scheduler:
 			return [optimizer], [{'scheduler': scheduler, 'interval': 'epoch'}]

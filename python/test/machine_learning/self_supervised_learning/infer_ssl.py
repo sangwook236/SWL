@@ -7,16 +7,26 @@ sys.path.append('./src')
 
 import os, logging, datetime, time
 import torch
+import yaml
 import utils
 
-def prepare_open_data(dataset_type, dataset_root_dir_path=None, logger=None):
-	if dataset_type == 'imagenet':
-		_, test_dataset = utils.create_imagenet_datasets(dataset_root_dir_path, logger)
-	elif dataset_type == 'cifar10':
-		_, test_dataset, _ = utils.create_cifar10_datasets(logger)
-	elif dataset_type == 'mnist':
-		_, test_dataset = utils.create_mnist_datasets(logger)
-	return test_dataset
+def prepare_open_data(config, logger=None):
+	import torchvision
+
+	transform = utils.construct_transform(config['transforms'])
+
+	if logger: logger.info('Creating a dataset...')
+	start_time = time.time()
+	if config['dataset'] == 'imagenet':
+		dataset = torchvision.datasets.ImageNet(root=config['data_dir'], split='val', transform=transform, target_transform=None)
+	elif config['dataset'] == 'cifar10':
+		dataset = torchvision.datasets.CIFAR10(root=config['data_dir'], train=False, download=True, transform=transform, target_transform=None)
+	elif config['dataset'] == 'mnist':
+		dataset = torchvision.datasets.MNIST(root=config['data_dir'], train=False, download=True, transform=transform, target_transform=None)
+	if logger: logger.info('A dataset created: {} secs.'.format(time.time() - start_time))
+	if logger: logger.info('#examples = {}.'.format(len(dataset)))
+
+	return dataset
 
 # REF [function] >> load_ssl() in ./train_ssl.py
 def load_ssl(ssl_type, model_filepath):
@@ -45,9 +55,32 @@ def load_ssl(ssl_type, model_filepath):
 #--------------------------------------------------------------------
 
 def main():
-	args = utils.parse_command_line_options(use_ssl_type=True, use_dataset_type=True)
+	args = utils.parse_config_command_line_options(is_training=False)
+	assert os.path.isfile(args.config), 'Config file not found, {}'.format(args.config)
 
-	logger = utils.get_logger(args.log if args.log else os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, args.log_dir if args.log_dir else args.out_dir, is_rotating=True)
+	try:
+		with open(args.config, encoding='utf-8') as fd:
+			config = yaml.load(fd, Loader=yaml.Loader)
+	except yaml.scanner.ScannerError as ex:
+		print('yaml.scanner.ScannerError in {}.'.format(args.config))
+		logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
+		raise
+	except UnicodeDecodeError as ex:
+		print('Unicode decode error in {}.'.format(args.config))
+		logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
+		raise
+	except FileNotFoundError as ex:
+		print('Config file not found, {}.'.format(args.config))
+		logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
+		raise
+
+	config['out_dir'] = config.get('out_dir', None)
+	config['log_name'] = config.get('log_name', os.path.basename(os.path.normpath(__file__)))
+	config['log_level'] = config.get('log_level', logging.INFO)
+	config['log_dir'] = config.get('log_dir', config['out_dir'])
+
+	#--------------------
+	logger = utils.get_logger(config['log_name'], config['log_level'], config['log_dir'], is_rotating=True)
 	logger.info('----------------------------------------------------------------------')
 	logger.info('Logger: name = {}, level = {}.'.format(logger.name, logger.level))
 	logger.info('Command-line arguments: {}.'.format(sys.argv))
@@ -62,20 +95,19 @@ def main():
 	logger.info('Device: {}.'.format(device))
 
 	#--------------------
-	#assert args.ssl in ['simclr', 'byol', 'relic', 'simsiam'], 'Invalid SSL model, {}'.format(args.ssl)
-	#assert args.dataset in ['imagenet', 'cifar10', 'mnist'], 'Invalid dataset, {}'.format(args.dataset)
+	#config['ssl_type'] = config.get('ssl_type', 'simclr')
+	assert config['ssl_type'] in ['byol', 'relic', 'simclr', 'simsiam'], 'Invalid SSL model, {}'.format(config['ssl_type'])
+	assert config['data']['dataset'] in ['cifar10', 'imagenet', 'mnist'], 'Invalid dataset, {}'.format(config['data']['dataset'])
 
-	use_projector, use_predictor = False, False
-	num_workers = 8
-
-	#--------------------
-	model_filepath_to_load, output_dir_path = os.path.normpath(args.model_file) if args.model_file else None, os.path.normpath(args.out_dir) if args.out_dir else None
+	model_filepath_to_load = os.path.normpath(args.model_file) if args.model_file else None
 	assert model_filepath_to_load is None or os.path.isfile(model_filepath_to_load), 'Model file not found, {}'.format(model_filepath_to_load)
+
+	output_dir_path = os.path.normpath(config['out_dir']) if config['out_dir'] else None
 	#if model_filepath_to_load and not output_dir_path:
 	#	output_dir_path = os.path.dirname(model_filepath_to_load)
 	if not output_dir_path:
 		timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-		output_dir_path = os.path.join('.', '{}_results_{}'.format(args.ssl, timestamp))
+		output_dir_path = os.path.join('.', '{}_results_{}'.format(config['ssl_type'], timestamp))
 	if output_dir_path and output_dir_path.strip() and not os.path.isdir(output_dir_path):
 		os.makedirs(output_dir_path, exist_ok=True)
 
@@ -83,30 +115,26 @@ def main():
 
 	#--------------------
 	try:
+		config_data = config['data']
+		config_model = config['model']
+
 		# Prepare data.
-		def create_data_generator(dataset):
-			dataloader = torch.utils.data.DataLoader(dataset, batch_size=args.batch, shuffle=False, num_workers=num_workers, persistent_workers=False)
+		def create_data_generator(dataset, batch_size, num_workers, shuffle=False):
+			dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, persistent_workers=False)
 			logger.info('#data batches = {}.'.format(len(dataloader)))
 			for batch in dataloader:
 				yield batch[0]
 
-		if args.dataset == 'imagenet':
-			if 'posix' == os.name:
-				dataset_root_dir_path = '/home/sangwook/work/dataset/imagenet'
-			else:
-				dataset_root_dir_path = 'D:/work/dataset/imagenet'
-		else:
-			dataset_root_dir_path = None
-		dataset = prepare_open_data(args.dataset, dataset_root_dir_path, logger=None)
+		dataset = prepare_open_data(config_data, logger=None)
 
 		# Load a SSL model.
 		logger.info('Loading a SSL model from {}...'.format(model_filepath_to_load))
 		start_time = time.time()
-		ssl_model = load_ssl(args.ssl, model_filepath_to_load)
+		ssl_model = load_ssl(config['ssl_type'], model_filepath_to_load)
 		logger.info('A SSL model loaded: {} secs.'.format(time.time() - start_time))
 
 		# Infer by the model.
-		predictions = utils.infer(ssl_model, create_data_generator(dataset), use_projector, use_predictor, logger, device)
+		predictions = utils.infer(config_model, ssl_model, create_data_generator(dataset, config_data['batch_size'], config_data['num_workers']), logger, device)
 	except Exception as ex:
 		#logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
 		logger.exception(ex)
@@ -115,9 +143,10 @@ def main():
 #--------------------------------------------------------------------
 
 # Usage:
-#	python infer_ssl.py --ssl simclr --model_file ./ssl_models/model.ckpt --dataset imagenet --out_dir ./ssl_results
-#	python infer_ssl.py --ssl byol --model_file ./ssl_models/model.ckpt --dataset cifar10 --batch 64 --out_dir ./ssl_results
-#	python infer_ssl.py --ssl relic --model_file ./ssl_models/model.ckpt --dataset mnist --batch 32 --out_dir ./ssl_results --log ssl_log --log_dir ./log
+#	python infer_ssl.py --config ./config/infer_byol.yaml --model_file ./byol_models/model.ckpt
+#	python infer_ssl.py --config ./config/infer_relic.yaml --model_file ./relic_models/model.ckpt
+#	python infer_ssl.py --config ./config/infer_simclr.yaml --model_file ./simclr_models/model.ckpt
+#	python infer_ssl.py --config ./config/infer_simsiam.yaml --model_file ./simsiam_models/model.ckpt
 
 if '__main__' == __name__:
 	main()

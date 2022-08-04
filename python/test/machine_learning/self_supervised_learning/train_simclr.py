@@ -6,15 +6,39 @@ sys.path.append('../../../src')
 sys.path.append('./src')
 
 import os, logging, datetime, time
-import torch, torchvision
+import torch
 import pytorch_lightning as pl
+import yaml
 import model_simclr
 import utils
 
 def main():
-	args = utils.parse_train_command_line_options(use_ssl_type=False)
+	args = utils.parse_config_command_line_options(is_training=True)
+	assert os.path.isfile(args.config), 'Config file not found, {}'.format(args.config)
 
-	logger = utils.get_logger(args.log if args.log else os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, args.log_dir if args.log_dir else args.out_dir, is_rotating=True)
+	try:
+		with open(args.config, encoding='utf-8') as fd:
+			config = yaml.load(fd, Loader=yaml.Loader)
+	except yaml.scanner.ScannerError as ex:
+		print('yaml.scanner.ScannerError in {}.'.format(args.config))
+		logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
+		raise
+	except UnicodeDecodeError as ex:
+		print('Unicode decode error in {}.'.format(args.config))
+		logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
+		raise
+	except FileNotFoundError as ex:
+		print('Config file not found, {}.'.format(args.config))
+		logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
+		raise
+
+	config['out_dir'] = config.get('out_dir', None)
+	config['log_name'] = config.get('log_name', os.path.basename(os.path.normpath(__file__)))
+	config['log_level'] = config.get('log_level', logging.INFO)
+	config['log_dir'] = config.get('log_dir', config['out_dir'])
+
+	#--------------------
+	logger = utils.get_logger(config['log_name'], config['log_level'], config['log_dir'], is_rotating=True)
 	logger.info('----------------------------------------------------------------------')
 	logger.info('Logger: name = {}, level = {}.'.format(logger.name, logger.level))
 	logger.info('Command-line arguments: {}.'.format(sys.argv))
@@ -26,79 +50,58 @@ def main():
 	logger.info('cuDNN: version = {}.'.format(torch.backends.cudnn.version()))
 
 	#--------------------
-	#assert args.ssl == 'simclr', 'Only SimCLR model is supported, but got {}'.format(args.ssl)
-	#assert args.dataset in ['imagenet', 'cifar10', 'mnist'], 'Invalid dataset, {}'.format(args.dataset)
+	#config['ssl_type'] = config.get('ssl_type', 'simclr')
+	assert config['ssl_type'] == 'simclr', 'Only SimCLR model is supported, but got {}'.format(config['ssl_type'])
+	assert config['data']['dataset'] in ['cifar10', 'imagenet', 'mnist'], 'Invalid dataset, {}'.format(config['data']['dataset'])
 
-	ssl_type = 'simclr'
-	if args.dataset == 'imagenet':
-		image_shape = [224, 224, 3]
-		normalization_mean, normalization_stddev = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]  # For ImageNet.
-	elif args.dataset == 'cifar10':
-		image_shape = [32, 32, 3]
-		#normalization_mean, normalization_stddev = [0.4914, 0.4822, 0.4465], [0.2470, 0.2435, 0.2616]  # For CIFAR-10.
-		normalization_mean, normalization_stddev = [0.5, 0.5, 0.5], [0.5, 0.5, 0.5]  # For RGB images.
-	elif args.dataset == 'mnist':
-		image_shape = [28, 28, 1]
-		#normalization_mean, normalization_stddev = [0.1307], [0.3081]  # For MNIST.
-		normalization_mean, normalization_stddev = [0.5], [0.5]  # For grayscale images.
-	num_workers = 8
-	ssl_augmenter = utils.create_simclr_augmenter(*image_shape[:2], normalization_mean, normalization_stddev)
-
-	feature_dim = 2048  # For ResNet50 or higher.
-	projector_output_dim, projector_hidden_dim = 256, 4096  # projector_input_dim = feature_dim.
-	is_model_initialized = False
-	is_all_model_params_optimized = True
-
-	#max_gradient_norm = 20.0  # Gradient clipping value.
-	max_gradient_norm = None
-	swa = False
-
-	#is_resumed = args.model_file is not None
-
-	encoder = utils.ModelWrapper(torchvision.models.resnet50(pretrained=True), layer_name='avgpool')
-	if True:
-		projector = utils.MLP(feature_dim, projector_output_dim, projector_hidden_dim)
-	else:
-		projector = utils.SimSiamMLP(feature_dim, projector_output_dim, projector_hidden_dim)
-
-	#--------------------
-	model_filepath_to_load, output_dir_path = os.path.normpath(args.model_file) if args.model_file else None, os.path.normpath(args.out_dir) if args.out_dir else None
+	model_filepath_to_load = os.path.normpath(args.model_file) if args.model_file else None
 	assert model_filepath_to_load is None or os.path.isfile(model_filepath_to_load), 'Model file not found, {}'.format(model_filepath_to_load)
+	#if model_filepath_to_load: logger.info('Model filepath to load: {}.'.format(model_filepath_to_load))
+
 	#if pl.utilities.distributed.rank_zero_only.rank == 0:
 	if True:
+		output_dir_path = os.path.normpath(config['out_dir']) if config['out_dir'] else None
 		#if model_filepath_to_load and not output_dir_path:
 		#	output_dir_path = os.path.dirname(model_filepath_to_load)
 		if not output_dir_path:
 			timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-			output_dir_path = os.path.join('.', '{}_train_outputs_{}'.format(ssl_type, timestamp))
+			output_dir_path = os.path.join('.', '{}_train_outputs_{}'.format(config['ssl_type'], timestamp))
 		if output_dir_path and output_dir_path.strip() and not os.path.isdir(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
 		logger.info('Output directory path: {}.'.format(output_dir_path))
-		#if model_filepath_to_load: logger.info('Model filepath to load: {}.'.format(model_filepath_to_load))
 	else:
 		output_dir_path = None
 
+	#is_resumed = args.model_file is not None
+
 	#--------------------
 	try:
+		config_data = config['data']
+		config_model = config['model']
+		config_training = config['training']
+
+		image_shape = config_data['image_shape']
+		#ssl_augmenter = utils.create_simclr_augmenter(*image_shape[:2], *config_data['ssl_transforms']['normalize'])
+		ssl_augmenter = utils.construct_transform(config_data['ssl_transforms'])
+
 		# Prepare data.
-		if args.dataset == 'imagenet':
-			if 'posix' == os.name:
-				dataset_root_dir_path = '/home/sangwook/work/dataset/imagenet'
-			else:
-				dataset_root_dir_path = 'D:/work/dataset/imagenet'
-		else:
-			dataset_root_dir_path = None
-		train_dataloader, test_dataloader, _ = utils.prepare_open_data(args.dataset, args.batch, num_workers, dataset_root_dir_path, show_info=True, show_data=False, logger=logger)
+		train_dataloader, test_dataloader, _ = utils.prepare_open_data(config_data, show_info=True, show_data=False, logger=logger)
 
 		# Build a model.
+		encoder, feature_dim = utils.construct_encoder(**config_model['encoder'])
+		if True:
+			projector = utils.MLP(feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
+		else:
+			projector = utils.SimSiamMLP(feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
+
 		logger.info('Building a SimCLR model...')
 		start_time = time.time()
-		ssl_model = model_simclr.SimclrModule(encoder, projector, ssl_augmenter, ssl_augmenter, is_model_initialized, is_all_model_params_optimized, logger)
+		ssl_model = model_simclr.SimclrModule(config_training, encoder, projector, ssl_augmenter, ssl_augmenter, logger)
 		logger.info('A SimCLR model built: {} secs.'.format(time.time() - start_time))
 
 		# Train the model.
-		best_model_filepath = utils.train(ssl_model, train_dataloader, test_dataloader, max_gradient_norm, args.epoch, output_dir_path, model_filepath_to_load, swa, logger)
+		best_model_filepath = utils.train(config_training, ssl_model, train_dataloader, test_dataloader, output_dir_path, model_filepath_to_load, logger)
 
 		if True:
 			# For production.
@@ -106,7 +109,7 @@ def main():
 
 			# TorchScript.
 			try:
-				torchscript_filepath = os.path.join(output_dir_path, '{}_ts.pth'.format(ssl_type))
+				torchscript_filepath = os.path.join(output_dir_path, '{}_ts.pth'.format(config['ssl_type']))
 				if True:
 					# FIXME [error] >> ReferenceError: weakly-referenced object no longer exists.
 					script = ssl_model.to_torchscript(file_path=torchscript_filepath, method='script')
@@ -123,7 +126,7 @@ def main():
 
 			# ONNX.
 			try:
-				onnx_filepath = os.path.join(output_dir_path, '{}.onnx'.format(ssl_type))
+				onnx_filepath = os.path.join(output_dir_path, '{}.onnx'.format(config['ssl_type']))
 				dummy_inputs = torch.randn((1, image_shape[2], image_shape[0], image_shape[1]))
 				# FIXME [error] >> ReferenceError: weakly-referenced object no longer exists.
 				ssl_model.to_onnx(onnx_filepath, dummy_inputs, export_params=True)
@@ -148,9 +151,8 @@ def main():
 #--------------------------------------------------------------------
 
 # Usage:
-#	python train_simclr.py --dataset imagenet --epoch 40 --batch 64 --out_dir ./simclr_train_outputs
-#	python train_simclr.py --dataset cifar10 --epoch 20 --batch 32 --out_dir ./simclr_train_outputs --log simclr_log --log_dir ./log
-#	python train_simclr.py --dataset mnist --epoch 10 --batch 48 --model_file ./simclr_models/model.ckpt --out_dir ./simclr_train_outputs
+#	python train_simclr.py --config ./config/train_simclr.yaml
+#	python train_simclr.py --config ./config/train_simclr.yaml --model_file ./simclr_models/model.ckpt
 
 if '__main__' == __name__:
 	main()

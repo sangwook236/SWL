@@ -1,0 +1,32 @@
+# Configuration for BYOL.
+
+ssl_type: byol
+#out_dir: ./byol_results
+#log_name: byol_log
+#log_level: 20
+#log_dir: ./log
+
+data:
+  dataset: cifar10
+  data_dir: data/cifar10
+  image_shape: [32, 32, 3]
+  batch_size: 512
+  num_workers: 8
+
+  transforms:
+    #resize:
+    #  size: [36, 36]
+    center_crop:
+      size: [32, 32]
+    to_tensor:
+    normalize:
+      mean: [0.4914, 0.4822, 0.4465]
+      std: [0.2470, 0.2435, 0.2616]
+
+model:
+  encoder:
+    model_type: resnet50
+    pretrained: true
+
+  use_projector: false
+  use_predictor: false
