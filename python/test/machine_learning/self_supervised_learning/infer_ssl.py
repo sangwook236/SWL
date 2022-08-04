@@ -55,7 +55,7 @@ def load_ssl(ssl_type, model_filepath):
 #--------------------------------------------------------------------
 
 def main():
-	args = utils.parse_config_command_line_options(is_training=False)
+	args = utils.parse_command_line_options(is_training=False)
 	assert os.path.isfile(args.config), 'Config file not found, {}'.format(args.config)
 
 	try:

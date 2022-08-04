@@ -13,7 +13,7 @@ import model_byol
 import utils
 
 def main():
-	args = utils.parse_config_command_line_options(is_training=True)
+	args = utils.parse_command_line_options(is_training=True)
 	assert os.path.isfile(args.config), 'Config file not found, {}'.format(args.config)
 
 	try:

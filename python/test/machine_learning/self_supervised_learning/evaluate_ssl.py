@@ -61,28 +61,12 @@ class ClassificationModule(pl.LightningModule):
 				self._logger.info('#trainable model parameters = {}.'.format(num_model_params))
 				#self._logger.info('Trainable model parameters: {}.'.format([(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, self.named_parameters())]))
 
-		config_optimizer = self.config['optimizer']
-		if 'sgd' in config_optimizer:
-			optimizer = torch.optim.SGD(model_params, **config_optimizer['sgd'])
-		elif 'adam' in config_optimizer:
-			optimizer = torch.optim.Adam(model_params, **config_optimizer['adam'])
-		else:
-			raise ValueError('Invalid optimizer, {}'.format(config_optimizer))
-
-		scheduler = None
-		config_scheduler = self.config.get('scheduler', None)
-		if config_scheduler:
-			if 'multi_step' in config_scheduler:
-				scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, **config_scheduler['multi_step'])
-			elif 'cosine_annealing' in config_scheduler:
-				scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.trainer.max_epochs, **config_scheduler['cosine_annealing'])
-				#scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.config['epochs'], **config_scheduler['cosine_annealing'])
-			elif 'cosine_warmup' in config_scheduler:
-				scheduler = utils.CosineWarmupScheduler(optimizer, T_max=self.trainer.max_epochs, **config_scheduler['cosine_warmup'])
-				#scheduler = utils.CosineWarmupScheduler(optimizer, T_max=self.config['epochs'], **config_scheduler['cosine_warmup'])
+		optimizer = utils.construct_optimizer(self.config['optimizer'], model_params)
+		scheduler, is_epoch_based = utils.construct_lr_scheduler(self.config.get('lr_scheduler', None), optimizer, self.trainer.max_epochs)
+		#scheduler, is_epoch_based = utils.construct_lr_scheduler(self.config.get('lr_scheduler', None), optimizer, self.config['epochs'])
 
 		if scheduler:
-			return [optimizer], [{'scheduler': scheduler, 'interval': 'epoch'}]
+			return [optimizer], [{'scheduler': scheduler, 'interval': 'epoch' if is_epoch_based else 'step'}]
 		else:
 			return optimizer
 
@@ -238,7 +222,7 @@ def load_ssl(ssl_type, model_filepath):
 #--------------------------------------------------------------------
 
 def main():
-	args = utils.parse_config_command_line_options(is_training=False)
+	args = utils.parse_command_line_options(is_training=False)
 	assert os.path.isfile(args.config), 'Config file not found, {}'.format(args.config)
 
 	try:

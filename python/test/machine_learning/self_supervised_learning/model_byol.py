@@ -6,12 +6,12 @@ import utils
 
 # REF [site] >> https://github.com/lucidrains/byol-pytorch/blob/master/byol_pytorch/byol_pytorch.py
 class ByolModule(pl.LightningModule):
-	def __init__(self, config_training, encoder, projector, predictor, augmenter1, augmenter2, logger=None):
+	def __init__(self, config, encoder, projector, predictor, augmenter1, augmenter2, logger=None):
 		super().__init__()
 		#self.save_hyperparameters()  # UserWarning: Attribute 'encoder' is an instance of 'nn.Module' and is already saved during checkpointing.
 		self.save_hyperparameters(ignore=['encoder', 'projector', 'predictor' , 'augmenter1', 'augmenter2'])
 
-		self.config_training = config_training
+		self.config = config
 		self.online_model = torch.nn.Sequential(encoder, projector)
 		self.online_predictor = predictor
 		self.augmenter1 = augmenter1
@@ -19,11 +19,11 @@ class ByolModule(pl.LightningModule):
 		self._logger = logger
 
 		self.target_model = None
-		self.is_momentum_encoder_used = config_training.get('is_momentum_encoder_used', False)
-		self.moving_average_decay = config_training.get('moving_average_decay', 0.0)
-		self.is_all_model_params_optimized = config_training.get('is_all_model_params_optimized', True)
+		self.is_momentum_encoder_used = config.get('is_momentum_encoder_used', False)
+		self.moving_average_decay = config.get('moving_average_decay', 0.0)
+		self.is_all_model_params_optimized = config.get('is_all_model_params_optimized', True)
 
-		if config_training.get('is_model_initialized', False):
+		if config.get('is_model_initialized', False):
 			# Initialize model weights.
 			for name, param in self.online_model.named_parameters():
 				try:
@@ -86,28 +86,12 @@ class ByolModule(pl.LightningModule):
 				self._logger.info('#trainable model parameters = {}.'.format(num_model_params))
 				#self._logger.info('Trainable model parameters: {}.'.format([(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, self.named_parameters())]))
 
-		config_optimizer = self.config_training['optimizer']
-		if 'sgd' in config_optimizer:
-			optimizer = torch.optim.SGD(model_params, **config_optimizer['sgd'])
-		elif 'adam' in config_optimizer:
-			optimizer = torch.optim.Adam(model_params, **config_optimizer['adam'])
-		else:
-			raise ValueError('Invalid optimizer, {}'.format(config_optimizer))
-
-		scheduler = None
-		config_scheduler = self.config_training.get('scheduler', None)
-		if config_scheduler:
-			if 'multi_step' in config_scheduler:
-				scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, **config_scheduler['multi_step'])
-			elif 'cosine_annealing' in config_scheduler:
-				scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.trainer.max_epochs, **config_scheduler['cosine_annealing'])
-				#scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.config_training['epochs'], **config_scheduler['cosine_annealing'])
-			elif 'cosine_warmup' in config_scheduler:
-				scheduler = utils.CosineWarmupScheduler(optimizer, T_max=self.trainer.max_epochs, **config_scheduler['cosine_warmup'])
-				#scheduler = utils.CosineWarmupScheduler(optimizer, T_max=self.config_training['epochs'], **config_scheduler['cosine_warmup'])
+		optimizer = utils.construct_optimizer(self.config['optimizer'], model_params)
+		scheduler, is_epoch_based = utils.construct_lr_scheduler(self.config.get('lr_scheduler', None), optimizer, self.trainer.max_epochs)
+		#scheduler, is_epoch_based = utils.construct_lr_scheduler(self.config.get('lr_scheduler', None), optimizer, self.config['epochs'])
 
 		if scheduler:
-			return [optimizer], [{'scheduler': scheduler, 'interval': 'epoch'}]
+			return [optimizer], [{'scheduler': scheduler, 'interval': 'epoch' if is_epoch_based else 'step'}]
 		else:
 			return optimizer
 

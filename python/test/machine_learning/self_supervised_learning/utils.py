@@ -30,246 +30,7 @@ def get_logger(name, log_level=None, log_dir_path=None, is_rotating=True):
 
 	return logger
 
-def parse_train_command_line_options(use_ssl_type=True):
-	parser = argparse.ArgumentParser(description="Training options for self-supervised learning.")
-
-	if use_ssl_type:
-		parser.add_argument(
-			"-s",
-			"--ssl",
-			choices={"simclr", "byol", "relic", "simsiam"},
-			help="A SSL model to train",
-			#required=True,
-			default="simclr"
-		)
-	parser.add_argument(
-		"-d",
-		"--dataset",
-		choices={"imagenet", "cifar10", "mnist"},
-		help="A dataset for training",
-		#required=True,
-		default="cifar10"
-	)
-	parser.add_argument(
-		"-mf",
-		"--model_file",
-		type=str,
-		#nargs="?",
-		help="A model file path to resume training",
-		#required=True,
-		default=None
-	)
-	parser.add_argument(
-		"-o",
-		"--out_dir",
-		type=str,
-		#nargs="?",
-		help="An output directory path to save results such as images and log",
-		#required=True,
-		default=None
-	)
-	parser.add_argument(
-		"-e",
-		"--epoch",
-		type=int,
-		help="Number of epochs to train",
-		default=20
-	)
-	parser.add_argument(
-		"-b",
-		"--batch",
-		type=int,
-		help="Batch size",
-		default=64
-	)
-	parser.add_argument(
-		"-l",
-		"--log",
-		type=str,
-		help="The name of logger and log files",
-		default=None
-	)
-	parser.add_argument(
-		"-ll",
-		"--log_level",
-		type=int,
-		help="Log level, [0, 50]",  # {NOTSET=0, DEBUG=10, INFO=20, WARNING=WARN=30, ERROR=40, CRITICAL=FATAL=50}.
-		default=None
-	)
-	parser.add_argument(
-		"-ld",
-		"--log_dir",
-		type=str,
-		help="A directory path to log",
-		default=None
-	)
-
-	return parser.parse_args()
-
-def parse_evaluation_command_line_options(use_ssl_type=True, use_dataset_type=True):
-	parser = argparse.ArgumentParser(description="Options for self-supervised learning.")
-
-	if use_ssl_type:
-		parser.add_argument(
-			"-s",
-			"--ssl",
-			choices={"simclr", "byol", "relic", "simsiam"},
-			help="A SSL model to train",
-			#required=True,
-			default="simclr"
-		)
-	parser.add_argument(
-		"-mf",
-		"--model_file",
-		type=str,
-		#nargs="?",
-		help="A file path to load a pretrained model",
-		required=True,
-	)
-	if use_dataset_type:
-		parser.add_argument(
-			"-d",
-			"--dataset",
-			choices={"imagenet", "cifar10", "mnist"},
-			help="A dataset for training",
-			#required=True,
-			default="cifar10"
-		)
-	else:
-		parser.add_argument(
-			"-d",
-			"--data_dir",
-			type=str,
-			#nargs="?",
-			help="A directory path to load data",
-			required=True,
-		)
-	parser.add_argument(
-		"-o",
-		"--out_dir",
-		type=str,
-		#nargs="?",
-		help="An output directory path to save results such as images and log",
-		#required=True,
-		default=None
-	)
-	parser.add_argument(
-		"-e",
-		"--epoch",
-		type=int,
-		help="Number of epochs to train",
-		default=20
-	)
-	parser.add_argument(
-		"-b",
-		"--batch",
-		type=int,
-		help="Batch size",
-		default=64
-	)
-	parser.add_argument(
-		"-l",
-		"--log",
-		type=str,
-		help="The name of logger and log files",
-		default=None
-	)
-	parser.add_argument(
-		"-ll",
-		"--log_level",
-		type=int,
-		help="Log level, [0, 50]",  # {NOTSET=0, DEBUG=10, INFO=20, WARNING=WARN=30, ERROR=40, CRITICAL=FATAL=50}.
-		default=None
-	)
-	parser.add_argument(
-		"-ld",
-		"--log_dir",
-		type=str,
-		help="A directory path to log",
-		default=None
-	)
-
-	return parser.parse_args()
-
-def parse_command_line_options(use_ssl_type=True, use_dataset_type=True):
-	parser = argparse.ArgumentParser(description="Options for self-supervised learning.")
-
-	if use_ssl_type:
-		parser.add_argument(
-			"-s",
-			"--ssl",
-			choices={"simclr", "byol", "relic", "simsiam"},
-			help="A SSL model to train",
-			#required=True,
-			default="simclr"
-		)
-	parser.add_argument(
-		"-mf",
-		"--model_file",
-		type=str,
-		#nargs="?",
-		help="A file path to load a pretrained model",
-		required=True,
-	)
-	if use_dataset_type:
-		parser.add_argument(
-			"-d",
-			"--dataset",
-			choices={"imagenet", "cifar10", "mnist"},
-			help="A dataset for training",
-			#required=True,
-			default="cifar10"
-		)
-	else:
-		parser.add_argument(
-			"-d",
-			"--data_dir",
-			type=str,
-			#nargs="?",
-			help="A directory path to load data",
-			required=True,
-		)
-	parser.add_argument(
-		"-o",
-		"--out_dir",
-		type=str,
-		#nargs="?",
-		help="An output directory path to save results such as images and log",
-		#required=True,
-		default=None
-	)
-	parser.add_argument(
-		"-b",
-		"--batch",
-		type=int,
-		help="Batch size",
-		default=64
-	)
-	parser.add_argument(
-		"-l",
-		"--log",
-		type=str,
-		help="The name of logger and log files",
-		default=None
-	)
-	parser.add_argument(
-		"-ll",
-		"--log_level",
-		type=int,
-		help="Log level, [0, 50]",  # {NOTSET=0, DEBUG=10, INFO=20, WARNING=WARN=30, ERROR=40, CRITICAL=FATAL=50}.
-		default=None
-	)
-	parser.add_argument(
-		"-ld",
-		"--log_dir",
-		type=str,
-		help="A directory path to log",
-		default=None
-	)
-
-	return parser.parse_args()
-
-def parse_config_command_line_options(is_training=True):
+def parse_command_line_options(is_training=True):
 	parser = argparse.ArgumentParser(description="Options for self-supervised learning.")
 
 	parser.add_argument(
@@ -592,9 +353,9 @@ def construct_transform(config, *args, **kwargs):
 					raise NotImplementedError(f"{aug} not implemented")
 			return img
 
-	TRANSFORM_HELPER = {
+	TRANSFORMS = {
 		"color_jitter": torchvision.transforms.ColorJitter,
-		"random_gray": torchvision.transforms.RandomGrayscale,
+		"random_grayscale": torchvision.transforms.RandomGrayscale,
 		"random_crop": torchvision.transforms.RandomCrop,
 		"random_resized_crop": torchvision.transforms.RandomResizedCrop,
 		"center_crop": torchvision.transforms.CenterCrop,
@@ -604,7 +365,7 @@ def construct_transform(config, *args, **kwargs):
 		"normalize": torchvision.transforms.Normalize,
 		"gaussian_blur": torchvision.transforms.GaussianBlur,
 		#"gaussian_blur": GaussianBlur,
-		"rand_aug": RandomAugment,
+		"random_augument": RandomAugment,
 		"cutout": Cutout,
 	}
 
@@ -612,11 +373,11 @@ def construct_transform(config, *args, **kwargs):
 	for key, value in config.items():
 		if value is not None:
 			random_apply = value.pop("random_apply", None)
-			tr = TRANSFORM_HELPER[key](**value)
+			tr = TRANSFORMS[key](**value)
 			if random_apply is not None:
 				tr = torchvision.transforms.RandomApply([tr], p=random_apply["p"])
 		else:
-			tr = TRANSFORM_HELPER[key]()
+			tr = TRANSFORMS[key]()
 		transforms.append(tr)
 	return torchvision.transforms.Compose(transforms)
 
@@ -627,31 +388,19 @@ def create_simclr_augmenter(image_height, image_width, normalization_mean, norma
 		#torchvision.transforms.RandomResizedCrop(size=(image_height, image_width), scale=(0.2, 1.0), ratio=(3 / 4, 4 / 3), interpolation=torchvision.transforms.InterpolationMode.BILINEAR),
 		torchvision.transforms.RandomHorizontalFlip(p=0.5),
 		torchvision.transforms.RandomApply(
-			torchvision.transforms.ColorJitter(brightness=0.8 * s, contrast=0.8 * s, saturation=0.8 * s, hue=0.2 * s),
-			#torchvision.transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
+			[torchvision.transforms.ColorJitter(brightness=0.8 * s, contrast=0.8 * s, saturation=0.8 * s, hue=0.2 * s)],
+			#[torchvision.transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1)],
 			p=0.8
 		),
 		torchvision.transforms.RandomGrayscale(p=0.2),
 		torchvision.transforms.RandomApply(
-			#torchvision.transforms.GaussianBlur(kernel_size=(max(math.floor(image_height * 0.1 * 0.5) * 2 + 1, 3), max(math.floor(image_width * 0.1 * 0.5) * 2 + 1, 3)), sigma=(0.1, 2.0)),
-			torchvision.transforms.GaussianBlur(kernel_size=(max(math.floor(image_height * 0.05) * 2 + 1, 3), max(math.floor(image_width * 0.05) * 2 + 1, 3)), sigma=(0.1, 2.0)),
+			#[torchvision.transforms.GaussianBlur(kernel_size=(max(math.floor(image_height * 0.1 * 0.5) * 2 + 1, 3), max(math.floor(image_width * 0.1 * 0.5) * 2 + 1, 3)), sigma=(0.1, 2.0))],
+			[torchvision.transforms.GaussianBlur(kernel_size=(max(math.floor(image_height * 0.05) * 2 + 1, 3), max(math.floor(image_width * 0.05) * 2 + 1, 3)), sigma=(0.1, 2.0))],
 			p=0.5
 		),
 		torchvision.transforms.ToTensor(),  # (H, W) or (H, W, C) -> (C, H, W).
 		torchvision.transforms.Normalize(mean=normalization_mean, std=normalization_stddev),
 	])
-
-def construct_encoder(model_type, pretrained=True, *args, **kwargs):
-	ENCODERS = {
-		"resnet18": {"model": torchvision.models.resnet18, "feature_dim": 512},
-		"resnet50": {"model": torchvision.models.resnet50, "feature_dim": 2048},
-		"resnext50": {"model": torchvision.models.resnext50_32x4d, "feature_dim": 2048},
-		"resnext101": {"model": torchvision.models.resnext101_32x8d, "feature_dim": 2048},
-		"wide_resnet50": {"model": torchvision.models.wide_resnet50_2, "feature_dim": 2048},
-		"wide_resnet101": {"model": torchvision.models.wide_resnet101_2, "feature_dim": 2048},
-	}
-
-	return ModelWrapper(ENCODERS[model_type]["model"](pretrained=pretrained), layer_name="avgpool"), ENCODERS[model_type]["feature_dim"]
 
 class ModelWrapper(torch.nn.Module):
 	def __init__(self, model, layer_name):
@@ -713,6 +462,18 @@ class SimSiamMLP(torch.nn.Module):
 		x = self.batchnorm3(x)
 		return x
 
+def construct_encoder(model_type, pretrained=True, *args, **kwargs):
+	ENCODERS = {
+		"resnet18": {"model": torchvision.models.resnet18, "feature_dim": 512},
+		"resnet50": {"model": torchvision.models.resnet50, "feature_dim": 2048},
+		"resnext50": {"model": torchvision.models.resnext50_32x4d, "feature_dim": 2048},
+		"resnext101": {"model": torchvision.models.resnext101_32x8d, "feature_dim": 2048},
+		"wide_resnet50": {"model": torchvision.models.wide_resnet50_2, "feature_dim": 2048},
+		"wide_resnet101": {"model": torchvision.models.wide_resnet101_2, "feature_dim": 2048},
+	}
+
+	return ModelWrapper(ENCODERS[model_type]["model"](pretrained=pretrained), layer_name="avgpool"), ENCODERS[model_type]["feature_dim"]
+
 # REF [site] >> https://pytorch-lightning.readthedocs.io/en/latest/notebooks/course_UvA-DL/05-transformers-and-MH-attention.html
 class CosineWarmupScheduler(torch.optim.lr_scheduler._LRScheduler):
 	def __init__(self, optimizer, T_max, T_warmup, last_epoch=-1, verbose=False):
@@ -735,6 +496,104 @@ class CosineWarmupScheduler(torch.optim.lr_scheduler._LRScheduler):
 			return epoch / self.T_warmup
 		else:
 			return 0.5 * (1 + math.cos(math.pi * (epoch - self.T_warmup) / (self.T_max - self.T_warmup)))
+
+# REF [class] >> CosineAnnealingWarmUpRestarts class in ${SWDT_PYTHON_HOME}/rnd/test/machine_learning/pytorch/pytorch_optimization.py
+class CosineAnnealingWarmUpRestarts(torch.optim.lr_scheduler._LRScheduler):
+	def __init__(self, optimizer, T_0, T_mult=1, T_up=0, eta_max=0.1, gamma=1.0, last_epoch=-1):
+		if T_0 <= 0 or not isinstance(T_0, int):
+			raise ValueError("Expected positive integer T_0, but got {}".format(T_0))
+		if T_mult < 1 or not isinstance(T_mult, int):
+			raise ValueError("Expected integer T_mult >= 1, but got {}".format(T_mult))
+		if T_up < 0 or not isinstance(T_up, int):
+			raise ValueError("Expected positive integer T_up, but got {}".format(T_up))
+		self.T_0 = T_0
+		self.T_mult = T_mult
+		self.base_eta_max = eta_max
+		self.eta_max = eta_max
+		self.T_up = T_up
+		self.T_i = T_0
+		self.gamma = gamma
+		self.cycle = 0
+		self.T_cur = last_epoch
+		super(CosineAnnealingWarmUpRestarts, self).__init__(optimizer, last_epoch)
+
+	def get_lr(self):
+		if self.T_cur == -1:
+			return self.base_lrs
+		elif self.T_cur < self.T_up:
+			return [(self.eta_max - base_lr) * self.T_cur / self.T_up + base_lr for base_lr in self.base_lrs]
+		else:
+			return [base_lr + (self.eta_max - base_lr) * (1 + math.cos(math.pi * (self.T_cur - self.T_up) / (self.T_i - self.T_up))) / 2 for base_lr in self.base_lrs]
+
+	def step(self, epoch=None):
+		if epoch is None:
+			epoch = self.last_epoch + 1
+			self.T_cur = self.T_cur + 1
+			if self.T_cur >= self.T_i:
+				self.cycle += 1
+				self.T_cur = self.T_cur - self.T_i
+				self.T_i = (self.T_i - self.T_up) * self.T_mult + self.T_up
+		else:
+			if epoch >= self.T_0:
+				if self.T_mult == 1:
+					self.T_cur = epoch % self.T_0
+					self.cycle = epoch // self.T_0
+				else:
+					n = int(math.log((epoch / self.T_0 * (self.T_mult - 1) + 1), self.T_mult))
+					self.cycle = n
+					self.T_cur = epoch - self.T_0 * (self.T_mult ** n - 1) / (self.T_mult - 1)
+					self.T_i = self.T_0 * self.T_mult ** (n)
+			else:
+				self.T_i = self.T_0
+				self.T_cur = epoch
+
+		self.eta_max = self.base_eta_max * (self.gamma**self.cycle)
+		self.last_epoch = math.floor(epoch)
+		for param_group, lr in zip(self.optimizer.param_groups, self.get_lr()):
+			param_group["lr"] = lr
+
+		self._last_lr = [param_group["lr"] for param_group in self.optimizer.param_groups]
+
+def construct_optimizer(config, model_params, *args, **kwargs):
+	if "sgd" in config:
+		return torch.optim.SGD(model_params, **config["sgd"])
+	elif "adam" in config:
+		return torch.optim.Adam(model_params, **config["adam"])
+	elif "adadelta" in config:
+		return torch.optim.Adadelta(model_params, **config["adadelta"])
+	elif "adagrad" in config:
+		return torch.optim.Adagrad(model_params, **config["adagrad"])
+	elif "rmsprop" in config:
+		return torch.optim.RMSprop(model_params, **config["rmsprop"])
+	else:
+		raise ValueError("Invalid optimizer, {}".format(config))
+
+def construct_lr_scheduler(config, optimizer, num_epochs, *args, **kwargs):
+	if not config:
+		return None, True
+
+	if "step" in config:
+		epoch_based = config["step"].pop("epoch_based", True)
+		return torch.optim.lr_scheduler.StepLR(optimizer, **config["step"]), epoch_based
+	elif "multi_step" in config:
+		epoch_based = config["multi_step"].pop("epoch_based", True)
+		return torch.optim.lr_scheduler.MultiStepLR(optimizer, **config["multi_step"]), epoch_based
+	elif "cosine_annealing" in config:
+		T_max = config.pop("T_max", num_epochs)
+		epoch_based = config["cosine_annealing"].pop("epoch_based", True)
+		return torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=T_max, **config["cosine_annealing"]), epoch_based
+	elif "cosine_warmup" in config:
+		T_max = config.pop("T_max", num_epochs)
+		epoch_based = config["cosine_warmup"].pop("epoch_based", True)
+		return CosineWarmupScheduler(optimizer, T_max=T_max, **config["cosine_warmup"]), epoch_based
+	elif "cosine_restart" in config:
+		epoch_based = config["cosine_restart"].pop("epoch_based", True)
+		return CosineAnnealingWarmUpRestarts(optimizer, **config["cosine_restart"]), epoch_based
+	#elif "noam" in config:  # Step-based LR scheduler.
+	#	epoch_based = config["noam"].pop("epoch_based", True)
+	#	return NoamLR(optimizer, **config["noam"]), epoch_based
+	else:
+		return None, True
 
 # REF [function] >> train_text_recognizer() in ${SWLP_HOME}/app/text/run_text_recognition_pl.py
 def train(config, model, train_dataloader, test_dataloader, output_dir_path, model_filepath_to_load, logger=None):
@@ -792,7 +651,7 @@ def train(config, model, train_dataloader, test_dataloader, output_dir_path, mod
 def infer(config, model, data_iter, logger=None, device="cuda"):
 	model = model.to(device)
 
-	use_projector, use_predictor = config.get('use_projector', False), config.get('use_predictor', False)
+	use_projector, use_predictor = config.get("use_projector", False), config.get("use_predictor", False)
 	if logger: logger.info("Inferring...")
 	start_time = time.time()
 	model.eval()
