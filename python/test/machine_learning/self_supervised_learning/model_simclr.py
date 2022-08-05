@@ -63,7 +63,8 @@ class SimclrModule(pl.LightningModule):
 
 		self.criterion = SimclrLoss(**config['loss'])
 
-		if config.get('is_model_initialized', False):
+		#-----
+		if config.get('is_model_initialized', True):
 			# Initialize model weights.
 			for name, param in self.model.named_parameters():
 				try:
@@ -71,12 +72,15 @@ class SimclrModule(pl.LightningModule):
 						torch.nn.init.constant_(param, 0.0)
 					elif 'weight' in name:
 						torch.nn.init.kaiming_normal_(param)
-					#if param.dim() > 1:
-					#	torch.nn.init.xavier_uniform_(param)  # Initialize parameters with Glorot / fan_avg.
 				except Exception as ex:  # For batch normalization.
 					if 'weight' in name:
 						param.data.fill_(1)
 					continue
+			'''
+			for param in self.model.parameters():
+				if param.dim() > 1:
+					torch.nn.init.xavier_uniform_(param)  # Initialize parameters with Glorot / fan_avg.
+			'''
 
 	"""
 	def load_model(self, model_filepath):

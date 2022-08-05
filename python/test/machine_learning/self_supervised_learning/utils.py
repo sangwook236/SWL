@@ -48,7 +48,7 @@ def parse_command_line_options(is_training=True):
 		type=str,
 		#nargs="?",
 		help="A model file path to resume training" if is_training else "A file path to load a pretrained model",
-		#required=True,
+		required=not is_training,
 		default=None
 	)
 
@@ -462,7 +462,7 @@ class SimSiamMLP(torch.nn.Module):
 		x = self.batchnorm3(x)
 		return x
 
-def construct_encoder(model_type, pretrained=True, *args, **kwargs):
+def construct_encoder(model_type, *args, **kwargs):
 	ENCODERS = {
 		"resnet18": {"model": torchvision.models.resnet18, "feature_dim": 512},
 		"resnet50": {"model": torchvision.models.resnet50, "feature_dim": 2048},
@@ -472,7 +472,7 @@ def construct_encoder(model_type, pretrained=True, *args, **kwargs):
 		"wide_resnet101": {"model": torchvision.models.wide_resnet101_2, "feature_dim": 2048},
 	}
 
-	return ModelWrapper(ENCODERS[model_type]["model"](pretrained=pretrained), layer_name="avgpool"), ENCODERS[model_type]["feature_dim"]
+	return ModelWrapper(ENCODERS[model_type]["model"](*args, **kwargs), layer_name="avgpool"), ENCODERS[model_type]["feature_dim"]
 
 # REF [site] >> https://pytorch-lightning.readthedocs.io/en/latest/notebooks/course_UvA-DL/05-transformers-and-MH-attention.html
 class CosineWarmupScheduler(torch.optim.lr_scheduler._LRScheduler):
@@ -555,45 +555,45 @@ class CosineAnnealingWarmUpRestarts(torch.optim.lr_scheduler._LRScheduler):
 		self._last_lr = [param_group["lr"] for param_group in self.optimizer.param_groups]
 
 def construct_optimizer(config, model_params, *args, **kwargs):
-	if "sgd" in config:
-		return torch.optim.SGD(model_params, **config["sgd"])
-	elif "adam" in config:
-		return torch.optim.Adam(model_params, **config["adam"])
-	elif "adadelta" in config:
-		return torch.optim.Adadelta(model_params, **config["adadelta"])
-	elif "adagrad" in config:
-		return torch.optim.Adagrad(model_params, **config["adagrad"])
-	elif "rmsprop" in config:
-		return torch.optim.RMSprop(model_params, **config["rmsprop"])
-	else:
-		raise ValueError("Invalid optimizer, {}".format(config))
+	OPTIMIZERS = {
+		"sgd": torch.optim.SGD,
+		"adam": torch.optim.Adam,
+		"adadelta": torch.optim.SGD,
+		"adagrad": torch.optim.Adagrad,
+		"rmsprop": torch.optim.RMSprop,
+	}
+
+	for name in config:
+		if name in OPTIMIZERS:
+			return OPTIMIZERS[name](model_params, **config[name])
+		else:
+			raise ValueError("Unsupported optimizer, {}".format(name))
+	raise ValueError("Invalid optimizer, {}".format(config))
 
 def construct_lr_scheduler(config, optimizer, num_epochs, *args, **kwargs):
 	if not config:
 		return None, True
 
-	if "step" in config:
-		epoch_based = config["step"].pop("epoch_based", True)
-		return torch.optim.lr_scheduler.StepLR(optimizer, **config["step"]), epoch_based
-	elif "multi_step" in config:
-		epoch_based = config["multi_step"].pop("epoch_based", True)
-		return torch.optim.lr_scheduler.MultiStepLR(optimizer, **config["multi_step"]), epoch_based
-	elif "cosine_annealing" in config:
-		T_max = config.pop("T_max", num_epochs)
-		epoch_based = config["cosine_annealing"].pop("epoch_based", True)
-		return torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=T_max, **config["cosine_annealing"]), epoch_based
-	elif "cosine_warmup" in config:
-		T_max = config.pop("T_max", num_epochs)
-		epoch_based = config["cosine_warmup"].pop("epoch_based", True)
-		return CosineWarmupScheduler(optimizer, T_max=T_max, **config["cosine_warmup"]), epoch_based
-	elif "cosine_restart" in config:
-		epoch_based = config["cosine_restart"].pop("epoch_based", True)
-		return CosineAnnealingWarmUpRestarts(optimizer, **config["cosine_restart"]), epoch_based
-	#elif "noam" in config:  # Step-based LR scheduler.
-	#	epoch_based = config["noam"].pop("epoch_based", True)
-	#	return NoamLR(optimizer, **config["noam"]), epoch_based
-	else:
-		return None, True
+	LR_SCHEDULERS = {
+		"step": torch.optim.lr_scheduler.StepLR,
+		"multi_step": torch.optim.lr_scheduler.MultiStepLR,
+		"cosine_annealing": torch.optim.lr_scheduler.CosineAnnealingLR,
+		"cosine_warmup": CosineWarmupScheduler,
+		"cosine_restart": CosineAnnealingWarmUpRestarts,
+		#"noam": NoamLR,  # For transformer. Step-based LR scheduler.
+	}
+
+	for name in config:
+		if name in LR_SCHEDULERS:
+			epoch_based = config[name].pop("epoch_based", True)
+			if "T_max" in config[name]:
+				T_max = config[name].pop("T_max")
+				return LR_SCHEDULERS[name](optimizer, T_max=T_max if T_max is not None else num_epochs, **config[name]), epoch_based
+			else:
+				return LR_SCHEDULERS[name](optimizer, **config[name]), epoch_based
+		else:
+			raise ValueError("Unsupported LR scheduler, {}".format(name))
+	return None, True
 
 # REF [function] >> train_text_recognizer() in ${SWLP_HOME}/app/text/run_text_recognition_pl.py
 def train(config, model, train_dataloader, test_dataloader, output_dir_path, model_filepath_to_load, logger=None):
@@ -602,7 +602,7 @@ def train(config, model, train_dataloader, test_dataloader, output_dir_path, mod
 		filename="model-{epoch:03d}-{step:05d}-{val_acc:.5f}-{val_loss:.5f}",
 		monitor="val_loss",
 		mode="min",
-		save_top_k=-1,
+		save_top_k=5,
 	)
 	if config.get("swa", False):
 		swa_callback = pl.callbacks.StochasticWeightAveraging(swa_epoch_start=0.8, swa_lrs=None, annealing_epochs=2, annealing_strategy="cos", avg_fn=None)

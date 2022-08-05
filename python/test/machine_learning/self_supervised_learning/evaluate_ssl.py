@@ -13,7 +13,7 @@ import yaml
 import utils
 
 class ClassificationModule(pl.LightningModule):
-	def __init__(self, config, input_dim, num_classes, is_model_initialized=False, is_all_model_params_optimized=True, logger=None):
+	def __init__(self, config, input_dim, num_classes, is_all_model_params_optimized=True, logger=None):
 		super().__init__()
 		self.save_hyperparameters()
 
@@ -30,22 +30,26 @@ class ClassificationModule(pl.LightningModule):
 		self.is_all_model_params_optimized = is_all_model_params_optimized
 		self._logger = logger
 
-		self.criterion = torch.nn.NLLLoss()
+		# Define a loss.
+		self.criterion = torch.nn.NLLLoss(reduction='mean')
 
-		if is_model_initialized:
-			# Initialize model weights.
-			for name, param in self.model.named_parameters():
-				try:
-					if 'bias' in name:
-						torch.nn.init.constant_(param, 0.0)
-					elif 'weight' in name:
-						torch.nn.init.kaiming_normal_(param)
-					#if param.dim() > 1:
-					#	torch.nn.init.xavier_uniform_(param)  # Initialize parameters with Glorot / fan_avg.
-				except Exception as ex:  # For batch normalization.
-					if 'weight' in name:
-						param.data.fill_(1)
-					continue
+		#-----
+		# Initialize model weights.
+		for name, param in self.model.named_parameters():
+			try:
+				if 'bias' in name:
+					torch.nn.init.constant_(param, 0.0)
+				elif 'weight' in name:
+					torch.nn.init.kaiming_normal_(param)
+			except Exception as ex:  # For batch normalization.
+				if 'weight' in name:
+					param.data.fill_(1)
+				continue
+		'''
+		for param in self.model.parameters():
+			if param.dim() > 1:
+				torch.nn.init.xavier_uniform_(param)  # Initialize parameters with Glorot / fan_avg.
+		'''
 
 	def configure_optimizers(self):
 		if self.is_all_model_params_optimized:
@@ -125,7 +129,7 @@ def prepare_feature_data(config, ssl_model, train_dataloader, test_dataloader, l
 	class FeatureDataset(torch.utils.data.Dataset):
 		def __init__(self, srcs, tgts):
 			super().__init__()
-			assert len(srcs) == len(tgts), 'Invalid data length: {} != {}'.format(len(srcs), len(tgts))
+			assert len(srcs) == len(tgts), 'Invalid data length, {} != {}'.format(len(srcs), len(tgts))
 
 			self.srcs, self.tgts = srcs, tgts
 
@@ -168,17 +172,14 @@ def prepare_feature_data(config, ssl_model, train_dataloader, test_dataloader, l
 	return train_feature_dataloader, test_feature_dataloader
 
 def run_linear_evaluation(config, train_feature_dataloader, test_feature_dataloader, input_dim, num_classes, output_dir_path, logger=None):
-	is_model_initialized = True
-	is_all_model_params_optimized = True
-
-	classifier = ClassificationModule(config, input_dim, num_classes, is_model_initialized, is_all_model_params_optimized, logger)
+	classifier = ClassificationModule(config, input_dim, num_classes, is_all_model_params_optimized=True, logger=logger)
 
 	checkpoint_callback = pl.callbacks.ModelCheckpoint(
 		dirpath=(output_dir_path + '/checkpoints') if output_dir_path else './checkpoints',
 		filename='classifier-{epoch:03d}-{step:05d}-{val_acc:.5f}-{val_loss:.5f}',
 		monitor='val_loss',
 		mode='min',
-		save_top_k=-1,
+		save_top_k=5,
 	)
 	pl_callbacks = [checkpoint_callback]
 	tensorboard_logger = pl.loggers.TensorBoardLogger(save_dir=(output_dir_path + '/lightning_logs') if output_dir_path else './lightning_logs', name='', version=None)
@@ -283,8 +284,7 @@ def main():
 	#--------------------
 	try:
 		config_data = config['data']
-		config_model = config['model']
-		config_linear_eval = config['linear_evaluation']
+		config_eval = config['evaluation']
 
 		# Prepare data.
 		train_dataloader, test_dataloader, num_classes = utils.prepare_open_data(config_data, show_info=True, show_data=False, logger=logger)
@@ -296,12 +296,12 @@ def main():
 		logger.info('A SSL model loaded: {} secs.'.format(time.time() - start_time))
 
 		# Prepare feature datasets.
-		train_feature_dataloader, test_feature_dataloader = prepare_feature_data(config_linear_eval, ssl_model, train_dataloader, test_dataloader, logger, device)
+		train_feature_dataloader, test_feature_dataloader = prepare_feature_data(config_eval, ssl_model, train_dataloader, test_dataloader, logger, device)
 		del ssl_model  # Free memory of CPU or GPU.
 
 		# Run a linear evaluation.
-		_, feature_dim = utils.construct_encoder(**config_model['encoder'])
-		run_linear_evaluation(config_linear_eval, train_feature_dataloader, test_feature_dataloader, feature_dim, num_classes, output_dir_path, logger)
+		input_dim = config_eval['input_dim']
+		run_linear_evaluation(config_eval, train_feature_dataloader, test_feature_dataloader, input_dim, num_classes, output_dir_path, logger)
 	except Exception as ex:
 		#logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
 		logger.exception(ex)
@@ -310,10 +310,10 @@ def main():
 #--------------------------------------------------------------------
 
 # Usage:
-#	python evaluate_ssl.py --config ./config/linear_eval_byol.yaml --model_file ./byol_models/model.ckpt
-#	python evaluate_ssl.py --config ./config/linear_eval_relic.yaml --model_file ./relic_models/model.ckpt
-#	python evaluate_ssl.py --config ./config/linear_eval_simclr.yaml --model_file ./simclr_models/model.ckpt
-#	python evaluate_ssl.py --config ./config/linear_eval_simsiam.yaml --model_file ./simsiam_models/model.ckpt
+#	python evaluate_ssl.py --config ./config/eval_byol.yaml --model_file ./byol_models/model.ckpt
+#	python evaluate_ssl.py --config ./config/eval_relic.yaml --model_file ./relic_models/model.ckpt
+#	python evaluate_ssl.py --config ./config/eval_simclr.yaml --model_file ./simclr_models/model.ckpt
+#	python evaluate_ssl.py --config ./config/eval_simsiam.yaml --model_file ./simsiam_models/model.ckpt
 
 if '__main__' == __name__:
 	main()

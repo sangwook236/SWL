@@ -81,7 +81,7 @@ training:
 
   is_momentum_encoder_used: true
   moving_average_decay: 0.996
-  is_model_initialized: false
+  is_model_initialized: false  # false if a pretrained encoder is used.
   is_all_model_params_optimized: true
 
   #max_gradient_norm: 20.0
@@ -132,10 +132,10 @@ training:
     #  milestones: [200, 400, 600, 800]
     #  gamma: 0.1
     #cosine_annealing:
-    #  #T_max: epochs
+    #  T_max: null  # epochs.
     #  eta_min: 0.0
     cosine_warmup:
-      #T_max: epochs
+      T_max: null  # epochs.
       T_warmup: 20
     #cosine_restart:
     #  T_0: 100
