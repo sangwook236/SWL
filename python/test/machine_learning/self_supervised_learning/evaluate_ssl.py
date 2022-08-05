@@ -13,15 +13,15 @@ import yaml
 import utils
 
 class ClassificationModule(pl.LightningModule):
-	def __init__(self, config, input_dim, num_classes, is_all_model_params_optimized=True, logger=None):
+	def __init__(self, config, num_classes, is_all_model_params_optimized=True, logger=None):
 		super().__init__()
 		self.save_hyperparameters()
 
 		self.config = config
-		self.model = torch.nn.Linear(input_dim, num_classes)
+		self.model = torch.nn.Linear(config['input_dim'], num_classes)
 		'''
 		self.model = torch.nn.Sequential(
-			torch.nn.Linear(input_dim, hidden_dim),
+			torch.nn.Linear(config['input_dim'], hidden_dim),
 			torch.nn.BatchNorm1d(hidden_dim),
 			torch.nn.ReLU(inplace=True),
 			torch.nn.Linear(hidden_dim, num_classes),
@@ -146,7 +146,7 @@ def prepare_feature_data(config, ssl_model, train_dataloader, test_dataloader, l
 			batch_inputs = batch_inputs.to(device)
 			srcs.append(model(batch_inputs).cpu())  # [batch size, feature dim].
 			tgts.append(batch_outputs)  # [batch size].
-			del batch_inputs  # Free memory of CPU or GPU.
+			del batch_inputs  # Free memory in CPU or GPU.
 		return FeatureDataset(torch.vstack(srcs), torch.hstack(tgts))
 
 	# Create feature datasets.
@@ -171,8 +171,8 @@ def prepare_feature_data(config, ssl_model, train_dataloader, test_dataloader, l
 
 	return train_feature_dataloader, test_feature_dataloader
 
-def run_linear_evaluation(config, train_feature_dataloader, test_feature_dataloader, input_dim, num_classes, output_dir_path, logger=None):
-	classifier = ClassificationModule(config, input_dim, num_classes, is_all_model_params_optimized=True, logger=logger)
+def run_linear_evaluation(config, train_feature_dataloader, test_feature_dataloader, num_classes, output_dir_path, logger=None):
+	classifier = ClassificationModule(config, num_classes, is_all_model_params_optimized=True, logger=logger)
 
 	checkpoint_callback = pl.callbacks.ModelCheckpoint(
 		dirpath=(output_dir_path + '/checkpoints') if output_dir_path else './checkpoints',
@@ -297,11 +297,10 @@ def main():
 
 		# Prepare feature datasets.
 		train_feature_dataloader, test_feature_dataloader = prepare_feature_data(config_eval, ssl_model, train_dataloader, test_dataloader, logger, device)
-		del ssl_model  # Free memory of CPU or GPU.
+		del ssl_model  # Free memory in CPU or GPU.
 
 		# Run a linear evaluation.
-		input_dim = config_eval['input_dim']
-		run_linear_evaluation(config_eval, train_feature_dataloader, test_feature_dataloader, input_dim, num_classes, output_dir_path, logger)
+		run_linear_evaluation(config_eval, train_feature_dataloader, test_feature_dataloader, num_classes, output_dir_path, logger)
 	except Exception as ex:
 		#logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
 		logger.exception(ex)

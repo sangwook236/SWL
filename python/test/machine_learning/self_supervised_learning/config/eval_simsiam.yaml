@@ -1,8 +1,8 @@
-# Configuration for ReLIC.
+# Configuration for SimSiam.
 
-ssl_type: relic
-#out_dir: ./relic_eval_outputs
-#log_name: relic_log
+ssl_type: simsiam
+#out_dir: ./simsiam_eval_outputs
+#log_name: simsiam_log
 #log_level: 20
 #log_dir: ./log
 
@@ -34,7 +34,7 @@ data:
       std: [0.2470, 0.2435, 0.2616]
 
 evaluation:
-  input_dim: 2048  # ResNet 50 or higher.
+  input_dim: 2048  # ResNet50 or higher.
 
   batch_size: 256
   epochs: 100
