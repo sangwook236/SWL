@@ -70,7 +70,6 @@ class RelicModule(pl.LightningModule):
 		self.target_model = None
 		self.is_momentum_encoder_used = config.get('is_momentum_encoder_used', False)
 		self.moving_average_decay = config.get('moving_average_decay', 0.0)
-		self.is_all_model_params_optimized = config.get('is_all_model_params_optimized', True)
 
 		self.criterion = RelicLoss(**config['loss'])
 
@@ -128,7 +127,7 @@ class RelicModule(pl.LightningModule):
 		#checkpoint['augmenter2'] = self.augmenter2
 
 	def configure_optimizers(self):
-		if self.is_all_model_params_optimized:
+		if self.config.get('is_all_model_params_optimized', True):
 			model_params = list(self.parameters())
 		else:
 			# Filter model parameters only that require gradients.

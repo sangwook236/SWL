@@ -18,8 +18,6 @@ class SimSiamModule(pl.LightningModule):
 		self.augmenter2 = augmenter2
 		self._logger = logger
 
-		self.is_all_model_params_optimized = config.get('is_all_model_params_optimized', True)
-
 		#-----
 		if config.get('is_model_initialized', True):
 			# Initialize model weights.
@@ -70,7 +68,7 @@ class SimSiamModule(pl.LightningModule):
 		#checkpoint['augmenter2'] = self.augmenter2
 
 	def configure_optimizers(self):
-		if self.is_all_model_params_optimized:
+		if self.config.get('is_all_model_params_optimized', True):
 			model_params = list(self.parameters())
 		else:
 			# Filter model parameters only that require gradients.

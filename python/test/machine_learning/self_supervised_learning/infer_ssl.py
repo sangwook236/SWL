@@ -74,13 +74,8 @@ def main():
 		logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
 		raise
 
-	config['out_dir'] = config.get('out_dir', None)
-	config['log_name'] = config.get('log_name', os.path.basename(os.path.normpath(__file__)))
-	config['log_level'] = config.get('log_level', logging.INFO)
-	config['log_dir'] = config.get('log_dir', config['out_dir'])
-
 	#--------------------
-	logger = utils.get_logger(config['log_name'], config['log_level'], config['log_dir'], is_rotating=True)
+	logger = utils.get_logger(args.log if args.log else os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, args.log_dir if args.log_dir else args.out_dir, is_rotating=True)
 	logger.info('----------------------------------------------------------------------')
 	logger.info('Logger: name = {}, level = {}.'.format(logger.name, logger.level))
 	logger.info('Command-line arguments: {}.'.format(sys.argv))
@@ -102,7 +97,7 @@ def main():
 	model_filepath_to_load = os.path.normpath(args.model_file) if args.model_file else None
 	assert model_filepath_to_load is None or os.path.isfile(model_filepath_to_load), 'Model file not found, {}'.format(model_filepath_to_load)
 
-	output_dir_path = os.path.normpath(config['out_dir']) if config['out_dir'] else None
+	output_dir_path = os.path.normpath(args.out_dir) if args.out_dir else None
 	#if model_filepath_to_load and not output_dir_path:
 	#	output_dir_path = os.path.dirname(model_filepath_to_load)
 	if not output_dir_path:
@@ -143,10 +138,10 @@ def main():
 #--------------------------------------------------------------------
 
 # Usage:
+#	python infer_ssl.py --help
 #	python infer_ssl.py --config ./config/infer_byol.yaml --model_file ./byol_models/model.ckpt
-#	python infer_ssl.py --config ./config/infer_relic.yaml --model_file ./relic_models/model.ckpt
-#	python infer_ssl.py --config ./config/infer_simclr.yaml --model_file ./simclr_models/model.ckpt
-#	python infer_ssl.py --config ./config/infer_simsiam.yaml --model_file ./simsiam_models/model.ckpt
+#	python infer_ssl.py --config ./config/infer_relic.yaml --model_file ./relic_models/model.ckpt --out_dir ./relic_results
+#	python infer_ssl.py --config ./config/infer_simclr.yaml --model_file ./simclr_models/model.ckpt --log simclr_log --log_dir ./log
 
 if '__main__' == __name__:
 	main()

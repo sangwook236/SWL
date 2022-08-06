@@ -32,13 +32,8 @@ def main():
 		logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
 		raise
 
-	config['out_dir'] = config.get('out_dir', None)
-	config['log_name'] = config.get('log_name', os.path.basename(os.path.normpath(__file__)))
-	config['log_level'] = config.get('log_level', logging.INFO)
-	config['log_dir'] = config.get('log_dir', config['out_dir'])
-
 	#--------------------
-	logger = utils.get_logger(config['log_name'], config['log_level'], config['log_dir'], is_rotating=True)
+	logger = utils.get_logger(args.log if args.log else os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, args.log_dir if args.log_dir else args.out_dir, is_rotating=True)
 	logger.info('----------------------------------------------------------------------')
 	logger.info('Logger: name = {}, level = {}.'.format(logger.name, logger.level))
 	logger.info('Command-line arguments: {}.'.format(sys.argv))
@@ -60,7 +55,7 @@ def main():
 
 	#if pl.utilities.distributed.rank_zero_only.rank == 0:
 	if True:
-		output_dir_path = os.path.normpath(config['out_dir']) if config['out_dir'] else None
+		output_dir_path = os.path.normpath(args.out_dir) if args.out_dir else None
 		#if model_filepath_to_load and not output_dir_path:
 		#	output_dir_path = os.path.dirname(model_filepath_to_load)
 		if not output_dir_path:
@@ -117,8 +112,11 @@ def main():
 #--------------------------------------------------------------------
 
 # Usage:
+#	python train_simsiam.py --help
 #	python train_simsiam.py --config ./config/train_simsiam.yaml
 #	python train_simsiam.py --config ./config/train_simsiam.yaml --model_file ./simsiam_models/model.ckpt
+#	python train_simsiam.py --config ./config/train_simsiam.yaml --out_dir ./simsiam_train_outputs
+#	python train_simsiam.py --config ./config/train_simsiam.yaml --log simsiam_log --log_dir ./log
 
 if '__main__' == __name__:
 	main()

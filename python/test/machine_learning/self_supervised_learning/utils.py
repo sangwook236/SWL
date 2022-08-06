@@ -51,6 +51,34 @@ def parse_command_line_options(is_training=True):
 		required=not is_training,
 		default=None
 	)
+	parser.add_argument(
+		"-o",
+		"--out_dir",
+		type=str,
+		help="The output directory path to save results such as images and log",
+		default=None
+	)
+	parser.add_argument(
+		"-l",
+		"--log",
+		type=str,
+		help="The name of logger and log files",
+		default=None
+	)
+	parser.add_argument(
+		"-ll",
+		"--log_level",
+		type=int,
+		help="Log level, [0, 50]",  # {NOTSET=0, DEBUG=10, INFO=20, WARNING=WARN=30, ERROR=40, CRITICAL=FATAL=50}.
+		default=None
+	)
+	parser.add_argument(
+		"-ld",
+		"--log_dir",
+		type=str,
+		help="The directory path to log",
+		default=None
+	)
 
 	return parser.parse_args()
 

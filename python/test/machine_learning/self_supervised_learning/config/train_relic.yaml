@@ -1,15 +1,12 @@
 # Configuration for ReLIC.
 
 ssl_type: relic
-#out_dir: ./relic_train_outputs
-#log_name: relic_log
-#log_level: 20
-#log_dir: ./log
 
 data:
   dataset: cifar10
   data_dir: data/cifar10
   image_shape: [32, 32, 3]
+
   batch_size: 512
   num_workers: 8
 
