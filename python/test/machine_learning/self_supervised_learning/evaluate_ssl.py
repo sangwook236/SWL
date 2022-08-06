@@ -125,7 +125,7 @@ class ClassificationModule(pl.LightningModule):
 
 		return {'acc': acc}
 
-def prepare_feature_data(config, ssl_model, train_dataloader, test_dataloader, logger=None, device='cuda'):
+def prepare_simple_feature_data(config, ssl_model, logger=None, device='cuda'):
 	class FeatureDataset(torch.utils.data.Dataset):
 		def __init__(self, srcs, tgts):
 			super().__init__()
@@ -139,7 +139,8 @@ def prepare_feature_data(config, ssl_model, train_dataloader, test_dataloader, l
 		def __getitem__(self, idx):
 			return self.srcs[idx], self.tgts[idx]
 
-	def create_dataset(model, dataloader, device):
+	# REF [function] >> extract_features().
+	def create_feature_dataset(model, dataloader, device):
 		srcs, tgts = list(), list()
 		for batch in dataloader:
 			batch_inputs, batch_outputs = batch
@@ -149,6 +150,9 @@ def prepare_feature_data(config, ssl_model, train_dataloader, test_dataloader, l
 			del batch_inputs  # Free memory in CPU or GPU.
 		return FeatureDataset(torch.vstack(srcs), torch.hstack(tgts))
 
+	# Create data loaders.
+	train_dataloader, test_dataloader, num_classes = utils.prepare_open_data(config, show_info=True, show_data=False, logger=logger)
+
 	# Create feature datasets.
 	if logger: logger.info('Creating feature datasets...')
 	start_time = time.time()
@@ -156,8 +160,8 @@ def prepare_feature_data(config, ssl_model, train_dataloader, test_dataloader, l
 	ssl_model.eval()
 	ssl_model.freeze()
 	with torch.no_grad():
-		train_feature_dataset = create_dataset(ssl_model, train_dataloader, device)
-		test_feature_dataset = create_dataset(ssl_model, test_dataloader, device)
+		train_feature_dataset = create_feature_dataset(ssl_model, train_dataloader, device)
+		test_feature_dataset = create_feature_dataset(ssl_model, test_dataloader, device)
 	if logger: logger.info('Feature datasets created: {} secs.'.format(time.time() - start_time))
 	if logger: logger.info('#train examples = {}, #test examples = {}.'.format(len(train_feature_dataset), len(test_feature_dataset)))
 
@@ -169,7 +173,10 @@ def prepare_feature_data(config, ssl_model, train_dataloader, test_dataloader, l
 	if logger: logger.info('Feature data loaders created: {} secs.'.format(time.time() - start_time))
 	if logger: logger.info('#train steps per epoch = {}, #test steps per epoch = {}.'.format(len(train_feature_dataloader), len(test_feature_dataloader)))
 
-	return train_feature_dataloader, test_feature_dataloader
+	return train_feature_dataloader, test_feature_dataloader, num_classes
+
+def prepare_feature_data(config, ssl_model, logger=None, device='cuda'):
+	raise NotImplementedError
 
 def run_linear_evaluation(config, train_feature_dataloader, test_feature_dataloader, num_classes, output_dir_path, logger=None):
 	classifier = ClassificationModule(config, num_classes, is_all_model_params_optimized=True, logger=logger)
@@ -195,6 +202,20 @@ def run_linear_evaluation(config, train_feature_dataloader, test_feature_dataloa
 	start_time = time.time()
 	trainer.fit(classifier, train_dataloaders=train_feature_dataloader, val_dataloaders=test_feature_dataloader, ckpt_path=None)
 	if logger: logger.info('The classifier trained: {} secs.'.format(time.time() - start_time))
+
+def extract_features(model, dataloader, device='cuda'):
+	model = model.to(device)
+	model.eval()
+	model.freeze()
+	srcs, tgts = list(), list()
+	with torch.no_grad():
+		for batch in dataloader:
+			batch_inputs, batch_outputs = batch
+			batch_inputs = batch_inputs.to(device)
+			srcs.append(model(batch_inputs).cpu())  # [batch size, feature dim].
+			tgts.append(batch_outputs)  # [batch size].
+			#del batch_inputs  # Free memory in CPU or GPU.
+	return torch.vstack(srcs), torch.hstack(tgts)
 
 # REF [function] >> load_ssl() in ./train_ssl.py
 def load_ssl(ssl_type, model_filepath):
@@ -283,24 +304,31 @@ def main():
 
 	#--------------------
 	try:
-		config_data = config['data']
-		config_eval = config['evaluation']
-
-		# Prepare data.
-		train_dataloader, test_dataloader, num_classes = utils.prepare_open_data(config_data, show_info=True, show_data=False, logger=logger)
-
 		# Load a SSL model.
 		logger.info('Loading a SSL model from {}...'.format(model_filepath_to_load))
 		start_time = time.time()
 		ssl_model = load_ssl(config['ssl_type'], model_filepath_to_load)
 		logger.info('A SSL model loaded: {} secs.'.format(time.time() - start_time))
 
-		# Prepare feature datasets.
-		train_feature_dataloader, test_feature_dataloader = prepare_feature_data(config_eval, ssl_model, train_dataloader, test_dataloader, logger, device)
-		del ssl_model  # Free memory in CPU or GPU.
+		if False:
+			# Prepare data.
+			train_dataloader, test_dataloader, num_classes = utils.prepare_open_data(config['data'], show_info=True, show_data=False, logger=logger)
 
-		# Run a linear evaluation.
-		run_linear_evaluation(config_eval, train_feature_dataloader, test_feature_dataloader, num_classes, output_dir_path, logger)
+			# Extract features.
+			logger.info('Extracting features...')
+			start_time = time.time()
+			train_input_features, train_outputs = extract_features(ssl_model, train_dataloader, device)
+			test_input_features, test_outputs = extract_features(ssl_model, test_dataloader, device)
+			logger.info('Features extracted: {} secs.'.format(time.time() - start_time))
+			logger.info('#train features = {}, #test features = {}.'.format(len(train_input_features), len(test_input_features)))
+		else:
+			# Prepare feature data.
+			train_feature_dataloader, test_feature_dataloader, num_classes = prepare_simple_feature_data(config['data'], ssl_model, logger, device)
+			#train_feature_dataloader, test_feature_dataloader, num_classes = prepare_feature_data(config['data'], ssl_model, logger, device)  # Not yet implemented.
+			del ssl_model  # Free memory in CPU or GPU.
+
+			# Run a linear evaluation.
+			run_linear_evaluation(config['evaluation'], train_feature_dataloader, test_feature_dataloader, num_classes, output_dir_path, logger)
 	except Exception as ex:
 		#logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
 		logger.exception(ex)

@@ -90,30 +90,30 @@ training:
 
   optimizer:
     #sgd:
-    #  lr: 2.0
+    #  lr: 0.1
     #  momentum: 0.9
     #  damping: 0.0
     #  weight_decay: 1.0e-04
     #  nesterov: true
     adam:
-      lr: 2.0
+      lr: 0.1
       betas: [0.9, 0.999]
       eps: 1.0e-08
       weight_decay: 0.0
       amsgrad: false
     #adadelta:
-    #  lr: 2.0
+    #  lr: 0.1
     #  rho: 0.9
     #  eps: 1.0e-06
     #  weight_decay: 0.0
     #adagrad:
-    #  lr: 2.0
+    #  lr: 0.1
     #  lr_decay: 0.0
     #  weight_decay: 0.0
     #  initial_accumulator_value: 0.0
     #  eps: 1.0e-10
     #rmsprop:
-    #  lr: 2.0
+    #  lr: 0.1
     #  alpha: 0.99
     #  eps: 1.0e-08
     #  weight_decay: 0.0
@@ -136,7 +136,7 @@ training:
     #  T_0: 100
     #  T_mult: 1
     #  T_up: 10
-    #  eta_max: 0.1  # The initial learning rate should be close to 0.
+    #  eta_max: 0.1  # eta_max > eta_init or eta_min.
     #  gamma: 1.0
     #noam:  # For transformer. Step-based.
     #  dim_feature: 256  # d_model.
