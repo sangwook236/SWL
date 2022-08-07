@@ -17,7 +17,7 @@ def build_simclr(config, augmenter1, augmenter2, logger=None):
 	config_model = config['model']
 	config_training = config['training']
 
-	encoder, feature_dim = utils.construct_encoder(**config_model['encoder'])
+	encoder, feature_dim = utils.construct_pretrained_model(config_model['encoder'])
 	if True:
 		projector = utils.MLP(feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
 	else:
@@ -32,7 +32,7 @@ def build_byol(config, augmenter1, augmenter2, logger=None):
 	config_model = config['model']
 	config_training = config['training']
 
-	encoder, feature_dim = utils.construct_encoder(**config_model['encoder'])
+	encoder, feature_dim = utils.construct_pretrained_model(config_model['encoder'])
 	if config_training.get('is_momentum_encoder_used', True):
 		projector = utils.MLP(feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
 	else:
@@ -48,7 +48,7 @@ def build_relic(config, augmenter1, augmenter2, logger=None):
 	config_model = config['model']
 	config_training = config['training']
 
-	encoder, feature_dim = utils.construct_encoder(**config_model['encoder'])
+	encoder, feature_dim = utils.construct_pretrained_model(config_model['encoder'])
 	if config_training.get('is_momentum_encoder_used', True):
 		projector = utils.MLP(feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
 	else:
@@ -64,7 +64,7 @@ def build_simsiam(config, augmenter1, augmenter2, logger=None):
 	config_model = config['model']
 	config_training = config['training']
 
-	encoder, feature_dim = utils.construct_encoder(**config_model['encoder'])
+	encoder, feature_dim = utils.construct_pretrained_model(config_model['encoder'])
 	projector = utils.SimSiamMLP(feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
 	predictor = utils.MLP(config_model['projector_output_dim'], config_model['predictor_output_dim'], config_model['predictor_hidden_dim'])
 	ssl_model = model_simsiam.SimSiamModule(config_training, encoder, projector, predictor, augmenter1, augmenter2, logger)

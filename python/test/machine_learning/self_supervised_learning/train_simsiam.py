@@ -84,7 +84,7 @@ def main():
 		train_dataloader, test_dataloader, _ = utils.prepare_open_data(config_data, show_info=True, show_data=False, logger=logger)
 
 		# Build a model.
-		encoder, feature_dim = utils.construct_encoder(**config_model['encoder'])
+		encoder, feature_dim = utils.construct_pretrained_model(config_model['encoder'])
 		projector = utils.SimSiamMLP(feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
 		predictor = utils.MLP(config_model['projector_output_dim'], config_model['predictor_output_dim'], config_model['predictor_hidden_dim'])
 

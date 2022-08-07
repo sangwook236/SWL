@@ -271,7 +271,7 @@ def prepare_open_data(config, show_info=True, show_data=False, logger=None):
 
 	return train_dataloader, test_dataloader, num_classes
 
-# REF [site] >> https://github.com/NightShade99/Self-Supervised-Vision/blob/main/utils/augmentations.py
+# REF [function] >> construct_transform() in ${SWL_PYTHON_HOME}/test/machine_learning/config_test.py.
 def construct_transform(config, *args, **kwargs):
 	if not config: return None
 
@@ -430,6 +430,7 @@ def create_simclr_augmenter(image_height, image_width, normalization_mean, norma
 		torchvision.transforms.Normalize(mean=normalization_mean, std=normalization_stddev),
 	])
 
+# REF [class] >> ModelWrapper class in ${SWL_PYTHON_HOME}/test/machine_learning/config_test.py.
 class ModelWrapper(torch.nn.Module):
 	def __init__(self, model, layer_name):
 		super().__init__()
@@ -490,20 +491,63 @@ class SimSiamMLP(torch.nn.Module):
 		x = self.batchnorm3(x)
 		return x
 
-def construct_encoder(model_type, *args, **kwargs):
-	ENCODERS = {
-		"resnet18": {"model": torchvision.models.resnet18, "feature_dim": 512},
-		"resnet50": {"model": torchvision.models.resnet50, "feature_dim": 2048},
-		"resnext50": {"model": torchvision.models.resnext50_32x4d, "feature_dim": 2048},
-		"resnext101": {"model": torchvision.models.resnext101_32x8d, "feature_dim": 2048},
-		"wide_resnet50": {"model": torchvision.models.wide_resnet50_2, "feature_dim": 2048},
-		"wide_resnet101": {"model": torchvision.models.wide_resnet101_2, "feature_dim": 2048},
+# REF [function] >> construct_pretrained_model() in ${SWL_PYTHON_HOME}/test/machine_learning/config_test.py.
+def construct_pretrained_model(config, *args, **kwargs):
+	PRETRAINED_MODELS = {
+		"resnet18": torchvision.models.resnet18,
+		"resnet50": torchvision.models.resnet50,
+		"resnext50": torchvision.models.resnext50_32x4d,
+		"resnext101": torchvision.models.resnext101_32x8d,
+		"wide_resnet50": torchvision.models.wide_resnet50_2,
+		"wide_resnet101": torchvision.models.wide_resnet101_2,
 	}
 
-	return ModelWrapper(ENCODERS[model_type]["model"](*args, **kwargs), layer_name="avgpool"), ENCODERS[model_type]["feature_dim"]
+	for name in config:
+		if name in PRETRAINED_MODELS:
+			feature_layer = config[name].pop("feature_layer", "avgpool")
+			feature_dim = config[name].pop("feature_dim", 0)
+			return ModelWrapper(PRETRAINED_MODELS[name](**config[name]), layer_name=feature_layer), feature_dim
+		else:
+			raise ValueError("Unsupported pretrained model, {}".format(name))
+	raise ValueError("Invalid pretrained model, {}".format(config))
 
-# REF [site] >> https://pytorch-lightning.readthedocs.io/en/latest/notebooks/course_UvA-DL/05-transformers-and-MH-attention.html
-class CosineWarmupScheduler(torch.optim.lr_scheduler._LRScheduler):
+# REF [function] >> construct_user_defined_model() in ${SWL_PYTHON_HOME}/test/machine_learning/config_test.py.
+def construct_user_defined_model(config, *args, **kwargs):
+	MODULES = {
+		"linear": torch.nn.Linear,
+		"batch_norm_1d": torch.nn.BatchNorm1d,
+		"relu": torch.nn.ReLU,
+	}
+
+	modules = list()
+	for module_config in config:
+		module_type = module_config.pop("module_type")
+		if module_type in MODULES:
+			modules.append(MODULES[module_type](**module_config))
+		else:
+			raise ValueError("Unsupported module, {}".format(module_type))
+
+	return torch.nn.Sequential(*modules)
+
+# REF [function] >> construct_optimizer() in ${SWL_PYTHON_HOME}/test/machine_learning/config_test.py.
+def construct_optimizer(config, model_params, *args, **kwargs):
+	OPTIMIZERS = {
+		"sgd": torch.optim.SGD,
+		"adam": torch.optim.Adam,
+		"adadelta": torch.optim.SGD,
+		"adagrad": torch.optim.Adagrad,
+		"rmsprop": torch.optim.RMSprop,
+	}
+
+	for name in config:
+		if name in OPTIMIZERS:
+			return OPTIMIZERS[name](model_params, **config[name])
+		else:
+			raise ValueError("Unsupported optimizer, {}".format(name))
+	raise ValueError("Invalid optimizer, {}".format(config))
+
+# REF [class] >> CosineAnnealingWarmupLR class in ${SWDT_PYTHON_HOME}/rnd/test/machine_learning/pytorch/pytorch_optimization.py
+class CosineAnnealingWarmupLR(torch.optim.lr_scheduler._LRScheduler):
 	def __init__(self, optimizer, T_max, T_warmup, last_epoch=-1, verbose=False):
 		self.T_max = T_max
 		self.T_warmup = T_warmup
@@ -525,8 +569,8 @@ class CosineWarmupScheduler(torch.optim.lr_scheduler._LRScheduler):
 		else:
 			return 0.5 * (1 + math.cos(math.pi * (epoch - self.T_warmup) / (self.T_max - self.T_warmup)))
 
-# REF [class] >> CosineAnnealingWarmUpRestarts class in ${SWDT_PYTHON_HOME}/rnd/test/machine_learning/pytorch/pytorch_optimization.py
-class CosineAnnealingWarmUpRestarts(torch.optim.lr_scheduler._LRScheduler):
+# REF [class] >> CosineAnnealingWarmUpRestartsLR class in ${SWDT_PYTHON_HOME}/rnd/test/machine_learning/pytorch/pytorch_optimization.py
+class CosineAnnealingWarmUpRestartsLR(torch.optim.lr_scheduler._LRScheduler):
 	def __init__(self, optimizer, T_0, T_mult=1, T_up=0, eta_max=0.1, gamma=1.0, last_epoch=-1):
 		if T_0 <= 0 or not isinstance(T_0, int):
 			raise ValueError("Expected positive integer T_0, but got {}".format(T_0))
@@ -543,7 +587,7 @@ class CosineAnnealingWarmUpRestarts(torch.optim.lr_scheduler._LRScheduler):
 		self.gamma = gamma
 		self.cycle = 0
 		self.T_cur = last_epoch
-		super(CosineAnnealingWarmUpRestarts, self).__init__(optimizer, last_epoch)
+		super().__init__(optimizer, last_epoch)
 
 	def get_lr(self):
 		if self.T_cur == -1:
@@ -582,22 +626,7 @@ class CosineAnnealingWarmUpRestarts(torch.optim.lr_scheduler._LRScheduler):
 
 		self._last_lr = [param_group["lr"] for param_group in self.optimizer.param_groups]
 
-def construct_optimizer(config, model_params, *args, **kwargs):
-	OPTIMIZERS = {
-		"sgd": torch.optim.SGD,
-		"adam": torch.optim.Adam,
-		"adadelta": torch.optim.SGD,
-		"adagrad": torch.optim.Adagrad,
-		"rmsprop": torch.optim.RMSprop,
-	}
-
-	for name in config:
-		if name in OPTIMIZERS:
-			return OPTIMIZERS[name](model_params, **config[name])
-		else:
-			raise ValueError("Unsupported optimizer, {}".format(name))
-	raise ValueError("Invalid optimizer, {}".format(config))
-
+# REF [function] >> construct_lr_scheduler() in ${SWL_PYTHON_HOME}/test/machine_learning/config_test.py.
 def construct_lr_scheduler(config, optimizer, num_epochs, *args, **kwargs):
 	if not config:
 		return None, True
@@ -606,8 +635,8 @@ def construct_lr_scheduler(config, optimizer, num_epochs, *args, **kwargs):
 		"step": torch.optim.lr_scheduler.StepLR,
 		"multi_step": torch.optim.lr_scheduler.MultiStepLR,
 		"cosine_annealing": torch.optim.lr_scheduler.CosineAnnealingLR,
-		"cosine_warmup": CosineWarmupScheduler,
-		"cosine_restart": CosineAnnealingWarmUpRestarts,
+		"cosine_warmup": CosineAnnealingWarmupLR,
+		"cosine_restart": CosineAnnealingWarmUpRestartsLR,
 		#"noam": NoamLR,  # For transformer. Step-based LR scheduler.
 	}
 

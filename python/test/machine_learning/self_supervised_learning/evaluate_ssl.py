@@ -13,22 +13,28 @@ import yaml
 import utils
 
 class ClassificationModule(pl.LightningModule):
-	def __init__(self, config, num_classes, is_all_model_params_optimized=True, logger=None):
+	def __init__(self, config, num_classes, logger=None):
 		super().__init__()
 		self.save_hyperparameters()
 
 		self.config = config
-		self.model = torch.nn.Linear(config['input_dim'], num_classes)
-		'''
-		self.model = torch.nn.Sequential(
-			torch.nn.Linear(config['input_dim'], hidden_dim),
-			torch.nn.BatchNorm1d(hidden_dim),
-			torch.nn.ReLU(inplace=True),
-			torch.nn.Linear(hidden_dim, num_classes),
-		)
-		'''
-		self.is_all_model_params_optimized = is_all_model_params_optimized
 		self._logger = logger
+
+		self.is_all_model_params_optimized = True
+
+		# Build a classifier.
+		if 'classifier' in config:
+			self.model = utils.construct_user_defined_model(config['classifier'])
+		else:
+			self.model = torch.nn.Linear(config['input_dim'], num_classes)
+			'''
+			self.model = torch.nn.Sequential(
+				torch.nn.Linear(config['input_dim'], hidden_dim),
+				torch.nn.BatchNorm1d(hidden_dim),
+				torch.nn.ReLU(inplace=True),
+				torch.nn.Linear(hidden_dim, num_classes),
+			)
+			'''
 
 		# Define a loss.
 		self.criterion = torch.nn.NLLLoss(reduction='mean')
@@ -178,8 +184,8 @@ def prepare_simple_feature_data(config, ssl_model, logger=None, device='cuda'):
 def prepare_feature_data(config, ssl_model, logger=None, device='cuda'):
 	raise NotImplementedError
 
-def run_linear_evaluation(config, train_feature_dataloader, test_feature_dataloader, num_classes, output_dir_path, logger=None):
-	classifier = ClassificationModule(config, num_classes, is_all_model_params_optimized=True, logger=logger)
+def evaluate(config, train_feature_dataloader, test_feature_dataloader, num_classes, output_dir_path, logger=None):
+	classifier = ClassificationModule(config, num_classes, logger)
 
 	checkpoint_callback = pl.callbacks.ModelCheckpoint(
 		dirpath=(output_dir_path + '/checkpoints') if output_dir_path else './checkpoints',
@@ -322,8 +328,8 @@ def main():
 			#train_feature_dataloader, test_feature_dataloader, num_classes = prepare_feature_data(config['data'], ssl_model, logger, device)  # Not yet implemented.
 			del ssl_model  # Free memory in CPU or GPU.
 
-			# Run a linear evaluation.
-			run_linear_evaluation(config['evaluation'], train_feature_dataloader, test_feature_dataloader, num_classes, output_dir_path, logger)
+			# Evaluate the pretrained model by its features.
+			evaluate(config['evaluation'], train_feature_dataloader, test_feature_dataloader, num_classes, output_dir_path, logger)
 	except Exception as ex:
 		#logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
 		logger.exception(ex)

@@ -22,8 +22,10 @@ data:
 
 model:
   encoder:
-    model_type: resnet50
-    pretrained: true
+    resnet50:
+      feature_layer: avgpool
+      feature_dim: 2048
+      pretrained: true
 
   use_projector: false
   #use_predictor: false
