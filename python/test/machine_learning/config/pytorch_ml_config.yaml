@@ -1,0 +1,117 @@
+# Configuration for PyTorch.
+
+library: pytorch
+
+transforms:
+  resize:
+    size: [36, 36]
+  center_crop:
+    size: [32, 32]
+  random_resized_crop:
+    size: [32, 32]
+    scale: [0.2, 1.0]
+  random_horizontal_flip:
+    p: 0.5
+  to_tensor:
+  normalize:
+    mean: [0.5, 0.5, 0.5]
+    std: [0.5, 0.5, 0.5]
+
+pretrained_model:
+  #resnet18:
+  #  feature_layer: avgpool
+  #  feature_dim: 512
+  #  pretrained: true
+  resnet50:
+    feature_layer: avgpool
+    feature_dim: 2048
+    pretrained: true
+  #resnext50:
+  #  feature_layer: avgpool
+  #  feature_dim: 2048
+  #  pretrained: true
+  #resnext101:
+  #  feature_layer: avgpool
+  #  feature_dim: 2048
+  #  pretrained: true
+  #wide_resnet50:
+  #  feature_layer: avgpool
+  #  feature_dim: 2048
+  #  pretrained: true
+  #wide_resnet101:
+  #  feature_layer: avgpool
+  #  feature_dim: 2048
+  #  pretrained: true
+
+user_defined_model:
+  - module_type: linear
+    in_features:  2048  # input_dim.
+    out_features: 256  # hidden_dim.
+    bias: true
+  - module_type: batch_norm_1d
+    num_features: 256  # hidden_dim.
+    eps: 1.0e-05
+    momentum: 0.1
+  - module_type: relu
+    inplace: true
+  - module_type: linear
+    in_features:  256  # hidden_dim.
+    out_features: 10  # num_classes.
+    bias: true
+
+optimizer:
+  #sgd:
+  #  lr: 0.1
+  #  momentum: 0.9
+  #  damping: 0.0
+  #  weight_decay: 0.0
+  #  nesterov: false
+  adam:
+    lr: 0.1
+    betas: [0.9, 0.999]
+    eps: 1.0e-08
+    weight_decay: 0.0
+    amsgrad: false
+  #adadelta:
+  #  lr: 0.1
+  #  rho: 0.9
+  #  eps: 1.0e-06
+  #  weight_decay: 0.0
+  #adagrad:
+  #  lr: 0.1
+  #  lr_decay: 0.0
+  #  weight_decay: 0.0
+  #  initial_accumulator_value: 0.0
+  #  eps: 1.0e-10
+  #rmsprop:
+  #  lr: 0.1
+  #  alpha: 0.99
+  #  eps: 1.0e-08
+  #  weight_decay: 0.0
+  #  momentum: 0.0
+  #  centered: false
+
+lr_scheduler:
+  #step:
+  #  step_size: 200
+  #  gamma: 0.1
+  #multi_step:
+  #  milestones: [200, 400, 600, 800]
+  #  gamma: 0.1
+  cosine_annealing:
+    T_max: null  # epochs.
+    eta_min: 0.0
+  #cosine_warmup:
+  #  T_max: null  # epochs.
+  #  T_warmup: 20
+  #cosine_restart:
+  #  T_0: 100
+  #  T_mult: 1
+  #  T_up: 10
+  #  eta_max: 0.1  # eta_max > eta_init or eta_min.
+  #  gamma: 1.0
+  #noam:  # For transformer. Step-based.
+  #  dim_feature: 256  # d_model.
+  #  warmup_steps: 2000
+  #  factor: 1.0
+  #  epoch_based: false
