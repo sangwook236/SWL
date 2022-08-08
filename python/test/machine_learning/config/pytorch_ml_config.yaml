@@ -4,11 +4,11 @@ library: pytorch
 
 transforms:
   resize:
-    size: [36, 36]
+    size: [256, 256]
   center_crop:
-    size: [32, 32]
+    size: [224, 224]
   random_resized_crop:
-    size: [32, 32]
+    size: [224, 224]
     scale: [0.2, 1.0]
   random_horizontal_flip:
     p: 0.5

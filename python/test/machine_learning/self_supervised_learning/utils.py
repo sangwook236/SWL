@@ -443,7 +443,7 @@ class ModelWrapper(torch.nn.Module):
 	def forward(self, x):
 		for name, module in self.model._modules.items():
 			x = module(x)
-			if name is self.layer_name:
+			if name == self.layer_name:
 				return x.view(x.size(0), -1)
 				#return self.linear(x.view(x.size(0), -1))
 		return None

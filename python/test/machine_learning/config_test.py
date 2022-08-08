@@ -10,6 +10,7 @@ import yaml
 
 def pytorch_ml_config_test():
 	import torch, torchvision
+	import PIL.Image, PIL.ImageOps, PIL.ImageEnhance
 
 	# REF [site] >> https://github.com/NightShade99/Self-Supervised-Vision/blob/main/utils/augmentations.py
 	def construct_transform(config, *args, **kwargs):
@@ -72,51 +73,49 @@ def pytorch_ml_config_test():
 				]
 
 			def __call__(self, img):
-				from PIL import Image, ImageOps, ImageEnhance
-
 				aug_choices = random.choices(self.aug_list, k=self.n_aug)
 				for aug, min_value, max_value in aug_choices:
 					v = random.uniform(min_value, max_value)
 					if aug == "identity":
 						pass
 					elif aug == "autocontrast":
-						img = ImageOps.autocontrast(img)
+						img = PIL.ImageOps.autocontrast(img)
 					elif aug == "equalize":
-						img = ImageOps.equalize(img)
+						img = PIL.ImageOps.equalize(img)
 					elif aug == "rotate":
 						if random.random() > 0.5:
 							v = -v
 						img = img.rotate(v)
 					elif aug == "solarize":
-						img = ImageOps.solarize(img, v)
+						img = PIL.ImageOps.solarize(img, v)
 					elif aug == "color":
-						img = ImageEnhance.Color(img).enhance(v)
+						img = PIL.ImageEnhance.Color(img).enhance(v)
 					elif aug == "contrast":
-						img = ImageEnhance.Contrast(img).enhance(v)
+						img = PIL.ImageEnhance.Contrast(img).enhance(v)
 					elif aug == "brightness":
-						img = ImageEnhance.Brightness(img).enhance(v)
+						img = PIL.ImageEnhance.Brightness(img).enhance(v)
 					elif aug == "sharpness":
-						img = ImageEnhance.Sharpness(img).enhance(v)
+						img = PIL.ImageEnhance.Sharpness(img).enhance(v)
 					elif aug == "shear_x":
 						if random.random() > 0.5:
 							v = -v
-						img = img.transform(img.size, Image.AFFINE, (1, v, 0, 0, 1, 0))
+						img = img.transform(img.size, PIL.Image.AFFINE, (1, v, 0, 0, 1, 0))
 					elif aug == "shear_y":
 						if random.random() > 0.5:
 							v = -v
-						img = img.transform(img.size, Image.AFFINE, (1, 0, 0, v, 1, 0))
+						img = img.transform(img.size, PIL.Image.AFFINE, (1, 0, 0, v, 1, 0))
 					elif aug == "translate_x":
 						if random.random() > 0.5:
 							v = -v
 						v = v * img.size[0]
-						img = img.transform(img.size, Image.AFFINE, (1, 0, v, 0, 1, 0))
+						img = img.transform(img.size, PIL.Image.AFFINE, (1, 0, v, 0, 1, 0))
 					elif aug == "translate_y":
 						if random.random() > 0.5:
 							v = -v
 						v = v * img.size[1]
-						img = img.transform(img.size, Image.AFFINE, (1, 0, 0, 0, 1, v))
+						img = img.transform(img.size, PIL.Image.AFFINE, (1, 0, 0, 0, 1, v))
 					elif aug == "posterize":
-						img = ImageOps.posterize(img, int(v))
+						img = PIL.ImageOps.posterize(img, int(v))
 					else:
 						raise NotImplementedError(f"{aug} not implemented")
 				return img
@@ -161,7 +160,7 @@ def pytorch_ml_config_test():
 		def forward(self, x):
 			for name, module in self.model._modules.items():
 				x = module(x)
-				if name is self.layer_name:
+				if name == self.layer_name:
 					return x.view(x.size(0), -1)
 					#return self.linear(x.view(x.size(0), -1))
 			return None
@@ -387,6 +386,9 @@ def pytorch_ml_config_test():
 		return
 	print("A PyTorch ML config loaded: {} secs.".format(time.time() - start_time))
 
+	#--------------------
+	assert config["library"] == "pytorch", "The ML configuration for PyTorch library: Invalid library = {}".format(config["library"])
+
 	if "transforms" in config:
 		print("Transform --------------------------------------------------")
 		print("Processing transforms...")
@@ -394,8 +396,13 @@ def pytorch_ml_config_test():
 		transforms = construct_transform(config["transforms"])
 		print("Transforms processed: {} secs.".format(time.time() - start_time))
 
-		print('-----')
+		print("-----")
 		print(transforms)
+
+		print("-----")
+		inputs = PIL.Image.fromarray((np.random.rand(224, 224, 3) * 255).astype(np.uint8))  # (channel, height, width).
+		outputs = transforms(inputs)
+		print("Outputs: shape = {}, dtype = {}, (min, max) = ({}, {}).".format(outputs.shape, outputs.dtype, torch.min(outputs), torch.max(outputs)))
 
 	if "pretrained_model" in config:
 		print("Pretrained model --------------------------------------------------")
@@ -404,9 +411,15 @@ def pytorch_ml_config_test():
 		pretrained_model, feature_dim = construct_pretrained_model(config["pretrained_model"])
 		print("Pretrained models processed: {} secs.".format(time.time() - start_time))
 
-		print('-----')
+		print("-----")
 		print(pretrained_model)
 		print("Feature dimension = {}.".format(feature_dim))
+
+		print("-----")
+		inputs = torch.randn((5, 3, 244, 244), dtype=torch.float32)  # (batch size, channel, height, width).
+		outputs = pretrained_model(inputs)
+		print("Inputs:  shape = {}, dtype = {}, (min, max) = ({}, {}).".format(inputs.shape, inputs.dtype, torch.min(inputs), torch.max(inputs)))
+		print("Outputs: shape = {}, dtype = {}, (min, max) = ({}, {}).".format(outputs.shape, outputs.dtype, torch.min(outputs), torch.max(outputs)))
 
 	if "user_defined_model" in config:
 		print("User-defined model --------------------------------------------------")
@@ -415,8 +428,14 @@ def pytorch_ml_config_test():
 		user_defined_model = construct_user_defined_model(config["user_defined_model"])
 		print("User-defined models processed: {} secs.".format(time.time() - start_time))
 
-		print('-----')
+		print("-----")
 		print(user_defined_model)
+
+		print("-----")
+		inputs = torch.randn((5, 2048), dtype=torch.float32)  # (batch size, feature dim).
+		outputs = user_defined_model(inputs)
+		print("Inputs:  shape = {}, dtype = {}, (min, max) = ({}, {}).".format(inputs.shape, inputs.dtype, torch.min(inputs), torch.max(inputs)))
+		print("Outputs: shape = {}, dtype = {}, (min, max) = ({}, {}).".format(outputs.shape, outputs.dtype, torch.min(outputs), torch.max(outputs)))
 
 	if "optimizer" in config:
 		model = torchvision.models.resnet18()
@@ -427,8 +446,15 @@ def pytorch_ml_config_test():
 		optimizer = construct_optimizer(config["optimizer"], model.parameters())
 		print("Optimizers processed: {} secs.".format(time.time() - start_time))
 
-		print('-----')
+		print("-----")
 		print(optimizer)
+
+		print("-----")
+		num_steps = 100
+		for _ in range(num_steps):
+			optimizer.zero_grad()
+			optimizer.step()
+		print("Optimization done.")
 
 	if "lr_scheduler" in config:
 		model = torchvision.models.resnet18()
@@ -441,9 +467,18 @@ def pytorch_ml_config_test():
 		lr_scheduler, is_epoch_based = construct_lr_scheduler(config["lr_scheduler"], optimizer, num_epochs)
 		print("LR schedulers processed: {} secs.".format(time.time() - start_time))
 
-		print('-----')
+		print("-----")
 		print(lr_scheduler)
 		print("Is epoch based = {}.".format(is_epoch_based))
+
+		print("-----")
+		num_steps = 10
+		lrs = list()
+		for _ in range(num_steps):
+			lr_scheduler.optimizer.step()
+			lrs.append(lr_scheduler.get_last_lr())
+			lr_scheduler.step()
+		print("LRs: {}.".format(lrs))
 
 def main():
 	pytorch_ml_config_test()
