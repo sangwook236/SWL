@@ -233,7 +233,11 @@ class RelicModule(pl.LightningModule):
 
 	def _get_target_model(self):
 		if self.target_model is None:
-			self.target_model = copy.deepcopy(self.online_model)
+			# TODO [check] >> Which one is correct or better?
+			#	RuntimeError: Only Tensors created explicitly by the user (graph leaves) support the deepcopy protocol at the moment.
+			#self.target_model = copy.deepcopy(self.online_model)
+			self.target_model = copy.copy(self.online_model)
+			self.target_model.load_state_dict(copy.deepcopy(self.online_model.state_dict()))
 			self._set_requires_grad(self.target_model, False)
 		return self.target_model
 

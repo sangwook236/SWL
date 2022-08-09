@@ -75,7 +75,7 @@ model:
   predictor_output_dim: 256
 
 training:
-  epochs: 1000
+  epochs: 100
   #eval_every: 10
 
   is_momentum_encoder_used: true
@@ -118,6 +118,7 @@ training:
     #  weight_decay: 0.0
     #  momentum: 0.0
     #  centered: false
+
   lr_scheduler:
     #step:
     #  step_size: 200

@@ -189,16 +189,27 @@ def main():
 		best_model_filepath = utils.train(config_training, ssl_model, train_dataloader, test_dataloader, output_dir_path, model_filepath_to_load, logger)
 
 		if True:
-			# For production.
+			# Export the model for production.
 			# REF [site] >> https://pytorch-lightning.readthedocs.io/en/stable/common/production_inference.html
+
+			# NOTE [info] >>
+			#	<error> RuntimeError: Module 'ResNet' has no attribute '_modules'.
+			#	<cause> This error occurs when converting a module with an inner module like utils.ModelWrapper using TorchScript scripting.
+			#	<solution> Use TorchScript tracing.
+			#		Refer to ${SWDT_PYTHON_HOME}/rnd/test/machine_learning/pytorch/pytorch_torch_script.py.
+			# NOTE [info] >>
+			#	<error> ReferenceError: weakly-referenced object no longer exists.
+			#		Refer to https://docs.python.org/3/library/weakref.html.
+			#	<cause> This error occurs in child processes when training a model using pl.Trainer(strategy='ddp') in a single machine.
+			#	<solution> Use pl.Trainer(strategy='dp').
+			#		Refer to https://pytorch-lightning.readthedocs.io/en/latest/accelerators/gpu_intermediate.html.
 
 			# TorchScript.
 			try:
 				torchscript_filepath = os.path.join(output_dir_path, '{}_ts.pth'.format(config['ssl_type']))
-				if True:
-					# FIXME [error] >> ReferenceError: weakly-referenced object no longer exists.
+				if False:
 					script = ssl_model.to_torchscript(file_path=torchscript_filepath, method='script')
-				elif False:
+				elif True:
 					dummy_inputs = torch.randn((1, image_shape[2], image_shape[0], image_shape[1]))
 					script = ssl_model.to_torchscript(file_path=torchscript_filepath, method='trace', example_inputs=dummy_inputs)
 				else:
@@ -211,7 +222,6 @@ def main():
 
 			# ONNX.
 			try:
-				# FIXME [error] >> ReferenceError: weakly-referenced object no longer exists.
 				onnx_filepath = os.path.join(output_dir_path, '{}.onnx'.format(config['ssl_type']))
 				dummy_inputs = torch.randn((1, image_shape[2], image_shape[0], image_shape[1]))
 				ssl_model.to_onnx(onnx_filepath, dummy_inputs, export_params=True)

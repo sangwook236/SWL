@@ -88,6 +88,7 @@ evaluation:
     #  weight_decay: 0.0
     #  momentum: 0.0
     #  centered: false
+
   lr_scheduler:
     #step:
     #  step_size: 200

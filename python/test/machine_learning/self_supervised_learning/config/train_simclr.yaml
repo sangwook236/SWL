@@ -72,7 +72,7 @@ model:
   projector_output_dim: 256
 
 training:
-  epochs: 1000
+  epochs: 100
   #eval_every: 10
 
   is_model_initialized: false  # false if a pretrained encoder is used.
@@ -117,6 +117,7 @@ training:
     #  weight_decay: 0.0
     #  momentum: 0.0
     #  centered: false
+
   lr_scheduler:
     #step:
     #  step_size: 200

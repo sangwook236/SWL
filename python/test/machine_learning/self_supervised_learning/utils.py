@@ -675,8 +675,8 @@ def train(config, model, train_dataloader, test_dataloader, output_dir_path, mod
 	else:
 		gradient_clip_val = None
 		gradient_clip_algorithm = None
-	#trainer = pl.Trainer(devices=-1, accelerator="gpu", strategy="ddp", auto_select_gpus=True, max_epochs=config["epochs"], callbacks=pl_callbacks, enable_checkpointing=True, gradient_clip_val=gradient_clip_val, gradient_clip_algorithm=gradient_clip_algorithm, default_root_dir=output_dir_path)  # When using the default logger.
-	trainer = pl.Trainer(devices=-1, accelerator="gpu", strategy="ddp", auto_select_gpus=True, max_epochs=config["epochs"], callbacks=pl_callbacks, logger=pl_logger, enable_checkpointing=True, gradient_clip_val=gradient_clip_val, gradient_clip_algorithm=gradient_clip_algorithm, default_root_dir=None)
+	#trainer = pl.Trainer(devices=-1, accelerator="gpu", strategy="dp", auto_select_gpus=True, max_epochs=config["epochs"], callbacks=pl_callbacks, enable_checkpointing=True, gradient_clip_val=gradient_clip_val, gradient_clip_algorithm=gradient_clip_algorithm, default_root_dir=output_dir_path)  # When using the default logger.
+	trainer = pl.Trainer(devices=-1, accelerator="gpu", strategy="dp", auto_select_gpus=True, max_epochs=config["epochs"], callbacks=pl_callbacks, logger=pl_logger, enable_checkpointing=True, gradient_clip_val=gradient_clip_val, gradient_clip_algorithm=gradient_clip_algorithm, default_root_dir=None)
 
 	# Train the model.
 	if logger: logger.info("Training the model...")

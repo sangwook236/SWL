@@ -99,38 +99,6 @@ def main():
 		best_model_filepath = utils.train(config_training, ssl_model, train_dataloader, test_dataloader, output_dir_path, model_filepath_to_load, logger)
 
 		if True:
-			# For production.
-			# REF [site] >> https://pytorch-lightning.readthedocs.io/en/stable/common/production_inference.html
-
-			# TorchScript.
-			try:
-				torchscript_filepath = os.path.join(output_dir_path, '{}_ts.pth'.format(config['ssl_type']))
-				if True:
-					# FIXME [error] >> ReferenceError: weakly-referenced object no longer exists.
-					script = ssl_model.to_torchscript(file_path=torchscript_filepath, method='script')
-				elif False:
-					dummy_inputs = torch.randn((1, image_shape[2], image_shape[0], image_shape[1]))
-					script = ssl_model.to_torchscript(file_path=torchscript_filepath, method='trace', example_inputs=dummy_inputs)
-				else:
-					script = ssl_model.to_torchscript(file_path=None, method='script')
-					torch.jit.save(script, torchscript_filepath)
-				logger.info('A TorchScript model saved to {}.'.format(torchscript_filepath))
-			except Exception as ex:
-				logger.error('Failed to save a TorchScript model:')
-				logger.exception(ex)
-
-			# ONNX.
-			try:
-				onnx_filepath = os.path.join(output_dir_path, '{}.onnx'.format(config['ssl_type']))
-				dummy_inputs = torch.randn((1, image_shape[2], image_shape[0], image_shape[1]))
-				# FIXME [error] >> ReferenceError: weakly-referenced object no longer exists.
-				ssl_model.to_onnx(onnx_filepath, dummy_inputs, export_params=True)
-				logger.info('An ONNX model saved to {}.'.format(onnx_filepath))
-			except Exception as ex:
-				logger.error('Failed to save an ONNX model:')
-				logger.exception(ex)
-
-		if True:
 			# Load a model.
 			logger.info('Loading a SimCLR model from {}...'.format(best_model_filepath))
 			start_time = time.time()
