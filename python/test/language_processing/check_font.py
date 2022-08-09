@@ -5,14 +5,14 @@ import sys
 sys.path.append('../../src')
 sys.path.append('./src')
 
-import os, math, random, glob, time
+import os, glob, time
 import numpy as np
 import cv2
 from PIL import Image, ImageDraw, ImageFont
 import swl.language_processing.util as swl_langproc_util
 import text_generation_util as tg_util
 
-def construct_font(korean=True, english=True):
+def visualize_font_text():
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
 		font_base_dir_path = '/home/sangwook/work/font'
@@ -20,65 +20,55 @@ def construct_font(korean=True, english=True):
 		system_font_dir_path = 'C:/Windows/Fonts'
 		font_base_dir_path = 'D:/work/font'
 
-	font_dir_paths = list()
-	if korean:
-		#font_dir_paths.append(font_base_dir_path + '/kor_small')
-		font_dir_paths.append(font_base_dir_path + '/kor_large')
-		#font_dir_paths.append(font_base_dir_path + '/kor_receipt')
-	if english:
-		#font_dir_paths.append(font_base_dir_path + '/eng_small')
-		font_dir_paths.append(font_base_dir_path + '/eng_large')
-		#font_dir_paths.append(font_base_dir_path + '/eng_receipt')
-
-	return tg_util.construct_font(font_dir_paths)
-
-def visualize_font_text(font_dir_path=None, save_image=False):
-	if not font_dir_path:
-		font_list = construct_font(korean=True, english=True)
-	else:
-		font_filepaths = glob.glob(font_dir_path + '/*.ttf')
-		#font_list = tg_util.generate_font_list(font_filepaths)
-		font_list = tg_util.generate_hangeul_font_list(font_filepaths)
-
-		"""
-		gabia_solmee.ttf: 일부 자음 없음.
-		godoRoundedL.ttf: ? 표시.
-		godoRoundedR.ttf: ? 표시.
-		HS여름물빛체.ttf: 위아래 글자 겹침.
-		"""
-
 	if True:
+		#font_dir_path = font_base_dir_path + '/kor_small'
+		font_dir_path = font_base_dir_path + '/kor_large'
+		#font_dir_path = font_base_dir_path + '/kor_receipt'
+
+		image_size = (1800, 2500)
+		line_len = 54
 		text = tg_util.construct_charset(hangeul=True, hangeul_jamo=True)
-		line_len = 27
 		text = '\n'.join(text[i:i+line_len] for i in range(0, len(text), line_len))
-	else:
-		hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
-		#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
-		#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
-		with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
-			#hangeul_letters = fd.read().strip('\n')  # A string.
-			hangeul_letters = fd.read().replace(' ', '')  # A string.
-			#hangeul_letters = fd.readlines()  # A list of strings.
-			#hangeul_letters = fd.read().splitlines()  # A list of strings.
+	elif False:
+		#font_dir_path = font_base_dir_path + '/eng_small'
+		font_dir_path = font_base_dir_path + '/eng_large'
+		#font_dir_path = font_base_dir_path + '/eng_receipt'
 
-		hangeul_consonants = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ'
-		hangeul_vowels = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
+		image_size = (1800, 2500)
+		line_len = 54
+		#text = tg_util.construct_charset(latin=True, greek_uppercase=True, greek_lowercase=True)
+		text = tg_util.construct_charset(latin=True, greek_uppercase=True, greek_lowercase=True, unit=True, currency=True, symbol=True, math_symbol=True)
+		text = '\n'.join(text[i:i+line_len] for i in range(0, len(text), line_len))
+	elif False:
+		font_dir_path = font_base_dir_path + '/chinese'
 
-		alphabet1 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-		alphabet2 = 'abcdefghijklmnopqrstuvwxyz'
-		digits = '0123456789'
-		symbols = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
+		line_len = 54
+		image_size = (2000, 3000)
+		text = tg_util.construct_charset(chinese=True)
+		text = '\n'.join(text[i:i+line_len] for i in range(0, len(text), line_len))
+	elif False:
+		font_dir_path = font_base_dir_path + '/japanese'
 
-		text = alphabet1 + '\n' + \
-			alphabet2 + '\n' + \
-			digits + '\n' + \
-			symbols + '\n' + \
-			hangeul_consonants + '\n' + \
-			hangeul_vowels + '\n' + \
-			hangeul_letters
+		image_size = (2000, 3000)
+		line_len = 54
+		text = tg_util.construct_charset(hiragana=True, katakana=True, kanji=True)
+		text = '\n'.join(text[i:i+line_len] for i in range(0, len(text), line_len))
 
 	print('Text =', text)
 
+	font_filepaths = glob.glob(font_dir_path + '/*.*')
+	#font_filepaths = glob.glob(font_dir_path + '/*.ttf')
+	#font_list = tg_util.generate_font_list(font_filepaths)
+	font_list = tg_util.generate_hangeul_font_list(font_filepaths)
+
+	"""
+	gabia_solmee.ttf: 일부 자음 없음.
+	godoRoundedL.ttf: ? 표시.
+	godoRoundedR.ttf: ? 표시.
+	HS여름물빛체.ttf: 위아래 글자 겹침.
+	"""
+
+	#--------------------
 	text_offset = (0, 0)
 	crop_text_area = False
 	draw_text_border = False
@@ -87,9 +77,8 @@ def visualize_font_text(font_dir_path=None, save_image=False):
 	#font_color = None
 	bg_color = (0, 0, 0)
 	#bg_color = None
-	image_size = (1000, 4000)
 
-	#--------------------
+	save_image = True
 	output_dir_path = './font_check_results'
 	os.makedirs(output_dir_path, exist_ok=True)
 
@@ -102,12 +91,13 @@ def visualize_font_text(font_dir_path=None, save_image=False):
 
 			if save_image:
 				img_fpath = os.path.join(output_dir_path, os.path.basename(font_fpath) + '_{}.png'.format(font_index))
-				print('\tSaved an font image to {}.'.format(img_fpath))
+				print('\tSaved a font image to {}.'.format(img_fpath))
 				img.save(img_fpath)
 				#cv2.imwrite(img_fpath, np.array(img))
 				#cv2.imshow('Text', np.array(img))
 				#cv2.waitKey(0)
-		except:
+		except Exception as ex:
+			print('\tException raised in {}: {}.'.format(font_fpath, ex))
 			invalid_fonts.append((font_fpath, font_index))
 
 	#cv2.destroyAllWindows()
@@ -147,7 +137,33 @@ def is_valid_font(font_filepath, char_pair, height=64, width=64):
 
 	return not is_same
 
-def check_font_validity(font_dir_path, char_pair, dst_dir_path=None):
+def check_font_validity():
+	dst_dir_path = None
+
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		font_base_dir_path = '/home/sangwook/work/font'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_base_dir_path = 'D:/work/font'
+
+	if True:
+		#font_dir_path = font_base_dir_path + '/kor_small'
+		font_dir_path = font_base_dir_path + '/kor_large'
+		#font_dir_path = font_base_dir_path + '/kor_receipt'
+		char_pair = ('가', '너')
+	elif False:
+		#font_dir_path = font_base_dir_path + '/eng_small'
+		font_dir_path = font_base_dir_path + '/eng_large'
+		#font_dir_path = font_base_dir_path + '/eng_receipt'
+		char_pair = ('C', 'M')
+	elif False:
+		font_dir_path = font_base_dir_path + '/chinese'
+		char_pair = ('', '')  # FIXME [implement] >>
+	elif False:
+		font_dir_path = font_base_dir_path + '/japanese'
+		char_pair = ('', '')  # FIXME [implement] >>
+
 	print('Start checking font validity...')
 	start_time = time.time()
 	invalid_fonts = list()
@@ -184,9 +200,30 @@ def is_valid_font_by_area(font_filepath, ch, area_thresh=0.1, height=64, width=6
 
 	return area > (img.size[0] * img.size[1] * area_thresh)
 
-def check_font_validity_by_area(font_dir_path, dst_dir_path=None):
+def check_font_validity_by_area():
 	chars = tg_util.construct_charset(hangeul=True, hangeul_jamo=True)
 	area_thresh = 0.05  # Area ratio threshold, [0, 1].
+	dst_dir_path = None
+
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		font_base_dir_path = '/home/sangwook/work/font'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_base_dir_path = 'D:/work/font'
+
+	if True:
+		#font_dir_path = font_base_dir_path + '/kor_small'
+		font_dir_path = font_base_dir_path + '/kor_large'
+		#font_dir_path = font_base_dir_path + '/kor_receipt'
+	elif False:
+		#font_dir_path = font_base_dir_path + '/eng_small'
+		font_dir_path = font_base_dir_path + '/eng_large'
+		#font_dir_path = font_base_dir_path + '/eng_receipt'
+	elif False:
+		font_dir_path = font_base_dir_path + '/chinese'
+	elif False:
+		font_dir_path = font_base_dir_path + '/japanese'
 
 	print('Start checking font validity by area...')
 	start_time = time.time()
@@ -212,26 +249,75 @@ def check_font_validity_by_area(font_dir_path, dst_dir_path=None):
 	else:
 		print('No invalid fonts.')
 
-def main():
+def check_PIL_ImageFont_API_support():
 	if 'posix' == os.name:
-		system_font_dir_path = '/usr/share/fonts'
 		font_base_dir_path = '/home/sangwook/work/font'
 	else:
-		system_font_dir_path = 'C:/Windows/Fonts'
 		font_base_dir_path = 'D:/work/font'
-	#font_dir_path = font_base_dir_path + '/kor_small'
-	font_dir_path = font_base_dir_path + '/kor_large'
-	#font_dir_path = font_base_dir_path + '/kor_receipt'
-	#font_dir_path = font_base_dir_path + '/eng_small'
-	#font_dir_path = font_base_dir_path + '/eng_large'
-	#font_dir_path = font_base_dir_path + '/eng_receipt'
 
-	#visualize_font_text(font_dir_path, save_image=False)
+	if True:
+		font_dir_paths = [
+			#font_base_dir_path + '/kor_small',
+			font_base_dir_path + '/kor_large',
+			#font_base_dir_path + '/kor_receipt',
+		]
+		dst_dir_path = font_base_dir_path + '/kor_error'
 
-	#check_font_validity(font_dir_path, char_pair=('C', 'M'))  # For English.
-	#check_font_validity(font_dir_path, char_pair=('가', '너'))  # For Korean.
+		chars = tg_util.construct_charset(hangeul=True, hangeul_jamo=True)
+	elif False:
+		font_dir_paths = [
+			#font_base_dir_path + '/eng_small'
+			font_base_dir_path + '/eng_large',
+			#font_base_dir_path + '/eng_receipt',
+		]
+		dst_dir_path = font_base_dir_path + '/eng_error'
 
-	check_font_validity_by_area(font_dir_path)
+		chars = tg_util.construct_charset()
+	elif False:
+		font_dir_paths = [
+			font_base_dir_path + '/chinese',
+		]
+		dst_dir_path = font_base_dir_path + '/chinese_error'
+
+		chars = tg_util.construct_charset(chinese=True)
+	elif False:
+		font_dir_paths = [
+			font_base_dir_path + '/japanese',
+		]
+		dst_dir_path = font_base_dir_path + '/japanese_error'
+
+		chars = tg_util.construct_charset(hiragana=True, katakana=True, kanji=True)
+
+	#-----
+	font_sizes = list(range(8, 48, 2))
+	move_font_files = False
+
+	print('Checking getlength() support...')
+	start_time = time.time()
+	for font_dir_path in font_dir_paths:
+		font_filepaths = sorted(glob.glob(os.path.join(font_dir_path, '*.*'), recursive=True))
+		for font_filepath in font_filepaths:
+			for font_size in font_sizes:
+				try:
+					image_font = ImageFont.truetype(font=font_filepath, size=font_size)
+					text_length = image_font.getlength(chars)
+				except Exception as ex:
+					print('Exception raised in {} (font size = {}): {}.'.format(font_filepath, font_size, ex))
+					if move_font_files:
+						import shutil
+						shutil.move(font_filepath, dst_dir_path)
+						print('{} moved to {}.'.format(font_filepath, dst_dir_path))
+	print('getlength() support checked: {} secs.'.format(time.time() - start_time))
+
+def main():
+	visualize_font_text()
+
+	#--------------------
+	#check_font_validity()
+	#check_font_validity_by_area()
+
+	#--------------------
+	#check_PIL_ImageFont_API_support()
 
 #--------------------------------------------------------------------
 

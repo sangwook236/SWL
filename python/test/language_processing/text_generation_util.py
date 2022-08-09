@@ -5,7 +5,8 @@ import cv2
 import swl.language_processing.util as swl_langproc_util
 from swl.language_processing.text_generator import Transformer, HangeulJamoGenerator, HangeulLetterGenerator, TextGenerator, SceneProvider, SceneTextGenerator
 
-def construct_charset(digit=True, alphabet_uppercase=True, alphabet_lowercase=True, punctuation=True, space=True, whitespace=False, hangeul=False, hangeul_jamo=False, latin=False, greek_uppercase=False, greek_lowercase=False, chinese=False, hiragana=False, katakana=False, unit=False, currency=False, symbol=False, math_symbol=False, hangeul_letter_filepath=None):
+def construct_charset(digit=True, alphabet_uppercase=True, alphabet_lowercase=True, punctuation=True, space=True, whitespace=False, hangeul=False, hangeul_jamo=False, latin=False, greek_uppercase=False, greek_lowercase=False, chinese=False, hiragana=False, katakana=False, kanji=False, unit=False, currency=False, symbol=False, math_symbol=False, hangeul_letter_filepath=None, chinese_letter_filepath=None, kanji_letter_filepath=None, data_dir_path=None):
+	if not data_dir_path: data_dir_path = '../../data'
 	charset = ''
 
 	# Latin.
@@ -30,16 +31,16 @@ def construct_charset(digit=True, alphabet_uppercase=True, alphabet_lowercase=Tr
 		#charset += ''.join([chr(ch) for ch in range(0xAC00, 0xD7A3 + 1)])
 
 		if hangeul_letter_filepath is None:
-			hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
-			#hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
-			#hangeul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
+			hangeul_letter_filepath = data_dir_path + '/language_processing/hangul_ksx1001.txt'
+			#hangeul_letter_filepath = data_dir_path + '/language_processing/hangul_ksx1001_1.txt'
+			#hangeul_letter_filepath = data_dir_path + '/language_processing/hangul_unicode.txt'
 		with open(hangeul_letter_filepath, 'r', encoding='UTF-8') as fd:
 			#charset += fd.read().strip('\n')  # A string.
 			charset += fd.read().replace(' ', '').replace('\n', '')  # A string.
 			#charset += fd.readlines()  # A list of strings.
 			#charset += fd.read().splitlines()  # A list of strings.
 	if hangeul_jamo:
-		# Unicode: Hangul Jamo (U+1100 ~ U+11FF), Hangul Compatibility Jamo (U+3130 ~ U+318F), Hangul Jamo Extended-A (U+A960 ~ U+A97F), & Hangul Jamo Extended-B (U+D7B0 ~ U+D7FF).
+		# Unicode: Hangul Jamo (U+1100 ~ U+11FF), Hangul Compatibility Jamo (U+3130 ~ U+318F), Hangul Jamo Extended-A (U+A960 ~ U+A97F), Hangul Jamo Extended-B (U+D7B0 ~ U+D7FF), Halfwidth and Fullwidth Forms (U+FFA1 ~ U+FFD0).
 		##unicodes = list(range(0x1100, 0x11FF + 1)) + list(range(0x3131, 0x318E + 1))
 		#unicodes = range(0x3131, 0x318E + 1)
 		#charset += ''.join([chr(ch) for ch in unicodes])
@@ -49,10 +50,10 @@ def construct_charset(digit=True, alphabet_uppercase=True, alphabet_lowercase=Tr
 		#charset += 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
 
 	if latin:
-		# Unicode: Latin-1 Supplement (U+0080 ~ U+00FF), Latin Extended-A (U+0100 ~ U+017F), Latin Extended-B (U+0180 ~ U+024F).
+		# Unicode: Latin-1 Supplement (U+0080 ~ U+00FF), Latin Extended-A (U+0100 ~ U+017F), Latin Extended-B (U+0180 ~ U+024F), Halfwidth and Fullwidth Forms (U+FF01 ~ U+FF65).
 		charset += ''.join([chr(ch) for ch in range(0x00C0, 0x024F + 1)])
 
-	# Unicode: Greek and Coptic (U+0370 ~ U+03FF) & Greek Extended (U+1F00 ~ U+1FFF).
+	# Unicode: Greek and Coptic (U+0370 ~ U+03FF), Greek Extended (U+1F00 ~ U+1FFF).
 	if greek_uppercase:
 		unicodes = list(range(0x0391, 0x03A1 + 1)) + list(range(0x03A3, 0x03A9 + 1))
 		charset += ''.join([chr(ch) for ch in unicodes])
@@ -61,9 +62,20 @@ def construct_charset(digit=True, alphabet_uppercase=True, alphabet_lowercase=Tr
 		charset += ''.join([chr(ch) for ch in unicodes])
 
 	if chinese:
-		# Unicode: CJK Unified Ideographs (U+4E00 ~ U+9FFF) & CJK Unified Ideographs Extension A (U+3400 ~ U+4DBF).
-		unicodes = list(range(0x4E00, 0x9FD5 + 1)) + list(range(0x3400, 0x4DB5 + 1))
-		charset += ''.join([chr(ch) for ch in unicodes])
+		# Unicode: CJK Unified Ideographs (U+4E00 ~ U+9FFF), CJK Unified Ideographs Extension A (U+3400 ~ U+4DBF).
+		#unicodes = list(range(0x4E00, 0x9FD5 + 1)) + list(range(0x3400, 0x4DB5 + 1))
+		#charset += ''.join([chr(ch) for ch in unicodes])
+
+		if chinese_letter_filepath is None:
+			#chinese_letter_filepath = data_dir_path + '/language_processing/chinese_1000.txt'
+			#chinese_letter_filepath = data_dir_path + '/language_processing/chinese_1800.txt'
+			# REF [site] >> https://lingua.mtsu.edu/chinese-computing/statistics/char/listchangyong.php
+			chinese_letter_filepath = data_dir_path + '/language_processing/chinese_3499.txt'
+		with open(chinese_letter_filepath, 'r', encoding='UTF-8') as fd:
+			#charset += fd.read().strip('\n')  # A string.
+			charset += fd.read().replace(' ', '').replace('\n', '')  # A string.
+			#charset += fd.readlines()  # A list of strings.
+			#charset += fd.read().splitlines()  # A list of strings.
 
 	if hiragana:
 		# Unicode: Hiragana (U+3040 ~ U+309F).
@@ -71,6 +83,21 @@ def construct_charset(digit=True, alphabet_uppercase=True, alphabet_lowercase=Tr
 	if katakana:
 		# Unicode: Katakana (U+30A0 ~ U+30FF).
 		charset += ''.join([chr(ch) for ch in range(0x30A1, 0x30FA + 1)])
+	if kanji:
+		# Unicode: CJK Unified Ideographs (U+4E00 ~ U+9FFF), CJK Unified Ideographs Extension A (U+3400 ~ U+4DBF), Halfwidth and Fullwidth Forms (U+FF66 ~ U+FF9F).
+		#unicodes = list(range(0x4E00, 0x9FD5 + 1)) + list(range(0x3400, 0x4DB5 + 1))
+		#charset += ''.join([chr(ch) for ch in unicodes])
+
+		if kanji_letter_filepath is None:
+			# REF [site] >> https://kanjicards.org/kanji-lists.html
+			#kanji_letter_filepath = data_dir_path + '/language_processing/kanji_jlpt.txt'  # 2230 letters.
+			kanji_letter_filepath = data_dir_path + '/language_processing/kanji_grade.txt'  # 2928 letters.
+			#kanji_letter_filepath = data_dir_path + '/language_processing/kanji_freq.txt'  # 2501 letters.
+		with open(kanji_letter_filepath, 'r', encoding='UTF-8') as fd:
+			#charset += fd.read().strip('\n')  # A string.
+			charset += fd.read().replace(' ', '').replace('\n', '')  # A string.
+			#charset += fd.readlines()  # A list of strings.
+			#charset += fd.read().splitlines()  # A list of strings.
 
 	if unit:
 		# REF [site] >> http://xahlee.info/comp/unicode_units.html
@@ -115,11 +142,14 @@ def construct_charset(digit=True, alphabet_uppercase=True, alphabet_lowercase=Tr
 
 	return charset
 
-def construct_word_set(korean=True, english=True, korean_dictionary_filepath=None, english_dictionary_filepath=None):
+def construct_word_set(korean=False, english=False, chinese=False, japanese=False, korean_dictionary_filepath=None, english_dictionary_filepath=None, chinese_dictionary_filepath=None, japanese_dictionary_filepath=None, data_dir_path=None):
+	if not data_dir_path: data_dir_path = '../../data'
+
 	words = list()
 	if korean:
 		if korean_dictionary_filepath is None:
-			korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
+			korean_dictionary_filepath = data_dir_path + '/dictionary/korean_wordslistUnique.txt'
+		assert os.path.isfile(korean_dictionary_filepath), 'A Korean dictionary file, {} not found'.format(korean_dictionary_filepath)
 
 		print('Start loading a Korean dictionary...')
 		start_time = time.time()
@@ -131,9 +161,10 @@ def construct_word_set(korean=True, english=True, korean_dictionary_filepath=Non
 		words += korean_words
 	if english:
 		if english_dictionary_filepath is None:
-			#english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
-			english_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
-			#english_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
+			#english_dictionary_filepath = data_dir_path + '/dictionary/english_words.txt'
+			english_dictionary_filepath = data_dir_path + '/language_processing/wordlist_mono_clean.txt'
+			#english_dictionary_filepath = data_dir_path + '/language_processing/wordlist_bi_clean.txt'
+		assert os.path.isfile(english_dictionary_filepath), 'An English dictionary file, {} not found'.format(english_dictionary_filepath)
 
 		print('Start loading an English dictionary...')
 		start_time = time.time()
@@ -143,6 +174,33 @@ def construct_word_set(korean=True, english=True, korean_dictionary_filepath=Non
 			english_words = fd.read().splitlines()
 		print('End loading an English dictionary: {} secs.'.format(time.time() - start_time))
 		words += english_words
+	if chinese:
+		if chinese_dictionary_filepath is None:
+			chinese_dictionary_filepath = data_dir_path + '/dictionary/chinese-word-list.txt'  # REF [site] >> https://github.com/lwinmoe/segment/blob/master/chinese-word-list.txt
+		assert os.path.isfile(chinese_dictionary_filepath), 'A Chinese dictionary file, {} not found'.format(chinese_dictionary_filepath)
+
+		print('Start loading a Chinese dictionary...')
+		start_time = time.time()
+		with open(chinese_dictionary_filepath, 'r', encoding='UTF-8') as fd:
+			#chinese_words = fd.readlines()
+			#chinese_words = fd.read().strip('\n')
+			chinese_words = fd.read().splitlines()
+		print('End loading a Chinese dictionary: {} secs.'.format(time.time() - start_time))
+		words += chinese_words
+	if japanese:
+		if japanese_dictionary_filepath is None:
+			japanese_dictionary_filepath = data_dir_path + '/dictionary/ja.txt'  # REF [site] >> https://raw.githubusercontent.com/Belval/TextRecognitionDataGenerator/master/trdg/dicts/ja.txt
+		assert os.path.isfile(japanese_dictionary_filepath), 'A Japanese dictionary file, {} not found'.format(japanese_dictionary_filepath)
+
+		print('Start loading a Japanese dictionary...')
+		start_time = time.time()
+		with open(japanese_dictionary_filepath, 'r', encoding='UTF-8') as fd:
+			#japanese_words = fd.readlines()
+			#japanese_words = fd.read().strip('\n')
+			japanese_words = fd.read().splitlines()
+		print('End loading a Japanese dictionary: {} secs.'.format(time.time() - start_time))
+		words += japanese_words
+	assert len(words) > 0, 'No word found'
 
 	return set(words)
 
