@@ -79,10 +79,13 @@ def construct_charset(digit=True, alphabet_uppercase=True, alphabet_lowercase=Tr
 
 	if hiragana:
 		# Unicode: Hiragana (U+3040 ~ U+309F).
-		charset += ''.join([chr(ch) for ch in range(0x3041, 0x3096 + 1)])
+		#charset += ''.join([chr(ch) for ch in range(0x3041, 0x3096 + 1)])
+		#charset += ''.join([chr(ch) for ch in range(0x3041, 0x3094 + 1)])
+		charset += ''.join([chr(ch) for ch in range(0x3041, 0x3093 + 1)])
 	if katakana:
 		# Unicode: Katakana (U+30A0 ~ U+30FF).
-		charset += ''.join([chr(ch) for ch in range(0x30A1, 0x30FA + 1)])
+		#charset += ''.join([chr(ch) for ch in range(0x30A1, 0x30FA + 1)])
+		charset += ''.join([chr(ch) for ch in range(0x30A1, 0x30F6 + 1)])
 	if kanji:
 		# Unicode: CJK Unified Ideographs (U+4E00 ~ U+9FFF), CJK Unified Ideographs Extension A (U+3400 ~ U+4DBF), Halfwidth and Fullwidth Forms (U+FF66 ~ U+FF9F).
 		#unicodes = list(range(0x4E00, 0x9FD5 + 1)) + list(range(0x3400, 0x4DB5 + 1))
@@ -91,8 +94,8 @@ def construct_charset(digit=True, alphabet_uppercase=True, alphabet_lowercase=Tr
 		if kanji_letter_filepath is None:
 			# REF [site] >> https://kanjicards.org/kanji-lists.html
 			#kanji_letter_filepath = data_dir_path + '/language_processing/kanji_jlpt.txt'  # 2230 letters.
-			kanji_letter_filepath = data_dir_path + '/language_processing/kanji_grade.txt'  # 2928 letters.
-			#kanji_letter_filepath = data_dir_path + '/language_processing/kanji_freq.txt'  # 2501 letters.
+			#kanji_letter_filepath = data_dir_path + '/language_processing/kanji_grade.txt'  # 2928 letters.
+			kanji_letter_filepath = data_dir_path + '/language_processing/kanji_freq.txt'  # 2501 letters.
 		with open(kanji_letter_filepath, 'r', encoding='UTF-8') as fd:
 			#charset += fd.read().strip('\n')  # A string.
 			charset += fd.read().replace(' ', '').replace('\n', '')  # A string.

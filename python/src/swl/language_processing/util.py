@@ -343,10 +343,13 @@ def compute_sequence_precision_and_recall(seq_pairs, classes=None, isjunk=None):
 
 def compute_text_size(text, font_type, font_index, font_size):
 	font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
-	text_size = font.getsize(text)  # (width, height).
-	font_offset = font.getoffset(text)  # (x, y).
 
-	return text_size[0] + font_offset[0], text_size[1] + font_offset[1]
+	'''
+	font_offset = font.getoffset(text)  # (x, y).
+	text_size = font.getsize(text)  # (width, height).
+	return font_offset[0] + text_size[0], font_offset[1] + text_size[1]
+	'''
+	return font.getbbox(text)[2:]  # (left, top, right, bottom). (x offset, y offset) = (left, top), (text width, text height) = (right, bottom).
 
 def generate_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=None, mode='RGB', mask=False, mask_mode='1'):
 	if char_space_ratio is None or 1 == char_space_ratio:
@@ -392,10 +395,15 @@ def generate_simple_text_image(text, font_type, font_index, font_size, font_colo
 	draw.text(xy=text_offset, text=text, font=font, fill=font_color)
 
 	if draw_text_border or crop_text_area:
+		'''
+		font_offset = font.getoffset(text)  # (x, y).
 		#text_size = font.getsize(text)  # (width, height). This is erroneous for multiline text.
 		text_size = draw.textsize(text, font=font)  # (width, height).
-		font_offset = font.getoffset(text)  # (x, y).
-		text_rect = (text_offset[0], text_offset[1], text_offset[0] + text_size[0] + font_offset[0], text_offset[1] + text_size[1] + font_offset[1])
+		text_rect = (text_offset[0], text_offset[1], text_offset[0] + font_offset[0] + text_size[0], text_offset[1] + font_offset[1] + text_size[1])
+		'''
+		text_bbox = font.getbbox(text)  # (left, top, right, bottom). (x offset, y offset) = (left, top), (text width, text height) = (right, bottom).
+		text_rect = (text_offset[0], text_offset[1], text_offset[0] + text_bbox[2], text_offset[1] + text_bbox[3])
+		#text_rect = (text_offset[0] + text_bbox[0], text_offset[1] + text_bbox[1], text_offset[0] + text_bbox[2], text_offset[1] + text_bbox[3])
 
 		# Draws a rectangle surrounding text.
 		if draw_text_border:
@@ -445,10 +453,15 @@ def generate_simple_text_image_and_mask(text, font_type, font_index, font_size, 
 	draw_msk.text(xy=text_offset, text=text, font=font, fill=255)
 
 	if draw_text_border or crop_text_area:
+		'''
+		font_offset = font.getoffset(text)  # (x, y).
 		#text_size = font.getsize(text)  # (width, height). This is erroneous for multiline text.
 		text_size = draw_img.textsize(text, font=font)  # (width, height).
-		font_offset = font.getoffset(text)  # (x, y).
-		text_rect = (text_offset[0], text_offset[1], text_offset[0] + text_size[0] + font_offset[0], text_offset[1] + text_size[1] + font_offset[1])
+		text_rect = (text_offset[0], text_offset[1], text_offset[0] + font_offset[0] + text_size[0], text_offset[1] + font_offset[1] + text_size[1])
+		'''
+		text_bbox = font.getbbox(text)  # (left, top, right, bottom). (x offset, y offset) = (left, top), (text width, text height) = (right, bottom).
+		text_rect = (text_offset[0], text_offset[1], text_offset[0] + text_bbox[2], text_offset[1] + text_bbox[3])
+		#text_rect = (text_offset[0] + text_bbox[0], text_offset[1] + text_bbox[1], text_offset[0] + text_bbox[2], text_offset[1] + text_bbox[3])
 
 		# Draws a rectangle surrounding text.
 		if draw_text_border:
@@ -512,6 +525,8 @@ def generate_per_character_text_image(text, font_type, font_index, font_size, fo
 			char_offset[0] += char_space
 
 	if draw_text_border or crop_text_area:
+		'''
+		font_offset = font.getoffset(text)  # (x, y).
 		#text_size = list(font.getsize(text))  # (width, height). This is erroneous for multiline text.
 		text_size = list(draw.textsize(text, font=font))  # (width, height).
 		if num_chars > 1:
@@ -519,8 +534,11 @@ def generate_per_character_text_image(text, font_type, font_index, font_size, fo
 			#text_size[0] = char_space * (max_chars_in_line - 1) + font_size
 			text_size[0] = char_space * (max_chars_in_line - 1) + font.getsize(text[-1])[0]
 			text_size[1] = (num_newlines + 1) * font_size
-		font_offset = font.getoffset(text)  # (x, y).
-		text_rect = (text_offset[0], text_offset[1], text_offset[0] + text_size[0] + font_offset[0], text_offset[1] + text_size[1] + font_offset[1])
+		text_rect = (text_offset[0], text_offset[1], text_offset[0] + font_offset[0] + text_size[0], text_offset[1] + font_offset[1] + text_size[1])
+		'''
+		text_bbox = font.getbbox(text)  # (left, top, right, bottom). (x offset, y offset) = (left, top), (text width, text height) = (right, bottom).
+		text_rect = (text_offset[0], text_offset[1], text_offset[0] + text_bbox[2], text_offset[1] + text_bbox[3])
+		#text_rect = (text_offset[0] + text_bbox[0], text_offset[1] + text_bbox[1], text_offset[0] + text_bbox[2], text_offset[1] + text_bbox[3])
 
 		# Draws a rectangle surrounding text.
 		if draw_text_border:
@@ -591,6 +609,8 @@ def generate_per_character_text_image_and_mask(text, font_type, font_index, font
 			char_offset[0] += char_space
 
 	if draw_text_border or crop_text_area:
+		'''
+		font_offset = font.getoffset(text)  # (x, y).
 		#text_size = list(font.getsize(text))  # (width, height). This is erroneous for multiline text.
 		text_size = list(draw_img.textsize(text, font=font))  # (width, height).
 		if num_chars > 1:
@@ -598,8 +618,11 @@ def generate_per_character_text_image_and_mask(text, font_type, font_index, font
 			#text_size[0] = char_space * (max_chars_in_line - 1) + font_size
 			text_size[0] = char_space * (max_chars_in_line - 1) + font.getsize(text[-1])[0]
 			text_size[1] = (num_newlines + 1) * font_size
-		font_offset = font.getoffset(text)  # (x, y).
-		text_rect = (text_offset[0], text_offset[1], text_offset[0] + text_size[0] + font_offset[0], text_offset[1] + text_size[1] + font_offset[1])
+		text_rect = (text_offset[0], text_offset[1], text_offset[0] + font_offset[0] + text_size[0], text_offset[1] + font_offset[1] + text_size[1])
+		'''
+		text_bbox = font.getbbox(text)  # (left, top, right, bottom). (x offset, y offset) = (left, top), (text width, text height) = (right, bottom).
+		text_rect = (text_offset[0], text_offset[1], text_offset[0] + text_bbox[2], text_offset[1] + text_bbox[3])
+		#text_rect = (text_offset[0] + text_bbox[0], text_offset[1] + text_bbox[1], text_offset[0] + text_bbox[2], text_offset[1] + text_bbox[3])
 
 		# Draws a rectangle surrounding text.
 		if draw_text_border:
@@ -615,8 +638,9 @@ def generate_per_character_text_image_and_mask(text, font_type, font_index, font
 def generate_text_mask_and_distribution(text, font, rotation_angle=None):
 	import scipy.stats
 
-	text_size = font.getsize(text)  # (width, height). This is erroneous for multiline text.
+	#text_size = font.getsize(text)  # (width, height). This is erroneous for multiline text.
 	#text_size = (math.ceil(len(text) * font_size * 1.1), math.ceil((text.count('\n') + 1) * font_size * 1.1))
+	text_size = font.getbbox(text)[2:]
 
 	# Draw a distribution of character centers.
 	text_pil = Image.new('L', text_size, 0)
@@ -629,10 +653,15 @@ def generate_text_mask_and_distribution(text, font, rotation_angle=None):
 	text_pdf = np.zeros(x.shape, dtype=np.float32)
 	offset = [0, 0]
 	for ch in text:
+		'''
+		font_offset = font.getoffset(ch)  # (x, y).
 		#char_size = font.getsize(ch)  # (width, height). This is erroneous for multiline text.
 		char_size = text_draw.textsize(ch, font=font)  # (width, height).
-		font_offset = font.getoffset(ch)  # (x, y).
-		char_rect = (offset[0], offset[1], offset[0] + char_size[0] + font_offset[0], offset[1] + char_size[1] + font_offset[1])
+		char_rect = (offset[0], offset[1], offset[0] + font_offset[0] + char_size[0], offset[1] + font_offset[1] + char_size[1])
+		'''
+		char_bbox = font.getbbox(ch)  # (left, top, right, bottom). (x offset, y offset) = (left, top), (text width, text height) = (right, bottom).
+		char_rect = (offset[0], offset[1], offset[0] + char_bbox[2], offset[1] + char_bbox[3])
+		#char_rect = (offset[0] + char_bbox[0], offset[1] + char_bbox[1], offset[0] + char_bbox[2], offset[1] + char_bbox[3])
 
 		if not ch.isspace():
 			# TODO [decide] >> Which one is better?
@@ -699,10 +728,15 @@ def generate_text_mask_and_distribution(text, font, rotation_angle=None):
 
 def draw_text_on_image(img, text, font_type, font_index, font_size, font_color, text_offset=(0, 0), rotation_angle=None):
 	font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
+	'''
+	font_offset = font.getoffset(text)  # (x, y).
 	text_size = font.getsize(text)  # (width, height).
 	#text_size = draw.textsize(text, font=font)  # (width, height).
-	font_offset = font.getoffset(text)  # (x, y).
-	text_rect = (text_offset[0], text_offset[1], text_offset[0] + text_size[0] + font_offset[0], text_offset[1] + text_size[1] + font_offset[1])
+	text_rect = (text_offset[0], text_offset[1], text_offset[0] + font_offset[0] + text_size[0], text_offset[1] + font_offset[1] + text_size[1])
+	'''
+	text_bbox = font.getbbox(text)  # (left, top, right, bottom). (x offset, y offset) = (left, top), (text width, text height) = (right, bottom).
+	text_rect = (text_offset[0], text_offset[1], text_offset[0] + text_bbox[2], text_offset[1] + text_bbox[3])
+	#text_rect = (text_offset[0] + text_bbox[0], text_offset[1] + text_bbox[1], text_offset[0] + text_bbox[2], text_offset[1] + text_bbox[3])
 
 	bg_img = Image.fromarray(img)
 
@@ -750,10 +784,13 @@ def transform_text(text, tx, ty, rotation_angle, font, text_offset=None):
 
 	if text_offset is None:
 		text_offset = (0, 0)  # The coordinates (x, y) before transformation.
+	'''
+	font_offset = font.getoffset(text)  # (x, y).
 	text_size = font.getsize(text)  # (width, height).
 	#text_size = draw.textsize(text, font=font)  # (width, height).
-	font_offset = font.getoffset(text)  # (x, y).
-	
+	'''
+	text_size = font.getbbox(text)[2:]  # (left, top, right, bottom). (x offset, y offset) = (left, top), (text width, text height) = (right, bottom).
+
 	# z = -y.
 	#	xy: left-handed, xz: right-handed.
 	x1, z1 = transform(text_offset[0], -text_offset[1])
@@ -777,9 +814,12 @@ def transform_text_on_image(text, tx, ty, rotation_angle, img, font, font_color,
 
 	if text_offset is None:
 		text_offset = (0, 0)  # The coordinates (x, y) before transformation.
+	'''
+	font_offset = font.getoffset(text)  # (x, y).
 	text_size = font.getsize(text)  # (width, height).
 	#text_size = draw.textsize(text, font=font)  # (width, height).
-	font_offset = font.getoffset(text)  # (x, y).
+	'''
+	text_size = font.getbbox(text)[2:]  # (left, top, right, bottom). (x offset, y offset) = (left, top), (text width, text height) = (right, bottom).
 
 	# z = -y.
 	#	xy: left-handed, xz: right-handed.
@@ -824,6 +864,7 @@ def transform_texts(texts, tx, ty, rotation_angle, font, text_offsets=None):
 		text_offsets, text_sizes = list(), list()
 		max_text_height = 0
 		for idx, text in enumerate(texts):
+			'''
 			if 0 == idx:
 				text_offset = (0, 0)  # The coordinates (x, y) before transformation.
 			else:
@@ -832,10 +873,20 @@ def transform_texts(texts, tx, ty, rotation_angle, font, text_offsets=None):
 				text_offset = (text_size[0], 0)  # (x, y).
 			text_offsets.append(text_offset)
 
+			font_offset = font.getoffset(text)  # (x, y).
 			text_size = font.getsize(text)  # (width, height).
 			#text_size = draw.textsize(text, font=font)  # (width, height).
-			font_offset = font.getoffset(text)  # (x, y).
-			sx, sy = text_size[0] + font_offset[0], text_size[1] + font_offset[1]
+			sx, sy = font_offset[0] + text_size[0], font_offset[1] + text_size[1]
+			'''
+			if 0 == idx:
+				text_offset = (0, 0)  # The coordinates (x, y) before transformation.
+			else:
+				prev_texts = ' '.join(texts[:idx]) + ' '
+				text_size = font.getbbox(prev_texts)[2:]  # (left, top, right, bottom). (x offset, y offset) = (left, top), (text width, text height) = (right, bottom).
+				text_offset = (text_size[0], 0)  # (x, y).
+			text_offsets.append(text_offset)
+
+			sx, sy = font.getbbox(text)[2:]  # (left, top, right, bottom). (x offset, y offset) = (left, top), (text width, text height) = (right, bottom).
 			text_sizes.append((sx, sy))
 			if sy > max_text_height:
 				max_text_height = sy
@@ -851,10 +902,13 @@ def transform_texts(texts, tx, ty, rotation_angle, font, text_offsets=None):
 
 		text_sizes = list()
 		for text in texts:
+			'''
+			font_offset = font.getoffset(text)  # (x, y).
 			text_size = font.getsize(text)  # (width, height).
 			#text_size = draw.textsize(text, font=font)  # (width, height).
-			font_offset = font.getoffset(text)  # (x, y).
-			text_sizes.append((text_size[0] + font_offset[0], text_size[1] + font_offset[1]))
+			text_sizes.append((font_offset[0] + text_size[0], font_offset[1] + text_size[1]))
+			'''
+			text_sizes.append(font.getbbox(text)[2:])  # (left, top, right, bottom). (x offset, y offset) = (left, top), (text width, text height) = (right, bottom).
 
 	text_bboxes = list()
 	"""
@@ -899,6 +953,7 @@ def transform_texts_on_image(texts, tx, ty, rotation_angle, img, font, font_colo
 		text_offsets, text_sizes = list(), list()
 		max_text_height = 0
 		for idx, text in enumerate(texts):
+			'''
 			if 0 == idx:
 				text_offset = (0, 0)  # The coordinates (x, y) before transformation.
 			else:
@@ -907,10 +962,20 @@ def transform_texts_on_image(texts, tx, ty, rotation_angle, img, font, font_colo
 				text_offset = (text_size[0], 0)  # (x, y).
 			text_offsets.append(text_offset)
 
+			font_offset = font.getoffset(text)  # (x, y).
 			text_size = font.getsize(text)  # (width, height).
 			#text_size = draw.textsize(text, font=font)  # (width, height).
-			font_offset = font.getoffset(text)  # (x, y).
-			sx, sy = text_size[0] + font_offset[0], text_size[1] + font_offset[1]
+			sx, sy = font_offset[0] + text_size[0], font_offset[1] + text_size[1]
+			'''
+			if 0 == idx:
+				text_offset = (0, 0)  # The coordinates (x, y) before transformation.
+			else:
+				prev_texts = ' '.join(texts[:idx]) + ' '
+				text_size = font.getbbox(prev_texts)[2:]  # (left, top, right, bottom). (x offset, y offset) = (left, top), (text width, text height) = (right, bottom).
+				text_offset = (text_size[0], 0)  # (x, y).
+			text_offsets.append(text_offset)
+
+			sx, sy = font.getbbox(text)[2:]  # (left, top, right, bottom). (x offset, y offset) = (left, top), (text width, text height) = (right, bottom).
 			text_sizes.append((sx, sy))
 			if sy > max_text_height:
 				max_text_height = sy
@@ -926,10 +991,13 @@ def transform_texts_on_image(texts, tx, ty, rotation_angle, img, font, font_colo
 
 		text_sizes = list()
 		for text in texts:
+			'''
+			font_offset = font.getoffset(text)  # (x, y).
 			text_size = font.getsize(text)  # (width, height).
 			#text_size = draw.textsize(text, font=font)  # (width, height).
-			font_offset = font.getoffset(text)  # (x, y).
-			text_sizes.append((text_size[0] + font_offset[0], text_size[1] + font_offset[1]))
+			text_sizes.append((font_offset[0] + text_size[0], font_offset[1] + text_size[1]))
+			'''
+			text_sizes.append(font.getbbox(text)[2:])  # (left, top, right, bottom). (x offset, y offset) = (left, top), (text width, text height) = (right, bottom).
 
 	bg_img = Image.fromarray(img)
 	text_mask = Image.new('L', bg_img.size, (0,))

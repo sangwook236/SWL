@@ -20,7 +20,7 @@ def visualize_font_text():
 		system_font_dir_path = 'C:/Windows/Fonts'
 		font_base_dir_path = 'D:/work/font'
 
-	if True:
+	if False:
 		#font_dir_path = font_base_dir_path + '/kor_small'
 		font_dir_path = font_base_dir_path + '/kor_large'
 		#font_dir_path = font_base_dir_path + '/kor_receipt'
@@ -46,8 +46,9 @@ def visualize_font_text():
 		image_size = (2000, 3000)
 		text = tg_util.construct_charset(chinese=True)
 		text = '\n'.join(text[i:i+line_len] for i in range(0, len(text), line_len))
-	elif False:
+	elif True:
 		font_dir_path = font_base_dir_path + '/japanese'
+		#font_dir_path = font_base_dir_path + '/japanese_no_kanji'
 
 		image_size = (2000, 3000)
 		line_len = 54
@@ -162,6 +163,7 @@ def check_font_validity():
 		char_pair = ('', '')  # FIXME [implement] >>
 	elif False:
 		font_dir_path = font_base_dir_path + '/japanese'
+		#font_dir_path = font_base_dir_path + '/japanese_no_kanji'
 		char_pair = ('', '')  # FIXME [implement] >>
 
 	print('Start checking font validity...')
@@ -224,6 +226,7 @@ def check_font_validity_by_area():
 		font_dir_path = font_base_dir_path + '/chinese'
 	elif False:
 		font_dir_path = font_base_dir_path + '/japanese'
+		#font_dir_path = font_base_dir_path + '/japanese_no_kanji'
 
 	print('Start checking font validity by area...')
 	start_time = time.time()
@@ -283,6 +286,7 @@ def check_PIL_ImageFont_API_support():
 	elif False:
 		font_dir_paths = [
 			font_base_dir_path + '/japanese',
+			#font_base_dir_path + '/japanese_no_kanji'
 		]
 		dst_dir_path = font_base_dir_path + '/japanese_error'
 
@@ -296,11 +300,13 @@ def check_PIL_ImageFont_API_support():
 	start_time = time.time()
 	for font_dir_path in font_dir_paths:
 		font_filepaths = sorted(glob.glob(os.path.join(font_dir_path, '*.*'), recursive=True))
+		#font_filepaths = sorted(glob.glob(os.path.join(font_dir_path, '*.ttf'), recursive=True))
 		for font_filepath in font_filepaths:
 			for font_size in font_sizes:
 				try:
-					image_font = ImageFont.truetype(font=font_filepath, size=font_size)
-					text_length = image_font.getlength(chars)
+					font = ImageFont.truetype(font=font_filepath, size=font_size)
+					text_length = font.getlength(chars)
+					font_offset = font.getoffset(chars)  # (x, y).
 				except Exception as ex:
 					print('Exception raised in {} (font size = {}): {}.'.format(font_filepath, font_size, ex))
 					if move_font_files:
