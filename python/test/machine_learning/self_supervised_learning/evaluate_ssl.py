@@ -251,7 +251,6 @@ def load_ssl(ssl_type, model_filepath):
 
 def main():
 	args = utils.parse_command_line_options(is_training=False)
-	assert os.path.isfile(args.config), 'Config file not found, {}'.format(args.config)
 
 	try:
 		with open(args.config, encoding='utf-8') as fd:
@@ -266,6 +265,10 @@ def main():
 		raise
 	except FileNotFoundError as ex:
 		print('Config file not found, {}.'.format(args.config))
+		logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
+		raise
+	except Exception as ex:
+		print('Exception raised in {}.'.format(args.config))
 		logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
 		raise
 
@@ -285,6 +288,7 @@ def main():
 	logger.info('Device: {}.'.format(device))
 
 	#--------------------
+	assert ('evaluation' == config['stage']) if isinstance(config['stage'], str) else ('evaluation' in config['stage']), 'Invalid stage(s), {}'.format(config['stage'])
 	#config['ssl_type'] = config.get('ssl_type', 'simclr')
 	assert config['ssl_type'] in ['byol', 'relic', 'simclr', 'simsiam'], 'Invalid SSL model, {}'.format(config['ssl_type'])
 	assert config['data']['dataset'] in ['cifar10', 'imagenet', 'mnist'], 'Invalid dataset, {}'.format(config['data']['dataset'])

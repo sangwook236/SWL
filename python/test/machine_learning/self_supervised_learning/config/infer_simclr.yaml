@@ -1,6 +1,7 @@
 # Configuration for SimCLR.
 
 ssl_type: simclr
+stage: inference
 
 data:
   dataset: cifar10

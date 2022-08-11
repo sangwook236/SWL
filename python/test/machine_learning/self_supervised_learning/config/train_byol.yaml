@@ -1,6 +1,7 @@
 # Configuration for BYOL.
 
 ssl_type: byol
+stage: training
 
 data:
   dataset: cifar10

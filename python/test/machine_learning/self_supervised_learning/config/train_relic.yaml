@@ -1,6 +1,7 @@
 # Configuration for ReLIC.
 
 ssl_type: relic
+stage: training
 
 data:
   dataset: cifar10

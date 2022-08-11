@@ -14,7 +14,6 @@ import utils
 
 def main():
 	args = utils.parse_command_line_options(is_training=True)
-	assert os.path.isfile(args.config), 'Config file not found, {}'.format(args.config)
 
 	try:
 		with open(args.config, encoding='utf-8') as fd:
@@ -31,6 +30,10 @@ def main():
 		print('Config file not found, {}.'.format(args.config))
 		logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
 		raise
+	except Exception as ex:
+		print('Exception raised in {}.'.format(args.config))
+		logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
+		raise
 
 	#--------------------
 	logger = utils.get_logger(args.log if args.log else os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, args.log_dir if args.log_dir else args.out_dir, is_rotating=True)
@@ -45,6 +48,7 @@ def main():
 	logger.info('cuDNN: version = {}.'.format(torch.backends.cudnn.version()))
 
 	#--------------------
+	assert ('training' == config['stage']) if isinstance(config['stage'], str) else ('training' in config['stage']), 'Invalid stage(s), {}'.format(config['stage'])
 	#config['ssl_type'] = config.get('ssl_type', 'relic')
 	assert config['ssl_type'] == 'relic', 'Only ReLIC model is supported, but got {}'.format(config['ssl_type'])
 	assert config['data']['dataset'] in ['cifar10', 'imagenet', 'mnist'], 'Invalid dataset, {}'.format(config['data']['dataset'])

@@ -1,6 +1,7 @@
 # Configuration for SimSiam.
 
 ssl_type: simsiam
+stage: evaluation
 
 data:
   dataset: cifar10
