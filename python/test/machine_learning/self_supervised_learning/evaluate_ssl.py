@@ -38,6 +38,7 @@ class ClassificationModule(pl.LightningModule):
 
 		# Define a loss.
 		self.criterion = torch.nn.NLLLoss(reduction='mean')
+		#self.criterion = torch.nn.CrossEntropyLoss(reduction='mean')
 
 		#-----
 		# Initialize model weights.
@@ -131,13 +132,27 @@ class ClassificationModule(pl.LightningModule):
 
 		return {'acc': acc}
 
-def prepare_simple_feature_data(config, ssl_model, logger=None, device='cuda'):
-	class FeatureDataset(torch.utils.data.Dataset):
-		def __init__(self, srcs, tgts):
-			super().__init__()
-			assert len(srcs) == len(tgts), 'Invalid data length, {} != {}'.format(len(srcs), len(tgts))
+def extract_features(model, dataloader, device='cuda'):
+	model = model.to(device)
+	model.eval()
+	model.freeze()
+	srcs, tgts = list(), list()
+	with torch.no_grad():
+		for batch in dataloader:
+			batch_inputs, batch_outputs = batch
+			batch_inputs = batch_inputs.to(device)
+			srcs.append(model(batch_inputs).cpu())  # [batch size, feature dim].
+			tgts.append(batch_outputs)  # [batch size].
+			del batch_inputs  # Free memory in CPU or GPU.
+	return torch.vstack(srcs), torch.hstack(tgts)
 
-			self.srcs, self.tgts = srcs, tgts
+def prepare_simple_feature_data(config, model, logger=None, device='cuda'):
+	class FeatureDataset(torch.utils.data.Dataset):
+		def __init__(self, model, dataloader, device):
+			super().__init__()
+
+			self.srcs, self.tgts = extract_features(model, dataloader, device)
+			assert len(self.srcs) == len(self.tgts), 'Invalid data length, {} != {}'.format(len(self.srcs), len(self.tgts))
 
 		def __len__(self):
 			return len(self.srcs)
@@ -145,29 +160,14 @@ def prepare_simple_feature_data(config, ssl_model, logger=None, device='cuda'):
 		def __getitem__(self, idx):
 			return self.srcs[idx], self.tgts[idx]
 
-	# REF [function] >> extract_features().
-	def create_feature_dataset(model, dataloader, device):
-		srcs, tgts = list(), list()
-		for batch in dataloader:
-			batch_inputs, batch_outputs = batch
-			batch_inputs = batch_inputs.to(device)
-			srcs.append(model(batch_inputs).cpu())  # [batch size, feature dim].
-			tgts.append(batch_outputs)  # [batch size].
-			del batch_inputs  # Free memory in CPU or GPU.
-		return FeatureDataset(torch.vstack(srcs), torch.hstack(tgts))
-
 	# Create data loaders.
 	train_dataloader, test_dataloader, num_classes = utils.prepare_open_data(config, show_info=True, show_data=False, logger=logger)
 
 	# Create feature datasets.
 	if logger: logger.info('Creating feature datasets...')
 	start_time = time.time()
-	ssl_model = ssl_model.to(device)
-	ssl_model.eval()
-	ssl_model.freeze()
-	with torch.no_grad():
-		train_feature_dataset = create_feature_dataset(ssl_model, train_dataloader, device)
-		test_feature_dataset = create_feature_dataset(ssl_model, test_dataloader, device)
+	train_feature_dataset = FeatureDataset(model, train_dataloader, device)
+	test_feature_dataset = FeatureDataset(model, test_dataloader, device)
 	if logger: logger.info('Feature datasets created: {} secs.'.format(time.time() - start_time))
 	if logger: logger.info('#train examples = {}, #test examples = {}.'.format(len(train_feature_dataset), len(test_feature_dataset)))
 
@@ -181,7 +181,7 @@ def prepare_simple_feature_data(config, ssl_model, logger=None, device='cuda'):
 
 	return train_feature_dataloader, test_feature_dataloader, num_classes
 
-def prepare_feature_data(config, ssl_model, logger=None, device='cuda'):
+def prepare_feature_data(config, model, logger=None, device='cuda'):
 	class FeatureDataset(torch.utils.data.IterableDataset):
 		def __init__(self, model, dataloader, device):
 			super().__init__()
@@ -226,8 +226,8 @@ def prepare_feature_data(config, ssl_model, logger=None, device='cuda'):
 	# Create feature datasets.
 	if logger: logger.info('Creating feature datasets...')
 	start_time = time.time()
-	train_feature_dataset = FeatureDataset(ssl_model, train_dataloader, device)
-	test_feature_dataset = FeatureDataset(ssl_model, test_dataloader, device)
+	train_feature_dataset = FeatureDataset(model, train_dataloader, device)
+	test_feature_dataset = FeatureDataset(model, test_dataloader, device)
 	if logger: logger.info('Feature datasets created: {} secs.'.format(time.time() - start_time))
 	#if logger: logger.info('#train examples = {}, #test examples = {}.'.format(len(train_feature_dataset), len(test_feature_dataset)))  # NOTE [error] >> TypeError: object of type 'FeatureDataset' has no len().
 
@@ -257,52 +257,14 @@ def evaluate(config, train_feature_dataloader, test_feature_dataloader, num_clas
 
 	gradient_clip_val = None
 	gradient_clip_algorithm = None
-	#trainer = pl.Trainer(devices=-1, accelerator='gpu', strategy='ddp', auto_select_gpus=True, max_epochs=config['epochs'], callbacks=pl_callbacks, enable_checkpointing=True, gradient_clip_val=gradient_clip_val, gradient_clip_algorithm=gradient_clip_algorithm, default_root_dir=output_dir_path)  # When using the default logger.
-	trainer = pl.Trainer(devices=-1, accelerator='gpu', strategy='ddp', auto_select_gpus=True, max_epochs=config['epochs'], callbacks=pl_callbacks, logger=pl_logger, enable_checkpointing=True, gradient_clip_val=gradient_clip_val, gradient_clip_algorithm=gradient_clip_algorithm, default_root_dir=None)
+	#trainer = pl.Trainer(devices=-1, accelerator='gpu', strategy='dp', auto_select_gpus=True, max_epochs=config['epochs'], callbacks=pl_callbacks, enable_checkpointing=True, gradient_clip_val=gradient_clip_val, gradient_clip_algorithm=gradient_clip_algorithm, default_root_dir=output_dir_path)  # When using the default logger.
+	trainer = pl.Trainer(devices=-1, accelerator='gpu', strategy='dp', auto_select_gpus=True, max_epochs=config['epochs'], callbacks=pl_callbacks, logger=pl_logger, enable_checkpointing=True, gradient_clip_val=gradient_clip_val, gradient_clip_algorithm=gradient_clip_algorithm, default_root_dir=None)
 
 	# Train the classifier.
 	if logger: logger.info('Training the classifier...')
 	start_time = time.time()
 	trainer.fit(classifier, train_dataloaders=train_feature_dataloader, val_dataloaders=test_feature_dataloader, ckpt_path=None)
 	if logger: logger.info('The classifier trained: {} secs.'.format(time.time() - start_time))
-
-def extract_features(model, dataloader, device='cuda'):
-	model = model.to(device)
-	model.eval()
-	model.freeze()
-	srcs, tgts = list(), list()
-	with torch.no_grad():
-		for batch in dataloader:
-			batch_inputs, batch_outputs = batch
-			batch_inputs = batch_inputs.to(device)
-			srcs.append(model(batch_inputs).cpu())  # [batch size, feature dim].
-			tgts.append(batch_outputs)  # [batch size].
-			#del batch_inputs  # Free memory in CPU or GPU.
-	return torch.vstack(srcs), torch.hstack(tgts)
-
-# REF [function] >> load_ssl() in ./train_ssl.py
-def load_ssl(ssl_type, model_filepath):
-	if ssl_type == 'simclr':
-		import model_simclr
-		SslModule = getattr(model_simclr, 'SimclrModule')
-		ssl_model = SslModule.load_from_checkpoint(model_filepath, encoder=None, projector=None, augmenter1=None, augmenter2=None)
-	elif ssl_type == 'byol':
-		import model_byol
-		SslModule = getattr(model_byol, 'ByolModule')
-		ssl_model = SslModule.load_from_checkpoint(model_filepath, encoder=None, projector=None, predictor=None, augmenter1=None, augmenter2=None)
-	elif ssl_type == 'relic':
-		import model_relic
-		SslModule = getattr(model_relic, 'RelicModule')
-		ssl_model = SslModule.load_from_checkpoint(model_filepath, encoder=None, projector=None, predictor=None, augmenter1=None, augmenter2=None)
-	elif ssl_type == 'simsiam':
-		import model_simsiam
-		SslModule = getattr(model_simsiam, 'SimSiamModule')
-		ssl_model = SslModule.load_from_checkpoint(model_filepath, encoder=None, projector=None, predictor=None, augmenter1=None, augmenter2=None)
-
-	#ssl_model = SslModule.load_from_checkpoint(model_filepath)
-	#ssl_model = SslModule.load_from_checkpoint(model_filepath, map_location={'cuda:1': 'cuda:0'})
-
-	return ssl_model
 
 #--------------------------------------------------------------------
 
@@ -369,7 +331,7 @@ def main():
 		# Load a SSL model.
 		logger.info('Loading a SSL model from {}...'.format(model_filepath_to_load))
 		start_time = time.time()
-		ssl_model = load_ssl(config['ssl_type'], model_filepath_to_load)
+		ssl_model = utils.load_ssl(config['ssl_type'], model_filepath_to_load)
 		logger.info('A SSL model loaded: {} secs.'.format(time.time() - start_time))
 
 		if False:
@@ -385,9 +347,11 @@ def main():
 			logger.info('#train features = {}, #test features = {}.'.format(len(train_input_features), len(test_input_features)))
 		else:
 			# Prepare feature data.
-			#train_feature_dataloader, test_feature_dataloader, num_classes = prepare_simple_feature_data(config['data'], ssl_model, logger, device)
-			train_feature_dataloader, test_feature_dataloader, num_classes = prepare_feature_data(config['data'], ssl_model, logger, device)
-			del ssl_model  # Free memory in CPU or GPU.
+			if False:
+				train_feature_dataloader, test_feature_dataloader, num_classes = prepare_simple_feature_data(config['data'], ssl_model, logger, device)
+				del ssl_model  # Free memory in CPU or GPU.
+			else:
+				train_feature_dataloader, test_feature_dataloader, num_classes = prepare_feature_data(config['data'], ssl_model, logger, device)
 
 			# Evaluate the pretrained model by its features.
 			evaluate(config['evaluation'], train_feature_dataloader, test_feature_dataloader, num_classes, output_dir_path, logger)

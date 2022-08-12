@@ -491,6 +491,29 @@ class SimSiamMLP(torch.nn.Module):
 		x = self.batchnorm3(x)
 		return x
 
+def load_ssl(ssl_type, model_filepath):
+	if ssl_type == 'simclr':
+		import model_simclr
+		SslModule = getattr(model_simclr, 'SimclrModule')
+		ssl_model = SslModule.load_from_checkpoint(model_filepath, encoder=None, projector=None, augmenter1=None, augmenter2=None)
+	elif ssl_type == 'byol':
+		import model_byol
+		SslModule = getattr(model_byol, 'ByolModule')
+		ssl_model = SslModule.load_from_checkpoint(model_filepath, encoder=None, projector=None, predictor=None, augmenter1=None, augmenter2=None)
+	elif ssl_type == 'relic':
+		import model_relic
+		SslModule = getattr(model_relic, 'RelicModule')
+		ssl_model = SslModule.load_from_checkpoint(model_filepath, encoder=None, projector=None, predictor=None, augmenter1=None, augmenter2=None)
+	elif ssl_type == 'simsiam':
+		import model_simsiam
+		SslModule = getattr(model_simsiam, 'SimSiamModule')
+		ssl_model = SslModule.load_from_checkpoint(model_filepath, encoder=None, projector=None, predictor=None, augmenter1=None, augmenter2=None)
+
+	#ssl_model = SslModule.load_from_checkpoint(model_filepath)
+	#ssl_model = SslModule.load_from_checkpoint(model_filepath, map_location={'cuda:1': 'cuda:0'})
+
+	return ssl_model
+
 # REF [function] >> construct_pretrained_model() in ${SWL_PYTHON_HOME}/test/machine_learning/config_test.py.
 def construct_pretrained_model(config, *args, **kwargs):
 	PRETRAINED_MODELS = {

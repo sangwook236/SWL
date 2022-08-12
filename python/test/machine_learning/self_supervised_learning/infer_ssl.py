@@ -28,30 +28,6 @@ def prepare_open_data(config, logger=None):
 
 	return dataset
 
-# REF [function] >> load_ssl() in ./train_ssl.py
-def load_ssl(ssl_type, model_filepath):
-	if ssl_type == 'simclr':
-		import model_simclr
-		SslModule = getattr(model_simclr, 'SimclrModule')
-		ssl_model = SslModule.load_from_checkpoint(model_filepath, encoder=None, projector=None, augmenter1=None, augmenter2=None)
-	elif ssl_type == 'byol':
-		import model_byol
-		SslModule = getattr(model_byol, 'ByolModule')
-		ssl_model = SslModule.load_from_checkpoint(model_filepath, encoder=None, projector=None, predictor=None, augmenter1=None, augmenter2=None)
-	elif ssl_type == 'relic':
-		import model_relic
-		SslModule = getattr(model_relic, 'RelicModule')
-		ssl_model = SslModule.load_from_checkpoint(model_filepath, encoder=None, projector=None, predictor=None, augmenter1=None, augmenter2=None)
-	elif ssl_type == 'simsiam':
-		import model_simsiam
-		SslModule = getattr(model_simsiam, 'SimSiamModule')
-		ssl_model = SslModule.load_from_checkpoint(model_filepath, encoder=None, projector=None, predictor=None, augmenter1=None, augmenter2=None)
-
-	#ssl_model = SslModule.load_from_checkpoint(model_filepath)
-	#ssl_model = SslModule.load_from_checkpoint(model_filepath, map_location={'cuda:1': 'cuda:0'})
-
-	return ssl_model
-
 #--------------------------------------------------------------------
 
 def main():
@@ -114,26 +90,72 @@ def main():
 
 	#--------------------
 	try:
-		config_data = config['data']
-		config_model = config['model']
-
-		# Prepare data.
-		def create_data_generator(dataset, batch_size, num_workers, shuffle=False):
-			dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, persistent_workers=False)
-			logger.info('#data batches = {}.'.format(len(dataloader)))
-			for batch in dataloader:
-				yield batch[0]
-
-		dataset = prepare_open_data(config_data, logger=None)
-
 		# Load a SSL model.
 		logger.info('Loading a SSL model from {}...'.format(model_filepath_to_load))
 		start_time = time.time()
-		ssl_model = load_ssl(config['ssl_type'], model_filepath_to_load)
+		ssl_model = utils.load_ssl(config['ssl_type'], model_filepath_to_load)
 		logger.info('A SSL model loaded: {} secs.'.format(time.time() - start_time))
 
-		# Infer by the model.
-		predictions = utils.infer(config_model, ssl_model, create_data_generator(dataset, config_data['batch_size'], config_data['num_workers']), logger, device)
+		if True:
+			# Inference.
+
+			config_data = config['data']
+			config_model = config['model']
+
+			# Prepare data.
+			def create_data_generator(dataset, batch_size, num_workers, shuffle=False):
+				dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, persistent_workers=False)
+				logger.info('#data batches = {}.'.format(len(dataloader)))
+				for batch in dataloader:
+					yield batch[0]
+
+			dataset = prepare_open_data(config_data, logger=None)
+
+			# Infer by the model.
+			predictions = utils.infer(config_model, ssl_model, create_data_generator(dataset, config_data['batch_size'], config_data['num_workers']), logger, device)
+		else:
+			# Export the model for production.
+			# REF [site] >> https://pytorch-lightning.readthedocs.io/en/stable/common/production_inference.html
+
+			image_shape = config['data']['image_shape']  # (H, W, C).
+
+			# NOTE [info] >>
+			#	<error> RuntimeError: Module 'ResNet' has no attribute '_modules'.
+			#	<cause> This error occurs when converting a module with an inner module like utils.ModelWrapper using TorchScript scripting.
+			#	<solution> Use TorchScript tracing.
+			#		Refer to ${SWDT_PYTHON_HOME}/rnd/test/machine_learning/pytorch/pytorch_torch_script.py.
+			# NOTE [info] >>
+			#	<error> ReferenceError: weakly-referenced object no longer exists.
+			#		Refer to https://docs.python.org/3/library/weakref.html.
+			#	<cause> This error occurs in child processes when training a model using pl.Trainer(strategy='ddp') in a single machine.
+			#	<solution> Use pl.Trainer(strategy='dp').
+			#		Refer to https://pytorch-lightning.readthedocs.io/en/latest/accelerators/gpu_intermediate.html.
+
+			# TorchScript.
+			try:
+				torchscript_filepath = os.path.join(output_dir_path, '{}_ts.pth'.format(config['ssl_type']))
+				if False:
+					script = ssl_model.to_torchscript(file_path=torchscript_filepath, method='script')
+				elif True:
+					dummy_inputs = torch.randn((1, image_shape[2], image_shape[0], image_shape[1]))
+					script = ssl_model.to_torchscript(file_path=torchscript_filepath, method='trace', example_inputs=dummy_inputs)
+				else:
+					script = ssl_model.to_torchscript(file_path=None, method='script')
+					torch.jit.save(script, torchscript_filepath)
+				logger.info('A TorchScript model saved to {}.'.format(torchscript_filepath))
+			except Exception as ex:
+				logger.error('Failed to save a TorchScript model:')
+				logger.exception(ex)
+
+			# ONNX.
+			try:
+				onnx_filepath = os.path.join(output_dir_path, '{}.onnx'.format(config['ssl_type']))
+				dummy_inputs = torch.randn((1, image_shape[2], image_shape[0], image_shape[1]))
+				ssl_model.to_onnx(onnx_filepath, dummy_inputs, export_params=True)
+				logger.info('An ONNX model saved to {}.'.format(onnx_filepath))
+			except Exception as ex:
+				logger.error('Failed to save an ONNX model:')
+				logger.exception(ex)
 	except Exception as ex:
 		#logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
 		logger.exception(ex)
