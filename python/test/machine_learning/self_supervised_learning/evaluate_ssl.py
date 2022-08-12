@@ -5,7 +5,7 @@ import sys
 sys.path.append('../../../src')
 sys.path.append('./src')
 
-import os, logging, datetime, time
+import os, math, logging, datetime, time
 import numpy as np
 import torch
 import pytorch_lightning as pl
@@ -182,7 +182,64 @@ def prepare_simple_feature_data(config, ssl_model, logger=None, device='cuda'):
 	return train_feature_dataloader, test_feature_dataloader, num_classes
 
 def prepare_feature_data(config, ssl_model, logger=None, device='cuda'):
-	raise NotImplementedError
+	class FeatureDataset(torch.utils.data.IterableDataset):
+		def __init__(self, model, dataloader, device):
+			super().__init__()
+
+			self.model = model
+			self.dataloader = dataloader
+			self.device = device
+
+		def __iter__(self):
+			self.model = self.model.to(device)
+			self.model.eval()
+			self.model.freeze()
+
+			srcs, tgts = self._generate_data()
+			num_examples = len(srcs)
+			worker_info = torch.utils.data.get_worker_info()
+			if worker_info is None:  # Single-process data loading, return the full iterator.
+				return iter(zip(srcs, tgts))
+			else:  # In a worker process.
+				# Split workload.
+				worker_id = worker_info.id
+				num_examples_per_worker = math.ceil(num_examples / float(worker_info.num_workers))
+				iter_start = worker_id * num_examples_per_worker
+				iter_end = min(iter_start + num_examples_per_worker, num_examples)
+				return iter(zip(srcs[iter_start:iter_end], tgts[iter_start:iter_end]))
+
+		def _generate_data(self):
+			srcs, tgts = list(), list()
+			with torch.no_grad():
+				for batch_inputs, batch_outputs in self.dataloader:
+					batch_inputs = batch_inputs.to(self.device)
+					srcs.append(self.model(batch_inputs).cpu())  # [batch size, feature dim].
+					tgts.append(batch_outputs)  # [batch size].
+					del batch_inputs  # Free memory in CPU or GPU.
+			srcs, tgts = torch.vstack(srcs), torch.hstack(tgts)
+			assert len(srcs) == len(tgts)
+			return srcs, tgts
+
+	# Create data loaders.
+	train_dataloader, test_dataloader, num_classes = utils.prepare_open_data(config, show_info=True, show_data=False, logger=logger)
+
+	# Create feature datasets.
+	if logger: logger.info('Creating feature datasets...')
+	start_time = time.time()
+	train_feature_dataset = FeatureDataset(ssl_model, train_dataloader, device)
+	test_feature_dataset = FeatureDataset(ssl_model, test_dataloader, device)
+	if logger: logger.info('Feature datasets created: {} secs.'.format(time.time() - start_time))
+	#if logger: logger.info('#train examples = {}, #test examples = {}.'.format(len(train_feature_dataset), len(test_feature_dataset)))  # NOTE [error] >> TypeError: object of type 'FeatureDataset' has no len().
+
+	# Create feature data loaders.
+	if logger: logger.info('Creating feature data loaders...')
+	start_time = time.time()
+	train_feature_dataloader = torch.utils.data.DataLoader(train_feature_dataset, batch_size=config['batch_size'], shuffle=False, num_workers=0, persistent_workers=False)
+	test_feature_dataloader = torch.utils.data.DataLoader(test_feature_dataset, batch_size=config['batch_size'], shuffle=False, num_workers=0, persistent_workers=False)
+	if logger: logger.info('Feature data loaders created: {} secs.'.format(time.time() - start_time))
+	#if logger: logger.info('#train steps per epoch = {}, #test steps per epoch = {}.'.format(len(train_feature_dataloader), len(test_feature_dataloader)))  # NOTE [error] >> TypeError: object of type 'FeatureDataset' has no len().
+
+	return train_feature_dataloader, test_feature_dataloader, num_classes
 
 def evaluate(config, train_feature_dataloader, test_feature_dataloader, num_classes, output_dir_path, logger=None):
 	classifier = ClassificationModule(config, num_classes, logger)
@@ -328,8 +385,8 @@ def main():
 			logger.info('#train features = {}, #test features = {}.'.format(len(train_input_features), len(test_input_features)))
 		else:
 			# Prepare feature data.
-			train_feature_dataloader, test_feature_dataloader, num_classes = prepare_simple_feature_data(config['data'], ssl_model, logger, device)
-			#train_feature_dataloader, test_feature_dataloader, num_classes = prepare_feature_data(config['data'], ssl_model, logger, device)  # Not yet implemented.
+			#train_feature_dataloader, test_feature_dataloader, num_classes = prepare_simple_feature_data(config['data'], ssl_model, logger, device)
+			train_feature_dataloader, test_feature_dataloader, num_classes = prepare_feature_data(config['data'], ssl_model, logger, device)
 			del ssl_model  # Free memory in CPU or GPU.
 
 			# Evaluate the pretrained model by its features.
