@@ -677,6 +677,7 @@ def construct_lr_scheduler(config, optimizer, num_epochs, *args, **kwargs):
 
 # REF [function] >> train_text_recognizer() in ${SWLP_HOME}/app/text/run_text_recognition_pl.py
 def train(config, model, train_dataloader, test_dataloader, output_dir_path, model_filepath_to_load, logger=None):
+	# Create a trainer.
 	checkpoint_callback = pl.callbacks.ModelCheckpoint(
 		dirpath=(output_dir_path + "/checkpoints") if output_dir_path else "./checkpoints",
 		filename="model-{epoch:03d}-{step:05d}-{val_acc:.5f}-{val_loss:.5f}",

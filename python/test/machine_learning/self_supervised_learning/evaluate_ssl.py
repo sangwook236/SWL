@@ -133,41 +133,77 @@ class ClassificationModule(pl.LightningModule):
 		return {'acc': acc}
 
 def extract_features(model, dataloader, device='cuda'):
-	model = model.to(device)
-	model.eval()
-	model.freeze()
 	srcs, tgts = list(), list()
-	with torch.no_grad():
-		for batch in dataloader:
-			batch_inputs, batch_outputs = batch
-			batch_inputs = batch_inputs.to(device)
-			srcs.append(model(batch_inputs).cpu())  # [batch size, feature dim].
-			tgts.append(batch_outputs)  # [batch size].
-			del batch_inputs  # Free memory in CPU or GPU.
+	for batch_inputs, batch_outputs in dataloader:
+		batch_inputs = batch_inputs.to(device)
+		srcs.append(model(batch_inputs).cpu())  # [batch size, feature dim].
+		tgts.append(batch_outputs)  # [batch size].
+		del batch_inputs  # Free memory in CPU or GPU.
 	return torch.vstack(srcs), torch.hstack(tgts)
 
-def prepare_simple_feature_data(config, model, logger=None, device='cuda'):
-	class FeatureDataset(torch.utils.data.Dataset):
-		def __init__(self, model, dataloader, device):
-			super().__init__()
+class FeatureDataset(torch.utils.data.Dataset):
+	def __init__(self, model, dataloader, logger, device):
+		super().__init__()
 
+		model = model.to(device)
+		model.eval()
+		model.freeze()
+
+		if logger: logger.info('Extracting features...')
+		start_time = time.time()
+		with torch.no_grad():
 			self.srcs, self.tgts = extract_features(model, dataloader, device)
-			assert len(self.srcs) == len(self.tgts), 'Invalid data length, {} != {}'.format(len(self.srcs), len(self.tgts))
+		if logger: logger.info('Features extracted: {} secs.'.format(time.time() - start_time))
+		assert len(self.srcs) == len(self.tgts), 'Unmatched source and target lengths, {} != {}'.format(len(self.srcs), len(self.tgts))
 
-		def __len__(self):
-			return len(self.srcs)
+	def __len__(self):
+		return len(self.srcs)
 
-		def __getitem__(self, idx):
-			return self.srcs[idx], self.tgts[idx]
+	def __getitem__(self, idx):
+		return self.srcs[idx], self.tgts[idx]
 
+class FeatureIterableDataset(torch.utils.data.IterableDataset):
+	def __init__(self, model, dataloader, logger, device):
+		super().__init__()
+
+		self.model = model
+		self.dataloader = dataloader
+		self.logger = logger
+		self.device = device
+
+	def __iter__(self):
+		self.model = self.model.to(self.device)
+		self.model.eval()
+		self.model.freeze()
+
+		if self.logger: self.logger.info('Extracting features...')
+		start_time = time.time()
+		with torch.no_grad():
+			srcs, tgts = extract_features(self.model, self.dataloader, self.device)
+		if self.logger: self.logger.info('Features extracted: {} secs.'.format(time.time() - start_time))
+		assert len(srcs) == len(tgts), 'Unmatched source and target lengths, {} != {}'.format(len(srcs), len(tgts))
+		num_examples = len(srcs)
+
+		worker_info = torch.utils.data.get_worker_info()
+		if worker_info is None:  # Single-process data loading, return the full iterator.
+			return iter(zip(srcs, tgts))
+		else:  # In a worker process.
+			# Split workload.
+			worker_id = worker_info.id
+			num_examples_per_worker = math.ceil(num_examples / float(worker_info.num_workers))
+			iter_start = worker_id * num_examples_per_worker
+			iter_end = min(iter_start + num_examples_per_worker, num_examples)
+			return iter(zip(srcs[iter_start:iter_end], tgts[iter_start:iter_end]))
+
+def prepare_simple_feature_data(config, model, logger=None, device='cuda'):
 	# Create data loaders.
 	train_dataloader, test_dataloader, num_classes = utils.prepare_open_data(config, show_info=True, show_data=False, logger=logger)
 
 	# Create feature datasets.
 	if logger: logger.info('Creating feature datasets...')
 	start_time = time.time()
-	train_feature_dataset = FeatureDataset(model, train_dataloader, device)
-	test_feature_dataset = FeatureDataset(model, test_dataloader, device)
+	train_feature_dataset = FeatureDataset(model, train_dataloader, logger, device)
+	test_feature_dataset = FeatureDataset(model, test_dataloader, logger, device)
 	if logger: logger.info('Feature datasets created: {} secs.'.format(time.time() - start_time))
 	if logger: logger.info('#train examples = {}, #test examples = {}.'.format(len(train_feature_dataset), len(test_feature_dataset)))
 
@@ -182,58 +218,23 @@ def prepare_simple_feature_data(config, model, logger=None, device='cuda'):
 	return train_feature_dataloader, test_feature_dataloader, num_classes
 
 def prepare_feature_data(config, model, logger=None, device='cuda'):
-	class FeatureDataset(torch.utils.data.IterableDataset):
-		def __init__(self, model, dataloader, device):
-			super().__init__()
-
-			self.model = model
-			self.dataloader = dataloader
-			self.device = device
-
-		def __iter__(self):
-			self.model = self.model.to(device)
-			self.model.eval()
-			self.model.freeze()
-
-			srcs, tgts = self._generate_data()
-			num_examples = len(srcs)
-			worker_info = torch.utils.data.get_worker_info()
-			if worker_info is None:  # Single-process data loading, return the full iterator.
-				return iter(zip(srcs, tgts))
-			else:  # In a worker process.
-				# Split workload.
-				worker_id = worker_info.id
-				num_examples_per_worker = math.ceil(num_examples / float(worker_info.num_workers))
-				iter_start = worker_id * num_examples_per_worker
-				iter_end = min(iter_start + num_examples_per_worker, num_examples)
-				return iter(zip(srcs[iter_start:iter_end], tgts[iter_start:iter_end]))
-
-		def _generate_data(self):
-			srcs, tgts = list(), list()
-			with torch.no_grad():
-				for batch_inputs, batch_outputs in self.dataloader:
-					batch_inputs = batch_inputs.to(self.device)
-					srcs.append(self.model(batch_inputs).cpu())  # [batch size, feature dim].
-					tgts.append(batch_outputs)  # [batch size].
-					del batch_inputs  # Free memory in CPU or GPU.
-			srcs, tgts = torch.vstack(srcs), torch.hstack(tgts)
-			assert len(srcs) == len(tgts)
-			return srcs, tgts
-
 	# Create data loaders.
 	train_dataloader, test_dataloader, num_classes = utils.prepare_open_data(config, show_info=True, show_data=False, logger=logger)
 
 	# Create feature datasets.
 	if logger: logger.info('Creating feature datasets...')
 	start_time = time.time()
-	train_feature_dataset = FeatureDataset(model, train_dataloader, device)
-	test_feature_dataset = FeatureDataset(model, test_dataloader, device)
+	train_feature_dataset = FeatureIterableDataset(model, train_dataloader, logger, device)
+	test_feature_dataset = FeatureIterableDataset(model, test_dataloader, logger, device)
 	if logger: logger.info('Feature datasets created: {} secs.'.format(time.time() - start_time))
 	#if logger: logger.info('#train examples = {}, #test examples = {}.'.format(len(train_feature_dataset), len(test_feature_dataset)))  # NOTE [error] >> TypeError: object of type 'FeatureDataset' has no len().
 
 	# Create feature data loaders.
 	if logger: logger.info('Creating feature data loaders...')
 	start_time = time.time()
+	# TODO [check] >> num_workers = 0?
+	#train_feature_dataloader = torch.utils.data.DataLoader(train_feature_dataset, batch_size=config['batch_size'], shuffle=False, num_workers=train_dataloader.num_workers, persistent_workers=False)
+	#test_feature_dataloader = torch.utils.data.DataLoader(test_feature_dataset, batch_size=config['batch_size'], shuffle=False, num_workers=test_dataloader.num_workers, persistent_workers=False)
 	train_feature_dataloader = torch.utils.data.DataLoader(train_feature_dataset, batch_size=config['batch_size'], shuffle=False, num_workers=0, persistent_workers=False)
 	test_feature_dataloader = torch.utils.data.DataLoader(test_feature_dataset, batch_size=config['batch_size'], shuffle=False, num_workers=0, persistent_workers=False)
 	if logger: logger.info('Feature data loaders created: {} secs.'.format(time.time() - start_time))
@@ -242,8 +243,10 @@ def prepare_feature_data(config, model, logger=None, device='cuda'):
 	return train_feature_dataloader, test_feature_dataloader, num_classes
 
 def evaluate(config, train_feature_dataloader, test_feature_dataloader, num_classes, output_dir_path, logger=None):
+	# Build a classification module.
 	classifier = ClassificationModule(config, num_classes, logger)
 
+	# Create a trainer.
 	checkpoint_callback = pl.callbacks.ModelCheckpoint(
 		dirpath=(output_dir_path + '/checkpoints') if output_dir_path else './checkpoints',
 		filename='classifier-{epoch:03d}-{step:05d}-{val_acc:.5f}-{val_loss:.5f}',
@@ -297,6 +300,7 @@ def main():
 	logger.info('Logger: name = {}, level = {}.'.format(logger.name, logger.level))
 	logger.info('Command-line arguments: {}.'.format(sys.argv))
 	logger.info('Command-line options: {}.'.format(vars(args)))
+	logger.info('Configuration: {}.'.format(config))
 	logger.info('Python: version = {}.'.format(sys.version.replace('\n', ' ')))
 	logger.info('Torch: version = {}, distributed = {} & {}.'.format(torch.__version__, 'available' if torch.distributed.is_available() else 'unavailable', 'initialized' if torch.distributed.is_initialized() else 'uninitialized'))
 	#logger.info('PyTorch Lightning: version = {}, distributed = {}.'.format(pl.__version__, 'available' if pl.utilities.distributed.distributed_available() else 'unavailable'))
@@ -339,10 +343,15 @@ def main():
 			train_dataloader, test_dataloader, num_classes = utils.prepare_open_data(config['data'], show_info=True, show_data=False, logger=logger)
 
 			# Extract features.
+			ssl_model = ssl_model.to(device)
+			ssl_model.eval()
+			ssl_model.freeze()
+
 			logger.info('Extracting features...')
 			start_time = time.time()
-			train_input_features, train_outputs = extract_features(ssl_model, train_dataloader, device)
-			test_input_features, test_outputs = extract_features(ssl_model, test_dataloader, device)
+			with torch.no_grad():
+				train_input_features, train_outputs = extract_features(ssl_model, train_dataloader, device)
+				test_input_features, test_outputs = extract_features(ssl_model, test_dataloader, device)
 			logger.info('Features extracted: {} secs.'.format(time.time() - start_time))
 			logger.info('#train features = {}, #test features = {}.'.format(len(train_input_features), len(test_input_features)))
 		else:

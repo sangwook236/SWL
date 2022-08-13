@@ -59,6 +59,7 @@ def main():
 	logger.info('Logger: name = {}, level = {}.'.format(logger.name, logger.level))
 	logger.info('Command-line arguments: {}.'.format(sys.argv))
 	logger.info('Command-line options: {}.'.format(vars(args)))
+	logger.info('Configuration: {}.'.format(config))
 	logger.info('Python: version = {}.'.format(sys.version.replace('\n', ' ')))
 	logger.info('Torch: version = {}, distributed = {} & {}.'.format(torch.__version__, 'available' if torch.distributed.is_available() else 'unavailable', 'initialized' if torch.distributed.is_initialized() else 'uninitialized'))
 	#logger.info('PyTorch Lightning: version = {}, distributed = {}.'.format(pl.__version__, 'available' if pl.utilities.distributed.distributed_available() else 'unavailable'))
@@ -90,6 +91,8 @@ def main():
 
 	#--------------------
 	try:
+		config_data = config['data']
+
 		# Load a SSL model.
 		logger.info('Loading a SSL model from {}...'.format(model_filepath_to_load))
 		start_time = time.time()
@@ -98,9 +101,6 @@ def main():
 
 		if True:
 			# Inference.
-
-			config_data = config['data']
-			config_model = config['model']
 
 			# Prepare data.
 			def create_data_generator(dataset, batch_size, num_workers, shuffle=False):
@@ -112,12 +112,10 @@ def main():
 			dataset = prepare_open_data(config_data, logger=None)
 
 			# Infer by the model.
-			predictions = utils.infer(config_model, ssl_model, create_data_generator(dataset, config_data['batch_size'], config_data['num_workers']), logger, device)
+			predictions = utils.infer(config['model'], ssl_model, create_data_generator(dataset, config_data['batch_size'], config_data['num_workers']), logger, device)
 		else:
 			# Export the model for production.
 			# REF [site] >> https://pytorch-lightning.readthedocs.io/en/stable/common/production_inference.html
-
-			image_shape = config['data']['image_shape']  # (H, W, C).
 
 			# NOTE [info] >>
 			#	<error> RuntimeError: Module 'ResNet' has no attribute '_modules'.
@@ -130,6 +128,8 @@ def main():
 			#	<cause> This error occurs in child processes when training a model using pl.Trainer(strategy='ddp') in a single machine.
 			#	<solution> Use pl.Trainer(strategy='dp').
 			#		Refer to https://pytorch-lightning.readthedocs.io/en/latest/accelerators/gpu_intermediate.html.
+
+			image_shape = config_data['image_shape']  # (H, W, C).
 
 			# TorchScript.
 			try:
