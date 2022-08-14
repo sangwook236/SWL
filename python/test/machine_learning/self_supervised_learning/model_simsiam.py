@@ -19,7 +19,7 @@ class SimSiamModule(pl.LightningModule):
 		self._logger = logger
 
 		#-----
-		if config.get('is_model_initialized', True):
+		if config and config.get('is_model_initialized', True):
 			# Initialize model weights.
 			for name, param in self.model.named_parameters():
 				try:

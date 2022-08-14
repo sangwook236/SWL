@@ -59,10 +59,10 @@ class SimclrModule(pl.LightningModule):
 		self.augmenter2 = augmenter2
 		self._logger = logger
 
-		self.criterion = SimclrLoss(**config['loss'])
+		self.criterion = SimclrLoss(**config['loss']) if config else None
 
 		#-----
-		if config.get('is_model_initialized', True):
+		if config and config.get('is_model_initialized', True):
 			# Initialize model weights.
 			for name, param in self.model.named_parameters():
 				try:

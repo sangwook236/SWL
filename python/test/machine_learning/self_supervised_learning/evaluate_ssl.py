@@ -5,7 +5,7 @@ import sys
 sys.path.append('../../../src')
 sys.path.append('./src')
 
-import os, math, logging, datetime, time
+import os, math, logging, pickle, datetime, time
 import numpy as np
 import torch
 import pytorch_lightning as pl
@@ -26,15 +26,17 @@ class ClassificationModule(pl.LightningModule):
 		if 'classifier' in config:
 			self.model = utils.construct_user_defined_model(config['classifier'])
 		else:
-			self.model = torch.nn.Linear(config['input_dim'], num_classes)
-			'''
-			self.model = torch.nn.Sequential(
-				torch.nn.Linear(config['input_dim'], hidden_dim),
-				torch.nn.BatchNorm1d(hidden_dim),
-				torch.nn.ReLU(inplace=True),
-				torch.nn.Linear(hidden_dim, num_classes),
-			)
-			'''
+			if True:
+				# Linear classifier.
+				self.model = torch.nn.Linear(config['input_dim'], num_classes)
+			else:
+				# MLP classifier.
+				self.model = torch.nn.Sequential(
+					torch.nn.Linear(config['input_dim'], hidden_dim),
+					torch.nn.BatchNorm1d(hidden_dim),
+					torch.nn.ReLU(inplace=True),
+					torch.nn.Linear(hidden_dim, num_classes),
+				)
 
 		# Define a loss.
 		self.criterion = torch.nn.NLLLoss(reduction='mean')
@@ -132,17 +134,17 @@ class ClassificationModule(pl.LightningModule):
 
 		return {'acc': acc}
 
-def extract_features(model, dataloader, device='cuda'):
+def extract_features(model, dataloader, use_projector=False, use_predictor=False, device='cuda'):
 	srcs, tgts = list(), list()
 	for batch_inputs, batch_outputs in dataloader:
 		batch_inputs = batch_inputs.to(device)
-		srcs.append(model(batch_inputs).cpu())  # [batch size, feature dim].
-		tgts.append(batch_outputs)  # [batch size].
+		srcs.append(model(batch_inputs, use_projector, use_predictor).cpu())  # [batch size, feature dim].
+		tgts.append(batch_outputs)  # [batch size, 1].
 		del batch_inputs  # Free memory in CPU or GPU.
 	return torch.vstack(srcs), torch.hstack(tgts)
 
 class FeatureDataset(torch.utils.data.Dataset):
-	def __init__(self, model, dataloader, logger, device):
+	def __init__(self, model, dataloader, use_projector, use_predictor, logger, device):
 		super().__init__()
 
 		model = model.to(device)
@@ -152,7 +154,7 @@ class FeatureDataset(torch.utils.data.Dataset):
 		if logger: logger.info('Extracting features...')
 		start_time = time.time()
 		with torch.no_grad():
-			self.srcs, self.tgts = extract_features(model, dataloader, device)
+			self.srcs, self.tgts = extract_features(model, dataloader, use_projector, use_predictor, device)
 		if logger: logger.info('Features extracted: {} secs.'.format(time.time() - start_time))
 		assert len(self.srcs) == len(self.tgts), 'Unmatched source and target lengths, {} != {}'.format(len(self.srcs), len(self.tgts))
 
@@ -163,11 +165,12 @@ class FeatureDataset(torch.utils.data.Dataset):
 		return self.srcs[idx], self.tgts[idx]
 
 class FeatureIterableDataset(torch.utils.data.IterableDataset):
-	def __init__(self, model, dataloader, logger, device):
+	def __init__(self, model, dataloader, use_projector, use_predictor, logger, device):
 		super().__init__()
 
 		self.model = model
 		self.dataloader = dataloader
+		self.use_projector, self.use_predictor = use_projector, use_predictor
 		self.logger = logger
 		self.device = device
 
@@ -179,7 +182,7 @@ class FeatureIterableDataset(torch.utils.data.IterableDataset):
 		if self.logger: self.logger.info('Extracting features...')
 		start_time = time.time()
 		with torch.no_grad():
-			srcs, tgts = extract_features(self.model, self.dataloader, self.device)
+			srcs, tgts = extract_features(self.model, self.dataloader, self.use_projector, self.use_predictor, self.device)
 		if self.logger: self.logger.info('Features extracted: {} secs.'.format(time.time() - start_time))
 		assert len(srcs) == len(tgts), 'Unmatched source and target lengths, {} != {}'.format(len(srcs), len(tgts))
 		num_examples = len(srcs)
@@ -195,15 +198,15 @@ class FeatureIterableDataset(torch.utils.data.IterableDataset):
 			iter_end = min(iter_start + num_examples_per_worker, num_examples)
 			return iter(zip(srcs[iter_start:iter_end], tgts[iter_start:iter_end]))
 
-def prepare_simple_feature_data(config, model, logger=None, device='cuda'):
+def prepare_simple_feature_data(config, model, use_projector=False, use_predictor=False, logger=None, device='cuda'):
 	# Create data loaders.
 	train_dataloader, test_dataloader, num_classes = utils.prepare_open_data(config, show_info=True, show_data=False, logger=logger)
 
 	# Create feature datasets.
 	if logger: logger.info('Creating feature datasets...')
 	start_time = time.time()
-	train_feature_dataset = FeatureDataset(model, train_dataloader, logger, device)
-	test_feature_dataset = FeatureDataset(model, test_dataloader, logger, device)
+	train_feature_dataset = FeatureDataset(model, train_dataloader, use_projector, use_predictor, logger, device)
+	test_feature_dataset = FeatureDataset(model, test_dataloader, use_projector, use_predictor, logger, device)
 	if logger: logger.info('Feature datasets created: {} secs.'.format(time.time() - start_time))
 	if logger: logger.info('#train examples = {}, #test examples = {}.'.format(len(train_feature_dataset), len(test_feature_dataset)))
 
@@ -217,15 +220,15 @@ def prepare_simple_feature_data(config, model, logger=None, device='cuda'):
 
 	return train_feature_dataloader, test_feature_dataloader, num_classes
 
-def prepare_feature_data(config, model, logger=None, device='cuda'):
+def prepare_feature_data(config, model, use_projector=False, use_predictor=False, logger=None, device='cuda'):
 	# Create data loaders.
 	train_dataloader, test_dataloader, num_classes = utils.prepare_open_data(config, show_info=True, show_data=False, logger=logger)
 
 	# Create feature datasets.
 	if logger: logger.info('Creating feature datasets...')
 	start_time = time.time()
-	train_feature_dataset = FeatureIterableDataset(model, train_dataloader, logger, device)
-	test_feature_dataset = FeatureIterableDataset(model, test_dataloader, logger, device)
+	train_feature_dataset = FeatureIterableDataset(model, train_dataloader, use_projector, use_predictor, logger, device)
+	test_feature_dataset = FeatureIterableDataset(model, test_dataloader, use_projector, use_predictor, logger, device)
 	if logger: logger.info('Feature datasets created: {} secs.'.format(time.time() - start_time))
 	#if logger: logger.info('#train examples = {}, #test examples = {}.'.format(len(train_feature_dataset), len(test_feature_dataset)))  # NOTE [error] >> TypeError: object of type 'FeatureDataset' has no len().
 
@@ -242,8 +245,8 @@ def prepare_feature_data(config, model, logger=None, device='cuda'):
 
 	return train_feature_dataloader, test_feature_dataloader, num_classes
 
-def evaluate(config, train_feature_dataloader, test_feature_dataloader, num_classes, output_dir_path, logger=None):
-	# Build a classification module.
+def evaluate(config, train_feature_dataloader, test_feature_dataloader, num_classes, output_dir_path, logger=None, device='cuda'):
+	# Build a classifier.
 	classifier = ClassificationModule(config, num_classes, logger)
 
 	# Create a trainer.
@@ -268,6 +271,55 @@ def evaluate(config, train_feature_dataloader, test_feature_dataloader, num_clas
 	start_time = time.time()
 	trainer.fit(classifier, train_dataloaders=train_feature_dataloader, val_dataloaders=test_feature_dataloader, ckpt_path=None)
 	if logger: logger.info('The classifier trained: {} secs.'.format(time.time() - start_time))
+
+	#-----
+	if False:
+		# Validate the classifier.
+		if logger: logger.info('Validating the classifier...')
+		start_time = time.time()
+		val_metrics = trainer.validate(model=classifier, dataloaders=test_feature_dataloader, ckpt_path=None, verbose=True)
+		if logger: logger.info('The classifier validated: {} secs.'.format(time.time() - start_time))
+		if logger: logger.info('Validation metrics: {}.'.format(val_metrics))
+
+	#--------------------
+	# Evaluate.
+	classifier = classifier.to(device)
+	classifier.eval()
+	classifier.freeze()
+
+	if logger: logger.info('Evaluating...')
+	with torch.no_grad():
+		gts, predictions = list(), list()
+		for batch_inputs, batch_outputs in test_feature_dataloader:
+			gts.append(batch_outputs.numpy())
+			predictions.append(classifier(batch_inputs.to(device)).cpu().numpy())  # [batch size, #classes].
+		gts, predictions = np.hstack(gts), np.argmax(np.vstack(predictions), axis=-1)
+	if logger: logger.info('Evaluated: {} secs.'.format(time.time() - start_time))
+	assert len(gts) == len(predictions)
+	num_examples = len(gts)
+
+	results = gts == predictions
+	num_correct_examples = results.sum().item()
+	acc = results.mean().item()
+
+	if logger: logger.info('Evaluation: accuracy = {} / {} = {}.'.format(num_correct_examples, num_examples, acc))
+
+	#--------------------
+	if True:
+		# Save evaluation results.
+		evaluation_result_filepath = os.path.join(output_dir_path, 'evaluation_results.txt')
+		try:
+			if logger: logger.info('Saving evaluation results to {}...'.format(evaluation_result_filepath))
+			start_time = time.time()
+			incorrect_indices = np.argwhere(results == False).squeeze(axis=-1)
+			with open(evaluation_result_filepath, 'w+', encoding='utf-8') as fd:
+				fd.write('--------------------------------------------------\n')
+				for idx in incorrect_indices:
+					gt, pred = gts[idx], predictions[idx]
+					fd.write('{}:\t{}\t{}\n'.format(idx, gt, pred))
+			if logger: logger.info('Evaluation results saved: {} secs.'.format(time.time() - start_time))
+		except Exception as ex:
+			if logger: logger.warning('Failed to save evaluation results: {}.'.format(ex))
 
 #--------------------------------------------------------------------
 
@@ -303,7 +355,7 @@ def main():
 	logger.info('Configuration: {}.'.format(config))
 	logger.info('Python: version = {}.'.format(sys.version.replace('\n', ' ')))
 	logger.info('Torch: version = {}, distributed = {} & {}.'.format(torch.__version__, 'available' if torch.distributed.is_available() else 'unavailable', 'initialized' if torch.distributed.is_initialized() else 'uninitialized'))
-	#logger.info('PyTorch Lightning: version = {}, distributed = {}.'.format(pl.__version__, 'available' if pl.utilities.distributed.distributed_available() else 'unavailable'))
+	logger.info('PyTorch Lightning: version = {}, distributed = {}.'.format(pl.__version__, 'available' if pl.utilities.distributed.distributed_available() else 'unavailable'))
 	logger.info('CUDA: version = {}, {}.'.format(torch.version.cuda, 'available' if torch.cuda.is_available() else 'unavailable'))
 	logger.info('cuDNN: version = {}.'.format(torch.backends.cudnn.version()))
 
@@ -332,13 +384,29 @@ def main():
 
 	#--------------------
 	try:
+		use_projector, use_predictor = False, False  # For SSL models.
+
 		# Load a SSL model.
 		logger.info('Loading a SSL model from {}...'.format(model_filepath_to_load))
 		start_time = time.time()
 		ssl_model = utils.load_ssl(config['ssl_type'], model_filepath_to_load)
 		logger.info('A SSL model loaded: {} secs.'.format(time.time() - start_time))
 
-		if False:
+		if True:
+			# Evaluate the pretrained SSL model by training a classifier on its features.
+
+			# Prepare feature data.
+			if False:
+				train_feature_dataloader, test_feature_dataloader, num_classes = prepare_simple_feature_data(config['data'], ssl_model, use_projector, use_predictor, logger, device)
+				del ssl_model  # Free memory in CPU or GPU.
+			else:
+				train_feature_dataloader, test_feature_dataloader, num_classes = prepare_feature_data(config['data'], ssl_model, use_projector, use_predictor, logger, device)
+
+			# Evaluate the pretrained SSL model.
+			evaluate(config['evaluation'], train_feature_dataloader, test_feature_dataloader, num_classes, output_dir_path, logger, device)
+		else:
+			# Extract features from the pretrained SSL model.
+
 			# Prepare data.
 			train_dataloader, test_dataloader, num_classes = utils.prepare_open_data(config['data'], show_info=True, show_data=False, logger=logger)
 
@@ -350,20 +418,23 @@ def main():
 			logger.info('Extracting features...')
 			start_time = time.time()
 			with torch.no_grad():
-				train_input_features, train_outputs = extract_features(ssl_model, train_dataloader, device)
-				test_input_features, test_outputs = extract_features(ssl_model, test_dataloader, device)
+				train_input_features, train_outputs = extract_features(ssl_model, train_dataloader, use_projector, use_predictor, device)
+				test_input_features, test_outputs = extract_features(ssl_model, test_dataloader, use_projector, use_predictor, device)
 			logger.info('Features extracted: {} secs.'.format(time.time() - start_time))
 			logger.info('#train features = {}, #test features = {}.'.format(len(train_input_features), len(test_input_features)))
-		else:
-			# Prepare feature data.
-			if False:
-				train_feature_dataloader, test_feature_dataloader, num_classes = prepare_simple_feature_data(config['data'], ssl_model, logger, device)
-				del ssl_model  # Free memory in CPU or GPU.
-			else:
-				train_feature_dataloader, test_feature_dataloader, num_classes = prepare_feature_data(config['data'], ssl_model, logger, device)
 
-			# Evaluate the pretrained model by its features.
-			evaluate(config['evaluation'], train_feature_dataloader, test_feature_dataloader, num_classes, output_dir_path, logger)
+			if True:
+				# Save the extracted features.
+				feature_filepath = os.path.join(output_dir_path, '{}_features.pkl'.format(config['ssl_type']))
+				try:
+					logger.info('Saving features to {}...'.format(feature_filepath))
+					start_time = time.time()
+					feature_dict = {'train_inputs': train_input_features, 'train_outputs': train_outputs, 'test_inputs': test_input_features, 'test_outputs': test_outputs}
+					with open(feature_filepath, 'wb') as fd:
+						pickle.dump(feature_dict, fd)
+					logger.info('Features saved: {} secs.'.format(time.time() - start_time))
+				except Exception as ex:
+					logger.warning('Failed to save features: {}.'.format(ex))
 	except Exception as ex:
 		#logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
 		logger.exception(ex)

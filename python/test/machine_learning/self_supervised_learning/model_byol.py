@@ -19,11 +19,11 @@ class ByolModule(pl.LightningModule):
 		self._logger = logger
 
 		self.target_model = None
-		self.is_momentum_encoder_used = config.get('is_momentum_encoder_used', False)
-		self.moving_average_decay = config.get('moving_average_decay', 0.0)
+		self.is_momentum_encoder_used = config.get('is_momentum_encoder_used', False) if config else False
+		self.moving_average_decay = config.get('moving_average_decay', 0.0) if config else 0.0
 
 		#-----
-		if config.get('is_model_initialized', True):
+		if config and config.get('is_model_initialized', True):
 			# Initialize model weights.
 			for name, param in self.online_model.named_parameters():
 				try:

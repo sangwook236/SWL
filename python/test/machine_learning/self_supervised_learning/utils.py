@@ -495,19 +495,19 @@ def load_ssl(ssl_type, model_filepath):
 	if ssl_type == 'simclr':
 		import model_simclr
 		SslModule = getattr(model_simclr, 'SimclrModule')
-		ssl_model = SslModule.load_from_checkpoint(model_filepath, encoder=None, projector=None, augmenter1=None, augmenter2=None)
+		ssl_model = SslModule.load_from_checkpoint(model_filepath, config=None, encoder=None, projector=None, augmenter1=None, augmenter2=None)
 	elif ssl_type == 'byol':
 		import model_byol
 		SslModule = getattr(model_byol, 'ByolModule')
-		ssl_model = SslModule.load_from_checkpoint(model_filepath, encoder=None, projector=None, predictor=None, augmenter1=None, augmenter2=None)
+		ssl_model = SslModule.load_from_checkpoint(model_filepath, config=None, encoder=None, projector=None, predictor=None, augmenter1=None, augmenter2=None)
 	elif ssl_type == 'relic':
 		import model_relic
 		SslModule = getattr(model_relic, 'RelicModule')
-		ssl_model = SslModule.load_from_checkpoint(model_filepath, encoder=None, projector=None, predictor=None, augmenter1=None, augmenter2=None)
+		ssl_model = SslModule.load_from_checkpoint(model_filepath, config=None, encoder=None, projector=None, predictor=None, augmenter1=None, augmenter2=None)
 	elif ssl_type == 'simsiam':
 		import model_simsiam
 		SslModule = getattr(model_simsiam, 'SimSiamModule')
-		ssl_model = SslModule.load_from_checkpoint(model_filepath, encoder=None, projector=None, predictor=None, augmenter1=None, augmenter2=None)
+		ssl_model = SslModule.load_from_checkpoint(model_filepath, config=None, encoder=None, projector=None, predictor=None, augmenter1=None, augmenter2=None)
 
 	#ssl_model = SslModule.load_from_checkpoint(model_filepath)
 	#ssl_model = SslModule.load_from_checkpoint(model_filepath, map_location={'cuda:1': 'cuda:0'})
@@ -714,7 +714,7 @@ def train(config, model, train_dataloader, test_dataloader, output_dir_path, mod
 		if logger: logger.info("Validating the model...")
 		start_time = time.time()
 		#model.eval()
-		trainer.validate(model, dataloaders=test_dataloader, ckpt_path=None, verbose=True)
+		trainer.validate(model=model, dataloaders=test_dataloader, ckpt_path=None, verbose=True)
 		if logger: logger.info("The model validated: {} secs.".format(time.time() - start_time))
 
 	#--------------------
@@ -729,18 +729,17 @@ def train(config, model, train_dataloader, test_dataloader, output_dir_path, mod
 
 	return best_model_filepath
 
-def infer(config, model, data_iter, logger=None, device="cuda"):
+def infer(model, data_iter, use_projector=False, use_predictor=False, logger=None, device="cuda"):
 	model = model.to(device)
-
-	use_projector, use_predictor = config.get("use_projector", False), config.get("use_predictor", False)
-	if logger: logger.info("Inferring...")
-	start_time = time.time()
 	model.eval()
 	model.freeze()
+
+	if logger: logger.info("Inferring...")
+	start_time = time.time()
 	with torch.no_grad():
 		predictions = list()
 		for inputs in data_iter:
-			predictions.append(model(inputs.to(device), use_projector, use_predictor).cpu().numpy())
+			predictions.append(model(inputs.to(device), use_projector, use_predictor).cpu().numpy())  # [batch size, feature dim].
 		predictions = np.vstack(predictions)
 	if logger: logger.info("Inferred: {} secs.".format(time.time() - start_time))
 	#if logger: logger.info("Prediction: shape = {}, dtype = {}, (min, max) = ({}, {}).".format(predictions.shape, predictions.dtype, np.min(predictions), np.max(predictions)))

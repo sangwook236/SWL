@@ -100,7 +100,9 @@ def main():
 		logger.info('A SSL model loaded: {} secs.'.format(time.time() - start_time))
 
 		if True:
-			# Inference.
+			# Infer by the trained SSL model.
+
+			use_projector, use_predictor = config['model'].get('use_projector', False), config['model'].get('use_predictor', False)
 
 			# Prepare data.
 			def create_data_generator(dataset, batch_size, num_workers, shuffle=False):
@@ -112,9 +114,9 @@ def main():
 			dataset = prepare_open_data(config_data, logger=None)
 
 			# Infer by the model.
-			predictions = utils.infer(config['model'], ssl_model, create_data_generator(dataset, config_data['batch_size'], config_data['num_workers']), logger, device)
+			predictions = utils.infer(ssl_model, create_data_generator(dataset, config_data['batch_size'], config_data['num_workers']), use_projector, use_predictor, logger, device)
 		else:
-			# Export the model for production.
+			# Export the trained SSL model for production.
 			# REF [site] >> https://pytorch-lightning.readthedocs.io/en/stable/common/production_inference.html
 
 			# NOTE [info] >>
@@ -134,6 +136,9 @@ def main():
 			# TorchScript.
 			try:
 				torchscript_filepath = os.path.join(output_dir_path, '{}_ts.pth'.format(config['ssl_type']))
+
+				logger.info('Exporting a TorchScript model to {}.'.format(torchscript_filepath))
+				start_time = time.time()
 				if False:
 					script = ssl_model.to_torchscript(file_path=torchscript_filepath, method='script')
 				elif True:
@@ -142,19 +147,22 @@ def main():
 				else:
 					script = ssl_model.to_torchscript(file_path=None, method='script')
 					torch.jit.save(script, torchscript_filepath)
-				logger.info('A TorchScript model saved to {}.'.format(torchscript_filepath))
+				logger.info('A TorchScript model exported: {} secs.'.format(time.time() - start_time))
 			except Exception as ex:
-				logger.error('Failed to save a TorchScript model:')
+				logger.error('Failed to export a TorchScript model:')
 				logger.exception(ex)
 
 			# ONNX.
 			try:
 				onnx_filepath = os.path.join(output_dir_path, '{}.onnx'.format(config['ssl_type']))
+
+				logger.info('Exporting an ONNX model to {}.'.format(onnx_filepath))
+				start_time = time.time()
 				dummy_inputs = torch.randn((1, image_shape[2], image_shape[0], image_shape[1]))
 				ssl_model.to_onnx(onnx_filepath, dummy_inputs, export_params=True)
-				logger.info('An ONNX model saved to {}.'.format(onnx_filepath))
+				logger.info('An ONNX model exported: {} secs.'.format(time.time() - start_time))
 			except Exception as ex:
-				logger.error('Failed to save an ONNX model:')
+				logger.error('Failed to export an ONNX model:')
 				logger.exception(ex)
 	except Exception as ex:
 		#logging.exception(ex)  # Logs a message with level 'ERROR' on the root logger.
