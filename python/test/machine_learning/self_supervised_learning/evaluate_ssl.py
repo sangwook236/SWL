@@ -246,6 +246,8 @@ def prepare_feature_data(config, model, use_projector=False, use_predictor=False
 	return train_feature_dataloader, test_feature_dataloader, num_classes
 
 def evaluate(config, train_feature_dataloader, test_feature_dataloader, num_classes, output_dir_path, logger=None, device='cuda'):
+	from tqdm import tqdm
+
 	# Build a classifier.
 	classifier = ClassificationModule(config, num_classes, logger)
 
@@ -290,7 +292,7 @@ def evaluate(config, train_feature_dataloader, test_feature_dataloader, num_clas
 	if logger: logger.info('Evaluating...')
 	with torch.no_grad():
 		gts, predictions = list(), list()
-		for batch_inputs, batch_outputs in test_feature_dataloader:
+		for batch_inputs, batch_outputs in tqdm(test_feature_dataloader):
 			gts.append(batch_outputs.numpy())
 			predictions.append(classifier(batch_inputs.to(device)).cpu().numpy())  # [batch size, #classes].
 		gts, predictions = np.hstack(gts), np.argmax(np.vstack(predictions), axis=-1)

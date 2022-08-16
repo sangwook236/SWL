@@ -6,6 +6,7 @@ sys.path.append('../../../src')
 sys.path.append('./src')
 
 import os, logging, datetime, time
+import numpy as np
 import torch
 import yaml
 import utils
@@ -113,8 +114,17 @@ def main():
 
 			dataset = prepare_open_data(config_data, logger=None)
 
-			# Infer by the model.
-			predictions = utils.infer(ssl_model, create_data_generator(dataset, config_data['batch_size'], config_data['num_workers']), use_projector, use_predictor, logger, device)
+			if True:
+				# Infer by the model.
+				logger.info("Inferring...")
+				start_time = time.time()
+				predictions = utils.infer(ssl_model, create_data_generator(dataset, config_data['batch_size'], config_data['num_workers']), use_projector, use_predictor, device)
+				logger.info("Inferred: {} secs.".format(time.time() - start_time))
+				logger.info("Prediction: shape = {}, dtype = {}, (min, max) = ({}, {}).".format(predictions.shape, predictions.dtype, np.min(predictions), np.max(predictions)))
+			else:
+				# Test the model.
+				dataloader = torch.utils.data.DataLoader(dataset, batch_size=config_data['batch_size'], shuffle=False, num_workers=config_data['num_workers'], persistent_workers=False)
+				utils.test(model, dataloader, logger)
 		else:
 			# Export the trained SSL model for production.
 			# REF [site] >> https://pytorch-lightning.readthedocs.io/en/stable/common/production_inference.html

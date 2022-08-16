@@ -492,25 +492,25 @@ class SimSiamMLP(torch.nn.Module):
 		return x
 
 def load_ssl(ssl_type, model_filepath):
-	if ssl_type == 'simclr':
+	if ssl_type == "simclr":
 		import model_simclr
-		SslModule = getattr(model_simclr, 'SimclrModule')
+		SslModule = getattr(model_simclr, "SimclrModule")
 		ssl_model = SslModule.load_from_checkpoint(model_filepath, config=None, encoder=None, projector=None, augmenter1=None, augmenter2=None)
-	elif ssl_type == 'byol':
+	elif ssl_type == "byol":
 		import model_byol
-		SslModule = getattr(model_byol, 'ByolModule')
+		SslModule = getattr(model_byol, "ByolModule")
 		ssl_model = SslModule.load_from_checkpoint(model_filepath, config=None, encoder=None, projector=None, predictor=None, augmenter1=None, augmenter2=None)
-	elif ssl_type == 'relic':
+	elif ssl_type == "relic":
 		import model_relic
-		SslModule = getattr(model_relic, 'RelicModule')
+		SslModule = getattr(model_relic, "RelicModule")
 		ssl_model = SslModule.load_from_checkpoint(model_filepath, config=None, encoder=None, projector=None, predictor=None, augmenter1=None, augmenter2=None)
-	elif ssl_type == 'simsiam':
+	elif ssl_type == "simsiam":
 		import model_simsiam
-		SslModule = getattr(model_simsiam, 'SimSiamModule')
+		SslModule = getattr(model_simsiam, "SimSiamModule")
 		ssl_model = SslModule.load_from_checkpoint(model_filepath, config=None, encoder=None, projector=None, predictor=None, augmenter1=None, augmenter2=None)
 
 	#ssl_model = SslModule.load_from_checkpoint(model_filepath)
-	#ssl_model = SslModule.load_from_checkpoint(model_filepath, map_location={'cuda:1': 'cuda:0'})
+	#ssl_model = SslModule.load_from_checkpoint(model_filepath, map_location={"cuda:1": "cuda:0"})
 
 	return ssl_model
 
@@ -729,20 +729,47 @@ def train(config, model, train_dataloader, test_dataloader, output_dir_path, mod
 
 	return best_model_filepath
 
-def infer(model, data_iter, use_projector=False, use_predictor=False, logger=None, device="cuda"):
+def validate(model, dataloader, logger=None):
+	# Create a trainer.
+	trainer = pl.Trainer(devices=-1, accelerator="gpu", strategy="dp", auto_select_gpus=True, max_epochs=-1, default_root_dir=None)
+
+	# Validate the model.
+	if logger: logger.info("Validating the model...")
+	start_time = time.time()
+	val_metrics = trainer.validate(model=model, dataloaders=dataloader, ckpt_path=None, verbose=True)
+	if logger: logger.info("The model validated: {} secs.".format(time.time() - start_time))
+	if logger: logger.info("Validation metrics: {}.".format(val_metrics))
+
+def test(model, dataloader, logger=None):
+	# Create a trainer.
+	trainer = pl.Trainer(devices=-1, accelerator="gpu", strategy="dp", auto_select_gpus=True, max_epochs=-1, default_root_dir=None)
+
+	# Test the model.
+	if logger: logger.info("Testing the model...")
+	start_time = time.time()
+	test_metrics = trainer.test(model=model, dataloaders=dataloader, ckpt_path=None, verbose=True)
+	if logger: logger.info("The model tested: {} secs.".format(time.time() - start_time))
+	if logger: logger.info("Test metrics: {}.".format(test_metrics))
+
+	# Predict.
+	if logger: logger.info("Predicting...")
+	start_time = time.time()
+	predictions = trainer.predict(model=model, dataloaders=dataloader, ckpt_path=None, return_predictions=None)  # A list of [batch size, feature dim or #classes]'s.
+	predictions = torch.vstack(predictions)
+	if logger: logger.info("Predicted: {} secs.".format(time.time() - start_time))
+	if logger: logger.info("Prediction: shape = {}, dtype = {}, (min, max) = ({}, {}).".format(predictions.shape, predictions.dtype, torch.min(predictions), torch.max(predictions)))
+
+def infer(model, data_iter, use_projector=False, use_predictor=False, device="cuda"):
+	from tqdm import tqdm
+
 	model = model.to(device)
 	model.eval()
 	model.freeze()
 
-	if logger: logger.info("Inferring...")
-	start_time = time.time()
 	with torch.no_grad():
 		predictions = list()
-		for inputs in data_iter:
+		for inputs in tqdm(data_iter):
 			predictions.append(model(inputs.to(device), use_projector, use_predictor).cpu().numpy())  # [batch size, feature dim].
 		predictions = np.vstack(predictions)
-	if logger: logger.info("Inferred: {} secs.".format(time.time() - start_time))
-	#if logger: logger.info("Prediction: shape = {}, dtype = {}, (min, max) = ({}, {}).".format(predictions.shape, predictions.dtype, np.min(predictions), np.max(predictions)))
-	if logger: logger.info("Prediction: shape = {}, dtype = {}, (min, max) = ({}, {}).".format(predictions.shape, predictions.dtype, np.min(np.abs(predictions)), np.max(np.abs(predictions))))
 
 	return predictions
