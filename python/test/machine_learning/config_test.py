@@ -186,8 +186,15 @@ def pytorch_ml_config_test():
 
 	def construct_user_defined_model(config, *args, **kwargs):
 		MODULES = {
+			"conv_1d": torch.nn.Conv1d,
+			"conv_2d": torch.nn.Conv2d,
 			"linear": torch.nn.Linear,
+			"max_pool_1d": torch.nn.MaxPool1d,
+			"max_pool_2d": torch.nn.MaxPool2d,
 			"batch_norm_1d": torch.nn.BatchNorm1d,
+			"batch_norm_2d": torch.nn.BatchNorm2d,
+			"flatten": torch.nn.Flatten,
+			"sigmoid": torch.nn.Sigmoid,
 			"relu": torch.nn.ReLU,
 		}
 
