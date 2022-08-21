@@ -22,6 +22,10 @@ pretrained_model:
   #  feature_layer: avgpool
   #  feature_dim: 512
   #  pretrained: true
+  #resnet34:
+  #  feature_layer: avgpool
+  #  feature_dim: 512
+  #  pretrained: true
   resnet50:
     feature_layer: avgpool
     feature_dim: 2048
@@ -45,68 +49,73 @@ pretrained_model:
 
 user_defined_model:
   # For simple test.
-  #- module_type: linear
-  #  in_features:  2048  # input_dim.
-  #  out_features: 256  # hidden_dim.
-  #  bias: true
-  #- module_type: batch_norm_1d
-  #  num_features: 256  # hidden_dim.
-  #  eps: 1.0e-05
-  #  momentum: 0.1
-  #- module_type: relu
-  #  inplace: true
-  #- module_type: linear
-  #  in_features:  256  # hidden_dim.
-  #  out_features: 10  # num_classes.
-  #  bias: true
+  #architecture:
+  #  - module_type: linear
+  #    in_features:  2048  # input_dim.
+  #    out_features: 256  # hidden_dim.
+  #    bias: true
+  #  - module_type: batch_norm_1d
+  #    num_features: 256  # hidden_dim.
+  #    eps: 1.0e-05
+  #    momentum: 0.1
+  #  - module_type: relu
+  #    inplace: true
+  #  - module_type: linear
+  #    in_features:  256  # hidden_dim.
+  #    out_features: 10  # num_classes.
+  #    bias: true
+  #output_dim: 10
   # For LeNet5 + MNIST.
-  - module_type: conv_2d
-    in_channels:  1
-    out_channels: 6
-    kernel_size: 3
-    stride: 1
-    padding: 0
-    dilation: 1
-  - module_type: relu
-    inplace: true
-  - module_type: max_pool_2d
-    kernel_size: [2, 2]
-  - module_type: conv_2d
-    in_channels:  6
-    out_channels: 16
-    kernel_size: 3
-    stride: 1
-    padding: 0
-    dilation: 1
-  - module_type: relu
-    inplace: true
-  - module_type: max_pool_2d
-    kernel_size: [2, 2]
-  - module_type: flatten
-  - module_type: linear
-    in_features:  400  # 400 = 16 * 5 * 5.
-    out_features: 120
-    bias: true
-  - module_type: batch_norm_1d
-    num_features: 120
-    eps: 1.0e-05
-    momentum: 0.1
-  - module_type: relu
-    inplace: true
-  - module_type: linear
-    in_features:  120
-    out_features: 84
-    bias: true
-  - module_type: batch_norm_1d
-    num_features: 84
-    eps: 1.0e-05
-    momentum: 0.1
-  - module_type: relu
-    inplace: true
-  - module_type: linear
-    in_features:  84
-    out_features: 10
-    bias: true
+  architecture:
+    - module_type: conv_2d
+      in_channels:  1
+      out_channels: 6
+      kernel_size: 3
+      stride: 1
+      padding: 0
+      dilation: 1
+    - module_type: relu
+      inplace: true
+    - module_type: max_pool_2d
+      kernel_size: [2, 2]
+    - module_type: conv_2d
+      in_channels:  6
+      out_channels: 16
+      kernel_size: 3
+      stride: 1
+      padding: 0
+      dilation: 1
+    - module_type: relu
+      inplace: true
+    - module_type: max_pool_2d
+      kernel_size: [2, 2]
+    - module_type: flatten
+    - module_type: linear
+      in_features:  400  # 400 = 16 * 5 * 5.
+      out_features: 120
+      bias: true
+    - module_type: batch_norm_1d
+      num_features: 120
+      eps: 1.0e-05
+      momentum: 0.1
+    - module_type: relu
+      inplace: true
+    - module_type: linear
+      in_features:  120
+      out_features: 84
+      bias: true
+    - module_type: batch_norm_1d
+      num_features: 84
+      eps: 1.0e-05
+      momentum: 0.1
+    - module_type: relu
+      inplace: true
+    - module_type: linear
+      in_features:  84
+      out_features: 10
+      bias: true
+    - module_type: sigmoid
+  output_dim: 10
 
 optimizer:
   #sgd:

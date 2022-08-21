@@ -35,28 +35,30 @@ evaluation:
   input_dim: 2048  # ResNet50 or higher.
   epochs: 100
 
-  # User-defined classifier.
-  classifier:
-    # Linear evaluation.
-    - module_type: linear
-      in_features:  2048  # input_dim.
-      out_features: 10  # num_classes.
-      bias: true
-    # MLP evaluation.
-    #- module_type: linear
-    #  in_features:  2048  # input_dim.
-    #  out_features: 256  # hidden_dim.
-    #  bias: true
-    #- module_type: batch_norm_1d
-    #  num_features: 256  # hidden_dim.
-    #  eps: 1.0e-05
-    #  momentum: 0.1
-    #- module_type: relu
-    #  inplace: true
-    #- module_type: linear
-    #  in_features:  256  # hidden_dim.
-    #  out_features: 10  # num_classes.
-    #  bias: true
+  # For classifier.
+  user_defined_model:
+    architecture:
+      # Linear evaluation.
+      - module_type: linear
+        in_features:  2048  # input_dim.
+        out_features: 10  # num_classes.
+        bias: true
+      # MLP evaluation.
+      #- module_type: linear
+      #  in_features:  2048  # input_dim.
+      #  out_features: 256  # hidden_dim.
+      #  bias: true
+      #- module_type: batch_norm_1d
+      #  num_features: 256  # hidden_dim.
+      #  eps: 1.0e-05
+      #  momentum: 0.1
+      #- module_type: relu
+      #  inplace: true
+      #- module_type: linear
+      #  in_features:  256  # hidden_dim.
+      #  out_features: 10  # num_classes.
+      #  bias: true
+    output_dim: 2
 
   optimizer:
     #sgd:

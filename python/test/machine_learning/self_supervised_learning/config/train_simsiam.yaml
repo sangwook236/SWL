@@ -62,7 +62,8 @@ data:
     #  std: [0.2470, 0.2435, 0.2616]
 
 model:
-  encoder:
+  # For encoder.
+  pretrained_model:
     resnet50:
       feature_layer: avgpool
       feature_dim: 2048

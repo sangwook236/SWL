@@ -518,9 +518,13 @@ def load_ssl(ssl_type, model_filepath):
 def construct_pretrained_model(config, *args, **kwargs):
 	PRETRAINED_MODELS = {
 		"resnet18": torchvision.models.resnet18,
+		"resnet34": torchvision.models.resnet34,
 		"resnet50": torchvision.models.resnet50,
+		"resnet101": torchvision.models.resnet101,
+		"resnet152": torchvision.models.resnet152,
 		"resnext50": torchvision.models.resnext50_32x4d,
 		"resnext101": torchvision.models.resnext101_32x8d,
+		#"resnext101": torchvision.models.resnext101_64x4d,
 		"wide_resnet50": torchvision.models.wide_resnet50_2,
 		"wide_resnet101": torchvision.models.wide_resnet101_2,
 	}
@@ -530,6 +534,11 @@ def construct_pretrained_model(config, *args, **kwargs):
 			feature_layer = config[name].pop("feature_layer", "avgpool")
 			feature_dim = config[name].pop("feature_dim", 0)
 			return ModelWrapper(PRETRAINED_MODELS[name](**config[name]), layer_name=feature_layer), feature_dim
+		elif hasattr(torchvision.models, name):
+			pretrained_model = getattr(torchvision.models, name)
+			feature_layer = config[name].pop("feature_layer", "avgpool")
+			feature_dim = config[name].pop("feature_dim", 0)
+			return ModelWrapper(pretrained_model(**config[name]), layer_name=feature_layer), feature_dim
 		else:
 			raise ValueError("Unsupported pretrained model, {}".format(name))
 	raise ValueError("Invalid pretrained model, {}".format(config))
@@ -537,20 +546,34 @@ def construct_pretrained_model(config, *args, **kwargs):
 # REF [function] >> construct_user_defined_model() in ${SWL_PYTHON_HOME}/test/machine_learning/config_test.py.
 def construct_user_defined_model(config, *args, **kwargs):
 	MODULES = {
+		"conv_1d": torch.nn.Conv1d,
+		"conv_2d": torch.nn.Conv2d,
 		"linear": torch.nn.Linear,
+		"max_pool_1d": torch.nn.MaxPool1d,
+		"max_pool_2d": torch.nn.MaxPool2d,
 		"batch_norm_1d": torch.nn.BatchNorm1d,
+		"batch_norm_2d": torch.nn.BatchNorm2d,
+		"dropout": torch.nn.Dropout,
+		"flatten": torch.nn.Flatten,
+		"softmax": torch.nn.Softmax,
+		"sigmoid": torch.nn.Sigmoid,
+		"tanh": torch.nn.Tanh,
 		"relu": torch.nn.ReLU,
 	}
 
 	modules = list()
-	for module_config in config:
+	for module_config in config["architecture"]:
 		module_type = module_config.pop("module_type")
 		if module_type in MODULES:
 			modules.append(MODULES[module_type](**module_config))
+		elif hasattr(torch.nn, module_type):
+			module = getattr(torch.nn, module_type)
+			modules.append(module(**module_config))
 		else:
 			raise ValueError("Unsupported module, {}".format(module_type))
+	output_dim = config.pop("output_dim", 0)
 
-	return torch.nn.Sequential(*modules)
+	return torch.nn.Sequential(*modules), output_dim
 
 # REF [function] >> construct_optimizer() in ${SWL_PYTHON_HOME}/test/machine_learning/config_test.py.
 def construct_optimizer(config, model_params, *args, **kwargs):
@@ -565,6 +588,9 @@ def construct_optimizer(config, model_params, *args, **kwargs):
 	for name in config:
 		if name in OPTIMIZERS:
 			return OPTIMIZERS[name](model_params, **config[name])
+		elif hasattr(torch.optim, name):
+			optimizer = getattr(torch.optim, name)
+			return optimizer(model_params, **config[name])
 		else:
 			raise ValueError("Unsupported optimizer, {}".format(name))
 	raise ValueError("Invalid optimizer, {}".format(config))
@@ -671,6 +697,14 @@ def construct_lr_scheduler(config, optimizer, num_epochs, *args, **kwargs):
 				return LR_SCHEDULERS[name](optimizer, T_max=T_max if T_max is not None else num_epochs, **config[name]), epoch_based
 			else:
 				return LR_SCHEDULERS[name](optimizer, **config[name]), epoch_based
+		elif hasattr(torch.optim.lr_scheduler, name):
+			lr_scheduler = getattr(torch.optim.lr_scheduler, name)
+			epoch_based = config[name].pop("epoch_based", True)
+			if "T_max" in config[name]:
+				T_max = config[name].pop("T_max")
+				return lr_scheduler(optimizer, T_max=T_max if T_max is not None else num_epochs, **config[name]), epoch_based
+			else:
+				return lr_scheduler(optimizer, **config[name]), epoch_based
 		else:
 			raise ValueError("Unsupported LR scheduler, {}".format(name))
 	return None, True

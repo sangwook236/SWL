@@ -22,11 +22,5 @@ data:
       std: [0.2470, 0.2435, 0.2616]
 
 model:
-  encoder:
-    resnet50:
-      feature_layer: avgpool
-      feature_dim: 2048
-      pretrained: true
-
   use_projector: false
   use_predictor: false

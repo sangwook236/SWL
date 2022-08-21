@@ -23,8 +23,9 @@ class ClassificationModule(pl.LightningModule):
 		self.is_all_model_params_optimized = True
 
 		# Build a classifier.
-		if 'classifier' in config:
-			self.model = utils.construct_user_defined_model(config['classifier'])
+		if 'user_defined_model' in config:
+			self.model, classifier_output_dim = utils.construct_user_defined_model(config['user_defined_model'])
+			assert classifier_output_dim == num_classes, 'The output dimension ({}) of the user-defined model does not match the number of classes ({})'.format(classifier_output_dim, num_classes)
 		else:
 			if True:
 				# Linear classifier.

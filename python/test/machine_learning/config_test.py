@@ -168,9 +168,13 @@ def pytorch_ml_config_test():
 	def construct_pretrained_model(config, *args, **kwargs):
 		PRETRAINED_MODELS = {
 			"resnet18": torchvision.models.resnet18,
+			"resnet34": torchvision.models.resnet34,
 			"resnet50": torchvision.models.resnet50,
+			"resnet101": torchvision.models.resnet101,
+			"resnet152": torchvision.models.resnet152,
 			"resnext50": torchvision.models.resnext50_32x4d,
 			"resnext101": torchvision.models.resnext101_32x8d,
+			#"resnext101": torchvision.models.resnext101_64x4d,
 			"wide_resnet50": torchvision.models.wide_resnet50_2,
 			"wide_resnet101": torchvision.models.wide_resnet101_2,
 		}
@@ -180,6 +184,11 @@ def pytorch_ml_config_test():
 				feature_layer = config[name].pop("feature_layer", "avgpool")
 				feature_dim = config[name].pop("feature_dim", 0)
 				return ModelWrapper(PRETRAINED_MODELS[name](**config[name]), layer_name=feature_layer), feature_dim
+			elif hasattr(torchvision.models, name):
+				pretrained_model = getattr(torchvision.models, name)
+				feature_layer = config[name].pop("feature_layer", "avgpool")
+				feature_dim = config[name].pop("feature_dim", 0)
+				return ModelWrapper(pretrained_model(**config[name]), layer_name=feature_layer), feature_dim
 			else:
 				raise ValueError("Unsupported pretrained model, {}".format(name))
 		raise ValueError("Invalid pretrained model, {}".format(config))
@@ -193,20 +202,27 @@ def pytorch_ml_config_test():
 			"max_pool_2d": torch.nn.MaxPool2d,
 			"batch_norm_1d": torch.nn.BatchNorm1d,
 			"batch_norm_2d": torch.nn.BatchNorm2d,
+			"dropout": torch.nn.Dropout,
 			"flatten": torch.nn.Flatten,
+			"softmax": torch.nn.Softmax,
 			"sigmoid": torch.nn.Sigmoid,
+			"tanh": torch.nn.Tanh,
 			"relu": torch.nn.ReLU,
 		}
 
 		modules = list()
-		for module_config in config:
+		for module_config in config["architecture"]:
 			module_type = module_config.pop("module_type")
 			if module_type in MODULES:
 				modules.append(MODULES[module_type](**module_config))
+			elif hasattr(torch.nn, module_type):
+				module = getattr(torch.nn, module_type)
+				modules.append(module(**module_config))
 			else:
 				raise ValueError("Unsupported module, {}".format(module_type))
+		output_dim = config.pop("output_dim", 0)
 
-		return torch.nn.Sequential(*modules)
+		return torch.nn.Sequential(*modules), output_dim
 
 	def construct_optimizer(config, model_params, *args, **kwargs):
 		OPTIMIZERS = {
@@ -220,6 +236,9 @@ def pytorch_ml_config_test():
 		for name in config:
 			if name in OPTIMIZERS:
 				return OPTIMIZERS[name](model_params, **config[name])
+			elif hasattr(torch.optim, name):
+				optimizer = getattr(torch.optim, name)
+				return optimizer(model_params, **config[name])
 			else:
 				raise ValueError("Unsupported optimizer, {}".format(name))
 		raise ValueError("Invalid optimizer, {}".format(config))
@@ -367,6 +386,14 @@ def pytorch_ml_config_test():
 					return LR_SCHEDULERS[name](optimizer, T_max=T_max if T_max is not None else num_epochs, **config[name]), epoch_based
 				else:
 					return LR_SCHEDULERS[name](optimizer, **config[name]), epoch_based
+			elif hasattr(torch.optim.lr_scheduler, name):
+				lr_scheduler = getattr(torch.optim.lr_scheduler, name)
+				epoch_based = config[name].pop("epoch_based", True)
+				if "T_max" in config[name]:
+					T_max = config[name].pop("T_max")
+					return lr_scheduler(optimizer, T_max=T_max if T_max is not None else num_epochs, **config[name]), epoch_based
+				else:
+					return lr_scheduler(optimizer, **config[name]), epoch_based
 			else:
 				raise ValueError("Unsupported LR scheduler, {}".format(name))
 		return None, True
@@ -423,26 +450,42 @@ def pytorch_ml_config_test():
 		print("Feature dimension = {}.".format(feature_dim))
 
 		print("-----")
-		inputs = torch.randn((5, 3, 244, 244), dtype=torch.float32)  # (batch size, channel, height, width).
+		inputs = torch.randn((5, 3, 244, 244), dtype=torch.float32)  # (batch size, image channel, image height, image width).
 		outputs = pretrained_model(inputs)
 		print("Inputs:  shape = {}, dtype = {}, (min, max) = ({}, {}).".format(inputs.shape, inputs.dtype, torch.min(inputs), torch.max(inputs)))
 		print("Outputs: shape = {}, dtype = {}, (min, max) = ({}, {}).".format(outputs.shape, outputs.dtype, torch.min(outputs), torch.max(outputs)))
+		if isinstance(feature_dim, list) or isinstance(feature_dim, tuple):
+			assert list(feature_dim) == list(outputs.shape[1:]), "The feature dimension of the pretrained model is not matched, {} != {}".format(feature_dim, list(outputs.shape[1:]))
+		elif isinstance(feature_dim, int):
+			assert [feature_dim] == list(outputs.shape[1:]), "The feature dimension of the pretrained model is not matched, {} != {}".format(feature_dim, list(outputs.shape[1:]))
+		else:
+			raise ValueError("Invalid feature dimension type, {}".format(type(feature_dim)))
 
 	if "user_defined_model" in config:
 		print("User-defined model --------------------------------------------------")
 		print("Processing User-defined models...")
 		start_time = time.time()
-		user_defined_model = construct_user_defined_model(config["user_defined_model"])
+		user_defined_model, output_dim = construct_user_defined_model(config["user_defined_model"])
 		print("User-defined models processed: {} secs.".format(time.time() - start_time))
 
 		print("-----")
 		print(user_defined_model)
+		print("Output dimension = {}.".format(output_dim))
 
 		print("-----")
-		inputs = torch.randn((5, 2048), dtype=torch.float32)  # (batch size, feature dim).
+		# For simple test.
+		#inputs = torch.randn((5, 2048), dtype=torch.float32)  # (batch size, feature dim).
+		# For LeNet5 + MNIST.
+		inputs = torch.randn((5, 1, 28, 28), dtype=torch.float32)  # (batch size, image channel, image height, image width).
 		outputs = user_defined_model(inputs)
 		print("Inputs:  shape = {}, dtype = {}, (min, max) = ({}, {}).".format(inputs.shape, inputs.dtype, torch.min(inputs), torch.max(inputs)))
 		print("Outputs: shape = {}, dtype = {}, (min, max) = ({}, {}).".format(outputs.shape, outputs.dtype, torch.min(outputs), torch.max(outputs)))
+		if isinstance(output_dim, list) or isinstance(output_dim, tuple):
+			assert list(output_dim) == list(outputs.shape[1:]), "The output dimension of the user-defined model is not matched, {} != {}".format(output_dim, list(outputs.shape[1:]))
+		elif isinstance(output_dim, int):
+			assert [output_dim] == list(outputs.shape[1:]), "The output dimension of the user-defined model is not matched, {} != {}".format(output_dim, list(outputs.shape[1:]))
+		else:
+			raise ValueError("Invalid output dimension type, {}".format(type(output_dim)))
 
 	if "optimizer" in config:
 		model = torchvision.models.resnet18()
