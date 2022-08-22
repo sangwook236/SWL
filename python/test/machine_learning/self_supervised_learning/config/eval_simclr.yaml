@@ -40,12 +40,12 @@ evaluation:
     architecture:
       # Linear evaluation.
       - module_type: linear
-        in_features:  2048  # input_dim.
+        in_features: 2048  # input_dim.
         out_features: 10  # num_classes.
         bias: true
       # MLP evaluation.
       #- module_type: linear
-      #  in_features:  2048  # input_dim.
+      #  in_features: 2048  # input_dim.
       #  out_features: 256  # hidden_dim.
       #  bias: true
       #- module_type: batch_norm_1d
@@ -55,7 +55,7 @@ evaluation:
       #- module_type: relu
       #  inplace: true
       #- module_type: linear
-      #  in_features:  256  # hidden_dim.
+      #  in_features: 256  # hidden_dim.
       #  out_features: 10  # num_classes.
       #  bias: true
     output_dim: 2
@@ -64,7 +64,7 @@ evaluation:
     #sgd:
     #  lr: 0.1
     #  momentum: 0.9
-    #  damping: 0.0
+    #  dampening: 0.0
     #  weight_decay: 1.0e-04
     #  nesterov: true
     adam:

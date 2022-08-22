@@ -350,22 +350,6 @@ def main():
 		raise
 
 	#--------------------
-	logger = utils.get_logger(args.log if args.log else os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, args.log_dir if args.log_dir else args.out_dir, is_rotating=True)
-	logger.info('----------------------------------------------------------------------')
-	logger.info('Logger: name = {}, level = {}.'.format(logger.name, logger.level))
-	logger.info('Command-line arguments: {}.'.format(sys.argv))
-	logger.info('Command-line options: {}.'.format(vars(args)))
-	logger.info('Configuration: {}.'.format(config))
-	logger.info('Python: version = {}.'.format(sys.version.replace('\n', ' ')))
-	logger.info('Torch: version = {}, distributed = {} & {}.'.format(torch.__version__, 'available' if torch.distributed.is_available() else 'unavailable', 'initialized' if torch.distributed.is_initialized() else 'uninitialized'))
-	logger.info('PyTorch Lightning: version = {}, distributed = {}.'.format(pl.__version__, 'available' if pl.utilities.distributed.distributed_available() else 'unavailable'))
-	logger.info('CUDA: version = {}, {}.'.format(torch.version.cuda, 'available' if torch.cuda.is_available() else 'unavailable'))
-	logger.info('cuDNN: version = {}.'.format(torch.backends.cudnn.version()))
-
-	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-	logger.info('Device: {}.'.format(device))
-
-	#--------------------
 	assert ('evaluation' == config['stage']) if isinstance(config['stage'], str) else ('evaluation' in config['stage']), 'Invalid stage(s), {}'.format(config['stage'])
 	#config['ssl_type'] = config.get('ssl_type', 'simclr')
 	assert config['ssl_type'] in ['byol', 'relic', 'simclr', 'simsiam'], 'Invalid SSL model, {}'.format(config['ssl_type'])
@@ -382,6 +366,22 @@ def main():
 		output_dir_path = os.path.join('.', '{}_eval_outputs_{}'.format(config['ssl_type'], timestamp))
 	if output_dir_path and output_dir_path.strip() and not os.path.isdir(output_dir_path):
 		os.makedirs(output_dir_path, exist_ok=True)
+
+	#--------------------
+	logger = utils.get_logger(args.log if args.log else os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, args.log_dir if args.log_dir else output_dir_path, is_rotating=True)
+	logger.info('----------------------------------------------------------------------')
+	logger.info('Logger: name = {}, level = {}.'.format(logger.name, logger.level))
+	logger.info('Command-line arguments: {}.'.format(sys.argv))
+	logger.info('Command-line options: {}.'.format(vars(args)))
+	logger.info('Configuration: {}.'.format(config))
+	logger.info('Python: version = {}.'.format(sys.version.replace('\n', ' ')))
+	logger.info('Torch: version = {}, distributed = {} & {}.'.format(torch.__version__, 'available' if torch.distributed.is_available() else 'unavailable', 'initialized' if torch.distributed.is_initialized() else 'uninitialized'))
+	logger.info('PyTorch Lightning: version = {}, distributed = {}.'.format(pl.__version__, 'available' if pl.utilities.distributed.distributed_available() else 'unavailable'))
+	logger.info('CUDA: version = {}, {}.'.format(torch.version.cuda, 'available' if torch.cuda.is_available() else 'unavailable'))
+	logger.info('cuDNN: version = {}.'.format(torch.backends.cudnn.version()))
+
+	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+	logger.info('Device: {}.'.format(device))
 
 	logger.info('Output directory path: {}.'.format(output_dir_path))
 

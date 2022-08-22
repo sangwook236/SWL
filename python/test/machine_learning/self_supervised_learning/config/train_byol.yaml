@@ -93,7 +93,7 @@ training:
     #sgd:
     #  lr: 0.1
     #  momentum: 0.9
-    #  damping: 0.0
+    #  dampening: 0.0
     #  weight_decay: 1.0e-04
     #  nesterov: true
     adam:

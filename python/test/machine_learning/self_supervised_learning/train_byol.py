@@ -36,19 +36,6 @@ def main():
 		raise
 
 	#--------------------
-	logger = utils.get_logger(args.log if args.log else os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, args.log_dir if args.log_dir else args.out_dir, is_rotating=True)
-	logger.info('----------------------------------------------------------------------')
-	logger.info('Logger: name = {}, level = {}.'.format(logger.name, logger.level))
-	logger.info('Command-line arguments: {}.'.format(sys.argv))
-	logger.info('Command-line options: {}.'.format(vars(args)))
-	logger.info('Configuration: {}.'.format(config))
-	logger.info('Python: version = {}.'.format(sys.version.replace('\n', ' ')))
-	logger.info('Torch: version = {}, distributed = {} & {}.'.format(torch.__version__, 'available' if torch.distributed.is_available() else 'unavailable', 'initialized' if torch.distributed.is_initialized() else 'uninitialized'))
-	logger.info('PyTorch Lightning: version = {}, distributed = {}.'.format(pl.__version__, 'available' if pl.utilities.distributed.distributed_available() else 'unavailable'))
-	logger.info('CUDA: version = {}, {}.'.format(torch.version.cuda, 'available' if torch.cuda.is_available() else 'unavailable'))
-	logger.info('cuDNN: version = {}.'.format(torch.backends.cudnn.version()))
-
-	#--------------------
 	assert ('training' == config['stage']) if isinstance(config['stage'], str) else ('training' in config['stage']), 'Invalid stage(s), {}'.format(config['stage'])
 	#config['ssl_type'] = config.get('ssl_type', 'byol')
 	assert config['ssl_type'] == 'byol', 'Only BYOL model is supported, but got {}'.format(config['ssl_type'])
@@ -56,7 +43,6 @@ def main():
 
 	model_filepath_to_load = os.path.normpath(args.model_file) if args.model_file else None
 	assert model_filepath_to_load is None or os.path.isfile(model_filepath_to_load), 'Model file not found, {}'.format(model_filepath_to_load)
-	#if model_filepath_to_load: logger.info('Model filepath to load: {}.'.format(model_filepath_to_load))
 
 	#if pl.utilities.distributed.rank_zero_only.rank == 0:
 	if True:
@@ -68,14 +54,28 @@ def main():
 			output_dir_path = os.path.join('.', '{}_train_outputs_{}'.format(config['ssl_type'], timestamp))
 		if output_dir_path and output_dir_path.strip() and not os.path.isdir(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
-
-		logger.info('Output directory path: {}.'.format(output_dir_path))
 	else:
 		output_dir_path = None
 
-	#is_resumed = args.model_file is not None
+	#--------------------
+	logger = utils.get_logger(args.log if args.log else os.path.basename(os.path.normpath(__file__)), args.log_level if args.log_level else logging.INFO, args.log_dir if args.log_dir else output_dir_path, is_rotating=True)
+	logger.info('----------------------------------------------------------------------')
+	logger.info('Logger: name = {}, level = {}.'.format(logger.name, logger.level))
+	logger.info('Command-line arguments: {}.'.format(sys.argv))
+	logger.info('Command-line options: {}.'.format(vars(args)))
+	logger.info('Configuration: {}.'.format(config))
+	logger.info('Python: version = {}.'.format(sys.version.replace('\n', ' ')))
+	logger.info('Torch: version = {}, distributed = {} & {}.'.format(torch.__version__, 'available' if torch.distributed.is_available() else 'unavailable', 'initialized' if torch.distributed.is_initialized() else 'uninitialized'))
+	logger.info('PyTorch Lightning: version = {}, distributed = {}.'.format(pl.__version__, 'available' if pl.utilities.distributed.distributed_available() else 'unavailable'))
+	logger.info('CUDA: version = {}, {}.'.format(torch.version.cuda, 'available' if torch.cuda.is_available() else 'unavailable'))
+	logger.info('cuDNN: version = {}.'.format(torch.backends.cudnn.version()))
+
+	logger.info('Output directory path: {}.'.format(output_dir_path))
+	#if model_filepath_to_load: logger.info('Model filepath to load: {}.'.format(model_filepath_to_load))
 
 	#--------------------
+	#is_resumed = args.model_file is not None
+
 	try:
 		config_data = config['data']
 		config_model = config['model']
