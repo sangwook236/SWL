@@ -20,7 +20,7 @@ def build_simclr(config, augmenter1, augmenter2, logger=None):
 	if 'pretrained_model' in config_model:
 		encoder, encoder_feature_dim = utils.construct_pretrained_model(config_model['pretrained_model'])
 	else:
-		raise ValueError('No encoder is specified')
+		raise ValueError('No encoder specified')
 	if True:
 		projector = utils.MLP(encoder_feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
 	else:

@@ -19,52 +19,38 @@ transforms:
 
 pretrained_model:
   #resnet18:
-  #  feature_layer: avgpool
-  #  feature_dim: 512
-  #  pretrained: true
   #resnet34:
   #  feature_layer: avgpool
   #  feature_dim: 512
   #  pretrained: true
   resnet50:
+  #resnet101:
+  #resnet152:
+  #resnext50:
+  #resnext101:
+  #wide_resnet50:
+  #wide_resnet101:
     feature_layer: avgpool
     feature_dim: 2048
     pretrained: true
-  #resnext50:
-  #  feature_layer: avgpool
-  #  feature_dim: 2048
-  #  pretrained: true
-  #resnext101:
-  #  feature_layer: avgpool
-  #  feature_dim: 2048
-  #  pretrained: true
-  #wide_resnet50:
-  #  feature_layer: avgpool
-  #  feature_dim: 2048
-  #  pretrained: true
-  #wide_resnet101:
-  #  feature_layer: avgpool
-  #  feature_dim: 2048
-  #  pretrained: true
 
 user_defined_model:
   # For simple test.
   #architecture:
   #  - module_type: linear
-  #    in_features: 2048  # input_dim.
-  #    out_features: 256  # hidden_dim.
+  #    in_features: 2048
+  #    out_features: 256
   #    bias: true
   #  - module_type: batch_norm_1d
-  #    num_features: 256  # hidden_dim.
+  #    num_features: 256
   #    eps: 1.0e-05
   #    momentum: 0.1
   #  - module_type: relu
   #    inplace: true
   #  - module_type: linear
-  #    in_features: 256  # hidden_dim.
-  #    out_features: 10  # num_classes.
+  #    in_features: 256
+  #    out_features: 10
   #    bias: true
-  #output_dim: 10
   # For LeNet5 + MNIST.
   architecture:
     - module_type: conv_2d

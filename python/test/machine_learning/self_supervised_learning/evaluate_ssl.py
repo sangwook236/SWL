@@ -26,18 +26,25 @@ class ClassificationModule(pl.LightningModule):
 		if 'user_defined_model' in config:
 			self.model, classifier_output_dim = utils.construct_user_defined_model(config['user_defined_model'])
 			assert classifier_output_dim == num_classes, 'The output dimension ({}) of the user-defined model does not match the number of classes ({})'.format(classifier_output_dim, num_classes)
-		else:
-			if True:
+		elif 'predefined_model' in config:
+			predefined_model_name = config['predefined_model'].get('model_name', 'linear')
+			classifier_input_dim = config['predefined_model']['input_dim']
+			if predefined_model_name == 'linear':
 				# Linear classifier.
-				self.model = torch.nn.Linear(config['input_dim'], num_classes)
-			else:
+				self.model = torch.nn.Linear(classifier_input_dim, num_classes)
+			elif predefined_model_name == 'mlp':
 				# MLP classifier.
+				classifier_hidden_dim = config['predefined_model'].get('hidden_dim', 128)
 				self.model = torch.nn.Sequential(
-					torch.nn.Linear(config['input_dim'], hidden_dim),
-					torch.nn.BatchNorm1d(hidden_dim),
+					torch.nn.Linear(classifier_input_dim, classifier_hidden_dim),
+					torch.nn.BatchNorm1d(classifier_hidden_dim),
 					torch.nn.ReLU(inplace=True),
-					torch.nn.Linear(hidden_dim, num_classes),
+					torch.nn.Linear(classifier_hidden_dim, num_classes),
 				)
+			else:
+				raise ValueError('Invalid classifier model name, {}'.format(predefined_model_name))
+		else:
+			raise ValueError('No classifier specified')
 
 		# Define a loss.
 		self.criterion = torch.nn.NLLLoss(reduction='mean')
