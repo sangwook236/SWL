@@ -18,7 +18,7 @@ def build_simclr(config, augmenter1, augmenter2, logger=None):
 	config_training = config['training']
 
 	if 'pretrained_model' in config_model:
-		encoder, encoder_feature_dim = utils.construct_pretrained_model(config_model['pretrained_model'])
+		encoder, encoder_feature_dim = utils.construct_pretrained_model(config_model['pretrained_model'], output_dim=None)
 	else:
 		raise ValueError('No encoder specified')
 	if True:
@@ -36,7 +36,7 @@ def build_byol(config, augmenter1, augmenter2, logger=None):
 	config_training = config['training']
 
 	if 'pretrained_model' in config_model:
-		encoder, encoder_feature_dim = utils.construct_pretrained_model(config_model['pretrained_model'])
+		encoder, encoder_feature_dim = utils.construct_pretrained_model(config_model['pretrained_model'], output_dim=None)
 	else:
 		raise ValueError('No encoder is specified')
 	if config_training.get('is_momentum_encoder_used', True):
@@ -55,7 +55,7 @@ def build_relic(config, augmenter1, augmenter2, logger=None):
 	config_training = config['training']
 
 	if 'pretrained_model' in config_model:
-		encoder, encoder_feature_dim = utils.construct_pretrained_model(config_model['pretrained_model'])
+		encoder, encoder_feature_dim = utils.construct_pretrained_model(config_model['pretrained_model'], output_dim=None)
 	else:
 		raise ValueError('No encoder is specified')
 	if config_training.get('is_momentum_encoder_used', True):
@@ -74,7 +74,7 @@ def build_simsiam(config, augmenter1, augmenter2, logger=None):
 	config_training = config['training']
 
 	if 'pretrained_model' in config_model:
-		encoder, encoder_feature_dim = utils.construct_pretrained_model(config_model['pretrained_model'])
+		encoder, encoder_feature_dim = utils.construct_pretrained_model(config_model['pretrained_model'], output_dim=None)
 	else:
 		raise ValueError('No encoder is specified')
 	projector = utils.SimSiamMLP(encoder_feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])

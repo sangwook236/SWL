@@ -149,23 +149,22 @@ def pytorch_ml_config_test():
 		return torchvision.transforms.Compose(transforms)
 
 	class ModelWrapper(torch.nn.Module):
-		def __init__(self, model, layer_name):
+		def __init__(self, model, layer_name, feature_dim=None, output_dim=None):
 			super().__init__()
 
 			assert layer_name in model._modules.keys(), "Layer name, {} not found in model".format(layer_name)
 			self.model = model
 			self.layer_name = layer_name
-			#self.linear = torch.nn.Linear(feature_dim, output_dim)
+			self.generator = torch.nn.Linear(feature_dim, output_dim) if feature_dim is not None and output_dim is not None else None
 
 		def forward(self, x):
 			for name, module in self.model._modules.items():
 				x = module(x)
 				if name == self.layer_name:
-					return x.view(x.size(0), -1)
-					#return self.linear(x.view(x.size(0), -1))
+					return x.view(x.size(0), -1) if self.generator is None else self.generator(x.view(x.size(0), -1))
 			return None
 
-	def construct_pretrained_model(config, *args, **kwargs):
+	def construct_pretrained_model(config, output_dim=None, *args, **kwargs):
 		PRETRAINED_MODELS = {
 			"resnet18": torchvision.models.resnet18,
 			"resnet34": torchvision.models.resnet34,
@@ -183,12 +182,12 @@ def pytorch_ml_config_test():
 			if name in PRETRAINED_MODELS:
 				feature_layer = config[name].pop("feature_layer", "avgpool")
 				feature_dim = config[name].pop("feature_dim", 0)
-				return ModelWrapper(PRETRAINED_MODELS[name](**config[name]), layer_name=feature_layer), feature_dim
+				return ModelWrapper(PRETRAINED_MODELS[name](**config[name]), layer_name=feature_layer, feature_dim=feature_dim, output_dim=output_dim), feature_dim
 			elif hasattr(torchvision.models, name):
 				pretrained_model = getattr(torchvision.models, name)
 				feature_layer = config[name].pop("feature_layer", "avgpool")
 				feature_dim = config[name].pop("feature_dim", 0)
-				return ModelWrapper(pretrained_model(**config[name]), layer_name=feature_layer), feature_dim
+				return ModelWrapper(pretrained_model(**config[name]), layer_name=feature_layer, feature_dim=feature_dim, output_dim=output_dim), feature_dim
 			else:
 				raise ValueError("Unsupported pretrained model, {}".format(name))
 		raise ValueError("Invalid pretrained model, {}".format(config))
@@ -442,7 +441,7 @@ def pytorch_ml_config_test():
 		print("Pretrained model --------------------------------------------------")
 		print("Processing Pretrained models...")
 		start_time = time.time()
-		pretrained_model, feature_dim = construct_pretrained_model(config["pretrained_model"])
+		pretrained_model, feature_dim = construct_pretrained_model(config["pretrained_model"], output_dim=None)
 		print("Pretrained models processed: {} secs.".format(time.time() - start_time))
 
 		print("-----")

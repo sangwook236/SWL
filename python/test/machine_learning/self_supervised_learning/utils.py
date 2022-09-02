@@ -432,20 +432,19 @@ def create_simclr_augmenter(image_height, image_width, normalization_mean, norma
 
 # REF [class] >> ModelWrapper class in ${SWL_PYTHON_HOME}/test/machine_learning/config_test.py.
 class ModelWrapper(torch.nn.Module):
-	def __init__(self, model, layer_name):
+	def __init__(self, model, layer_name, feature_dim=None, output_dim=None):
 		super().__init__()
 
 		assert layer_name in model._modules.keys(), "Layer name, {} not found in model".format(layer_name)
 		self.model = model
 		self.layer_name = layer_name
-		#self.linear = torch.nn.Linear(feature_dim, output_dim)
+		self.generator = torch.nn.Linear(feature_dim, output_dim) if feature_dim is not None and output_dim is not None else None
 
 	def forward(self, x):
 		for name, module in self.model._modules.items():
 			x = module(x)
 			if name == self.layer_name:
-				return x.view(x.size(0), -1)
-				#return self.linear(x.view(x.size(0), -1))
+				return x.view(x.size(0), -1) if self.generator is None else self.generator(x.view(x.size(0), -1))
 		return None
 
 # REF [site] >> https://github.com/lucidrains/byol-pytorch/blob/master/byol_pytorch/byol_pytorch.py
@@ -515,7 +514,7 @@ def load_ssl(ssl_type, model_filepath):
 	return ssl_model
 
 # REF [function] >> construct_pretrained_model() in ${SWL_PYTHON_HOME}/test/machine_learning/config_test.py.
-def construct_pretrained_model(config, *args, **kwargs):
+def construct_pretrained_model(config, output_dim=None, *args, **kwargs):
 	PRETRAINED_MODELS = {
 		"resnet18": torchvision.models.resnet18,
 		"resnet34": torchvision.models.resnet34,
@@ -533,12 +532,12 @@ def construct_pretrained_model(config, *args, **kwargs):
 		if name in PRETRAINED_MODELS:
 			feature_layer = config[name].pop("feature_layer", "avgpool")
 			feature_dim = config[name].pop("feature_dim", 0)
-			return ModelWrapper(PRETRAINED_MODELS[name](**config[name]), layer_name=feature_layer), feature_dim
+			return ModelWrapper(PRETRAINED_MODELS[name](**config[name]), layer_name=feature_layer, feature_dim=feature_dim, output_dim=output_dim), feature_dim
 		elif hasattr(torchvision.models, name):
 			pretrained_model = getattr(torchvision.models, name)
 			feature_layer = config[name].pop("feature_layer", "avgpool")
 			feature_dim = config[name].pop("feature_dim", 0)
-			return ModelWrapper(pretrained_model(**config[name]), layer_name=feature_layer), feature_dim
+			return ModelWrapper(pretrained_model(**config[name]), layer_name=feature_layer, feature_dim=feature_dim, output_dim=output_dim), feature_dim
 		else:
 			raise ValueError("Unsupported pretrained model, {}".format(name))
 	raise ValueError("Invalid pretrained model, {}".format(config))
