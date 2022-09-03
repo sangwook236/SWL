@@ -11,24 +11,6 @@ import pytorch_lightning as pl
 import yaml
 import utils
 
-def build_simclr(config, augmenter1, augmenter2, logger=None):
-	import model_simclr
-
-	config_model = config['model']
-	config_training = config['training']
-
-	if 'pretrained_model' in config_model:
-		encoder, encoder_feature_dim = utils.construct_pretrained_model(config_model['pretrained_model'], output_dim=None)
-	else:
-		raise ValueError('No encoder specified')
-	if True:
-		projector = utils.MLP(encoder_feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
-	else:
-		projector = utils.SimSiamMLP(encoder_feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
-	ssl_model = model_simclr.SimclrModule(config_training, encoder, projector, augmenter1, augmenter2, logger)
-
-	return ssl_model
-
 def build_byol(config, augmenter1, augmenter2, logger=None):
 	import model_byol
 
@@ -37,14 +19,15 @@ def build_byol(config, augmenter1, augmenter2, logger=None):
 
 	if 'pretrained_model' in config_model:
 		encoder, encoder_feature_dim = utils.construct_pretrained_model(config_model['pretrained_model'], output_dim=None)
+		is_model_initialized = False
 	else:
-		raise ValueError('No encoder is specified')
+		raise ValueError('No encoder specified')
 	if config_training.get('is_momentum_encoder_used', True):
 		projector = utils.MLP(encoder_feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
 	else:
 		projector = utils.SimSiamMLP(encoder_feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
 	predictor = utils.MLP(config_model['projector_output_dim'], config_model['predictor_output_dim'], config_model['predictor_hidden_dim'])
-	ssl_model = model_byol.ByolModule(config_training, encoder, projector, predictor, augmenter1, augmenter2, logger)
+	ssl_model = model_byol.ByolModule(config_training, encoder, projector, predictor, augmenter1, augmenter2, is_model_initialized, logger)
 
 	return ssl_model
 
@@ -56,14 +39,34 @@ def build_relic(config, augmenter1, augmenter2, logger=None):
 
 	if 'pretrained_model' in config_model:
 		encoder, encoder_feature_dim = utils.construct_pretrained_model(config_model['pretrained_model'], output_dim=None)
+		is_model_initialized = False
 	else:
-		raise ValueError('No encoder is specified')
+		raise ValueError('No encoder specified')
 	if config_training.get('is_momentum_encoder_used', True):
 		projector = utils.MLP(encoder_feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
 	else:
 		projector = utils.SimSiamMLP(encoder_feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
 	predictor = utils.MLP(config_model['projector_output_dim'], config_model['predictor_output_dim'], config_model['predictor_hidden_dim'])
-	ssl_model = model_relic.RelicModule(config_training, encoder, projector, predictor, augmenter1, augmenter2, logger)
+	ssl_model = model_relic.RelicModule(config_training, encoder, projector, predictor, augmenter1, augmenter2, is_model_initialized, logger)
+
+	return ssl_model
+
+def build_simclr(config, augmenter1, augmenter2, logger=None):
+	import model_simclr
+
+	config_model = config['model']
+	config_training = config['training']
+
+	if 'pretrained_model' in config_model:
+		encoder, encoder_feature_dim = utils.construct_pretrained_model(config_model['pretrained_model'], output_dim=None)
+		is_model_initialized = False
+	else:
+		raise ValueError('No encoder specified')
+	if True:
+		projector = utils.MLP(encoder_feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
+	else:
+		projector = utils.SimSiamMLP(encoder_feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
+	ssl_model = model_simclr.SimclrModule(config_training, encoder, projector, augmenter1, augmenter2, is_model_initialized, logger)
 
 	return ssl_model
 
@@ -75,11 +78,12 @@ def build_simsiam(config, augmenter1, augmenter2, logger=None):
 
 	if 'pretrained_model' in config_model:
 		encoder, encoder_feature_dim = utils.construct_pretrained_model(config_model['pretrained_model'], output_dim=None)
+		is_model_initialized = False
 	else:
-		raise ValueError('No encoder is specified')
+		raise ValueError('No encoder specified')
 	projector = utils.SimSiamMLP(encoder_feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
 	predictor = utils.MLP(config_model['projector_output_dim'], config_model['predictor_output_dim'], config_model['predictor_hidden_dim'])
-	ssl_model = model_simsiam.SimSiamModule(config_training, encoder, projector, predictor, augmenter1, augmenter2, logger)
+	ssl_model = model_simsiam.SimSiamModule(config_training, encoder, projector, predictor, augmenter1, augmenter2, is_model_initialized, logger)
 
 	return ssl_model
 

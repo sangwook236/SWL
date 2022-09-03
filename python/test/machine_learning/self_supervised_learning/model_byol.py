@@ -6,7 +6,7 @@ import utils
 
 # REF [site] >> https://github.com/lucidrains/byol-pytorch/blob/master/byol_pytorch/byol_pytorch.py
 class ByolModule(pl.LightningModule):
-	def __init__(self, config, encoder, projector, predictor, augmenter1, augmenter2, logger=None):
+	def __init__(self, config, encoder, projector, predictor, augmenter1, augmenter2, is_model_initialized=True, logger=None):
 		super().__init__()
 		#self.save_hyperparameters()  # UserWarning: Attribute 'encoder' is an instance of 'nn.Module' and is already saved during checkpointing.
 		self.save_hyperparameters(ignore=['encoder', 'projector', 'predictor' , 'augmenter1', 'augmenter2'])
@@ -23,7 +23,7 @@ class ByolModule(pl.LightningModule):
 		self.moving_average_decay = config.get('moving_average_decay', 0.0) if config else 0.0
 
 		#-----
-		if config and config.get('is_model_initialized', True):
+		if is_model_initialized:
 			# Initialize model weights.
 			for name, param in self.online_model.named_parameters():
 				try:

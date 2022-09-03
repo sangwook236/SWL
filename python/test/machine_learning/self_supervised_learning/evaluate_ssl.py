@@ -26,6 +26,7 @@ class ClassificationModule(pl.LightningModule):
 		if 'user_defined_model' in config:
 			self.model, classifier_output_dim = utils.construct_user_defined_model(config['user_defined_model'])
 			assert classifier_output_dim == num_classes, 'The output dimension ({}) of the user-defined model does not match the number of classes ({})'.format(classifier_output_dim, num_classes)
+			is_model_initialized = True
 		elif 'predefined_model' in config:
 			predefined_model_name = config['predefined_model'].get('model_name', 'linear')
 			classifier_input_dim = config['predefined_model']['input_dim']
@@ -43,6 +44,7 @@ class ClassificationModule(pl.LightningModule):
 				)
 			else:
 				raise ValueError('Invalid classifier model name, {}'.format(predefined_model_name))
+			is_model_initialized = True
 		else:
 			raise ValueError('No classifier specified')
 
@@ -51,22 +53,23 @@ class ClassificationModule(pl.LightningModule):
 		#self.criterion = torch.nn.CrossEntropyLoss(reduction='mean')
 
 		#-----
-		# Initialize model weights.
-		for name, param in self.model.named_parameters():
-			try:
-				if 'bias' in name:
-					torch.nn.init.constant_(param, 0.0)
-				elif 'weight' in name:
-					torch.nn.init.kaiming_normal_(param)
-			except Exception as ex:  # For batch normalization.
-				if 'weight' in name:
-					param.data.fill_(1)
-				continue
-		'''
-		for param in self.model.parameters():
-			if param.dim() > 1:
-				torch.nn.init.xavier_uniform_(param)  # Initialize parameters with Glorot / fan_avg.
-		'''
+		if is_model_initialized:
+			# Initialize model weights.
+			for name, param in self.model.named_parameters():
+				try:
+					if 'bias' in name:
+						torch.nn.init.constant_(param, 0.0)
+					elif 'weight' in name:
+						torch.nn.init.kaiming_normal_(param)
+				except Exception as ex:  # For batch normalization.
+					if 'weight' in name:
+						param.data.fill_(1)
+					continue
+			'''
+			for param in self.model.parameters():
+				if param.dim() > 1:
+					torch.nn.init.xavier_uniform_(param)  # Initialize parameters with Glorot / fan_avg.
+			'''
 
 	def configure_optimizers(self):
 		if self.is_all_model_params_optimized:

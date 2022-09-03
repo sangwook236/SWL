@@ -77,7 +77,6 @@ training:
   epochs: 100
   #eval_every: 10
 
-  is_model_initialized: false  # false if a pretrained encoder is used.
   is_all_model_params_optimized: true
 
   #max_gradient_norm: 20.0

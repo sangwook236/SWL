@@ -89,16 +89,20 @@ def main():
 		train_dataloader, test_dataloader, _ = utils.prepare_open_data(config_data, show_info=True, show_data=False, logger=logger)
 
 		# Build a model.
-		encoder, feature_dim = utils.construct_pretrained_model(config_model['encoder'], output_dim=None)
-		if config_training.get('is_momentum_encoder_used', True):
-			projector = utils.MLP(feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
+		if 'pretrained_model' in config_model:
+			encoder, encoder_feature_dim = utils.construct_pretrained_model(config_model['pretrained_model'], output_dim=None)
+			is_model_initialized = False
 		else:
-			projector = utils.SimSiamMLP(feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
+			raise ValueError('No encoder specified')
+		if config_training.get('is_momentum_encoder_used', True):
+			projector = utils.MLP(encoder_feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
+		else:
+			projector = utils.SimSiamMLP(encoder_feature_dim, config_model['projector_output_dim'], config_model['projector_hidden_dim'])
 		predictor = utils.MLP(config_model['projector_output_dim'], config_model['predictor_output_dim'], config_model['predictor_hidden_dim'])
 
 		logger.info('Building a BYOL model...')
 		start_time = time.time()
-		ssl_model = model_byol.ByolModule(config_training, encoder, projector, predictor, ssl_augmenter, ssl_augmenter, logger)
+		ssl_model = model_byol.ByolModule(config_training, encoder, projector, predictor, ssl_augmenter, ssl_augmenter, is_model_initialized, logger)
 		logger.info('A BYOL model built: {} secs.'.format(time.time() - start_time))
 
 		# Train the model.
