@@ -97,21 +97,21 @@ evaluation:
 
   lr_scheduler:
     #step:
-    #  step_size: 200
+    #  step_size: 10
     #  gamma: 0.1
     #multi_step:
-    #  milestones: [200, 400, 600, 800]
+    #  milestones: [10, 20]
     #  gamma: 0.1
     #cosine_annealing:
     #  T_max: null  # epochs.
     #  eta_min: 0.0
     cosine_warmup:
       T_max: null  # epochs.
-      T_warmup: 20
+      T_warmup: 5
     #cosine_restart:
-    #  T_0: 100
+    #  T_0: 15
     #  T_mult: 1
-    #  T_up: 10
+    #  T_up: 5
     #  eta_max: 0.1  # eta_max > eta_init or eta_min.
     #  gamma: 1.0
     #noam:  # For transformer. Step-based.
