@@ -712,10 +712,10 @@ def construct_lr_scheduler(config, optimizer, num_epochs, *args, **kwargs):
 def train(config, model, train_dataloader, test_dataloader, output_dir_path, model_filepath_to_load, logger=None):
 	# Create a trainer.
 	checkpoint_callback = pl.callbacks.ModelCheckpoint(
-		dirpath=(output_dir_path + "/checkpoints") if output_dir_path else "./checkpoints",
+		dirpath=(output_dir_path + "/checkpoints") if output_dir_path else None,
 		filename="model-{epoch:03d}-{step:05d}-{val_acc:.5f}-{val_loss:.5f}",
-		monitor="val_loss",
-		mode="min",
+		#monitor="val_acc", mode="max",
+		monitor="val_loss", mode="min",
 		save_top_k=5,
 	)
 	if config.get("swa", False):
