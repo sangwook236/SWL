@@ -719,7 +719,7 @@ def train(config, model, train_dataloader, test_dataloader, output_dir_path, mod
 		save_top_k=5,
 	)
 	if config.get("swa", False):
-		swa_callback = pl.callbacks.StochasticWeightAveraging(swa_epoch_start=0.8, swa_lrs=None, annealing_epochs=2, annealing_strategy="cos", avg_fn=None)
+		swa_callback = pl.callbacks.StochasticWeightAveraging(swa_lrs=0.1, swa_epoch_start=0.8, annealing_epochs=2, annealing_strategy="cos", avg_fn=None)
 		pl_callbacks = [checkpoint_callback, swa_callback]
 	else:
 		pl_callbacks = [checkpoint_callback]
@@ -796,9 +796,9 @@ def infer(model, data_iter, use_projector=False, use_predictor=False, device="cu
 	from tqdm import tqdm
 
 	model = model.to(device)
+
 	model.eval()
 	model.freeze()
-
 	with torch.no_grad():
 		predictions = list()
 		for inputs in tqdm(data_iter):

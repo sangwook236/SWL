@@ -159,11 +159,11 @@ class FeatureDataset(torch.utils.data.Dataset):
 		super().__init__()
 
 		model = model.to(device)
-		model.eval()
-		model.freeze()
 
 		if logger: logger.info('Extracting features...')
 		start_time = time.time()
+		model.eval()
+		model.freeze()
 		with torch.no_grad():
 			self.srcs, self.tgts = extract_features(model, dataloader, use_projector, use_predictor, device)
 		if logger: logger.info('Features extracted: {} secs.'.format(time.time() - start_time))
@@ -187,11 +187,11 @@ class FeatureIterableDataset(torch.utils.data.IterableDataset):
 
 	def __iter__(self):
 		self.model = self.model.to(self.device)
-		self.model.eval()
-		self.model.freeze()
 
 		if self.logger: self.logger.info('Extracting features...')
 		start_time = time.time()
+		self.model.eval()
+		self.model.freeze()
 		with torch.no_grad():
 			srcs, tgts = extract_features(self.model, self.dataloader, self.use_projector, self.use_predictor, self.device)
 		if self.logger: self.logger.info('Features extracted: {} secs.'.format(time.time() - start_time))
@@ -297,10 +297,11 @@ def evaluate(config, train_feature_dataloader, test_feature_dataloader, num_clas
 	#--------------------
 	# Evaluate.
 	classifier = classifier.to(device)
-	classifier.eval()
-	classifier.freeze()
 
 	if logger: logger.info('Evaluating...')
+	start_time = time.time()
+	classifier.eval()
+	classifier.freeze()
 	with torch.no_grad():
 		gts, predictions = list(), list()
 		for batch_inputs, batch_outputs in tqdm(test_feature_dataloader):
@@ -425,11 +426,11 @@ def main():
 
 			# Extract features.
 			ssl_model = ssl_model.to(device)
-			ssl_model.eval()
-			ssl_model.freeze()
 
 			logger.info('Extracting features...')
 			start_time = time.time()
+			ssl_model.eval()
+			ssl_model.freeze()
 			with torch.no_grad():
 				train_input_features, train_outputs = extract_features(ssl_model, train_dataloader, use_projector, use_predictor, device)
 				test_input_features, test_outputs = extract_features(ssl_model, test_dataloader, use_projector, use_predictor, device)
