@@ -264,7 +264,7 @@ def evaluate(config, train_feature_dataloader, test_feature_dataloader, num_clas
 
 	# Create a trainer.
 	checkpoint_callback = pl.callbacks.ModelCheckpoint(
-		dirpath=(output_dir_path + '/checkpoints') if output_dir_path else './checkpoints',
+		dirpath=os.path.join(output_dir_path, 'checkpoints') if output_dir_path else './checkpoints',
 		filename='classifier-{epoch:03d}-{step:05d}-{val_acc:.5f}-{val_loss:.5f}',
 		monitor='val_loss',
 		mode='min',

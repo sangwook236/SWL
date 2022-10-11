@@ -90,6 +90,7 @@ def main():
 
 		# Build a model.
 		if 'pretrained_model' in config_model:
+			logger.info('Pretraind model specified.')
 			encoder, encoder_feature_dim = utils.construct_pretrained_model(config_model['pretrained_model'], output_dim=None)
 			is_model_initialized = False
 		else:

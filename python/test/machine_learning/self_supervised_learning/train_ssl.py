@@ -18,6 +18,7 @@ def build_byol(config, augmenter1, augmenter2, logger=None):
 	config_training = config['training']
 
 	if 'pretrained_model' in config_model:
+		if logger: logger.info('Pretraind model specified.')
 		encoder, encoder_feature_dim = utils.construct_pretrained_model(config_model['pretrained_model'], output_dim=None)
 		is_model_initialized = False
 	else:
@@ -38,6 +39,7 @@ def build_relic(config, augmenter1, augmenter2, logger=None):
 	config_training = config['training']
 
 	if 'pretrained_model' in config_model:
+		if logger: logger.info('Pretraind model specified.')
 		encoder, encoder_feature_dim = utils.construct_pretrained_model(config_model['pretrained_model'], output_dim=None)
 		is_model_initialized = False
 	else:
@@ -58,6 +60,7 @@ def build_simclr(config, augmenter1, augmenter2, logger=None):
 	config_training = config['training']
 
 	if 'pretrained_model' in config_model:
+		if logger: logger.info('Pretraind model specified.')
 		encoder, encoder_feature_dim = utils.construct_pretrained_model(config_model['pretrained_model'], output_dim=None)
 		is_model_initialized = False
 	else:
@@ -77,6 +80,7 @@ def build_simsiam(config, augmenter1, augmenter2, logger=None):
 	config_training = config['training']
 
 	if 'pretrained_model' in config_model:
+		if logger: logger.info('Pretraind model specified.')
 		encoder, encoder_feature_dim = utils.construct_pretrained_model(config_model['pretrained_model'], output_dim=None)
 		is_model_initialized = False
 	else:
