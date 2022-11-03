@@ -367,7 +367,7 @@ def main():
 	assert config['data']['dataset'] in ['cifar10', 'imagenet', 'mnist'], 'Invalid dataset, {}'.format(config['data']['dataset'])
 
 	model_filepath_to_load = os.path.normpath(args.model_file) if args.model_file else None
-	assert model_filepath_to_load is None or os.path.isfile(model_filepath_to_load), 'Model file not found, {}'.format(model_filepath_to_load)
+	assert model_filepath_to_load is not None and os.path.isfile(model_filepath_to_load), 'Model file not found, {}'.format(model_filepath_to_load)
 
 	output_dir_path = os.path.normpath(args.out_dir) if args.out_dir else None
 	#if model_filepath_to_load and not output_dir_path:
