@@ -121,6 +121,27 @@ def main():
 				predictions = utils.infer(ssl_model, create_data_generator(dataset, config_data['batch_size'], config_data['num_workers']), use_projector, use_predictor, device)
 				logger.info("Inferred: {} secs.".format(time.time() - start_time))
 				logger.info("Prediction: shape = {}, dtype = {}, (min, max) = ({}, {}).".format(predictions.shape, predictions.dtype, np.min(predictions), np.max(predictions)))
+
+				if False:
+					import sklearn.metrics
+
+					labels = np.asarray(list(lbl for _, lbl in dataset))
+
+					# Confusion matrix.
+					confusion_matrix = sklearn.metrics.confusion_matrix(labels, predictions)
+					logger.info("Confusion matrix:\n{}.".format(confusion_matrix))
+
+					# Performance metrics.
+					pos_label = 1
+					average = "binary"
+					prec = sklearn.metrics.precision_score(labels, predictions, labels=None, pos_label=pos_label, average=average)
+					recall = sklearn.metrics.recall_score(labels, predictions, labels=None, pos_label=pos_label, average=average)
+					f1 = sklearn.metrics.f1_score(labels, predictions, labels=None, pos_label=pos_label, average=average)
+					acc = sklearn.metrics.accuracy_score(labels, predictions, normalize=True)
+					logger.info(f"Precision = {prec}.")
+					logger.info(f"Recal = {recall}.")
+					logger.info(f"F1 = {f1}.")
+					logger.info(f"Accuracy = {acc}.")
 			else:
 				# Test the model.
 				dataloader = torch.utils.data.DataLoader(dataset, batch_size=config_data['batch_size'], shuffle=False, num_workers=config_data['num_workers'], persistent_workers=False)
