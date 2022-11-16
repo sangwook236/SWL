@@ -398,6 +398,9 @@ def main():
 
 	#--------------------
 	try:
+		torch.backends.cudnn.backend = True  # Causes cuDNN to benchmark multiple convolution algorithms and select the fastest.
+		#torch.backends.cudnn.deterministic = False  # Causes cuDNN to only use deterministic convolution algorithms.
+
 		use_projector, use_predictor = False, False  # For SSL models.
 
 		# Load a SSL model.

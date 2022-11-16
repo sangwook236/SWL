@@ -171,6 +171,9 @@ def main():
 	#is_resumed = args.model_file is not None
 
 	try:
+		torch.backends.cudnn.backend = True  # Causes cuDNN to benchmark multiple convolution algorithms and select the fastest.
+		#torch.backends.cudnn.deterministic = False  # Causes cuDNN to only use deterministic convolution algorithms.
+
 		config_data = config['data']
 
 		image_shape = config_data['image_shape']  # (H, W, C).
