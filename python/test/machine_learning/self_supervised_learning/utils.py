@@ -718,11 +718,12 @@ def train(config, model, train_dataloader, test_dataloader, output_dir_path, mod
 		monitor="val_loss", mode="min",
 		save_top_k=5,
 	)
+	lr_monitor_callback = pl.callbacks.LearningRateMonitor(logging_interval="step", log_momentum=False)
 	if config.get("swa", False):
 		swa_callback = pl.callbacks.StochasticWeightAveraging(swa_lrs=0.1, swa_epoch_start=0.8, annealing_epochs=2, annealing_strategy="cos", avg_fn=None)
-		pl_callbacks = [checkpoint_callback, swa_callback]
+		pl_callbacks = [checkpoint_callback, lr_monitor_callback, swa_callback]
 	else:
-		pl_callbacks = [checkpoint_callback]
+		pl_callbacks = [checkpoint_callback, lr_monitor_callback]
 	tensorboard_logger = pl.loggers.TensorBoardLogger(save_dir=(output_dir_path + "/lightning_logs") if output_dir_path else "./lightning_logs", name="", version=None)
 	pl_logger = [tensorboard_logger]
 
