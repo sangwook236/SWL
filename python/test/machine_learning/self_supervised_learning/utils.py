@@ -720,7 +720,8 @@ def train(config, model, train_dataloader, test_dataloader, output_dir_path, mod
 	)
 	lr_monitor_callback = pl.callbacks.LearningRateMonitor(logging_interval="step", log_momentum=False)
 	if config.get("swa", False):
-		swa_callback = pl.callbacks.StochasticWeightAveraging(swa_lrs=0.1, swa_epoch_start=0.8, annealing_epochs=2, annealing_strategy="cos", avg_fn=None)
+		# When SWA gets activated, SWALR (annealing_strategy) is applied from swa_epoch_start (current LRs) to swa_epoch_start + annealing_epochs (swa_lrs). [swa_epoch_start, swa_epoch_start + annealing_epochs).
+		swa_callback = pl.callbacks.StochasticWeightAveraging(swa_lrs=1.0e-5, swa_epoch_start=0.8, annealing_epochs=2, annealing_strategy="cos", avg_fn=None)
 		pl_callbacks = [checkpoint_callback, lr_monitor_callback, swa_callback]
 	else:
 		pl_callbacks = [checkpoint_callback, lr_monitor_callback]
