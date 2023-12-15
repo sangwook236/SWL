@@ -91,7 +91,7 @@ void BFS(const Graph& g, Vertex* v, Visitor visitor)
 		if (u->isVisited()) continue;
 
 		u->setVisited();
-        visitor(*u);
+		visitor(*u);
 
 		const std::list<Vertex*>& adjacents = g.getAdjacents(u);
 		for (auto w : adjacents)
