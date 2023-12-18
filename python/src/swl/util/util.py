@@ -1,4 +1,4 @@
-import os, math, re, csv
+import os, math, functools, re, csv
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
@@ -335,3 +335,17 @@ def convert_currency_to_float(currency, currency_symbols):
 	#currency = currency.strip(currency_symbols + string.whitespace)
 	currency = currency.strip(currency_symbols + string.whitespace).replace(' ', '')
 	return locale.atof(currency)
+
+#--------------------------------------------------------------------
+
+def to_base(dec: int, base: str = "0123456789"):
+	l = len(base)
+	hash_str = ""
+	while dec > 0:
+		hash_str = base[dec % l] + hash_str
+		dec //= l
+	return hash_str
+
+def from_base(s: str, base: str = "0123456789"):
+	l = len(base)
+	return functools.reduce(lambda val, c: val * l + base.index(c), s, 0)

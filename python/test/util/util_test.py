@@ -191,16 +191,73 @@ def convert_currency_to_float_test():
 	# Sets the locale for all categories to the user's default setting.
 	locale.setlocale(locale.LC_ALL, '')
 
+def base_encoding_and_decoding_test():
+	#base10 = "0123456789"
+	#base16 = "0123456789ABCDEF"
+	#base32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"  # Padding = "="
+	#base58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+	base62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	#base64 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/"  # Padding = "="
+
+	v = 999
+	b = swl_util.to_base(v, base=base62)
+	r = swl_util.from_base(b, base=base62)
+	assert v == r
+
+	v = 13456
+	b = swl_util.to_base(v, base=base62)
+	r = swl_util.from_base(b, base=base62)
+	assert v == r
+
+	#-----
+	import base64
+	
+	ss = "GeeksForGeeks is the best"
+	ss_bytes = ss.encode("ascii")
+
+	#base16_bytes = base64.b16encode(ss_bytes)
+	#base32_bytes = base64.b32encode(ss_bytes)
+	#base64_bytes = base64.b64encode(ss_bytes)
+	#base64_bytes = base64.standard_b64encode(ss_bytes)
+	#base64_bytes = base64.urlsafe_b64encode(ss_bytes)
+	#a85_bytes = base64.a85encode(ss_bytes)
+	#b85_bytes = base64.b85encode(ss_bytes)
+
+	base64_bytes = base64.b64encode(ss_bytes)
+	base64_string = base64_bytes.decode("ascii")
+
+	print(f"Encoded string: {base64_string}")
+
+	base64_string = " R2Vla3NGb3JHZWVrcyBpcyB0aGUgYmVzdA =="
+	base64_bytes = base64_string.encode("ascii")
+
+	#ss_bytes = base64.b16decode(base16_bytes)
+	#ss_bytes = base64.b32decode(base32_bytes)
+	#ss_bytes = base64.b64decode(base64_bytes)
+	#ss_bytes = base64.standard_b64decode(base64_bytes)
+	#ss_bytes = base64.urlsafe_b64decode(base64_bytes)
+	#ss_bytes = base64.a85decode(a85_bytes)
+	#ss_bytes = base64.b85decode(b85_bytes)
+
+	ss_bytes = base64.b64decode(base64_bytes)
+	ss = ss_bytes.decode("ascii")
+
+	print(f"Decoded string: {ss}")
+
 def main():
 	#download_test()
 
-	load_filepaths_from_npy_file_info_test()
-	load_data_from_npy_files_test()
+	#load_filepaths_from_npy_file_info_test()
+	#load_data_from_npy_files_test()
 	#shuffle_data_in_npy_files_test()
 
 	#load_data_from_npz_file_test()
 
-	convert_currency_to_float_test()
+	#convert_currency_to_float_test()
+
+	#-----
+	# Base10, base16, base32, base58, base62, base64.
+	base_encoding_and_decoding_test()
 
 #--------------------------------------------------------------------
 
