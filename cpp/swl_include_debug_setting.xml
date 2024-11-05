@@ -2,21 +2,21 @@
 <cdtprojectproperties>
 <section name="org.eclipse.cdt.internal.ui.wizards.settingswizards.IncludePaths">
 <language name="Assembly Source File">
-<includepath>../../inc</includepath>
-<includepath>D:/work_center/sw_dev/cpp/ext/inc</includepath>
-<includepath>D:/work_center/sw_dev/cpp/rnd/inc</includepath>
+<includepath>../../include</includepath>
+<includepath>D:/work/SWDT_github/sw_dev/cpp/ext/include</includepath>
+<includepath>D:/work/SWDT_github/sw_dev/cpp/rnd/include</includepath>
 
 </language>
 <language name="C++ Source File">
-<includepath>../../inc</includepath>
-<includepath>D:/work_center/sw_dev/cpp/ext/inc</includepath>
-<includepath>D:/work_center/sw_dev/cpp/rnd/inc</includepath>
+<includepath>../../include</includepath>
+<includepath>D:/work/SWDT_github/sw_dev/cpp/ext/include</includepath>
+<includepath>D:/work/SWDT_github/sw_dev/cpp/rnd/include</includepath>
 
 </language>
 <language name="C Source File">
-<includepath>../../inc</includepath>
-<includepath>D:/work_center/sw_dev/cpp/ext/inc</includepath>
-<includepath>D:/work_center/sw_dev/cpp/rnd/inc</includepath>
+<includepath>../../include</includepath>
+<includepath>D:/work/SWDT_github/sw_dev/cpp/ext/include</includepath>
+<includepath>D:/work/SWDT_github/sw_dev/cpp/rnd/include</includepath>
 
 </language>
 <language name="Object File">

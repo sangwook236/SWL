@@ -15,37 +15,37 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\swl\machine_vision\ExportMachineVision.h">
+    <ClInclude Include="..\..\include\swl\machine_vision\ExportMachineVision.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\machine_vision\ImageRectificationUsingOpenCV.h">
+    <ClInclude Include="..\..\include\swl\machine_vision\ImageRectificationUsingOpenCV.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\machine_vision\ImageUndistortionUsingOpenCV.h">
+    <ClInclude Include="..\..\include\swl\machine_vision\ImageUndistortionUsingOpenCV.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\machine_vision\KinectSensor.h">
+    <ClInclude Include="..\..\include\swl\machine_vision\KinectSensor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\machine_vision\ScaleSpace.h">
+    <ClInclude Include="..\..\include\swl\machine_vision\ScaleSpace.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\machine_vision\DerivativesOfGaussian.h">
+    <ClInclude Include="..\..\include\swl\machine_vision\DerivativesOfGaussian.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\machine_vision\ImageFilter.h">
+    <ClInclude Include="..\..\include\swl\machine_vision\ImageFilter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\machine_vision\SkeletonAlgorithm.h">
+    <ClInclude Include="..\..\include\swl\machine_vision\SkeletonAlgorithm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\machine_vision\NonMaximumSuppression.h">
+    <ClInclude Include="..\..\include\swl\machine_vision\NonMaximumSuppression.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\machine_vision\BoundaryExtraction.h">
+    <ClInclude Include="..\..\include\swl\machine_vision\BoundaryExtraction.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\machine_vision\Convolution.h">
+    <ClInclude Include="..\..\include\swl\machine_vision\Convolution.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

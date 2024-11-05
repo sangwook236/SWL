@@ -3,15 +3,15 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="include">
-    <File Name="../../inc/swl/machine_vision/ExportMachineVision.h"/>
-    <File Name="../../inc/swl/machine_vision/DerivativesOfGaussian.h"/>
-    <File Name="../../inc/swl/machine_vision/ImageFilter.h"/>
-    <File Name="../../inc/swl/machine_vision/ImageRectificationUsingOpenCV.h"/>
-    <File Name="../../inc/swl/machine_vision/ImageUndistortionUsingOpenCV.h"/>
-    <File Name="../../inc/swl/machine_vision/KinectSensor.h"/>
-    <File Name="../../inc/swl/machine_vision/NonMaximaSuppression.h"/>
-    <File Name="../../inc/swl/machine_vision/ScaleSpace.h"/>
-    <File Name="../../inc/swl/machine_vision/SkeletonAlgorithm.h"/>
+    <File Name="../../include/swl/machine_vision/ExportMachineVision.h"/>
+    <File Name="../../include/swl/machine_vision/DerivativesOfGaussian.h"/>
+    <File Name="../../include/swl/machine_vision/ImageFilter.h"/>
+    <File Name="../../include/swl/machine_vision/ImageRectificationUsingOpenCV.h"/>
+    <File Name="../../include/swl/machine_vision/ImageUndistortionUsingOpenCV.h"/>
+    <File Name="../../include/swl/machine_vision/KinectSensor.h"/>
+    <File Name="../../include/swl/machine_vision/NonMaximaSuppression.h"/>
+    <File Name="../../include/swl/machine_vision/ScaleSpace.h"/>
+    <File Name="../../include/swl/machine_vision/SkeletonAlgorithm.h"/>
   </VirtualDirectory>
   <VirtualDirectory Name="src">
     <File Name="DerivativesOfGaussian.cpp"/>
@@ -34,7 +34,7 @@
     </GlobalSettings>
     <Configuration Name="Debug" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-std=c++11;-Wall -g -DBUILD_DLL -fPIC -fopenmp" C_Options="-Wall -g -DBUILD_DLL -fPIC -fopenmp " Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="../../inc"/>
+        <IncludePath Value="../../include"/>
         <IncludePath Value="/usr/local/include"/>
       </Compiler>
       <Linker Options="-O0" Required="yes">
@@ -82,7 +82,7 @@
     </Configuration>
     <Configuration Name="Release" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-std=c++11;-O2 -Wall -DBUILD_DLL -fPIC -fopenmp" C_Options="-O2 -Wall -DBUILD_DLL -fPIC -fopenmp " Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="../../inc"/>
+        <IncludePath Value="../../include"/>
         <IncludePath Value="/usr/local/include"/>
       </Compiler>
       <Linker Options="-s " Required="yes">

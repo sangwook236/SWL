@@ -3,25 +3,25 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="include">
-    <File Name="../../inc/swl/graphics/Appearance.h"/>
-    <File Name="../../inc/swl/graphics/AppearanceSceneNode.h"/>
-    <File Name="../../inc/swl/graphics/BoundingBox.h"/>
-    <File Name="../../inc/swl/graphics/Color.h"/>
-    <File Name="../../inc/swl/graphics/CoordinateFrame.h"/>
-    <File Name="../../inc/swl/graphics/ExportGraphics.h"/>
-    <File Name="../../inc/swl/graphics/Geometry.h"/>
-    <File Name="../../inc/swl/graphics/GeometryPoolMgr.h"/>
-    <File Name="../../inc/swl/graphics/GeometrySceneNode.h"/>
-    <File Name="../../inc/swl/graphics/GraphicsObj.h"/>
-    <File Name="../../inc/swl/graphics/IDrawable.h"/>
-    <File Name="../../inc/swl/graphics/ISceneVisitor.h"/>
-    <File Name="../../inc/swl/graphics/ITransformable.h"/>
-    <File Name="../../inc/swl/graphics/ObjectPickerMgr.h"/>
-    <File Name="../../inc/swl/graphics/PickableInterface.h"/>
-    <File Name="../../inc/swl/graphics/SceneNode.h"/>
-    <File Name="../../inc/swl/graphics/Shape.h"/>
-    <File Name="../../inc/swl/graphics/ShapeSceneNode.h"/>
-    <File Name="../../inc/swl/graphics/TransformSceneNode.h"/>
+    <File Name="../../include/swl/graphics/Appearance.h"/>
+    <File Name="../../include/swl/graphics/AppearanceSceneNode.h"/>
+    <File Name="../../include/swl/graphics/BoundingBox.h"/>
+    <File Name="../../include/swl/graphics/Color.h"/>
+    <File Name="../../include/swl/graphics/CoordinateFrame.h"/>
+    <File Name="../../include/swl/graphics/ExportGraphics.h"/>
+    <File Name="../../include/swl/graphics/Geometry.h"/>
+    <File Name="../../include/swl/graphics/GeometryPoolMgr.h"/>
+    <File Name="../../include/swl/graphics/GeometrySceneNode.h"/>
+    <File Name="../../include/swl/graphics/GraphicsObj.h"/>
+    <File Name="../../include/swl/graphics/IDrawable.h"/>
+    <File Name="../../include/swl/graphics/ISceneVisitor.h"/>
+    <File Name="../../include/swl/graphics/ITransformable.h"/>
+    <File Name="../../include/swl/graphics/ObjectPickerMgr.h"/>
+    <File Name="../../include/swl/graphics/PickableInterface.h"/>
+    <File Name="../../include/swl/graphics/SceneNode.h"/>
+    <File Name="../../include/swl/graphics/Shape.h"/>
+    <File Name="../../include/swl/graphics/ShapeSceneNode.h"/>
+    <File Name="../../include/swl/graphics/TransformSceneNode.h"/>
   </VirtualDirectory>
   <VirtualDirectory Name="src">
     <File Name="Appearance.cpp"/>
@@ -45,7 +45,7 @@
     </GlobalSettings>
     <Configuration Name="Debug" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-Wall -g -DBUILD_DLL -fPIC " C_Options="-Wall -g -DBUILD_DLL -fPIC " Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="../../inc"/>
+        <IncludePath Value="../../include"/>
         <IncludePath Value="/usr/local/include"/>
       </Compiler>
       <Linker Options="-O0" Required="yes">
@@ -88,7 +88,7 @@
     </Configuration>
     <Configuration Name="Release" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-O2 -Wall -DBUILD_DLL -fPIC " C_Options="-O2 -Wall -DBUILD_DLL -fPIC " Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="../../inc"/>
+        <IncludePath Value="../../include"/>
         <IncludePath Value="/usr/local/include"/>
       </Compiler>
       <Linker Options="-s " Required="yes">

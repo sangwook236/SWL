@@ -49,8 +49,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SWL_BASE_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SWL_BASE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -71,8 +71,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SWL_BASE_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SWL_BASE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -100,24 +100,24 @@
     <ClCompile Include="String.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\swl\base\ExportBase.h" />
-    <ClInclude Include="..\..\inc\swl\base\INotifier.h" />
-    <ClInclude Include="..\..\inc\swl\base\IObserver.h" />
-    <ClInclude Include="..\..\inc\swl\base\IPrintable.h" />
-    <ClInclude Include="..\..\inc\swl\base\IVisitable.h" />
-    <ClInclude Include="..\..\inc\swl\base\Log.h" />
-    <ClInclude Include="..\..\inc\swl\base\LogException.h" />
-    <ClInclude Include="..\..\inc\swl\base\MvcController.h" />
-    <ClInclude Include="..\..\inc\swl\base\MvcModel.h" />
-    <ClInclude Include="..\..\inc\swl\base\MvcModelUpdateController.h" />
-    <ClInclude Include="..\..\inc\swl\base\MvcView.h" />
-    <ClInclude Include="..\..\inc\swl\base\MvcViewUpdateController.h" />
-    <ClInclude Include="..\..\inc\swl\base\Point.h" />
-    <ClInclude Include="..\..\inc\swl\base\Region.h" />
-    <ClInclude Include="..\..\inc\swl\base\ReturnException.h" />
-    <ClInclude Include="..\..\inc\swl\base\Size.h" />
-    <ClInclude Include="..\..\inc\swl\base\String.h" />
-    <ClInclude Include="..\..\inc\swl\base\Tuple.h" />
+    <ClInclude Include="..\..\include\swl\base\ExportBase.h" />
+    <ClInclude Include="..\..\include\swl\base\INotifier.h" />
+    <ClInclude Include="..\..\include\swl\base\IObserver.h" />
+    <ClInclude Include="..\..\include\swl\base\IPrintable.h" />
+    <ClInclude Include="..\..\include\swl\base\IVisitable.h" />
+    <ClInclude Include="..\..\include\swl\base\Log.h" />
+    <ClInclude Include="..\..\include\swl\base\LogException.h" />
+    <ClInclude Include="..\..\include\swl\base\MvcController.h" />
+    <ClInclude Include="..\..\include\swl\base\MvcModel.h" />
+    <ClInclude Include="..\..\include\swl\base\MvcModelUpdateController.h" />
+    <ClInclude Include="..\..\include\swl\base\MvcView.h" />
+    <ClInclude Include="..\..\include\swl\base\MvcViewUpdateController.h" />
+    <ClInclude Include="..\..\include\swl\base\Point.h" />
+    <ClInclude Include="..\..\include\swl\base\Region.h" />
+    <ClInclude Include="..\..\include\swl\base\ReturnException.h" />
+    <ClInclude Include="..\..\include\swl\base\Size.h" />
+    <ClInclude Include="..\..\include\swl\base\String.h" />
+    <ClInclude Include="..\..\include\swl\base\Tuple.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

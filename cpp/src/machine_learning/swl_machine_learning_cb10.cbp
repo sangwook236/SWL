@@ -52,21 +52,21 @@
 		<Compiler>
 			<Add option="-std=c++11" />
 			<Add option="-fPIC" />
-			<Add directory="../../inc" />
+			<Add directory="../../include" />
 			<Add directory="/usr/local/include" />
 		</Compiler>
 		<Linker>
 			<Add directory="../../lib" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
-		<Unit filename="../../inc/swl/machine_learning/ExportMachineLearning.h" />
-		<Unit filename="../../inc/swl/machine_learning/QLambda.h" />
-		<Unit filename="../../inc/swl/machine_learning/QLearning.h" />
-		<Unit filename="../../inc/swl/machine_learning/Sarsa.h" />
-		<Unit filename="../../inc/swl/machine_learning/SarsaLambda.h" />
-		<Unit filename="../../inc/swl/machine_learning/TDLambda.h" />
-		<Unit filename="../../inc/swl/machine_learning/TDLearning.h" />
-		<Unit filename="../../inc/swl/machine_learning/TDLearningBase.h" />
+		<Unit filename="../../include/swl/machine_learning/ExportMachineLearning.h" />
+		<Unit filename="../../include/swl/machine_learning/QLambda.h" />
+		<Unit filename="../../include/swl/machine_learning/QLearning.h" />
+		<Unit filename="../../include/swl/machine_learning/Sarsa.h" />
+		<Unit filename="../../include/swl/machine_learning/SarsaLambda.h" />
+		<Unit filename="../../include/swl/machine_learning/TDLambda.h" />
+		<Unit filename="../../include/swl/machine_learning/TDLearning.h" />
+		<Unit filename="../../include/swl/machine_learning/TDLearningBase.h" />
 		<Unit filename="TDLearningBase.cpp" />
 		<Extensions>
 			<code_completion />

@@ -50,79 +50,79 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\swl\math\Complex.h">
+    <ClInclude Include="..\..\include\swl\math\Complex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ConvexHull.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\Coordinates.h">
+    <ClInclude Include="..\..\include\swl\math\Coordinates.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\Duplex.h">
+    <ClInclude Include="..\..\include\swl\math\Duplex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\ExportMath.h">
+    <ClInclude Include="..\..\include\swl\math\ExportMath.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\GeometryUtil.h">
+    <ClInclude Include="..\..\include\swl\math\GeometryUtil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\Line.h">
+    <ClInclude Include="..\..\include\swl\math\Line.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\LineSegment.h">
+    <ClInclude Include="..\..\include\swl\math\LineSegment.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\MathConstant.h">
+    <ClInclude Include="..\..\include\swl\math\MathConstant.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\MathExt.h">
+    <ClInclude Include="..\..\include\swl\math\MathExt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\MathUtil.h">
+    <ClInclude Include="..\..\include\swl\math\MathUtil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\Matrix.h">
+    <ClInclude Include="..\..\include\swl\math\Matrix.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\Plane.h">
+    <ClInclude Include="..\..\include\swl\math\Plane.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\QMatrix.h">
+    <ClInclude Include="..\..\include\swl\math\QMatrix.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\Quaternion.h">
+    <ClInclude Include="..\..\include\swl\math\Quaternion.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\Rational.h">
+    <ClInclude Include="..\..\include\swl\math\Rational.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\RMatrix.h">
+    <ClInclude Include="..\..\include\swl\math\RMatrix.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\RootFinder.h">
+    <ClInclude Include="..\..\include\swl\math\RootFinder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\Rotation.h">
+    <ClInclude Include="..\..\include\swl\math\Rotation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\TMatrix.h">
+    <ClInclude Include="..\..\include\swl\math\TMatrix.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\Triangle.h">
+    <ClInclude Include="..\..\include\swl\math\Triangle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\TVector.h">
+    <ClInclude Include="..\..\include\swl\math\TVector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\Vector.h">
+    <ClInclude Include="..\..\include\swl\math\Vector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\DataNormalization.h">
+    <ClInclude Include="..\..\include\swl\math\DataNormalization.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\Statistic.h">
+    <ClInclude Include="..\..\include\swl\math\Statistic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

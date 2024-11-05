@@ -88,8 +88,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-4.1.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SWL_RND_UTIL_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;$(MY_USR_LOCAL_INCLUDE)/opencv-4.1.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_RND_UTIL_EXPORTS;WIN32;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -113,8 +113,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-4.1.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;SWL_RND_UTIL_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;$(MY_USR_LOCAL_INCLUDE)/opencv-4.1.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_RND_UTIL_EXPORTS;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -135,8 +135,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-4.1.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SWL_RND_UTIL_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;$(MY_USR_LOCAL_INCLUDE)/opencv-4.1.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_RND_UTIL_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -159,8 +159,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-4.1.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;SWL_RND_UTIL_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;$(MY_USR_LOCAL_INCLUDE)/opencv-4.1.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_RND_UTIL_EXPORTS;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -223,52 +223,52 @@
     <ClCompile Include="VonMisesMixtureModel.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\swl\rnd_util\ArHmmWithMultivariateNormalMixtureObservations.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\ArHmmWithMultivariateNormalObservations.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\ArHmmWithUnivariateNormalMixtureObservations.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\ArHmmWithUnivariateNormalObservations.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\CDHMM.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\CDHMMWithMixtureObservations.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\ContinuousDensityMixtureModel.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\ContinuousLinearStochasticSystem.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\ContinuousNonlinearStochasticSystem.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\DDHMM.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\DiscreteLinearStochasticSystem.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\DiscreteNonlinearStochasticSystem.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\DynamicTimeWarping.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\ExportRndUtil.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\ExtendedKalmanFilter.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\GraphAlgorithm.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\GraphTraversal.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\HistogramAccumulator.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\HistogramMatcher.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\HistogramUtil.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\HMM.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\HmmSegmenter.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithMultinomialObservations.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithMultivariateNormalMixtureObservations.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithMultivariateNormalObservations.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithUnivariateNormalMixtureObservations.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithUnivariateNormalObservations.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithVonMisesFisherMixtureObservations.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithVonMisesFisherObservations.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithVonMisesMixtureObservations.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithVonMisesObservations.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\HoughTransform.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\KalmanFilter.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\LevenshteinDistance.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\MetropolisHastingsAlgorithm.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\MixtureModel.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\MultivariateNormalMixtureModel.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\SignalProcessing.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\Sort.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\UnivariateNormalMixtureModel.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\Ransac.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\RejectionSampling.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\SamplingImportanceResampling.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\UnscentedKalmanFilter.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\UnscentedKalmanFilterWithAdditiveNoise.h" />
-    <ClInclude Include="..\..\inc\swl\rnd_util\VonMisesMixtureModel.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\ArHmmWithMultivariateNormalMixtureObservations.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\ArHmmWithMultivariateNormalObservations.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\ArHmmWithUnivariateNormalMixtureObservations.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\ArHmmWithUnivariateNormalObservations.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\CDHMM.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\CDHMMWithMixtureObservations.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\ContinuousDensityMixtureModel.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\ContinuousLinearStochasticSystem.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\ContinuousNonlinearStochasticSystem.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\DDHMM.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\DiscreteLinearStochasticSystem.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\DiscreteNonlinearStochasticSystem.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\DynamicTimeWarping.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\ExportRndUtil.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\ExtendedKalmanFilter.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\GraphAlgorithm.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\GraphTraversal.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\HistogramAccumulator.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\HistogramMatcher.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\HistogramUtil.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\HMM.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\HmmSegmenter.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\HmmWithMultinomialObservations.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\HmmWithMultivariateNormalMixtureObservations.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\HmmWithMultivariateNormalObservations.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\HmmWithUnivariateNormalMixtureObservations.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\HmmWithUnivariateNormalObservations.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\HmmWithVonMisesFisherMixtureObservations.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\HmmWithVonMisesFisherObservations.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\HmmWithVonMisesMixtureObservations.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\HmmWithVonMisesObservations.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\HoughTransform.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\KalmanFilter.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\LevenshteinDistance.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\MetropolisHastingsAlgorithm.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\MixtureModel.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\MultivariateNormalMixtureModel.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\SignalProcessing.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\Sort.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\UnivariateNormalMixtureModel.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\Ransac.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\RejectionSampling.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\SamplingImportanceResampling.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\UnscentedKalmanFilter.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\UnscentedKalmanFilterWithAdditiveNoise.h" />
+    <ClInclude Include="..\..\include\swl\rnd_util\VonMisesMixtureModel.h" />
     <ClInclude Include="AutoRegression.h" />
     <ClInclude Include="RndUtilLocalApi.h" />
   </ItemGroup>

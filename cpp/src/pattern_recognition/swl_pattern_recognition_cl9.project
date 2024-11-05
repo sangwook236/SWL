@@ -3,11 +3,11 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="include">
-    <File Name="../../inc/swl/pattern_recognition/ExportPatternRecognition.h"/>
-    <File Name="../../inc/swl/pattern_recognition/GestureClassifierByHistogram.h"/>
-    <File Name="../../inc/swl/pattern_recognition/GestureType.h"/>
-    <File Name="../../inc/swl/pattern_recognition/IGestureClassifier.h"/>
-    <File Name="../../inc/swl/pattern_recognition/MotionSegmenter.h"/>
+    <File Name="../../include/swl/pattern_recognition/ExportPatternRecognition.h"/>
+    <File Name="../../include/swl/pattern_recognition/GestureClassifierByHistogram.h"/>
+    <File Name="../../include/swl/pattern_recognition/GestureType.h"/>
+    <File Name="../../include/swl/pattern_recognition/IGestureClassifier.h"/>
+    <File Name="../../include/swl/pattern_recognition/MotionSegmenter.h"/>
     <File Name="HistogramGenerator.h"/>
   </VirtualDirectory>
   <VirtualDirectory Name="src">
@@ -28,7 +28,7 @@
     </GlobalSettings>
     <Configuration Name="Debug" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-Wall -g -DBUILD_DLL -fPIC " C_Options="-Wall -g -DBUILD_DLL -fPIC " Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="../../inc"/>
+        <IncludePath Value="../../include"/>
         <IncludePath Value="/usr/local/include"/>
       </Compiler>
       <Linker Options="-O0" Required="yes">
@@ -73,7 +73,7 @@
     </Configuration>
     <Configuration Name="Release" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-O2 -Wall -DBUILD_DLL -fPIC " C_Options="-O2 -Wall -DBUILD_DLL -fPIC " Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="../../inc"/>
+        <IncludePath Value="../../include"/>
         <IncludePath Value="/usr/local/include"/>
       </Compiler>
       <Linker Options="-s " Required="yes">

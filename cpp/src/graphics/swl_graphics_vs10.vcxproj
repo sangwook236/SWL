@@ -48,8 +48,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SWL_GRAPHICS_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_GRAPHICS_EXPORTS;WIN32;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -71,8 +71,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SWL_GRAPHICS_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_GRAPHICS_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -103,25 +103,25 @@
     <ClCompile Include="Shape.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\swl\graphics\Appearance.h" />
-    <ClInclude Include="..\..\inc\swl\graphics\AppearanceSceneNode.h" />
-    <ClInclude Include="..\..\inc\swl\graphics\BoundingBox.h" />
-    <ClInclude Include="..\..\inc\swl\graphics\Color.h" />
-    <ClInclude Include="..\..\inc\swl\graphics\CoordinateFrame.h" />
-    <ClInclude Include="..\..\inc\swl\graphics\ExportGraphics.h" />
-    <ClInclude Include="..\..\inc\swl\graphics\Geometry.h" />
-    <ClInclude Include="..\..\inc\swl\graphics\GeometryPoolMgr.h" />
-    <ClInclude Include="..\..\inc\swl\graphics\GeometrySceneNode.h" />
-    <ClInclude Include="..\..\inc\swl\graphics\GraphicsObj.h" />
-    <ClInclude Include="..\..\inc\swl\graphics\IDrawable.h" />
-    <ClInclude Include="..\..\inc\swl\graphics\ISceneVisitor.h" />
-    <ClInclude Include="..\..\inc\swl\graphics\ITransformable.h" />
-    <ClInclude Include="..\..\inc\swl\graphics\ObjectPickerMgr.h" />
-    <ClInclude Include="..\..\inc\swl\graphics\PickableInterface.h" />
-    <ClInclude Include="..\..\inc\swl\graphics\SceneNode.h" />
-    <ClInclude Include="..\..\inc\swl\graphics\Shape.h" />
-    <ClInclude Include="..\..\inc\swl\graphics\ShapeSceneNode.h" />
-    <ClInclude Include="..\..\inc\swl\graphics\TransformSceneNode.h" />
+    <ClInclude Include="..\..\include\swl\graphics\Appearance.h" />
+    <ClInclude Include="..\..\include\swl\graphics\AppearanceSceneNode.h" />
+    <ClInclude Include="..\..\include\swl\graphics\BoundingBox.h" />
+    <ClInclude Include="..\..\include\swl\graphics\Color.h" />
+    <ClInclude Include="..\..\include\swl\graphics\CoordinateFrame.h" />
+    <ClInclude Include="..\..\include\swl\graphics\ExportGraphics.h" />
+    <ClInclude Include="..\..\include\swl\graphics\Geometry.h" />
+    <ClInclude Include="..\..\include\swl\graphics\GeometryPoolMgr.h" />
+    <ClInclude Include="..\..\include\swl\graphics\GeometrySceneNode.h" />
+    <ClInclude Include="..\..\include\swl\graphics\GraphicsObj.h" />
+    <ClInclude Include="..\..\include\swl\graphics\IDrawable.h" />
+    <ClInclude Include="..\..\include\swl\graphics\ISceneVisitor.h" />
+    <ClInclude Include="..\..\include\swl\graphics\ITransformable.h" />
+    <ClInclude Include="..\..\include\swl\graphics\ObjectPickerMgr.h" />
+    <ClInclude Include="..\..\include\swl\graphics\PickableInterface.h" />
+    <ClInclude Include="..\..\include\swl\graphics\SceneNode.h" />
+    <ClInclude Include="..\..\include\swl\graphics\Shape.h" />
+    <ClInclude Include="..\..\include\swl\graphics\ShapeSceneNode.h" />
+    <ClInclude Include="..\..\include\swl\graphics\TransformSceneNode.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\base\swl_base_vs10.vcxproj">

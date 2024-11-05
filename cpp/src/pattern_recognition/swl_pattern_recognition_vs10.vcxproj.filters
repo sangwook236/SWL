@@ -21,19 +21,19 @@
     <ClInclude Include="HistogramGenerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\pattern_recognition\ExportPatternRecognition.h">
+    <ClInclude Include="..\..\include\swl\pattern_recognition\ExportPatternRecognition.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\pattern_recognition\GestureClassifierByHistogram.h">
+    <ClInclude Include="..\..\include\swl\pattern_recognition\GestureClassifierByHistogram.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\pattern_recognition\GestureType.h">
+    <ClInclude Include="..\..\include\swl\pattern_recognition\GestureType.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\pattern_recognition\IGestureClassifier.h">
+    <ClInclude Include="..\..\include\swl\pattern_recognition\IGestureClassifier.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\pattern_recognition\MotionSegmenter.h">
+    <ClInclude Include="..\..\include\swl\pattern_recognition\MotionSegmenter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

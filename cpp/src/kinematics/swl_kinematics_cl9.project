@@ -3,27 +3,27 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="include">
-    <File Name="../../inc/swl/kinematics/ArcPathPlanner.h"/>
-    <File Name="../../inc/swl/kinematics/ArticulatedKinematics.h"/>
-    <File Name="../../inc/swl/kinematics/CartesianKinematics.h"/>
-    <File Name="../../inc/swl/kinematics/CartesianPathPlanner.h"/>
-    <File Name="../../inc/swl/kinematics/CurvePathPlanner.h"/>
-    <File Name="../../inc/swl/kinematics/DHParam.h"/>
-    <File Name="../../inc/swl/kinematics/ExportKinematics.h"/>
-    <File Name="../../inc/swl/kinematics/Joint.h"/>
-    <File Name="../../inc/swl/kinematics/JointParam.h"/>
-    <File Name="../../inc/swl/kinematics/JointPathPlanner.h"/>
-    <File Name="../../inc/swl/kinematics/Kinematics.h"/>
-    <File Name="../../inc/swl/kinematics/LinePathPlanner.h"/>
-    <File Name="../../inc/swl/kinematics/Link.h"/>
-    <File Name="../../inc/swl/kinematics/ParallelogramLinkKinematics.h"/>
-    <File Name="../../inc/swl/kinematics/PathBlender.h"/>
-    <File Name="../../inc/swl/kinematics/PathPlanner.h"/>
-    <File Name="../../inc/swl/kinematics/PumaKinematics.h"/>
-    <File Name="../../inc/swl/kinematics/RobotKinematics.h"/>
-    <File Name="../../inc/swl/kinematics/ScaraKinematics.h"/>
-    <File Name="../../inc/swl/kinematics/ScrewAxis.h"/>
-    <File Name="../../inc/swl/kinematics/StanfordArmKinematics.h"/>
+    <File Name="../../include/swl/kinematics/ArcPathPlanner.h"/>
+    <File Name="../../include/swl/kinematics/ArticulatedKinematics.h"/>
+    <File Name="../../include/swl/kinematics/CartesianKinematics.h"/>
+    <File Name="../../include/swl/kinematics/CartesianPathPlanner.h"/>
+    <File Name="../../include/swl/kinematics/CurvePathPlanner.h"/>
+    <File Name="../../include/swl/kinematics/DHParam.h"/>
+    <File Name="../../include/swl/kinematics/ExportKinematics.h"/>
+    <File Name="../../include/swl/kinematics/Joint.h"/>
+    <File Name="../../include/swl/kinematics/JointParam.h"/>
+    <File Name="../../include/swl/kinematics/JointPathPlanner.h"/>
+    <File Name="../../include/swl/kinematics/Kinematics.h"/>
+    <File Name="../../include/swl/kinematics/LinePathPlanner.h"/>
+    <File Name="../../include/swl/kinematics/Link.h"/>
+    <File Name="../../include/swl/kinematics/ParallelogramLinkKinematics.h"/>
+    <File Name="../../include/swl/kinematics/PathBlender.h"/>
+    <File Name="../../include/swl/kinematics/PathPlanner.h"/>
+    <File Name="../../include/swl/kinematics/PumaKinematics.h"/>
+    <File Name="../../include/swl/kinematics/RobotKinematics.h"/>
+    <File Name="../../include/swl/kinematics/ScaraKinematics.h"/>
+    <File Name="../../include/swl/kinematics/ScrewAxis.h"/>
+    <File Name="../../include/swl/kinematics/StanfordArmKinematics.h"/>
   </VirtualDirectory>
   <VirtualDirectory Name="src">
     <File Name="ArcPathPlanner.cpp"/>
@@ -60,7 +60,7 @@
     <Configuration Name="Debug" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-Wall -g -DBUILD_DLL -fPIC " C_Options="-Wall -g -DBUILD_DLL -fPIC " Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
         <IncludePath Value="/usr/local/include"/>
-        <IncludePath Value="../../inc"/>
+        <IncludePath Value="../../include"/>
       </Compiler>
       <Linker Options="-O0" Required="yes">
         <LibraryPath Value="../../lib"/>
@@ -104,7 +104,7 @@
     <Configuration Name="Release" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-O2 -Wall -DBUILD_DLL -fPIC " C_Options="-O2 -Wall -DBUILD_DLL -fPIC " Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
         <IncludePath Value="/usr/local/include"/>
-        <IncludePath Value="../../inc"/>
+        <IncludePath Value="../../include"/>
       </Compiler>
       <Linker Options="-s " Required="yes">
         <LibraryPath Value="../../lib"/>

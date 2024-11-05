@@ -137,148 +137,148 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\swl\rnd_util\ContinuousLinearStochasticSystem.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\ContinuousLinearStochasticSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\ContinuousNonlinearStochasticSystem.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\ContinuousNonlinearStochasticSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\DiscreteLinearStochasticSystem.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\DiscreteLinearStochasticSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\DiscreteNonlinearStochasticSystem.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\DiscreteNonlinearStochasticSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\ExportRndUtil.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\ExportRndUtil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\ExtendedKalmanFilter.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\ExtendedKalmanFilter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\HoughTransform.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\HoughTransform.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\KalmanFilter.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\KalmanFilter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\MetropolisHastingsAlgorithm.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\MetropolisHastingsAlgorithm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\Ransac.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\Ransac.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\SamplingImportanceResampling.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\SamplingImportanceResampling.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\UnscentedKalmanFilter.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\UnscentedKalmanFilter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\UnscentedKalmanFilterWithAdditiveNoise.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\UnscentedKalmanFilterWithAdditiveNoise.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\HistogramAccumulator.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\HistogramAccumulator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\HistogramMatcher.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\HistogramMatcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\HistogramUtil.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\HistogramUtil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithMultinomialObservations.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\HmmWithMultinomialObservations.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\CDHMM.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\CDHMM.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\DDHMM.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\DDHMM.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\HMM.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\HMM.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithVonMisesFisherMixtureObservations.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\HmmWithVonMisesFisherMixtureObservations.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithVonMisesFisherObservations.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\HmmWithVonMisesFisherObservations.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithVonMisesMixtureObservations.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\HmmWithVonMisesMixtureObservations.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithVonMisesObservations.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\HmmWithVonMisesObservations.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithMultivariateNormalMixtureObservations.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\HmmWithMultivariateNormalMixtureObservations.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithMultivariateNormalObservations.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\HmmWithMultivariateNormalObservations.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithUnivariateNormalMixtureObservations.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\HmmWithUnivariateNormalMixtureObservations.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithUnivariateNormalObservations.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\HmmWithUnivariateNormalObservations.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\RejectionSampling.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\RejectionSampling.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RndUtilLocalApi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\HmmSegmenter.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\HmmSegmenter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\MixtureModel.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\MixtureModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\VonMisesMixtureModel.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\VonMisesMixtureModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\ContinuousDensityMixtureModel.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\ContinuousDensityMixtureModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\UnivariateNormalMixtureModel.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\UnivariateNormalMixtureModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\MultivariateNormalMixtureModel.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\MultivariateNormalMixtureModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\ArHmmWithUnivariateNormalMixtureObservations.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\ArHmmWithUnivariateNormalMixtureObservations.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\ArHmmWithUnivariateNormalObservations.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\ArHmmWithUnivariateNormalObservations.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\CDHMMWithMixtureObservations.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\CDHMMWithMixtureObservations.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="AutoRegression.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\ArHmmWithMultivariateNormalMixtureObservations.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\ArHmmWithMultivariateNormalMixtureObservations.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\ArHmmWithMultivariateNormalObservations.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\ArHmmWithMultivariateNormalObservations.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\DynamicTimeWarping.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\DynamicTimeWarping.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\LevenshteinDistance.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\LevenshteinDistance.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\Sort.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\Sort.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\GraphTraversal.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\GraphTraversal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\GraphAlgorithm.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\GraphAlgorithm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\SignalProcessing.h">
+    <ClInclude Include="..\..\include\swl\rnd_util\SignalProcessing.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

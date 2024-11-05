@@ -3,15 +3,15 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="include">
-    <File Name="../../inc/swl/view/ExportView.h"/>
-    <File Name="../../inc/swl/view/KeyEvent.h"/>
-    <File Name="../../inc/swl/view/MouseEvent.h"/>
-    <File Name="../../inc/swl/view/ViewBase.h"/>
-    <File Name="../../inc/swl/view/ViewCamera2.h"/>
-    <File Name="../../inc/swl/view/ViewCamera3.h"/>
-    <File Name="../../inc/swl/view/ViewContext.h"/>
-    <File Name="../../inc/swl/view/ViewEventController.h"/>
-    <File Name="../../inc/swl/view/ViewMatrix.h"/>
+    <File Name="../../include/swl/view/ExportView.h"/>
+    <File Name="../../include/swl/view/KeyEvent.h"/>
+    <File Name="../../include/swl/view/MouseEvent.h"/>
+    <File Name="../../include/swl/view/ViewBase.h"/>
+    <File Name="../../include/swl/view/ViewCamera2.h"/>
+    <File Name="../../include/swl/view/ViewCamera3.h"/>
+    <File Name="../../include/swl/view/ViewContext.h"/>
+    <File Name="../../include/swl/view/ViewEventController.h"/>
+    <File Name="../../include/swl/view/ViewMatrix.h"/>
   </VirtualDirectory>
   <VirtualDirectory Name="src">
     <File Name="ViewCamera2.cpp"/>
@@ -31,7 +31,7 @@
     </GlobalSettings>
     <Configuration Name="Debug" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-Wall -g -DBUILD_DLL -fPIC " C_Options="-Wall -g -DBUILD_DLL -fPIC " Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="../../inc"/>
+        <IncludePath Value="../../include"/>
         <IncludePath Value="/usr/local/include"/>
       </Compiler>
       <Linker Options="-O0" Required="yes">
@@ -74,7 +74,7 @@
     </Configuration>
     <Configuration Name="Release" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-O2 -Wall -DBUILD_DLL -fPIC " C_Options="-O2 -Wall -DBUILD_DLL -fPIC " Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="../../inc"/>
+        <IncludePath Value="../../include"/>
         <IncludePath Value="/usr/local/include"/>
       </Compiler>
       <Linker Options="-s " Required="yes">

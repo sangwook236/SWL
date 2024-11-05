@@ -46,23 +46,23 @@
 		</Build>
 		<Compiler>
 			<Add option="-fPIC" />
-			<Add directory="../../inc" />
+			<Add directory="../../include" />
 			<Add directory="/usr/local/include" />
 		</Compiler>
 		<Linker>
 			<Add directory="../../lib" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
-		<Unit filename="../../inc/swl/glutil/ExportGLUtil.h" />
-		<Unit filename="../../inc/swl/glutil/GLCamera.h" />
-		<Unit filename="../../inc/swl/glutil/GLCreateDisplayListVisitor.h" />
-		<Unit filename="../../inc/swl/glutil/GLDisplayListCallableInterface.h" />
-		<Unit filename="../../inc/swl/glutil/GLPickObjectVisitor.h" />
-		<Unit filename="../../inc/swl/glutil/GLPrintSceneVisitor.h" />
-		<Unit filename="../../inc/swl/glutil/GLRenderSceneVisitor.h" />
-		<Unit filename="../../inc/swl/glutil/GLShape.h" />
-		<Unit filename="../../inc/swl/glutil/GLShapeSceneNode.h" />
-		<Unit filename="../../inc/swl/glutil/IGLSceneVisitor.h" />
+		<Unit filename="../../include/swl/glutil/ExportGLUtil.h" />
+		<Unit filename="../../include/swl/glutil/GLCamera.h" />
+		<Unit filename="../../include/swl/glutil/GLCreateDisplayListVisitor.h" />
+		<Unit filename="../../include/swl/glutil/GLDisplayListCallableInterface.h" />
+		<Unit filename="../../include/swl/glutil/GLPickObjectVisitor.h" />
+		<Unit filename="../../include/swl/glutil/GLPrintSceneVisitor.h" />
+		<Unit filename="../../include/swl/glutil/GLRenderSceneVisitor.h" />
+		<Unit filename="../../include/swl/glutil/GLShape.h" />
+		<Unit filename="../../include/swl/glutil/GLShapeSceneNode.h" />
+		<Unit filename="../../include/swl/glutil/IGLSceneVisitor.h" />
 		<Unit filename="GLCamera.cpp" />
 		<Unit filename="GLCreateDisplayListVisitor.cpp" />
 		<Unit filename="GLDisplayListCallableInterface.cpp" />

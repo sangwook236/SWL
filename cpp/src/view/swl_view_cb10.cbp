@@ -44,22 +44,22 @@
 		</Build>
 		<Compiler>
 			<Add option="-fPIC" />
-			<Add directory="../../inc" />
+			<Add directory="../../include" />
 			<Add directory="/usr/local/include" />
 		</Compiler>
 		<Linker>
 			<Add directory="../../lib" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
-		<Unit filename="../../inc/swl/view/ExportView.h" />
-		<Unit filename="../../inc/swl/view/KeyEvent.h" />
-		<Unit filename="../../inc/swl/view/MouseEvent.h" />
-		<Unit filename="../../inc/swl/view/ViewBase.h" />
-		<Unit filename="../../inc/swl/view/ViewCamera2.h" />
-		<Unit filename="../../inc/swl/view/ViewCamera3.h" />
-		<Unit filename="../../inc/swl/view/ViewContext.h" />
-		<Unit filename="../../inc/swl/view/ViewEventController.h" />
-		<Unit filename="../../inc/swl/view/ViewMatrix.h" />
+		<Unit filename="../../include/swl/view/ExportView.h" />
+		<Unit filename="../../include/swl/view/KeyEvent.h" />
+		<Unit filename="../../include/swl/view/MouseEvent.h" />
+		<Unit filename="../../include/swl/view/ViewBase.h" />
+		<Unit filename="../../include/swl/view/ViewCamera2.h" />
+		<Unit filename="../../include/swl/view/ViewCamera3.h" />
+		<Unit filename="../../include/swl/view/ViewContext.h" />
+		<Unit filename="../../include/swl/view/ViewEventController.h" />
+		<Unit filename="../../include/swl/view/ViewMatrix.h" />
 		<Unit filename="ViewCamera2.cpp" />
 		<Unit filename="ViewCamera3.cpp" />
 		<Unit filename="ViewEventController.cpp" />

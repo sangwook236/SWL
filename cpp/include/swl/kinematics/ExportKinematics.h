@@ -4,24 +4,24 @@
 
 #if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
 #	if defined(_MSC_VER)
-#		if defined(SWL_KINEMATICS_EXPORT)
-#		    define SWL_KINEMATICS_API __declspec(dllexport)
+#		if defined(SWL_KINEMATICS_EXPORTS)
+#			define SWL_KINEMATICS_API __declspec(dllexport)
 #			define SWL_KINEMATICS_TEMPLATE_EXTERN
 #		else
-#		    define SWL_KINEMATICS_API __declspec(dllimport)
+#			define SWL_KINEMATICS_API __declspec(dllimport)
 #			define SWL_KINEMATICS_TEMPLATE_EXTERN extern
-#		endif  // SWL_KINEMATICS_EXPORT
+#		endif  // SWL_KINEMATICS_EXPORTS
 #	else
 #		define SWL_KINEMATICS_API
 #		define SWL_KINEMATICS_TEMPLATE_EXTERN
 #	endif  // _MSC_VER
 #elif defined(__MINGW32__)
 #	if defined(_USRDLL)
-#		if defined(SWL_KINEMATICS_EXPORT)
+#		if defined(SWL_KINEMATICS_EXPORTS)
 #			define SWL_KINEMATICS_API __declspec(dllexport)
 #		else
 #			define SWL_KINEMATICS_API __declspec(dllimport)
-#		endif  // SWL_KINEMATICS_EXPORT
+#		endif  // SWL_KINEMATICS_EXPORTS
 #	else
 #		define SWL_KINEMATICS_API
 #	endif  // _USRDLL

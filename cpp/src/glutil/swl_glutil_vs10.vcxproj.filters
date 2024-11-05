@@ -38,34 +38,34 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\swl\glutil\GLCamera.h">
+    <ClInclude Include="..\..\include\swl\glutil\GLCamera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\glutil\GLCreateDisplayListVisitor.h">
+    <ClInclude Include="..\..\include\swl\glutil\GLCreateDisplayListVisitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\glutil\GLDisplayListCallableInterface.h">
+    <ClInclude Include="..\..\include\swl\glutil\GLDisplayListCallableInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\glutil\GLPickObjectVisitor.h">
+    <ClInclude Include="..\..\include\swl\glutil\GLPickObjectVisitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\glutil\GLPrintSceneVisitor.h">
+    <ClInclude Include="..\..\include\swl\glutil\GLPrintSceneVisitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\glutil\GLRenderSceneVisitor.h">
+    <ClInclude Include="..\..\include\swl\glutil\GLRenderSceneVisitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\glutil\GLShape.h">
+    <ClInclude Include="..\..\include\swl\glutil\GLShape.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\glutil\GLShapeSceneNode.h">
+    <ClInclude Include="..\..\include\swl\glutil\GLShapeSceneNode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\glutil\IGLSceneVisitor.h">
+    <ClInclude Include="..\..\include\swl\glutil\IGLSceneVisitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\glutil\ExportGLUtil.h">
+    <ClInclude Include="..\..\include\swl\glutil\ExportGLUtil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

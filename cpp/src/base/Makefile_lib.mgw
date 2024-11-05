@@ -36,7 +36,7 @@ IMPORT_LIB_NAME=lib$(IMPORT_LIB_BASE_NAME).a
 
 #----------------------------------------------------------------------------
 
-INCS=-I$(WORKING_DIR)/inc/stl/stlport -I$(SYSTEM_DIR)/include/g++-3 -I../../inc
+INCS=-I$(WORKING_DIR)/include/stl/stlport -I$(SYSTEM_DIR)/include/g++-3 -I../../include
 LIB_SEARCH_PATH=-L./ -L$(SYSTEM_DIR)/lib -L$(INSTALL_DIR)
 ifeq ($(LIB_BUILD_TYPE),__BUILD_SHARED_LIB)
   LIBS=$(LIB_SEARCH_PATH) -lstdc++

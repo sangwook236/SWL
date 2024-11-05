@@ -51,8 +51,8 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SWL_PATTERN_RECOGNITION_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-2.4.3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_PATTERN_RECOGNITION_EXPORTS;WIN32;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;$(MY_USR_LOCAL_INCLUDE)/opencv-2.4.3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -69,8 +69,8 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SWL_PATTERN_RECOGNITION_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-2.4.3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_PATTERN_RECOGNITION_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;$(MY_USR_LOCAL_INCLUDE)/opencv-2.4.3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -83,11 +83,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\swl\pattern_recognition\ExportPatternRecognition.h" />
-    <ClInclude Include="..\..\inc\swl\pattern_recognition\GestureClassifierByHistogram.h" />
-    <ClInclude Include="..\..\inc\swl\pattern_recognition\GestureType.h" />
-    <ClInclude Include="..\..\inc\swl\pattern_recognition\IGestureClassifier.h" />
-    <ClInclude Include="..\..\inc\swl\pattern_recognition\MotionSegmenter.h" />
+    <ClInclude Include="..\..\include\swl\pattern_recognition\ExportPatternRecognition.h" />
+    <ClInclude Include="..\..\include\swl\pattern_recognition\GestureClassifierByHistogram.h" />
+    <ClInclude Include="..\..\include\swl\pattern_recognition\GestureType.h" />
+    <ClInclude Include="..\..\include\swl\pattern_recognition\IGestureClassifier.h" />
+    <ClInclude Include="..\..\include\swl\pattern_recognition\MotionSegmenter.h" />
     <ClInclude Include="HistogramGenerator.h" />
   </ItemGroup>
   <ItemGroup>

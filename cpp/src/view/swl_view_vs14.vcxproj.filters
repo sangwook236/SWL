@@ -29,31 +29,31 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\swl\view\ExportView.h">
+    <ClInclude Include="..\..\include\swl\view\ExportView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\view\KeyEvent.h">
+    <ClInclude Include="..\..\include\swl\view\KeyEvent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\view\MouseEvent.h">
+    <ClInclude Include="..\..\include\swl\view\MouseEvent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\view\ViewBase.h">
+    <ClInclude Include="..\..\include\swl\view\ViewBase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\view\ViewCamera2.h">
+    <ClInclude Include="..\..\include\swl\view\ViewCamera2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\view\ViewCamera3.h">
+    <ClInclude Include="..\..\include\swl\view\ViewCamera3.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\view\ViewContext.h">
+    <ClInclude Include="..\..\include\swl\view\ViewContext.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\view\ViewEventController.h">
+    <ClInclude Include="..\..\include\swl\view\ViewEventController.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\view\ViewMatrix.h">
+    <ClInclude Include="..\..\include\swl\view\ViewMatrix.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

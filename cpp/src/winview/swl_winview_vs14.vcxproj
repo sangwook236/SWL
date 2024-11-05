@@ -88,8 +88,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SWL_WIN_VIEW_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_WIN_VIEW_EXPORTS;WIN32;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -112,8 +112,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;SWL_WIN_VIEW_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_WIN_VIEW_EXPORTS;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -133,8 +133,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SWL_WIN_VIEW_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_WIN_VIEW_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -156,8 +156,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;SWL_WIN_VIEW_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_WIN_VIEW_EXPORTS;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -199,27 +199,27 @@
     <ClCompile Include="WinViewPrintApi.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\swl\winview\ExportWinView.h" />
-    <ClInclude Include="..\..\inc\swl\winview\GdiBitmapBufferedContext.h" />
-    <ClInclude Include="..\..\inc\swl\winview\GdiContext.h" />
-    <ClInclude Include="..\..\inc\swl\winview\GdiContextBase.h" />
-    <ClInclude Include="..\..\inc\swl\winview\GdiplusBitmapBufferedContext.h" />
-    <ClInclude Include="..\..\inc\swl\winview\GdiplusContext.h" />
-    <ClInclude Include="..\..\inc\swl\winview\GdiplusContextBase.h" />
-    <ClInclude Include="..\..\inc\swl\winview\GdiPrintContext.h" />
-    <ClInclude Include="..\..\inc\swl\winview\GdiRubberBand.h" />
-    <ClInclude Include="..\..\inc\swl\winview\WglBitmapBufferedContext.h" />
-    <ClInclude Include="..\..\inc\swl\winview\WglContextBase.h" />
-    <ClInclude Include="..\..\inc\swl\winview\WglDoubleBufferedContext.h" />
-    <ClInclude Include="..\..\inc\swl\winview\WglFont.h" />
-    <ClInclude Include="..\..\inc\swl\winview\WglPrintContext.h" />
-    <ClInclude Include="..\..\inc\swl\winview\WglViewBase.h" />
-    <ClInclude Include="..\..\inc\swl\winview\WglViewCaptureApi.h" />
-    <ClInclude Include="..\..\inc\swl\winview\WglViewPrintApi.h" />
-    <ClInclude Include="..\..\inc\swl\winview\WinClipboardApi.h" />
-    <ClInclude Include="..\..\inc\swl\winview\WinViewBase.h" />
-    <ClInclude Include="..\..\inc\swl\winview\WinViewCaptureApi.h" />
-    <ClInclude Include="..\..\inc\swl\winview\WinViewPrintApi.h" />
+    <ClInclude Include="..\..\include\swl\winview\ExportWinView.h" />
+    <ClInclude Include="..\..\include\swl\winview\GdiBitmapBufferedContext.h" />
+    <ClInclude Include="..\..\include\swl\winview\GdiContext.h" />
+    <ClInclude Include="..\..\include\swl\winview\GdiContextBase.h" />
+    <ClInclude Include="..\..\include\swl\winview\GdiplusBitmapBufferedContext.h" />
+    <ClInclude Include="..\..\include\swl\winview\GdiplusContext.h" />
+    <ClInclude Include="..\..\include\swl\winview\GdiplusContextBase.h" />
+    <ClInclude Include="..\..\include\swl\winview\GdiPrintContext.h" />
+    <ClInclude Include="..\..\include\swl\winview\GdiRubberBand.h" />
+    <ClInclude Include="..\..\include\swl\winview\WglBitmapBufferedContext.h" />
+    <ClInclude Include="..\..\include\swl\winview\WglContextBase.h" />
+    <ClInclude Include="..\..\include\swl\winview\WglDoubleBufferedContext.h" />
+    <ClInclude Include="..\..\include\swl\winview\WglFont.h" />
+    <ClInclude Include="..\..\include\swl\winview\WglPrintContext.h" />
+    <ClInclude Include="..\..\include\swl\winview\WglViewBase.h" />
+    <ClInclude Include="..\..\include\swl\winview\WglViewCaptureApi.h" />
+    <ClInclude Include="..\..\include\swl\winview\WglViewPrintApi.h" />
+    <ClInclude Include="..\..\include\swl\winview\WinClipboardApi.h" />
+    <ClInclude Include="..\..\include\swl\winview\WinViewBase.h" />
+    <ClInclude Include="..\..\include\swl\winview\WinViewCaptureApi.h" />
+    <ClInclude Include="..\..\include\swl\winview\WinViewPrintApi.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\base\swl_base_vs14.vcxproj">

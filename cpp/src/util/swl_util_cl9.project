@@ -3,21 +3,21 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="include">
-    <File Name="../../inc/swl/util/AsyncTcpSocketClient.h"/>
-    <File Name="../../inc/swl/util/ExportUtil.h"/>
-    <File Name="../../inc/swl/util/GuardedBuffer.h"/>
-    <File Name="../../inc/swl/util/IPacketDispatcher.h"/>
-    <File Name="../../inc/swl/util/IniParser.h"/>
-    <File Name="../../inc/swl/util/PacketPacker.h"/>
-    <File Name="../../inc/swl/util/RegionOfInterest.h"/>
-    <File Name="../../inc/swl/util/RegionOfInterestMgr.h"/>
-    <File Name="../../inc/swl/util/SerialPort.h"/>
-    <File Name="../../inc/swl/util/TcpSocketClient.h"/>
-    <File Name="../../inc/swl/util/TcpSocketConnection.h"/>
-    <File Name="../../inc/swl/util/TcpSocketConnectionUsingSession.h"/>
-    <File Name="../../inc/swl/util/TcpSocketServer.h"/>
-    <File Name="../../inc/swl/util/TcpSocketSession.h"/>
-    <File Name="../../inc/swl/util/WaveData.h"/>
+    <File Name="../../include/swl/util/AsyncTcpSocketClient.h"/>
+    <File Name="../../include/swl/util/ExportUtil.h"/>
+    <File Name="../../include/swl/util/GuardedBuffer.h"/>
+    <File Name="../../include/swl/util/IPacketDispatcher.h"/>
+    <File Name="../../include/swl/util/IniParser.h"/>
+    <File Name="../../include/swl/util/PacketPacker.h"/>
+    <File Name="../../include/swl/util/RegionOfInterest.h"/>
+    <File Name="../../include/swl/util/RegionOfInterestMgr.h"/>
+    <File Name="../../include/swl/util/SerialPort.h"/>
+    <File Name="../../include/swl/util/TcpSocketClient.h"/>
+    <File Name="../../include/swl/util/TcpSocketConnection.h"/>
+    <File Name="../../include/swl/util/TcpSocketConnectionUsingSession.h"/>
+    <File Name="../../include/swl/util/TcpSocketServer.h"/>
+    <File Name="../../include/swl/util/TcpSocketSession.h"/>
+    <File Name="../../include/swl/util/WaveData.h"/>
     <File Name="dictionary.h"/>
     <File Name="iniparser_impl.h"/>
     <File Name="strlib.h"/>
@@ -54,7 +54,7 @@
     </GlobalSettings>
     <Configuration Name="Debug" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-Wall -g -DBUILD_DLL -fexceptions -fPIC " C_Options="-Wall -g -DBUILD_DLL -fexceptions -fPIC " Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="../../inc"/>
+        <IncludePath Value="../../include"/>
         <IncludePath Value="/usr/local/include"/>
       </Compiler>
       <Linker Options="-O0" Required="yes">
@@ -97,7 +97,7 @@
     </Configuration>
     <Configuration Name="Release" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-O2 -Wall -DBUILD_DLL -fexceptions -fPIC " C_Options="-O2 -Wall -DBUILD_DLL -fexceptions -fPIC " Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="../../inc"/>
+        <IncludePath Value="../../include"/>
         <IncludePath Value="/usr/local/include"/>
       </Compiler>
       <Linker Options="-s " Required="yes">

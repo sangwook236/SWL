@@ -42,15 +42,15 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 			<Add option="-fPIC" />
-			<Add directory="../../inc" />
+			<Add directory="../../include" />
 			<Add directory="/usr/local/include" />
 		</Compiler>
 		<Linker>
 			<Add directory="../../lib" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
-		<Unit filename="../../inc/swl/posixutil/ExportPosixUtil.h" />
-		<Unit filename="../../inc/swl/posixutil/PosixTimer.h" />
+		<Unit filename="../../include/swl/posixutil/ExportPosixUtil.h" />
+		<Unit filename="../../include/swl/posixutil/PosixTimer.h" />
 		<Unit filename="PosixTimer.cpp" />
 		<Extensions>
 			<code_completion />

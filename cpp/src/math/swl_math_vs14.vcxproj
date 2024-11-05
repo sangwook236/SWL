@@ -88,8 +88,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/eigen3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SWL_MATH_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;$(MY_USR_LOCAL_INCLUDE)/eigen3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_MATH_EXPORTS;WIN32;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -112,8 +112,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/eigen3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;SWL_MATH_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;$(MY_USR_LOCAL_INCLUDE)/eigen3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_MATH_EXPORTS;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -133,8 +133,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/eigen3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SWL_MATH_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;$(MY_USR_LOCAL_INCLUDE)/eigen3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_MATH_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -156,8 +156,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/eigen3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;SWL_MATH_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;$(MY_USR_LOCAL_INCLUDE)/eigen3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_MATH_EXPORTS;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -191,32 +191,32 @@
     <ClCompile Include="Statistic.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\swl\math\Complex.h" />
-    <ClInclude Include="..\..\inc\swl\math\CurveFitting.h" />
-    <ClInclude Include="..\..\inc\swl\math\DataNormalization.h" />
-    <ClInclude Include="..\..\inc\swl\math\RootFinding.h" />
-    <ClInclude Include="..\..\inc\swl\math\Statistic.h" />
+    <ClInclude Include="..\..\include\swl\math\Complex.h" />
+    <ClInclude Include="..\..\include\swl\math\CurveFitting.h" />
+    <ClInclude Include="..\..\include\swl\math\DataNormalization.h" />
+    <ClInclude Include="..\..\include\swl\math\RootFinding.h" />
+    <ClInclude Include="..\..\include\swl\math\Statistic.h" />
     <ClInclude Include="ConvexHull.h" />
-    <ClInclude Include="..\..\inc\swl\math\Coordinates.h" />
-    <ClInclude Include="..\..\inc\swl\math\Duplex.h" />
-    <ClInclude Include="..\..\inc\swl\math\ExportMath.h" />
-    <ClInclude Include="..\..\inc\swl\math\GeometryUtil.h" />
-    <ClInclude Include="..\..\inc\swl\math\Line.h" />
-    <ClInclude Include="..\..\inc\swl\math\LineSegment.h" />
-    <ClInclude Include="..\..\inc\swl\math\MathConstant.h" />
-    <ClInclude Include="..\..\inc\swl\math\MathExt.h" />
-    <ClInclude Include="..\..\inc\swl\math\MathUtil.h" />
-    <ClInclude Include="..\..\inc\swl\math\Matrix.h" />
-    <ClInclude Include="..\..\inc\swl\math\Plane.h" />
-    <ClInclude Include="..\..\inc\swl\math\QMatrix.h" />
-    <ClInclude Include="..\..\inc\swl\math\Quaternion.h" />
-    <ClInclude Include="..\..\inc\swl\math\Rational.h" />
-    <ClInclude Include="..\..\inc\swl\math\RMatrix.h" />
-    <ClInclude Include="..\..\inc\swl\math\Rotation.h" />
-    <ClInclude Include="..\..\inc\swl\math\TMatrix.h" />
-    <ClInclude Include="..\..\inc\swl\math\Triangle.h" />
-    <ClInclude Include="..\..\inc\swl\math\TVector.h" />
-    <ClInclude Include="..\..\inc\swl\math\Vector.h" />
+    <ClInclude Include="..\..\include\swl\math\Coordinates.h" />
+    <ClInclude Include="..\..\include\swl\math\Duplex.h" />
+    <ClInclude Include="..\..\include\swl\math\ExportMath.h" />
+    <ClInclude Include="..\..\include\swl\math\GeometryUtil.h" />
+    <ClInclude Include="..\..\include\swl\math\Line.h" />
+    <ClInclude Include="..\..\include\swl\math\LineSegment.h" />
+    <ClInclude Include="..\..\include\swl\math\MathConstant.h" />
+    <ClInclude Include="..\..\include\swl\math\MathExt.h" />
+    <ClInclude Include="..\..\include\swl\math\MathUtil.h" />
+    <ClInclude Include="..\..\include\swl\math\Matrix.h" />
+    <ClInclude Include="..\..\include\swl\math\Plane.h" />
+    <ClInclude Include="..\..\include\swl\math\QMatrix.h" />
+    <ClInclude Include="..\..\include\swl\math\Quaternion.h" />
+    <ClInclude Include="..\..\include\swl\math\Rational.h" />
+    <ClInclude Include="..\..\include\swl\math\RMatrix.h" />
+    <ClInclude Include="..\..\include\swl\math\Rotation.h" />
+    <ClInclude Include="..\..\include\swl\math\TMatrix.h" />
+    <ClInclude Include="..\..\include\swl\math\Triangle.h" />
+    <ClInclude Include="..\..\include\swl\math\TVector.h" />
+    <ClInclude Include="..\..\include\swl\math\Vector.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\base\swl_base_vs14.vcxproj">

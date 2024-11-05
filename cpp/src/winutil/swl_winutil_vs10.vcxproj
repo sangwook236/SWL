@@ -48,8 +48,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SWL_WIN_UTIL_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_WIN_UTIL_EXPORTS;WIN32;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -71,8 +71,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SWL_WIN_UTIL_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_WIN_UTIL_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -105,15 +105,15 @@
     <ClCompile Include="WinSockClient.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\swl\winutil\ExportWinUtil.h" />
-    <ClInclude Include="..\..\inc\swl\winutil\MfcSockClient.h" />
-    <ClInclude Include="..\..\inc\swl\winutil\WinConsoleWindow.h" />
-    <ClInclude Include="..\..\inc\swl\winutil\WinFileCrypter.h" />
-    <ClInclude Include="..\..\inc\swl\winutil\WinFileLocker.h" />
-    <ClInclude Include="..\..\inc\swl\winutil\WinRegistrar.h" />
-    <ClInclude Include="..\..\inc\swl\winutil\WinSerialPort.h" />
-    <ClInclude Include="..\..\inc\swl\winutil\WinSockClient.h" />
-    <ClInclude Include="..\..\inc\swl\winutil\WinTimer.h" />
+    <ClInclude Include="..\..\include\swl\winutil\ExportWinUtil.h" />
+    <ClInclude Include="..\..\include\swl\winutil\MfcSockClient.h" />
+    <ClInclude Include="..\..\include\swl\winutil\WinConsoleWindow.h" />
+    <ClInclude Include="..\..\include\swl\winutil\WinFileCrypter.h" />
+    <ClInclude Include="..\..\include\swl\winutil\WinFileLocker.h" />
+    <ClInclude Include="..\..\include\swl\winutil\WinRegistrar.h" />
+    <ClInclude Include="..\..\include\swl\winutil\WinSerialPort.h" />
+    <ClInclude Include="..\..\include\swl\winutil\WinSockClient.h" />
+    <ClInclude Include="..\..\include\swl\winutil\WinTimer.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\base\swl_base_vs10.vcxproj">

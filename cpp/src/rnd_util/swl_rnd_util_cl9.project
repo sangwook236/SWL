@@ -3,53 +3,53 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="include">
-    <File Name="../../inc/swl/rnd_util/ArHmmWithMultivariateNormalMixtureObservations.h"/>
-    <File Name="../../inc/swl/rnd_util/ArHmmWithMultivariateNormalObservations.h"/>
-    <File Name="../../inc/swl/rnd_util/ArHmmWithUnivariateNormalMixtureObservations.h"/>
-    <File Name="../../inc/swl/rnd_util/ArHmmWithUnivariateNormalObservations.h"/>
-    <File Name="../../inc/swl/rnd_util/CDHMM.h"/>
-    <File Name="../../inc/swl/rnd_util/CDHMMWithMixtureObservations.h"/>
-    <File Name="../../inc/swl/rnd_util/ContinuousDensityMixtureModel.h"/>
-    <File Name="../../inc/swl/rnd_util/ContinuousLinearStochasticSystem.h"/>
-    <File Name="../../inc/swl/rnd_util/ContinuousNonlinearStochasticSystem.h"/>
-    <File Name="../../inc/swl/rnd_util/DDHMM.h"/>
-    <File Name="../../inc/swl/rnd_util/DiscreteLinearStochasticSystem.h"/>
-    <File Name="../../inc/swl/rnd_util/DiscreteNonlinearStochasticSystem.h"/>
-    <File Name="../../inc/swl/rnd_util/DynamicTimeWarping.h"/>
-    <File Name="../../inc/swl/rnd_util/ExportRndUtil.h"/>
-    <File Name="../../inc/swl/rnd_util/ExtendedKalmanFilter.h"/>
-    <File Name="../../inc/swl/rnd_util/GraphAlgorithm.h"/>
-    <File Name="../../inc/swl/rnd_util/GraphTraversal.h"/>
-    <File Name="../../inc/swl/rnd_util/HMM.h"/>
-    <File Name="../../inc/swl/rnd_util/HistogramAccumulator.h"/>
-    <File Name="../../inc/swl/rnd_util/HistogramMatcher.h"/>
-    <File Name="../../inc/swl/rnd_util/HistogramUtil.h"/>
-    <File Name="../../inc/swl/rnd_util/HmmSegmenter.h"/>
-    <File Name="../../inc/swl/rnd_util/HmmWithMixtureObservations.h"/>
-    <File Name="../../inc/swl/rnd_util/HmmWithMultinomialObservations.h"/>
-    <File Name="../../inc/swl/rnd_util/HmmWithMultivariateNormalMixtureObservations.h"/>
-    <File Name="../../inc/swl/rnd_util/HmmWithMultivariateNormalObservations.h"/>
-    <File Name="../../inc/swl/rnd_util/HmmWithUnivariateNormalMixtureObservations.h"/>
-    <File Name="../../inc/swl/rnd_util/HmmWithUnivariateNormalObservations.h"/>
-    <File Name="../../inc/swl/rnd_util/HmmWithVonMisesFisherMixtureObservations.h"/>
-    <File Name="../../inc/swl/rnd_util/HmmWithVonMisesFisherObservations.h"/>
-    <File Name="../../inc/swl/rnd_util/HmmWithVonMisesMixtureObservations.h"/>
-    <File Name="../../inc/swl/rnd_util/HmmWithVonMisesObservations.h"/>
-    <File Name="../../inc/swl/rnd_util/HoughTransform.h"/>
-    <File Name="../../inc/swl/rnd_util/KalmanFilter.h"/>
-    <File Name="../../inc/swl/rnd_util/LevenshteinDistance.h"/>
-    <File Name="../../inc/swl/rnd_util/MetropolisHastingsAlgorithm.h"/>
-    <File Name="../../inc/swl/rnd_util/MixtureModel.h"/>
-    <File Name="../../inc/swl/rnd_util/MultivariateNormalMixtureModel.h"/>
-    <File Name="../../inc/swl/rnd_util/Ransac.h"/>
-    <File Name="../../inc/swl/rnd_util/RejectionSampling.h"/>
-    <File Name="../../inc/swl/rnd_util/SamplingImportanceResampling.h"/>
-    <File Name="../../inc/swl/rnd_util/SignalProcessing.h"/>
-    <File Name="../../inc/swl/rnd_util/Sort.h"/>
-    <File Name="../../inc/swl/rnd_util/UnivariateNormalMixtureModel.h"/>
-    <File Name="../../inc/swl/rnd_util/UnscentedKalmanFilter.h"/>
-    <File Name="../../inc/swl/rnd_util/UnscentedKalmanFilterWithAdditiveNoise.h"/>
-    <File Name="../../inc/swl/rnd_util/VonMisesMixtureModel.h"/>
+    <File Name="../../include/swl/rnd_util/ArHmmWithMultivariateNormalMixtureObservations.h"/>
+    <File Name="../../include/swl/rnd_util/ArHmmWithMultivariateNormalObservations.h"/>
+    <File Name="../../include/swl/rnd_util/ArHmmWithUnivariateNormalMixtureObservations.h"/>
+    <File Name="../../include/swl/rnd_util/ArHmmWithUnivariateNormalObservations.h"/>
+    <File Name="../../include/swl/rnd_util/CDHMM.h"/>
+    <File Name="../../include/swl/rnd_util/CDHMMWithMixtureObservations.h"/>
+    <File Name="../../include/swl/rnd_util/ContinuousDensityMixtureModel.h"/>
+    <File Name="../../include/swl/rnd_util/ContinuousLinearStochasticSystem.h"/>
+    <File Name="../../include/swl/rnd_util/ContinuousNonlinearStochasticSystem.h"/>
+    <File Name="../../include/swl/rnd_util/DDHMM.h"/>
+    <File Name="../../include/swl/rnd_util/DiscreteLinearStochasticSystem.h"/>
+    <File Name="../../include/swl/rnd_util/DiscreteNonlinearStochasticSystem.h"/>
+    <File Name="../../include/swl/rnd_util/DynamicTimeWarping.h"/>
+    <File Name="../../include/swl/rnd_util/ExportRndUtil.h"/>
+    <File Name="../../include/swl/rnd_util/ExtendedKalmanFilter.h"/>
+    <File Name="../../include/swl/rnd_util/GraphAlgorithm.h"/>
+    <File Name="../../include/swl/rnd_util/GraphTraversal.h"/>
+    <File Name="../../include/swl/rnd_util/HMM.h"/>
+    <File Name="../../include/swl/rnd_util/HistogramAccumulator.h"/>
+    <File Name="../../include/swl/rnd_util/HistogramMatcher.h"/>
+    <File Name="../../include/swl/rnd_util/HistogramUtil.h"/>
+    <File Name="../../include/swl/rnd_util/HmmSegmenter.h"/>
+    <File Name="../../include/swl/rnd_util/HmmWithMixtureObservations.h"/>
+    <File Name="../../include/swl/rnd_util/HmmWithMultinomialObservations.h"/>
+    <File Name="../../include/swl/rnd_util/HmmWithMultivariateNormalMixtureObservations.h"/>
+    <File Name="../../include/swl/rnd_util/HmmWithMultivariateNormalObservations.h"/>
+    <File Name="../../include/swl/rnd_util/HmmWithUnivariateNormalMixtureObservations.h"/>
+    <File Name="../../include/swl/rnd_util/HmmWithUnivariateNormalObservations.h"/>
+    <File Name="../../include/swl/rnd_util/HmmWithVonMisesFisherMixtureObservations.h"/>
+    <File Name="../../include/swl/rnd_util/HmmWithVonMisesFisherObservations.h"/>
+    <File Name="../../include/swl/rnd_util/HmmWithVonMisesMixtureObservations.h"/>
+    <File Name="../../include/swl/rnd_util/HmmWithVonMisesObservations.h"/>
+    <File Name="../../include/swl/rnd_util/HoughTransform.h"/>
+    <File Name="../../include/swl/rnd_util/KalmanFilter.h"/>
+    <File Name="../../include/swl/rnd_util/LevenshteinDistance.h"/>
+    <File Name="../../include/swl/rnd_util/MetropolisHastingsAlgorithm.h"/>
+    <File Name="../../include/swl/rnd_util/MixtureModel.h"/>
+    <File Name="../../include/swl/rnd_util/MultivariateNormalMixtureModel.h"/>
+    <File Name="../../include/swl/rnd_util/Ransac.h"/>
+    <File Name="../../include/swl/rnd_util/RejectionSampling.h"/>
+    <File Name="../../include/swl/rnd_util/SamplingImportanceResampling.h"/>
+    <File Name="../../include/swl/rnd_util/SignalProcessing.h"/>
+    <File Name="../../include/swl/rnd_util/Sort.h"/>
+    <File Name="../../include/swl/rnd_util/UnivariateNormalMixtureModel.h"/>
+    <File Name="../../include/swl/rnd_util/UnscentedKalmanFilter.h"/>
+    <File Name="../../include/swl/rnd_util/UnscentedKalmanFilterWithAdditiveNoise.h"/>
+    <File Name="../../include/swl/rnd_util/VonMisesMixtureModel.h"/>
     <File Name="AutoRegression.h"/>
     <File Name="RndUtilLocalApi.h"/>
   </VirtualDirectory>
@@ -107,7 +107,7 @@
     </GlobalSettings>
     <Configuration Name="Debug" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-std=c++11;-Wall -g -DBUILD_DLL -fPIC" C_Options="-Wall -g -DBUILD_DLL -fPIC" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="../../inc"/>
+        <IncludePath Value="../../include"/>
         <IncludePath Value="/usr/local/include"/>
       </Compiler>
       <Linker Options="-O0" Required="yes">
@@ -155,7 +155,7 @@
     </Configuration>
     <Configuration Name="Release" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-std=c++11;-O2 -Wall -DBUILD_DLL -fPIC" C_Options="-O2 -Wall -DBUILD_DLL -fPIC" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="../../inc"/>
+        <IncludePath Value="../../include"/>
         <IncludePath Value="/usr/local/include"/>
       </Compiler>
       <Linker Options="-s " Required="yes">

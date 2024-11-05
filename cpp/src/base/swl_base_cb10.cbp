@@ -40,7 +40,7 @@
 		</Build>
 		<Compiler>
 			<Add option="-fPIC" />
-			<Add directory="../../inc" />
+			<Add directory="../../include" />
 			<Add directory="/usr/local/include" />
 		</Compiler>
 		<Linker>
@@ -49,24 +49,24 @@
 			<Add directory="../../lib" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
-		<Unit filename="../../inc/swl/base/ExportBase.h" />
-		<Unit filename="../../inc/swl/base/INotifier.h" />
-		<Unit filename="../../inc/swl/base/IObserver.h" />
-		<Unit filename="../../inc/swl/base/IPrintable.h" />
-		<Unit filename="../../inc/swl/base/IVisitable.h" />
-		<Unit filename="../../inc/swl/base/Log.h" />
-		<Unit filename="../../inc/swl/base/LogException.h" />
-		<Unit filename="../../inc/swl/base/MvcController.h" />
-		<Unit filename="../../inc/swl/base/MvcModel.h" />
-		<Unit filename="../../inc/swl/base/MvcModelUpdateController.h" />
-		<Unit filename="../../inc/swl/base/MvcView.h" />
-		<Unit filename="../../inc/swl/base/MvcViewUpdateController.h" />
-		<Unit filename="../../inc/swl/base/Point.h" />
-		<Unit filename="../../inc/swl/base/Region.h" />
-		<Unit filename="../../inc/swl/base/ReturnException.h" />
-		<Unit filename="../../inc/swl/base/Size.h" />
-		<Unit filename="../../inc/swl/base/String.h" />
-		<Unit filename="../../inc/swl/base/Tuple.h" />
+		<Unit filename="../../include/swl/base/ExportBase.h" />
+		<Unit filename="../../include/swl/base/INotifier.h" />
+		<Unit filename="../../include/swl/base/IObserver.h" />
+		<Unit filename="../../include/swl/base/IPrintable.h" />
+		<Unit filename="../../include/swl/base/IVisitable.h" />
+		<Unit filename="../../include/swl/base/Log.h" />
+		<Unit filename="../../include/swl/base/LogException.h" />
+		<Unit filename="../../include/swl/base/MvcController.h" />
+		<Unit filename="../../include/swl/base/MvcModel.h" />
+		<Unit filename="../../include/swl/base/MvcModelUpdateController.h" />
+		<Unit filename="../../include/swl/base/MvcView.h" />
+		<Unit filename="../../include/swl/base/MvcViewUpdateController.h" />
+		<Unit filename="../../include/swl/base/Point.h" />
+		<Unit filename="../../include/swl/base/Region.h" />
+		<Unit filename="../../include/swl/base/ReturnException.h" />
+		<Unit filename="../../include/swl/base/Size.h" />
+		<Unit filename="../../include/swl/base/String.h" />
+		<Unit filename="../../include/swl/base/Tuple.h" />
 		<Unit filename="INotifier.cpp" />
 		<Unit filename="IObserver.cpp" />
 		<Unit filename="Log.cpp" />

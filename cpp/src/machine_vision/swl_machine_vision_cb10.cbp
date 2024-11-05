@@ -50,7 +50,7 @@
 			<Add option="-std=c++11" />
 			<Add option="-fPIC" />
 			<Add option="-fopenmp" />
-			<Add directory="../../inc" />
+			<Add directory="../../include" />
 			<Add directory="/usr/local/include" />
 		</Compiler>
 		<Linker>
@@ -61,16 +61,16 @@
 			<Add directory="../../lib" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
-		<Unit filename="../../inc/swl/machine_vision/BoundaryExtraction.h" />
-		<Unit filename="../../inc/swl/machine_vision/DerivativesOfGaussian.h" />
-		<Unit filename="../../inc/swl/machine_vision/ExportMachineVision.h" />
-		<Unit filename="../../inc/swl/machine_vision/ImageFilter.h" />
-		<Unit filename="../../inc/swl/machine_vision/ImageRectificationUsingOpenCV.h" />
-		<Unit filename="../../inc/swl/machine_vision/ImageUndistortionUsingOpenCV.h" />
-		<Unit filename="../../inc/swl/machine_vision/KinectSensor.h" />
-		<Unit filename="../../inc/swl/machine_vision/NonMaximaSuppression.h" />
-		<Unit filename="../../inc/swl/machine_vision/ScaleSpace.h" />
-		<Unit filename="../../inc/swl/machine_vision/SkeletonAlgorithm.h" />
+		<Unit filename="../../include/swl/machine_vision/BoundaryExtraction.h" />
+		<Unit filename="../../include/swl/machine_vision/DerivativesOfGaussian.h" />
+		<Unit filename="../../include/swl/machine_vision/ExportMachineVision.h" />
+		<Unit filename="../../include/swl/machine_vision/ImageFilter.h" />
+		<Unit filename="../../include/swl/machine_vision/ImageRectificationUsingOpenCV.h" />
+		<Unit filename="../../include/swl/machine_vision/ImageUndistortionUsingOpenCV.h" />
+		<Unit filename="../../include/swl/machine_vision/KinectSensor.h" />
+		<Unit filename="../../include/swl/machine_vision/NonMaximaSuppression.h" />
+		<Unit filename="../../include/swl/machine_vision/ScaleSpace.h" />
+		<Unit filename="../../include/swl/machine_vision/SkeletonAlgorithm.h" />
 		<Unit filename="BoundaryExtraction.cpp" />
 		<Unit filename="DerivativesOfGaussian.cpp" />
 		<Unit filename="ImageFilter.cpp" />

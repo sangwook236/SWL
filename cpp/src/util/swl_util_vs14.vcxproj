@@ -88,8 +88,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SWL_UTIL_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_UTIL_EXPORTS;WIN32;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -112,8 +112,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;SWL_UTIL_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_UTIL_EXPORTS;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -133,8 +133,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SWL_UTIL_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_UTIL_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -156,8 +156,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;SWL_UTIL_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_UTIL_EXPORTS;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -206,24 +206,24 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\swl\util\AsyncTcpSocketClient.h" />
-    <ClInclude Include="..\..\inc\swl\util\WaveData.h" />
+    <ClInclude Include="..\..\include\swl\util\AsyncTcpSocketClient.h" />
+    <ClInclude Include="..\..\include\swl\util\WaveData.h" />
     <ClInclude Include="dictionary.h" />
-    <ClInclude Include="..\..\inc\swl\util\ExportUtil.h" />
-    <ClInclude Include="..\..\inc\swl\util\GuardedBuffer.h" />
-    <ClInclude Include="..\..\inc\swl\util\IniParser.h" />
+    <ClInclude Include="..\..\include\swl\util\ExportUtil.h" />
+    <ClInclude Include="..\..\include\swl\util\GuardedBuffer.h" />
+    <ClInclude Include="..\..\include\swl\util\IniParser.h" />
     <ClInclude Include="iniparser_impl.h" />
-    <ClInclude Include="..\..\inc\swl\util\IPacketDispatcher.h" />
-    <ClInclude Include="..\..\inc\swl\util\PacketPacker.h" />
-    <ClInclude Include="..\..\inc\swl\util\RegionOfInterest.h" />
-    <ClInclude Include="..\..\inc\swl\util\RegionOfInterestMgr.h" />
-    <ClInclude Include="..\..\inc\swl\util\SerialPort.h" />
+    <ClInclude Include="..\..\include\swl\util\IPacketDispatcher.h" />
+    <ClInclude Include="..\..\include\swl\util\PacketPacker.h" />
+    <ClInclude Include="..\..\include\swl\util\RegionOfInterest.h" />
+    <ClInclude Include="..\..\include\swl\util\RegionOfInterestMgr.h" />
+    <ClInclude Include="..\..\include\swl\util\SerialPort.h" />
     <ClInclude Include="strlib.h" />
-    <ClInclude Include="..\..\inc\swl\util\TcpSocketClient.h" />
-    <ClInclude Include="..\..\inc\swl\util\TcpSocketConnection.h" />
-    <ClInclude Include="..\..\inc\swl\util\TcpSocketConnectionUsingSession.h" />
-    <ClInclude Include="..\..\inc\swl\util\TcpSocketServer.h" />
-    <ClInclude Include="..\..\inc\swl\util\TcpSocketSession.h" />
+    <ClInclude Include="..\..\include\swl\util\TcpSocketClient.h" />
+    <ClInclude Include="..\..\include\swl\util\TcpSocketConnection.h" />
+    <ClInclude Include="..\..\include\swl\util\TcpSocketConnectionUsingSession.h" />
+    <ClInclude Include="..\..\include\swl\util\TcpSocketServer.h" />
+    <ClInclude Include="..\..\include\swl\util\TcpSocketSession.h" />
     <ClInclude Include="xgetopt.h" />
   </ItemGroup>
   <ItemGroup>

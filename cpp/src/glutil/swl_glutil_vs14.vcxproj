@@ -88,8 +88,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SWL_GL_UTIL_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_GL_UTIL_EXPORTS;WIN32;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -112,8 +112,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;SWL_GL_UTIL_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_GL_UTIL_EXPORTS;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -133,8 +133,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SWL_GL_UTIL_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_GL_UTIL_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -156,8 +156,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;SWL_GL_UTIL_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_GL_UTIL_EXPORTS;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -186,16 +186,16 @@
     <ClCompile Include="GLShape.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\swl\glutil\ExportGLUtil.h" />
-    <ClInclude Include="..\..\inc\swl\glutil\GLCamera.h" />
-    <ClInclude Include="..\..\inc\swl\glutil\GLCreateDisplayListVisitor.h" />
-    <ClInclude Include="..\..\inc\swl\glutil\GLDisplayListCallableInterface.h" />
-    <ClInclude Include="..\..\inc\swl\glutil\GLPickObjectVisitor.h" />
-    <ClInclude Include="..\..\inc\swl\glutil\GLPrintSceneVisitor.h" />
-    <ClInclude Include="..\..\inc\swl\glutil\GLRenderSceneVisitor.h" />
-    <ClInclude Include="..\..\inc\swl\glutil\GLShape.h" />
-    <ClInclude Include="..\..\inc\swl\glutil\GLShapeSceneNode.h" />
-    <ClInclude Include="..\..\inc\swl\glutil\IGLSceneVisitor.h" />
+    <ClInclude Include="..\..\include\swl\glutil\ExportGLUtil.h" />
+    <ClInclude Include="..\..\include\swl\glutil\GLCamera.h" />
+    <ClInclude Include="..\..\include\swl\glutil\GLCreateDisplayListVisitor.h" />
+    <ClInclude Include="..\..\include\swl\glutil\GLDisplayListCallableInterface.h" />
+    <ClInclude Include="..\..\include\swl\glutil\GLPickObjectVisitor.h" />
+    <ClInclude Include="..\..\include\swl\glutil\GLPrintSceneVisitor.h" />
+    <ClInclude Include="..\..\include\swl\glutil\GLRenderSceneVisitor.h" />
+    <ClInclude Include="..\..\include\swl\glutil\GLShape.h" />
+    <ClInclude Include="..\..\include\swl\glutil\GLShapeSceneNode.h" />
+    <ClInclude Include="..\..\include\swl\glutil\IGLSceneVisitor.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\base\swl_base_vs14.vcxproj">

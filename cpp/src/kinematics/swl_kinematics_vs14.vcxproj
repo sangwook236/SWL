@@ -88,8 +88,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SWL_KINEMATICS_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_KINEMATICS_EXPORTS;WIN32;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -111,8 +111,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;SWL_KINEMATICS_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_KINEMATICS_EXPORTS;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -131,8 +131,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SWL_KINEMATICS_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_KINEMATICS_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -153,8 +153,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;SWL_KINEMATICS_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_KINEMATICS_EXPORTS;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -195,27 +195,27 @@
     <ClCompile Include="StanfordArmKinematics.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\swl\kinematics\ArcPathPlanner.h" />
-    <ClInclude Include="..\..\inc\swl\kinematics\ArticulatedKinematics.h" />
-    <ClInclude Include="..\..\inc\swl\kinematics\CartesianKinematics.h" />
-    <ClInclude Include="..\..\inc\swl\kinematics\CartesianPathPlanner.h" />
-    <ClInclude Include="..\..\inc\swl\kinematics\CurvePathPlanner.h" />
-    <ClInclude Include="..\..\inc\swl\kinematics\DHParam.h" />
-    <ClInclude Include="..\..\inc\swl\kinematics\ExportKinematics.h" />
-    <ClInclude Include="..\..\inc\swl\kinematics\Joint.h" />
-    <ClInclude Include="..\..\inc\swl\kinematics\JointParam.h" />
-    <ClInclude Include="..\..\inc\swl\kinematics\JointPathPlanner.h" />
-    <ClInclude Include="..\..\inc\swl\kinematics\Kinematics.h" />
-    <ClInclude Include="..\..\inc\swl\kinematics\LinePathPlanner.h" />
-    <ClInclude Include="..\..\inc\swl\kinematics\Link.h" />
-    <ClInclude Include="..\..\inc\swl\kinematics\ParallelogramLinkKinematics.h" />
-    <ClInclude Include="..\..\inc\swl\kinematics\PathBlender.h" />
-    <ClInclude Include="..\..\inc\swl\kinematics\PathPlanner.h" />
-    <ClInclude Include="..\..\inc\swl\kinematics\PumaKinematics.h" />
-    <ClInclude Include="..\..\inc\swl\kinematics\RobotKinematics.h" />
-    <ClInclude Include="..\..\inc\swl\kinematics\ScaraKinematics.h" />
-    <ClInclude Include="..\..\inc\swl\kinematics\ScrewAxis.h" />
-    <ClInclude Include="..\..\inc\swl\kinematics\StanfordArmKinematics.h" />
+    <ClInclude Include="..\..\include\swl\kinematics\ArcPathPlanner.h" />
+    <ClInclude Include="..\..\include\swl\kinematics\ArticulatedKinematics.h" />
+    <ClInclude Include="..\..\include\swl\kinematics\CartesianKinematics.h" />
+    <ClInclude Include="..\..\include\swl\kinematics\CartesianPathPlanner.h" />
+    <ClInclude Include="..\..\include\swl\kinematics\CurvePathPlanner.h" />
+    <ClInclude Include="..\..\include\swl\kinematics\DHParam.h" />
+    <ClInclude Include="..\..\include\swl\kinematics\ExportKinematics.h" />
+    <ClInclude Include="..\..\include\swl\kinematics\Joint.h" />
+    <ClInclude Include="..\..\include\swl\kinematics\JointParam.h" />
+    <ClInclude Include="..\..\include\swl\kinematics\JointPathPlanner.h" />
+    <ClInclude Include="..\..\include\swl\kinematics\Kinematics.h" />
+    <ClInclude Include="..\..\include\swl\kinematics\LinePathPlanner.h" />
+    <ClInclude Include="..\..\include\swl\kinematics\Link.h" />
+    <ClInclude Include="..\..\include\swl\kinematics\ParallelogramLinkKinematics.h" />
+    <ClInclude Include="..\..\include\swl\kinematics\PathBlender.h" />
+    <ClInclude Include="..\..\include\swl\kinematics\PathPlanner.h" />
+    <ClInclude Include="..\..\include\swl\kinematics\PumaKinematics.h" />
+    <ClInclude Include="..\..\include\swl\kinematics\RobotKinematics.h" />
+    <ClInclude Include="..\..\include\swl\kinematics\ScaraKinematics.h" />
+    <ClInclude Include="..\..\include\swl\kinematics\ScrewAxis.h" />
+    <ClInclude Include="..\..\include\swl\kinematics\StanfordArmKinematics.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\base\swl_base_vs14.vcxproj">

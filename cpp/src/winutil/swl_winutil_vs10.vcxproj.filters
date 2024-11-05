@@ -38,31 +38,31 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\swl\winutil\ExportWinUtil.h">
+    <ClInclude Include="..\..\include\swl\winutil\ExportWinUtil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\winutil\MfcSockClient.h">
+    <ClInclude Include="..\..\include\swl\winutil\MfcSockClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\winutil\WinConsoleWindow.h">
+    <ClInclude Include="..\..\include\swl\winutil\WinConsoleWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\winutil\WinFileCrypter.h">
+    <ClInclude Include="..\..\include\swl\winutil\WinFileCrypter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\winutil\WinFileLocker.h">
+    <ClInclude Include="..\..\include\swl\winutil\WinFileLocker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\winutil\WinRegistrar.h">
+    <ClInclude Include="..\..\include\swl\winutil\WinRegistrar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\winutil\WinSerialPort.h">
+    <ClInclude Include="..\..\include\swl\winutil\WinSerialPort.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\winutil\WinSockClient.h">
+    <ClInclude Include="..\..\include\swl\winutil\WinSockClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\winutil\WinTimer.h">
+    <ClInclude Include="..\..\include\swl\winutil\WinTimer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

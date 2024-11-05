@@ -7,7 +7,7 @@
     </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+      <Extensions>h;hpp;hxx;hm;inl;include;xsd</Extensions>
     </Filter>
     <Filter Include="Resource Files">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
@@ -20,28 +20,28 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\swl\machine_learning\QLambda.h">
+    <ClInclude Include="..\..\include\swl\machine_learning\QLambda.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\machine_learning\QLearning.h">
+    <ClInclude Include="..\..\include\swl\machine_learning\QLearning.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\machine_learning\Sarsa.h">
+    <ClInclude Include="..\..\include\swl\machine_learning\Sarsa.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\machine_learning\SarsaLambda.h">
+    <ClInclude Include="..\..\include\swl\machine_learning\SarsaLambda.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\machine_learning\TDLambda.h">
+    <ClInclude Include="..\..\include\swl\machine_learning\TDLambda.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\machine_learning\TDLearning.h">
+    <ClInclude Include="..\..\include\swl\machine_learning\TDLearning.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\machine_learning\TDLearningBase.h">
+    <ClInclude Include="..\..\include\swl\machine_learning\TDLearningBase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\machine_learning\ExportMachineLearning.h">
+    <ClInclude Include="..\..\include\swl\machine_learning\ExportMachineLearning.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

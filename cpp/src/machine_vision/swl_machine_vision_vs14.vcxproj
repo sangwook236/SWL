@@ -88,8 +88,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-4.1.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SWL_MACHINE_VISION_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;$(MY_USR_LOCAL_INCLUDE)/opencv-4.1.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_MACHINE_VISION_EXPORTS;WIN32;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -112,8 +112,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-4.1.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;SWL_MACHINE_VISION_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;$(MY_USR_LOCAL_INCLUDE)/opencv-4.1.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_MACHINE_VISION_EXPORTS;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -133,8 +133,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-4.1.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SWL_MACHINE_VISION_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;$(MY_USR_LOCAL_INCLUDE)/opencv-4.1.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_MACHINE_VISION_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -156,8 +156,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-4.1.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;SWL_MACHINE_VISION_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;$(MY_USR_LOCAL_INCLUDE)/opencv-4.1.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWL_MACHINE_VISION_EXPORTS;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -177,17 +177,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\swl\machine_vision\BoundaryExtraction.h" />
-    <ClInclude Include="..\..\inc\swl\machine_vision\Convolution.h" />
-    <ClInclude Include="..\..\inc\swl\machine_vision\DerivativesOfGaussian.h" />
-    <ClInclude Include="..\..\inc\swl\machine_vision\ExportMachineVision.h" />
-    <ClInclude Include="..\..\inc\swl\machine_vision\ImageFilter.h" />
-    <ClInclude Include="..\..\inc\swl\machine_vision\ImageRectificationUsingOpenCV.h" />
-    <ClInclude Include="..\..\inc\swl\machine_vision\ImageUndistortionUsingOpenCV.h" />
-    <ClInclude Include="..\..\inc\swl\machine_vision\KinectSensor.h" />
-    <ClInclude Include="..\..\inc\swl\machine_vision\NonMaximumSuppression.h" />
-    <ClInclude Include="..\..\inc\swl\machine_vision\ScaleSpace.h" />
-    <ClInclude Include="..\..\inc\swl\machine_vision\SkeletonAlgorithm.h" />
+    <ClInclude Include="..\..\include\swl\machine_vision\BoundaryExtraction.h" />
+    <ClInclude Include="..\..\include\swl\machine_vision\Convolution.h" />
+    <ClInclude Include="..\..\include\swl\machine_vision\DerivativesOfGaussian.h" />
+    <ClInclude Include="..\..\include\swl\machine_vision\ExportMachineVision.h" />
+    <ClInclude Include="..\..\include\swl\machine_vision\ImageFilter.h" />
+    <ClInclude Include="..\..\include\swl\machine_vision\ImageRectificationUsingOpenCV.h" />
+    <ClInclude Include="..\..\include\swl\machine_vision\ImageUndistortionUsingOpenCV.h" />
+    <ClInclude Include="..\..\include\swl\machine_vision\KinectSensor.h" />
+    <ClInclude Include="..\..\include\swl\machine_vision\NonMaximumSuppression.h" />
+    <ClInclude Include="..\..\include\swl\machine_vision\ScaleSpace.h" />
+    <ClInclude Include="..\..\include\swl\machine_vision\SkeletonAlgorithm.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\base\swl_base_vs14.vcxproj">

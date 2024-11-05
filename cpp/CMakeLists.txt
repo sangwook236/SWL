@@ -366,7 +366,7 @@ endif(USE_LYX)
 ##
 ## Add include and link paths.
 ##
-include_directories(${CMAKE_SOURCE_DIR}/inc)  # ../../inc
+include_directories(${CMAKE_SOURCE_DIR}/include)  # ../../include
 link_directories(${CMAKE_SOURCE_DIR}/lib)  # ../../lib
 add_definitions(-D_UNICODE -DUNICODE)
 
@@ -388,11 +388,11 @@ if(WIN32 AND NOT CYGWIN)
 	set(MY_SW_DEV_RND_HOME D:/work/swdt_github/sw_dev/cpp/rnd)
 	set(MY_HW_DEV_EXT_HOME D:/work/swdt_github/hw_dev/ext)
 
-	set(MY_SW_DEV_EXT_INCLUDE ${MY_SW_DEV_EXT_HOME}/inc)
+	set(MY_SW_DEV_EXT_INCLUDE ${MY_SW_DEV_EXT_HOME}/include)
 	set(MY_SW_DEV_EXT_LIB ${MY_SW_DEV_EXT_HOME}/lib)
-	set(MY_SW_DEV_RND_INCLUDE ${MY_SW_DEV_RND_HOME}/inc)
+	set(MY_SW_DEV_RND_INCLUDE ${MY_SW_DEV_RND_HOME}/include)
 	set(MY_SW_DEV_RND_LIB ${MY_SW_DEV_RND_HOME}/lib)
-	set(MY_HW_DEV_EXT_INCLUDE ${MY_HW_DEV_EXT_HOME}/inc)
+	set(MY_HW_DEV_EXT_INCLUDE ${MY_HW_DEV_EXT_HOME}/include)
 	set(MY_HW_DEV_EXT_LIB ${MY_HW_DEV_EXT_HOME}/lib)
 
 #	include_directories(${MY_USR_LOCAL_INCLUDE} ${MY_USR_INCLUDE} ${MY_SW_DEV_EXT_INCLUDE} ${MY_SW_DEV_RND_INCLUDE})
@@ -419,11 +419,11 @@ else()
 	set(MY_SW_DEV_RND_HOME $ENV{HOME}/work/swdt_github/sw_dev/cpp/rnd)
 	set(MY_HW_DEV_EXT_HOME $ENV{HOME}/work/swdt_github/hw_dev/ext)
 
-	set(MY_SW_DEV_EXT_INCLUDE ${MY_SW_DEV_EXT_HOME}/inc)
+	set(MY_SW_DEV_EXT_INCLUDE ${MY_SW_DEV_EXT_HOME}/include)
 	set(MY_SW_DEV_EXT_LIB ${MY_SW_DEV_EXT_HOME}/lib)
-	set(MY_SW_DEV_RND_INCLUDE ${MY_SW_DEV_RND_HOME}/inc)
+	set(MY_SW_DEV_RND_INCLUDE ${MY_SW_DEV_RND_HOME}/include)
 	set(MY_SW_DEV_RND_LIB ${MY_SW_DEV_RND_HOME}/lib)
-	set(MY_HW_DEV_EXT_INCLUDE ${MY_HW_DEV_EXT_HOME}/inc)
+	set(MY_HW_DEV_EXT_INCLUDE ${MY_HW_DEV_EXT_HOME}/include)
 	set(MY_HW_DEV_EXT_LIB ${MY_HW_DEV_EXT_HOME}/lib)
 
 #	include_directories(${MY_USR_LOCAL_INCLUDE} ${MY_USR_INCLUDE} ${MY_SW_DEV_EXT_INCLUDE} ${MY_SW_DEV_RND_INCLUDE})
@@ -436,7 +436,7 @@ endif()
 ## Install header files, data files, and binaries.
 ##
 # FIXME [check & correct] >>
-file(GLOB_RECURSE HEADER_FILES "${CMAKE_SOURCE_DIR}/inc/*.h")
+file(GLOB_RECURSE HEADER_FILES "${CMAKE_SOURCE_DIR}/include/*.h")
 install(FILES ${HEADER_FILES} DESTINATION include)
 file(GLOB_RECURSE DATA_FILES "${CMAKE_SOURCE_DIR}/bin/data/*")
 install(FILES ${DATA_FILES} DESTINATION bin/data)

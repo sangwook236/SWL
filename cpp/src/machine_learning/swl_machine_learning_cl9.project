@@ -3,14 +3,14 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="include">
-    <File Name="../../inc/swl/machine_learning/ExportMachineLearning.h"/>
-    <File Name="../../inc/swl/machine_learning/QLambda.h"/>
-    <File Name="../../inc/swl/machine_learning/QLearning.h"/>
-    <File Name="../../inc/swl/machine_learning/Sarsa.h"/>
-    <File Name="../../inc/swl/machine_learning/SarsaLambda.h"/>
-    <File Name="../../inc/swl/machine_learning/TDLambda.h"/>
-    <File Name="../../inc/swl/machine_learning/TDLearning.h"/>
-    <File Name="../../inc/swl/machine_learning/TDLearningBase.h"/>
+    <File Name="../../include/swl/machine_learning/ExportMachineLearning.h"/>
+    <File Name="../../include/swl/machine_learning/QLambda.h"/>
+    <File Name="../../include/swl/machine_learning/QLearning.h"/>
+    <File Name="../../include/swl/machine_learning/Sarsa.h"/>
+    <File Name="../../include/swl/machine_learning/SarsaLambda.h"/>
+    <File Name="../../include/swl/machine_learning/TDLambda.h"/>
+    <File Name="../../include/swl/machine_learning/TDLearning.h"/>
+    <File Name="../../include/swl/machine_learning/TDLearningBase.h"/>
   </VirtualDirectory>
   <VirtualDirectory Name="src">
     <File Name="TDLearningBase.cpp"/>
@@ -27,7 +27,7 @@
     </GlobalSettings>
     <Configuration Name="Debug" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-std=c++11;-Wall -g -DBUILD_DLL -fPIC" C_Options="-Wall -g -DBUILD_DLL -fPIC " Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="../../inc"/>
+        <IncludePath Value="../../include"/>
         <IncludePath Value="/usr/local/include"/>
       </Compiler>
       <Linker Options="-O0" Required="yes">
@@ -73,7 +73,7 @@
     </Configuration>
     <Configuration Name="Release" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-std=c++11;-O2 -Wall -DBUILD_DLL -fPIC" C_Options="-O2 -Wall -DBUILD_DLL -fPIC " Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="../../inc"/>
+        <IncludePath Value="../../include"/>
         <IncludePath Value="/usr/local/include"/>
       </Compiler>
       <Linker Options="-s " Required="yes">

@@ -15,16 +15,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\swl\machine_vision\ExportMachineVision.h">
+    <ClInclude Include="..\..\include\swl\machine_vision\ExportMachineVision.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\machine_vision\ImageRectificationUsingOpenCV.h">
+    <ClInclude Include="..\..\include\swl\machine_vision\ImageRectificationUsingOpenCV.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\machine_vision\ImageUndistortionUsingOpenCV.h">
+    <ClInclude Include="..\..\include\swl\machine_vision\ImageUndistortionUsingOpenCV.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\machine_vision\KinectSensor.h">
+    <ClInclude Include="..\..\include\swl\machine_vision\KinectSensor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

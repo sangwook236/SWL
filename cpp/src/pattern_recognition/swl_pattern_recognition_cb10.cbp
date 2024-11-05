@@ -48,18 +48,18 @@
 		</Build>
 		<Compiler>
 			<Add option="-fPIC" />
-			<Add directory="../../inc" />
+			<Add directory="../../include" />
 			<Add directory="/usr/local/include" />
 		</Compiler>
 		<Linker>
 			<Add directory="../../lib" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
-		<Unit filename="../../inc/swl/pattern_recognition/ExportPatternRecognition.h" />
-		<Unit filename="../../inc/swl/pattern_recognition/GestureClassifierByHistogram.h" />
-		<Unit filename="../../inc/swl/pattern_recognition/GestureType.h" />
-		<Unit filename="../../inc/swl/pattern_recognition/IGestureClassifier.h" />
-		<Unit filename="../../inc/swl/pattern_recognition/MotionSegmenter.h" />
+		<Unit filename="../../include/swl/pattern_recognition/ExportPatternRecognition.h" />
+		<Unit filename="../../include/swl/pattern_recognition/GestureClassifierByHistogram.h" />
+		<Unit filename="../../include/swl/pattern_recognition/GestureType.h" />
+		<Unit filename="../../include/swl/pattern_recognition/IGestureClassifier.h" />
+		<Unit filename="../../include/swl/pattern_recognition/MotionSegmenter.h" />
 		<Unit filename="GestureClassifierByHistogram.cpp" />
 		<Unit filename="GestureType.cpp" />
 		<Unit filename="HistogramGenerator.cpp" />

@@ -3,16 +3,16 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="include">
-    <File Name="../../inc/swl/glutil/ExportGLUtil.h"/>
-    <File Name="../../inc/swl/glutil/GLCamera.h"/>
-    <File Name="../../inc/swl/glutil/GLCreateDisplayListVisitor.h"/>
-    <File Name="../../inc/swl/glutil/GLDisplayListCallableInterface.h"/>
-    <File Name="../../inc/swl/glutil/GLPickObjectVisitor.h"/>
-    <File Name="../../inc/swl/glutil/GLPrintSceneVisitor.h"/>
-    <File Name="../../inc/swl/glutil/GLRenderSceneVisitor.h"/>
-    <File Name="../../inc/swl/glutil/GLShape.h"/>
-    <File Name="../../inc/swl/glutil/GLShapeSceneNode.h"/>
-    <File Name="../../inc/swl/glutil/IGLSceneVisitor.h"/>
+    <File Name="../../include/swl/glutil/ExportGLUtil.h"/>
+    <File Name="../../include/swl/glutil/GLCamera.h"/>
+    <File Name="../../include/swl/glutil/GLCreateDisplayListVisitor.h"/>
+    <File Name="../../include/swl/glutil/GLDisplayListCallableInterface.h"/>
+    <File Name="../../include/swl/glutil/GLPickObjectVisitor.h"/>
+    <File Name="../../include/swl/glutil/GLPrintSceneVisitor.h"/>
+    <File Name="../../include/swl/glutil/GLRenderSceneVisitor.h"/>
+    <File Name="../../include/swl/glutil/GLShape.h"/>
+    <File Name="../../include/swl/glutil/GLShapeSceneNode.h"/>
+    <File Name="../../include/swl/glutil/IGLSceneVisitor.h"/>
   </VirtualDirectory>
   <VirtualDirectory Name="src">
     <File Name="GLCamera.cpp"/>
@@ -35,7 +35,7 @@
     </GlobalSettings>
     <Configuration Name="Debug" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-Wall -g -DBUILD_DLL -fPIC " C_Options="-Wall -g -DBUILD_DLL -fPIC " Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="../../inc"/>
+        <IncludePath Value="../../include"/>
         <IncludePath Value="/usr/local/include"/>
       </Compiler>
       <Linker Options="-O0" Required="yes">
@@ -79,7 +79,7 @@
     </Configuration>
     <Configuration Name="Release" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-O2 -Wall -DBUILD_DLL -fPIC " C_Options="-O2 -Wall -DBUILD_DLL -fPIC " Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="../../inc"/>
+        <IncludePath Value="../../include"/>
         <IncludePath Value="/usr/local/include"/>
       </Compiler>
       <Linker Options="-s " Required="yes">

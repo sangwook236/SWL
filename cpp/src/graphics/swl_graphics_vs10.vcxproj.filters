@@ -41,61 +41,61 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\swl\graphics\Appearance.h">
+    <ClInclude Include="..\..\include\swl\graphics\Appearance.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\graphics\AppearanceSceneNode.h">
+    <ClInclude Include="..\..\include\swl\graphics\AppearanceSceneNode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\graphics\BoundingBox.h">
+    <ClInclude Include="..\..\include\swl\graphics\BoundingBox.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\graphics\Color.h">
+    <ClInclude Include="..\..\include\swl\graphics\Color.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\graphics\CoordinateFrame.h">
+    <ClInclude Include="..\..\include\swl\graphics\CoordinateFrame.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\graphics\Geometry.h">
+    <ClInclude Include="..\..\include\swl\graphics\Geometry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\graphics\GeometryPoolMgr.h">
+    <ClInclude Include="..\..\include\swl\graphics\GeometryPoolMgr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\graphics\GeometrySceneNode.h">
+    <ClInclude Include="..\..\include\swl\graphics\GeometrySceneNode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\graphics\GraphicsObj.h">
+    <ClInclude Include="..\..\include\swl\graphics\GraphicsObj.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\graphics\IDrawable.h">
+    <ClInclude Include="..\..\include\swl\graphics\IDrawable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\graphics\ISceneVisitor.h">
+    <ClInclude Include="..\..\include\swl\graphics\ISceneVisitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\graphics\ITransformable.h">
+    <ClInclude Include="..\..\include\swl\graphics\ITransformable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\graphics\ObjectPickerMgr.h">
+    <ClInclude Include="..\..\include\swl\graphics\ObjectPickerMgr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\graphics\PickableInterface.h">
+    <ClInclude Include="..\..\include\swl\graphics\PickableInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\graphics\SceneNode.h">
+    <ClInclude Include="..\..\include\swl\graphics\SceneNode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\graphics\Shape.h">
+    <ClInclude Include="..\..\include\swl\graphics\Shape.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\graphics\ShapeSceneNode.h">
+    <ClInclude Include="..\..\include\swl\graphics\ShapeSceneNode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\graphics\TransformSceneNode.h">
+    <ClInclude Include="..\..\include\swl\graphics\TransformSceneNode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\graphics\ExportGraphics.h">
+    <ClInclude Include="..\..\include\swl\graphics\ExportGraphics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

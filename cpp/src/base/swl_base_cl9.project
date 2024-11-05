@@ -3,24 +3,24 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="include">
-    <File Name="../../inc/swl/base/ExportBase.h"/>
-    <File Name="../../inc/swl/base/INotifier.h"/>
-    <File Name="../../inc/swl/base/IObserver.h"/>
-    <File Name="../../inc/swl/base/IPrintable.h"/>
-    <File Name="../../inc/swl/base/IVisitable.h"/>
-    <File Name="../../inc/swl/base/Log.h"/>
-    <File Name="../../inc/swl/base/LogException.h"/>
-    <File Name="../../inc/swl/base/MvcController.h"/>
-    <File Name="../../inc/swl/base/MvcModel.h"/>
-    <File Name="../../inc/swl/base/MvcModelUpdateController.h"/>
-    <File Name="../../inc/swl/base/MvcView.h"/>
-    <File Name="../../inc/swl/base/MvcViewUpdateController.h"/>
-    <File Name="../../inc/swl/base/Point.h"/>
-    <File Name="../../inc/swl/base/Region.h"/>
-    <File Name="../../inc/swl/base/ReturnException.h"/>
-    <File Name="../../inc/swl/base/Size.h"/>
-    <File Name="../../inc/swl/base/String.h"/>
-    <File Name="../../inc/swl/base/Tuple.h"/>
+    <File Name="../../include/swl/base/ExportBase.h"/>
+    <File Name="../../include/swl/base/INotifier.h"/>
+    <File Name="../../include/swl/base/IObserver.h"/>
+    <File Name="../../include/swl/base/IPrintable.h"/>
+    <File Name="../../include/swl/base/IVisitable.h"/>
+    <File Name="../../include/swl/base/Log.h"/>
+    <File Name="../../include/swl/base/LogException.h"/>
+    <File Name="../../include/swl/base/MvcController.h"/>
+    <File Name="../../include/swl/base/MvcModel.h"/>
+    <File Name="../../include/swl/base/MvcModelUpdateController.h"/>
+    <File Name="../../include/swl/base/MvcView.h"/>
+    <File Name="../../include/swl/base/MvcViewUpdateController.h"/>
+    <File Name="../../include/swl/base/Point.h"/>
+    <File Name="../../include/swl/base/Region.h"/>
+    <File Name="../../include/swl/base/ReturnException.h"/>
+    <File Name="../../include/swl/base/Size.h"/>
+    <File Name="../../include/swl/base/String.h"/>
+    <File Name="../../include/swl/base/Tuple.h"/>
   </VirtualDirectory>
   <VirtualDirectory Name="src">
     <File Name="INotifier.cpp"/>
@@ -44,7 +44,7 @@
     </GlobalSettings>
     <Configuration Name="Debug" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-Wall -g -DBUILD_DLL -fPIC " C_Options="-Wall -g -DBUILD_DLL -fPIC " Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="../../inc"/>
+        <IncludePath Value="../../include"/>
         <IncludePath Value="/usr/local/include"/>
       </Compiler>
       <Linker Options="-O0" Required="yes">
@@ -88,7 +88,7 @@
     </Configuration>
     <Configuration Name="Release" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-O2 -Wall -DBUILD_DLL -fPIC " C_Options="-O2 -Wall -DBUILD_DLL -fPIC " Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="../../inc"/>
+        <IncludePath Value="../../include"/>
         <IncludePath Value="/usr/local/include"/>
       </Compiler>
       <Linker Options="-s " Required="yes">

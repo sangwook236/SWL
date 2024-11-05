@@ -45,7 +45,7 @@
 		<Compiler>
 			<Add option="-std=c++11" />
 			<Add option="-fPIC" />
-			<Add directory="../../inc" />
+			<Add directory="../../include" />
 			<Add directory="/usr/local/include" />
 			<Add directory="/usr/include/eigen3" />
 		</Compiler>
@@ -55,30 +55,30 @@
 			<Add directory="../../lib" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
-		<Unit filename="../../inc/swl/math/Complex.h" />
-		<Unit filename="../../inc/swl/math/Coordinates.h" />
-		<Unit filename="../../inc/swl/math/CurveFitting.h" />
-		<Unit filename="../../inc/swl/math/DataNormalization.h" />
-		<Unit filename="../../inc/swl/math/Duplex.h" />
-		<Unit filename="../../inc/swl/math/ExportMath.h" />
-		<Unit filename="../../inc/swl/math/GeometryUtil.h" />
-		<Unit filename="../../inc/swl/math/Line.h" />
-		<Unit filename="../../inc/swl/math/LineSegment.h" />
-		<Unit filename="../../inc/swl/math/MathConstant.h" />
-		<Unit filename="../../inc/swl/math/MathExt.h" />
-		<Unit filename="../../inc/swl/math/MathUtil.h" />
-		<Unit filename="../../inc/swl/math/Matrix.h" />
-		<Unit filename="../../inc/swl/math/Plane.h" />
-		<Unit filename="../../inc/swl/math/QMatrix.h" />
-		<Unit filename="../../inc/swl/math/Quaternion.h" />
-		<Unit filename="../../inc/swl/math/RMatrix.h" />
-		<Unit filename="../../inc/swl/math/Rational.h" />
-		<Unit filename="../../inc/swl/math/RootFinding.h" />
-		<Unit filename="../../inc/swl/math/Rotation.h" />
-		<Unit filename="../../inc/swl/math/Statistic.h" />
-		<Unit filename="../../inc/swl/math/TMatrix.h" />
-		<Unit filename="../../inc/swl/math/Triangle.h" />
-		<Unit filename="../../inc/swl/math/Vector.h" />
+		<Unit filename="../../include/swl/math/Complex.h" />
+		<Unit filename="../../include/swl/math/Coordinates.h" />
+		<Unit filename="../../include/swl/math/CurveFitting.h" />
+		<Unit filename="../../include/swl/math/DataNormalization.h" />
+		<Unit filename="../../include/swl/math/Duplex.h" />
+		<Unit filename="../../include/swl/math/ExportMath.h" />
+		<Unit filename="../../include/swl/math/GeometryUtil.h" />
+		<Unit filename="../../include/swl/math/Line.h" />
+		<Unit filename="../../include/swl/math/LineSegment.h" />
+		<Unit filename="../../include/swl/math/MathConstant.h" />
+		<Unit filename="../../include/swl/math/MathExt.h" />
+		<Unit filename="../../include/swl/math/MathUtil.h" />
+		<Unit filename="../../include/swl/math/Matrix.h" />
+		<Unit filename="../../include/swl/math/Plane.h" />
+		<Unit filename="../../include/swl/math/QMatrix.h" />
+		<Unit filename="../../include/swl/math/Quaternion.h" />
+		<Unit filename="../../include/swl/math/RMatrix.h" />
+		<Unit filename="../../include/swl/math/Rational.h" />
+		<Unit filename="../../include/swl/math/RootFinding.h" />
+		<Unit filename="../../include/swl/math/Rotation.h" />
+		<Unit filename="../../include/swl/math/Statistic.h" />
+		<Unit filename="../../include/swl/math/TMatrix.h" />
+		<Unit filename="../../include/swl/math/Triangle.h" />
+		<Unit filename="../../include/swl/math/Vector.h" />
 		<Unit filename="ConvexHull.cpp" />
 		<Unit filename="ConvexHull.h" />
 		<Unit filename="Coordinates.cpp" />

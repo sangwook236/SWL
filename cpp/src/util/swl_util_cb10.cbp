@@ -45,28 +45,28 @@
 		<Compiler>
 			<Add option="-fexceptions" />
 			<Add option="-fPIC" />
-			<Add directory="../../inc" />
+			<Add directory="../../include" />
 			<Add directory="/usr/local/include" />
 		</Compiler>
 		<Linker>
 			<Add directory="../../lib" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
-		<Unit filename="../../inc/swl/util/AsyncTcpSocketClient.h" />
-		<Unit filename="../../inc/swl/util/ExportUtil.h" />
-		<Unit filename="../../inc/swl/util/GuardedBuffer.h" />
-		<Unit filename="../../inc/swl/util/IPacketDispatcher.h" />
-		<Unit filename="../../inc/swl/util/IniParser.h" />
-		<Unit filename="../../inc/swl/util/PacketPacker.h" />
-		<Unit filename="../../inc/swl/util/RegionOfInterest.h" />
-		<Unit filename="../../inc/swl/util/RegionOfInterestMgr.h" />
-		<Unit filename="../../inc/swl/util/SerialPort.h" />
-		<Unit filename="../../inc/swl/util/TcpSocketClient.h" />
-		<Unit filename="../../inc/swl/util/TcpSocketConnection.h" />
-		<Unit filename="../../inc/swl/util/TcpSocketConnectionUsingSession.h" />
-		<Unit filename="../../inc/swl/util/TcpSocketServer.h" />
-		<Unit filename="../../inc/swl/util/TcpSocketSession.h" />
-		<Unit filename="../../inc/swl/util/WaveData.h" />
+		<Unit filename="../../include/swl/util/AsyncTcpSocketClient.h" />
+		<Unit filename="../../include/swl/util/ExportUtil.h" />
+		<Unit filename="../../include/swl/util/GuardedBuffer.h" />
+		<Unit filename="../../include/swl/util/IPacketDispatcher.h" />
+		<Unit filename="../../include/swl/util/IniParser.h" />
+		<Unit filename="../../include/swl/util/PacketPacker.h" />
+		<Unit filename="../../include/swl/util/RegionOfInterest.h" />
+		<Unit filename="../../include/swl/util/RegionOfInterestMgr.h" />
+		<Unit filename="../../include/swl/util/SerialPort.h" />
+		<Unit filename="../../include/swl/util/TcpSocketClient.h" />
+		<Unit filename="../../include/swl/util/TcpSocketConnection.h" />
+		<Unit filename="../../include/swl/util/TcpSocketConnectionUsingSession.h" />
+		<Unit filename="../../include/swl/util/TcpSocketServer.h" />
+		<Unit filename="../../include/swl/util/TcpSocketSession.h" />
+		<Unit filename="../../include/swl/util/WaveData.h" />
 		<Unit filename="AsyncTcpSocketClient.cpp" />
 		<Unit filename="GuardedBuffer.cpp" />
 		<Unit filename="IniParser.cpp" />
