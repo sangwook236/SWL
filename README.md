@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/sangwook236/SWL.svg?branch=master)](https://travis-ci.org/sangwook236/SWL)
 [![codecov](https://codecov.io/gh/sangwook236/SWL/branch/master/graph/badge.svg)](https://codecov.io/gh/sangwook236/SWL)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/72891c96ed324b4a93db447cea2743fd)](https://www.codacy.com/app/sangwook236/SWL?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=sangwook236/SWL&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/603a4f2113d4499fa3fa06beb26926dd)](https://app.codacy.com/gh/sangwook236/SWL/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
 ## Introduction
 
