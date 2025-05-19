@@ -1,7 +1,7 @@
 # Sang-Wook's Library (SWL)
 
 [![Build Status](https://travis-ci.org/sangwook236/SWL.svg?branch=master)](https://travis-ci.org/sangwook236/SWL)
-[![codecov](https://codecov.io/gh/sangwook236/SWL/branch/master/graph/badge.svg)](https://codecov.io/gh/sangwook236/SWL)
+[![codecov](https://codecov.io/gh/sangwook236/SWL/graph/badge.svg?token=ga3S3bHLpi)](https://codecov.io/gh/sangwook236/SWL)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/603a4f2113d4499fa3fa06beb26926dd)](https://app.codacy.com/gh/sangwook236/SWL/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
 ## Introduction
